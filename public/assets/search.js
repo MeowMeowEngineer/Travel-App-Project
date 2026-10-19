@@ -57,6 +57,7 @@
   "use strict";
   var doc = document, form = doc.querySelector("[data-search]"), out = doc.querySelector("[data-results]");
   if (!form || !out) return;
+  window.gsSearchOn = true;   // search.html.j2's head script: the directory it keeps out stays out
   var input = form.querySelector('input[name="q"]') || form.querySelector("input");
   var dir = doc.querySelector("[data-directory]");
   var help = doc.querySelector("[data-none-help]");
@@ -87,7 +88,8 @@
   // related() drops from a word the index does not have as typed ('○○군도가볼만한곳' → ○○군도)
   var FILL = ["날", "때", "곳", "데", "것", "거", "좀", "수", "뭐", "갈", "할", "놀", "추천", "추천해", "추천해줘", "해줘",
     "알려줘", "알려", "주세요", "어디", "어디서", "어디가", "어디로", "어디야", "좋은", "갈곳", "갈데", "가볼", "가볼곳",
-    "가볼만한", "볼만한", "갈만한", "놀곳", "놀만한", "할만한", "만한", "있는", "있을까", "여행", "하기", "하면"];
+    "가볼만한", "볼만한", "갈만한", "놀곳", "놀만한", "할만한", "만한", "있는", "있을까", "여행", "하기", "하면",
+    "함께", "같이", "근처", "주변"];   // '아이와 함께', '인천공항 근처' (QA 2026-10-19 QA-24)
   var END = new RegExp("(?:" + FILL.filter(function (w) { return w.length > 1 || w === "곳" || w === "데"; })
     .sort(function (x, y) { return y.length - x.length; }).join("|") + ")+$");
   // what may follow a concept word in the query (concept detection): the particles, verb endings, nouns and endings
@@ -120,6 +122,12 @@
   var index = null, loading = null;
 
   function norm(s) { return String(s || "").toLowerCase().replace(STRIP, ""); }
+  // the directory shown or not; shown, it is no longer kept out by html.has-q (search.html.j2: a query in the address)
+  function showDir(on) {
+    if (!dir) return;
+    dir.hidden = !on;
+    if (on) doc.documentElement.classList.remove("has-q");
+  }
   CONCEPTS.forEach(function (c, i) {
     c.f = (c.find || []).map(function (w) { var k = norm(w); SHOWN[k] = w; return k; });
     (c.say || []).forEach(function (w) { var k = norm(w); if (k) { SAY.push([k, i]); if (!SHOWN[k]) SHOWN[k] = w; } });
@@ -136,7 +144,8 @@
           index = rows.map(function (row) {
             row._n = norm(row.n); row._a = norm(row.a); row._o = norm(row.o); row._v = norm(row.v);
             row._m = norm(row.m); row._g = norm(row.g);
-            row._d = norm([row.d, row.r, row.t].join(" "));
+            // each field on its own: '관교동 도심·소래' is no '교동도' (QA 2026-10-19 QA-23)
+            row._d = [row.d, row.r, row.t].map(norm).join("\u0001");
             row._w = [row._n, row._a, row._o, row._v, row._m, row._g, row._d].join("\n");   // every word it is found by
             row._l = [row.n, row.a, row.o, row.v, row.m, row.g, row.d, row.r, row.t].join("\n").toLowerCase();   // with its spaces
             return row;
@@ -220,6 +229,7 @@
     return p[b.length];
   }
   var SPLIT = /[\s·\-()（）\[\]|,\/、，:：—–]+/;
+  var COMPANY = /주식회사|유한회사|㈜|^주$/;
   // a row's words: each word of its names and dishes, each pair of neighbours, the first 2–4 syllables of a Korean
   // compound ('○○도해수욕장' → ○○, ○○도, ○○도해), and a name of several words whole ('○○ Lake Park');
   // [shown, key, the compound of a part] once per row
@@ -233,6 +243,7 @@
     ["n", "a", "o", "m"].forEach(function (f) {
       var ws = String(row[f] || "").split(SPLIT).filter(Boolean);
       ws.forEach(function (w, i) {
+        if (COMPANY.test(w)) return;   // a shop's company name in brackets is no name to suggest (QA 2026-10-19 QA-26)
         t.push([w, ""]);
         if (i + 1 < ws.length) t.push([w + " " + ws[i + 1], ""]);
         if (/^[가-힣]{3,}$/.test(w)) for (var k = 2; k < Math.min(w.length, 5); k++) t.push([w.slice(0, k), w]);
@@ -337,7 +348,8 @@
   // most words first
   function find(rows, raw) {
     var q = norm(raw), parts = parse(raw), hits = [];
-    var need = parts.filter(function (p) { return !p.city; });
+    // a filler word of its own ('근처 카페': 근처) is no condition next to another part (QA 2026-10-19 QA-24)
+    var need = parts.filter(function (p) { return !p.city && !(p.c < 0 && parts.length > 1 && NOISE.test(p.f[0])); });
     rows.forEach(function (row) {
       var s = score(row, q), ws = [], best = null, k, h;
       if (s) { hits.push([s[0], row, s[1], q, 0, 0]); return; }
@@ -463,7 +475,7 @@
     }
     html += planLine(raw);
     out.innerHTML = html;
-    if (dir) dir.hidden = rows.length > 0;   // an index that did not load: the directory stays the answer
+    showDir(!rows.length);   // an index that did not load: the directory stays the answer
     if (help) {
       help.hidden = false;
       var ask = help.querySelector("[data-chat-q]"), all = help.querySelector("[data-show-all]");
@@ -478,13 +490,13 @@
   function render(raw) {
     var q = norm(raw);
     if (help) help.hidden = true;
-    if (!q) { out.innerHTML = ""; if (dir) dir.hidden = false; if (emptyArt) emptyArt.hidden = true; return; }
+    if (!q) { out.innerHTML = ""; showDir(true); if (emptyArt) emptyArt.hidden = true; return; }
     load().then(function (rows) {
       if (norm(input.value) !== q) return; // a newer query is on its way
       var found = find(rows, raw), hits = found.hits;
       if (emptyArt) emptyArt.hidden = hits.length > 0;
       if (!hits.length) { none(rows, raw, found.parts); return; }
-      if (dir) dir.hidden = true;
+      showDir(false);
       var cut = hits.slice(0, LIMIT), groups = {};
       cut.forEach(function (h) { (groups[h[1].k] = groups[h[1].k] || []).push(h); });
       var counts = ORDER.filter(function (k) { return groups[k]; }).map(function (k) { return KIND[k] + " " + groups[k].length; });
@@ -533,7 +545,7 @@
   });
   var showAll = help && help.querySelector("[data-show-all]");
   if (showAll && dir) showAll.addEventListener("click", function () {
-    dir.hidden = false;
+    showDir(true);
     showAll.hidden = true;
     var h = doc.getElementById("h-dir");
     if (h) h.focus();

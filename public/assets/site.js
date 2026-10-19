@@ -385,11 +385,17 @@
     // while the question box is on screen (operator 2026-10-15: it covered the box's '#' tags) — css/49-chat.css hides
     // it from the first paint on a page with the box (body.has-ask) until html.ask-out says the box has left the
     // screen; without IntersectionObserver html.no-askio keeps it there as before
+    // — the box, and the conversation panel with its own follow-up box under it (QA 2026-10-19 QA-05: after the first
+    // answer the launcher sat on the panel's send button and took its taps)
     $all("[data-chat-open]").forEach(function (b) { b.removeAttribute("aria-haspopup"); });
     if ("IntersectionObserver" in win) {
-      new IntersectionObserver(function (es) {
-        root.classList.toggle("ask-out", !es[es.length - 1].isIntersecting);
-      }).observe(askZone);
+      var zones = [askZone], seen = [];
+      if (askLog && !askZone.contains(askLog)) zones.push(askLog);
+      var askIO = new IntersectionObserver(function (es) {
+        es.forEach(function (en) { var k = zones.indexOf(en.target); if (k > -1) seen[k] = en.isIntersecting; });
+        root.classList.toggle("ask-out", !seen.some(Boolean));
+      });
+      zones.forEach(function (z) { askIO.observe(z); });
     } else root.classList.add("no-askio");
     askShow = function (b) {
       var has = root.classList.contains("chat-has");
@@ -742,6 +748,9 @@
         try { history.replaceState(null, "", location.pathname + (p.toString() ? "?" + p : "") + location.hash); } catch (e) { /* file:// */ }
       }
     };
+    // the map could not load (map.js gs:mapfail — an address the provider's key is not registered for): the list
+    // again, so the page is never only the failure line (QA 2026-10-19 QA-42)
+    doc.addEventListener("gs:mapfail", function () { if (state.view === "map") { state.view = "list"; apply(true); } });
     box.addEventListener("click", function (e) {
       var b = e.target.closest("button");
       if (!b || !box.contains(b)) return;
@@ -862,6 +871,11 @@
         o.hidden = shown === onMap;
       });
       drawMapUndo(shown);
+      // the region kept for a map built later (map.js reads it, as GSFilter on the lists): the address's #r-<권역> is
+      // drawn before map.js loads (QA 2026-10-19 QA-07: the map drew all 1,922 places for a 193-place 권역)
+      win.GSRegion = { region: cur.region, kinds: Object.assign({}, cur.kinds) };
+      // a 권역's line of counts by kind says the kinds turned off are left out (QA 2026-10-19 QA-39)
+      $all("[data-rk]").forEach(function (sp) { sp.hidden = !cur.kinds[sp.getAttribute("data-rk")]; });
       emit("gs:region", { region: cur.region, kinds: cur.kinds });
     };
     // nothing shown: the 권역 (when the kinds shown have rows elsewhere) and each hidden kind (when it has rows in the

@@ -120,13 +120,16 @@
     counts[key] = n;
     form.querySelector('[data-count="' + key + '"] [data-count-value]').textContent = String(n);
   }
+  // a child comes with no age picked — the age prices the fees, so the reader picks it before the plan is asked for
+  // (QA 2026-10-19 QA-34: '아이와 가족' and '+' added a 7-year-old the reader never chose)
   function drawAges() {
     var box = form.querySelector("[data-ages]");
     box.textContent = "";
     ages.forEach(function (a, i) {
-      var sel = h("select", { "aria-label": (i + 1) + "번째 아이 나이" });
+      var sel = h("select", { "aria-label": (i + 1) + "번째 아이 나이", "data-age": "", "aria-invalid": a === null ? "true" : null });
+      sel.append(h("option", { value: "", text: "나이 선택", selected: a === null, disabled: true }));
       for (var y = 0; y <= 17; y += 1) sel.append(h("option", { value: String(y), text: y === 0 ? "1살 미만" : y + "살", selected: y === a }));
-      sel.addEventListener("change", function () { ages[i] = +sel.value; summary(); });
+      sel.addEventListener("change", function () { ages[i] = sel.value === "" ? null : +sel.value; sel.removeAttribute("aria-invalid"); summary(); });
       box.append(h("label", { class: "trp-age" }, [h("span", { text: "아이 " + (i + 1) }), sel]));
     });
   }
@@ -142,7 +145,7 @@
       out.textContent = String(n);
       if (key === "adults" && counts.seniors > n) setCount("seniors", n);
       if (key === "kids") {
-        while (ages.length < n) ages.push(7);
+        while (ages.length < n) ages.push(null);
         ages.length = n;
         drawAges();
         if (n && !form.querySelector('input[name="with"][value="kids"]').checked) form.querySelector('input[name="with"][value="kids"]').checked = true;
@@ -211,7 +214,7 @@
   }
   function describe(c) {
     var who = "어른 " + c.adults + (c.seniors ? "(65세 이상 " + c.seniors + ")" : "")
-      + (c.kids.length ? ", 아이 " + c.kids.map(function (a) { return a ? a + "살" : "1살 미만"; }).join("·") : "");
+      + (c.kids.length ? ", 아이 " + c.kids.map(function (a) { return a === null || a === undefined ? "나이 미정" : a ? a + "살" : "1살 미만"; }).join("·") : "");
     var bits = [c.date ? dayName(c.date) : "날짜 미정", label("days", c.days), LABEL.move[c.move], LABEL.with[c.with] + "(" + who + ")"];
     if (c.from || c.to) bits.push((c.from ? HUBS[c.from] + " " + c.start + " 출발" : "") + (c.from && c.to ? " → " : "") + (c.to ? HUBS[c.to] + " " + c.end + " 도착" : ""));
     if (c.prefs.length) bits.push(c.prefs.map(function (p) { return label("prefs", p); }).join("·"));
@@ -274,7 +277,7 @@
   function people() {
     var w = picked("with")[0];
     if (counts.kids && w !== "kids") { form.querySelector('input[name="with"][value="kids"]').checked = true; w = "kids"; }
-    if (w === "kids" && !counts.kids) { ages = [7]; setCount("kids", 1); drawAges(); }
+    if (w === "kids" && !counts.kids) { ages = [null]; setCount("kids", 1); drawAges(); }
     if (w === "solo" && counts.adults !== 1) setCount("adults", 1);
     if (counts.seniors > counts.adults) setCount("seniors", counts.adults);
   }
@@ -283,11 +286,16 @@
     e.preventDefault();
     var c = conditions();
     var err = "";
+    var noAge = Array.prototype.filter.call(form.querySelectorAll("[data-ages] select"), function (x) { return x.value === ""; })[0];
     if (!c.date || c.date < dateIn.min || c.date > dateIn.max) err = "여행 날짜는 오늘부터 180일 안에서 골라 주세요.";
     else if (+c.end.slice(0, 2) - +c.start.slice(0, 2) < 3) err = "하루 일정은 3시간 이상으로 골라 주세요.";
+    else if (c.kids.some(function (a) { return a === null || a === undefined; })) err = "아이 나이를 골라 주세요. 입장료를 나이에 맞춰 계산해요.";
     formErr.hidden = !err;
     formErr.textContent = err;
-    if (err) return;
+    if (err) {
+      if (/아이 나이/.test(err) && noAge) noAge.focus();
+      return;
+    }
     track("plan_submit", { days: c.days, move: c.move, with: c.with });
     hideProblems();
     ask({ conditions: c }, c, false);
@@ -359,7 +367,8 @@
         // after an edit: what changed against the plan it was made from (review 2026-10-17: a café added, the fees
         // and the access facts changed unasked)
         var diff = edit && state && fits(state.plan) ? diffPlans(state.plan, plan) : null;
-        state = { conditions: c, plan: plan, diff: diff };
+        // an edit may add a condition it names in words ('걷기 적게'): the plan's own conditions from then on
+        state = { conditions: edit && plan.conditions && plan.conditions.date === c.date ? plan.conditions : c, plan: plan, diff: diff };
         save();
         track(edit ? "plan_edit" : "plan_done", { days: c.days, flags: (plan.flags || []).length, status: plan.status, code: codeBuilt(plan) ? 1 : 0 });
         return getPlaces().then(function () { show(true); });
@@ -510,7 +519,7 @@
     var st = s.day || "unknown";
     var facts = h("ul", { class: "trp-facts" }, [
       h("li", { class: "trp-day trp-day-" + st }, [h("span", { class: "trp-fl", text: "그날" }), h("span", { text: LABEL.day[st].replace("그날 ", "") })]),
-      factRow("시간", p.h), factRow("쉬는 날", p.c, "trp-closed"),
+      factRow("시간", p.h), factRow("쉬는 날", p.c, p.cx ? "trp-closed" : ""),   // '연중무휴' is no closure (QA-31)
       factRow(p.k === "food" || p.k === "cafe" ? "메뉴" : "요금", p.k === "food" || p.k === "cafe" ? p.m : p.f), factRow("주차", p.p),
       s.role === "stay" ? factRow("체크인", p.ci) : null]);
     var notes = (s.flags || []).map(function (f) { return h("li", { class: "bad", text: f }); })
@@ -531,22 +540,27 @@
   }
   // a leg: its straight line, the margin the plan keeps, shared bus routes, a directions link; the line that the real
   // travel time is not known is said once above the day (legNote), and under a leg only when the leg is flagged
+  // the way the reader moves, as a picture: a car or a bus (QA 2026-10-19 QA-31: car trips showed a bus)
+  function moveIcon(move) { return move === "car" ? "fact-parking" : "transit-bus"; }
   function legRow(l, move) {
-    var icon = l.mode === "car" ? "fact-parking" : l.mode === "walk" ? "sit-walk" : "transit-bus";
+    var icon = l.mode === "walk" ? "sit-walk" : l.mode === "car" ? "fact-parking" : moveIcon(move);
     var bits = [h("span", { class: "trp-leg-d tn", text: dist(l.m) || "거리 모름" })];
     bits.push(h("span", { class: "trp-leg-g", text: l.gap > 0 ? "계획상 여유 " + l.gap + "분" : "여유 없음" }));
     if (move === "transit" && l.routes && l.routes.length) bits.push(h("span", { class: "trp-leg-r", text: "근처 정류장에 같은 번호 노선 " + l.routes.join("·") + "번(방향·시각 확인)" }));
     var go = l.url ? h("a", { class: "trp-leg-go", href: l.url, target: "_blank", rel: "noopener", text: "카카오맵 " + LABEL.mode[l.mode] + " 길찾기" }) : null;
-    return h("li", { class: "trp-leg" + (l.flag ? " trp-leg-bad" : "") }, [pic(icon), h("div", { class: "trp-leg-in" }, [
-      h("p", {}, bits), l.flag ? h("p", { class: "trp-leg-note", text: l.flag + " — 지도 앱에서 실제 시간을 확인하세요" }) : null, go])]);
+    // a leg on the islands that may cross the sea (planner seaLegs): said, never routed — the site has no ferries
+    // (QA 2026-10-19 QA-09)
+    var sea = l.sea ? h("p", { class: "trp-leg-note", text: "배로 건너야 할 수 있음 — 배편은 사이트에 없어요. 운항·시간은 선사·여객터미널에 확인하세요" }) : null;
+    return h("li", { class: "trp-leg" + (l.flag ? " trp-leg-bad" : "") + (l.sea ? " trp-leg-sea" : "") }, [pic(icon), h("div", { class: "trp-leg-in" }, [
+      h("p", {}, bits), l.flag ? h("p", { class: "trp-leg-note", text: l.flag + " — 지도 앱에서 실제 시간을 확인하세요" }) : null, sea, go])]);
   }
-  function legNote(day) {
-    return (day.legs || []).length ? h("p", { class: "trp-tl-note" }, [pic("transit-bus"),
+  function legNote(day, move) {
+    return (day.legs || []).length ? h("p", { class: "trp-tl-note" }, [pic(moveIcon(move)),
       h("span", { text: "장소 사이 거리는 직선거리이고, 시간은 계획에 둔 여유예요. 실제 이동 시간은 확인되지 않았어요 — 구간마다 있는 카카오맵 길찾기로 확인하세요." })]) : null;
   }
-  function hubRow(hb) {   // the trip's start or end at a station or a terminal: no point on the site, a link by names
+  function hubRow(hb, move) {   // the trip's start or end at a station or a terminal: no point on the site, a link by names
     var from = hb.dir === "from";
-    return h("li", { class: "trp-leg trp-hub" + (hb.gap > 0 ? "" : " trp-leg-bad") }, [pic("transit-bus"), h("div", { class: "trp-leg-in" }, [
+    return h("li", { class: "trp-leg trp-hub" + (hb.gap > 0 ? "" : " trp-leg-bad") }, [pic(moveIcon(move)), h("div", { class: "trp-leg-in" }, [
       h("p", {}, [h("span", { class: "trp-leg-d", text: from ? hb.name + " " + hb.at + " 출발" : hb.name + " " + hb.at + "까지 도착" }),
         h("span", { class: "trp-leg-g", text: (from ? "첫 장소까지 계획상 여유 " : "마지막 장소 뒤 계획상 여유 ") + Math.max(0, hb.gap) + "분" })]),
       h("p", { class: "trp-leg-note", text: "이동 시간·거리는 사이트에 없어요 — 지도 앱에서 확인하세요" }),
@@ -594,21 +608,28 @@
     if (f.state === "none") return ["—", FEE_STATE.none];
     if (f.state === "free") return ["0원", FEE_STATE.free];
     if (f.state === "known") return [money(f.total), "모든 사람·방문지 계산됨"];
-    if (f.state === "partial") return [money(f.known) + " + 확인 필요", "확인 필요 " + (f.open || []).length + "건 — 합계 확정 안 됨"];
-    return ["확인 필요", "요금 정보 없음 " + (f.open || []).length + "건"];
+    // the places with someone 확인 필요 (planner fees.openPlaces; QA 2026-10-19 QA-30: person × place lines were counted)
+    var n = num(f.openPlaces) ? f.openPlaces + "곳" : (f.open || []).length + "건";
+    if (f.state === "partial") return [money(f.known) + " + 확인 필요", "확인 필요 " + n + " — 합계 확정 안 됨"];
+    return ["확인 필요", "요금 정보 없음 " + n];
   }
   function verdictText(f) {
     return { within: "예산 안", over: "예산 넘음", open: "예산 충족 확정 못 함(확인 필요 남음)", none: "" }[f.verdict] || "";
   }
   function counted(plan) {
-    var n = { all: 0, closed: 0, timeBad: 0, dayCheck: 0 };
+    var n = { all: 0, closed: 0, timeBad: 0, dayCheck: 0, noData: 0, sea: 0 };
     plan.days.forEach(function (d) {
       d.stops.forEach(function (s) {
         n.all += 1;
         if (s.day === "closed") n.closed += 1;
         else if ((s.flags || []).length) n.timeBad += 1;
         if (s.day === "unknown" || (s.checks || []).length) n.dayCheck += 1;
+        // what the regular rules cannot say anything of: the day unknown, or a place to visit or eat with no hours
+        // (QA 2026-10-19 QA-03: '✓ 정기 규칙상 4/4곳 방문 가능' for stops without closed days or hours)
+        var p = (places || {})[s.path] || {};
+        if (s.day !== "closed" && (s.day === "unknown" || (s.role !== "stay" && !p.h))) n.noData += 1;
       });
+      (d.legs || []).forEach(function (l) { if (l.sea) n.sea += 1; });
     });
     var need = { ok: 0, check: 0, bad: 0, any: false };
     plan.needs.forEach(function (x) {
@@ -680,7 +701,8 @@
     var rows = [
       ["fact-hours", "정기 휴무·운영시간",
         n.closed ? ["bad", "그날 휴무인 곳 " + n.closed + "곳"] : n.timeBad ? ["bad", "시간이 맞지 않는 곳 " + n.timeBad + "곳"]
-          : ["ok", "정기 규칙상 " + (n.all - n.closed) + "/" + n.all + "곳 방문 가능"]],
+          : n.noData ? ["info", "정기 규칙 확인 " + (n.all - n.noData) + "/" + n.all + " · 자료 없음 " + n.noData + "곳"]
+            : ["ok", "정기 규칙상 " + (n.all - n.closed) + "/" + n.all + "곳 방문 가능"]],
       // a holiday or a date's rule (review 2026-10-18: '날짜 규칙에 걸리는 곳 없음' beside '정기 휴무 5곳'): never
       // all-clear while a stop is closed that day
       ["fact-closed", "공휴일·특별 운영",
@@ -693,15 +715,18 @@
       ["plan-budget", "입장료",
         [f.verdict === "over" ? "bad" : f.state === "partial" || f.state === "unknown" ? "info" : "ok",
           feeHead(f)[0] + (verdictText(f) ? " · " + verdictText(f) : f.state === "partial" || f.state === "unknown" ? " · 요금 자료 없는 곳은 빼고 셈" : "")]],
-      ["transit-bus", "이동", ["info", "구간마다 계획상 여유를 두었어요 · 실제 이동 시간은 지도 앱에서"]],
+      [moveIcon(state && state.conditions && state.conditions.move), "이동", ["info", (n.sea ? "배로 건너야 할 수 있는 구간 " + n.sea + "곳 — 배편은 사이트에 없음 · " : "")
+        + "구간마다 계획상 여유를 두었어요 · 실제 이동 시간은 지도 앱에서"]],
     ];
     if (done) rows.push(["kind-food", "일정 완성도", done]);
     var list = h("ul", { class: "trp-st4" }, rows.map(function (r) {
       return h("li", { class: "is-" + r[2][0] }, [pic(r[0]), h("span", { class: "trp-st4-l", text: r[1] }),
         h("span", { class: "trp-st4-v" }, [h("i", { class: "trp-mark", "aria-hidden": "true", text: MARK[r[2][0]] }), r[2][1]])]);
     }));
-    return h("section", { class: "trp-status is-" + st[0], "aria-labelledby": "h-status" }, [
-      h("h3", { id: "h-status" }, [h("i", { class: "trp-mark", "aria-hidden": "true", text: MARK[st[0]] }), st[1]]),
+    // a ready plan whose stops the data cannot all vouch for, or with a leg that may cross the sea: no ✓ (QA-03, QA-09)
+    var head = st[0] === "ok" && (n.noData || n.sea) ? "info" : st[0];
+    return h("section", { class: "trp-status is-" + head, "aria-labelledby": "h-status" }, [
+      h("h3", { id: "h-status" }, [h("i", { class: "trp-mark", "aria-hidden": "true", text: MARK[head] }), st[1]]),
       (plan.flags || []).length ? h("ul", { class: "trp-flags" }, plan.flags.map(function (x) { return h("li", { text: x }); })) : null,
       list,
       quickFixes(plan)]);
@@ -834,16 +859,17 @@
       meter = h("div", { class: "trp-meter" + (f.verdict === "over" ? " over" : f.verdict === "open" ? " open" : ""), role: "img",
         "aria-label": "확인된 입장료 " + won(f.known) + " / 예산 " + won(f.limit) + (f.verdict === "open" ? ", 확인 필요가 남아 예산 충족 미확정" : "") }, [h("span", { style: "width:" + pct + "%" })]);
     }
-    var ok = n.all - n.closed;
+    var ok = n.all - n.closed - n.noData;
     var rowCheck = h("div", { class: "trp-kpi-ring" }, [ring(ok, n.all), h("span", { class: "tn", text: ok + "/" + n.all })]);
     return h("ul", { class: "trp-kpis", "aria-label": "코스 요약" }, [
       tile("icon-course", "들르는 곳", h("span", { class: "tn", text: n.all + "곳" }), mix),
-      tile("transit-bus", "구간 직선거리 합", !sum.legs ? h("span", { class: "tn", text: "—" }) : sum.all ? h("span", { class: "tn", text: km(sum.metres) })
+      tile(moveIcon(state && state.conditions && state.conditions.move), "구간 직선거리 합", !sum.legs ? h("span", { class: "tn", text: "—" }) : sum.all ? h("span", { class: "tn", text: km(sum.metres) })
         : h("span", { class: "trp-kpi-x", text: "전체 이동거리 계산 안 됨" }),
         !sum.legs ? "구간 없음" : sum.all ? "구간 " + sum.legs + "개 · 실제 길 거리·시간 아님" : sum.legs + "개 구간 중 " + sum.known + "개만 거리 있음"),
       tile("plan-budget", "입장료", h("span", { class: "tn", text: head[0] }),
         num(f.limit) ? "예산 " + won(f.limit) + (verdictText(f) ? " · " + verdictText(f) : "") : head[1], meter),
-      tile("fact-closed", "정기 규칙상 방문 가능", rowCheck, n.closed ? "그날 휴무 " + n.closed + "곳" + (n.dayCheck ? " · 운영 확인 필요 " + n.dayCheck + "곳" : "")
+      tile("fact-closed", "정기 규칙상 방문 가능", rowCheck, n.noData ? "운영 자료 없음 " + n.noData + "곳" + (n.closed ? " · 그날 휴무 " + n.closed + "곳" : "")
+        : n.closed ? "그날 휴무 " + n.closed + "곳" + (n.dayCheck ? " · 운영 확인 필요 " + n.dayCheck + "곳" : "")
         : n.dayCheck ? "그날 운영 확인 필요 " + n.dayCheck + "곳" : "공휴일·날짜별 공지에 걸리는 곳 없음"),
     ]);
   }
@@ -891,7 +917,7 @@
     return h("figure", { class: "trp-chart trp-tlx" }, [h("figcaption", {}, [h("b", { text: "하루 시간표" }), h("span", { text: "막대에 손가락이나 마우스를 대면 자세히 보여요" })]),
       h("div", { class: "trp-tlx-body", "data-lenis-prevent": "" }, [h("div", { class: "trp-tlx-grid" }, [ticks].concat(rows))]), legend]);
   }
-  function metro(day) {   // the day as a line of stations: numbered stops, each link with its distance and how to go
+  function metro(day, move) {   // the day as a line of stations: numbered stops, each link with its distance and how to go
     var line = h("ol", { class: "trp-metro", "aria-label": day.label + " 경로" });
     var hubs = day.hubs || [];
     var hubSt = function (hb) {
@@ -908,7 +934,7 @@
       var l = (day.legs || []).filter(function (x) { return x.from === i; })[0];
       if (l) {
         line.append(h("li", { class: "trp-link" + (l.flag ? " bad" : ""), "aria-label": dist(l.m) + (l.flag ? ", " + l.flag : ", 계획상 여유 " + l.gap + "분") }, [
-          pic(l.mode === "car" ? "fact-parking" : l.mode === "walk" ? "sit-walk" : "transit-bus"),
+          pic(l.mode === "walk" ? "sit-walk" : l.mode === "car" ? "fact-parking" : moveIcon(move)),
           h("span", { class: "tn", text: num(l.m) ? km(l.m) : "?" })]));
       }
     });
@@ -1019,7 +1045,12 @@
     if (fa !== fb) out.push("입장료: " + fa + " → " + fb);
     var sa = (STATUS[a.status] || STATUS.ready)[1], sb = (STATUS[b.status] || STATUS.ready)[1];
     if (sa !== sb) out.push("상태: " + sa + " → " + sb);
-    return out.length ? out : ["장소와 시각은 그대로예요."];
+    // what the site took out of the AI's words, and the places asked for that did not go in, with the data's reason
+    // (QA 2026-10-19 QA-10: an edit came back as '장소와 시각은 그대로예요' and nothing said why)
+    var said = (b.fixed || []).filter(function (t) { return /^(?:AI 설명|요청): /.test(t); }).map(function (t) { return t.replace(/^요청: /, ""); });
+    var cb = (b.conditions || {}).needs || [], ca = (a.conditions || {}).needs || [];
+    if (cb.indexOf("lesswalk") > -1 && ca.indexOf("lesswalk") < 0) said.push("조건: '걷기 적게'를 더했어요 — 걷는 거리는 사이트 자료로 잴 수 없어요");
+    return out.length || said.length ? out.concat(said) : ["장소와 시각은 그대로예요."];
   }
   // an edit: the plan on screen and the change asked for. The stops go with their role and reason: the server hands
   // them over as they are, so the stops the change keeps are copied, not read and written again (operator
@@ -1087,15 +1118,15 @@
     }
     var day = plan.days[curDay];
     var tl = h("ol", { class: "trp-tl" });
-    (day.hubs || []).filter(function (x) { return x.dir === "from"; }).forEach(function (hb) { tl.append(hubRow(hb)); });
+    (day.hubs || []).filter(function (x) { return x.dir === "from"; }).forEach(function (hb) { tl.append(hubRow(hb, c.move)); });
     day.stops.forEach(function (s, i) {
       tl.append(stopCard(s, i + 1));
       var l = (day.legs || []).filter(function (x) { return x.from === i; })[0];
       if (l) tl.append(legRow(l, c.move));
     });
-    (day.hubs || []).filter(function (x) { return x.dir === "to"; }).forEach(function (hb) { tl.append(hubRow(hb)); });
+    (day.hubs || []).filter(function (x) { return x.dir === "to"; }).forEach(function (hb) { tl.append(hubRow(hb, c.move)); });
     var panel = h("div", { class: "trp-grid", id: "trp-day-" + curDay, role: tabs ? "tabpanel" : null, "aria-labelledby": tabs ? "trp-tab-" + curDay : null }, [
-      h("div", { class: "trp-main" }, [h("h3", { class: "trp-day-h", text: day.label }), fold("경로 한눈에 보기", metro(day)), legNote(day), tl]),
+      h("div", { class: "trp-main" }, [h("h3", { class: "trp-day-h", text: day.label }), fold("경로 한눈에 보기", metro(day, c.move)), legNote(day, c.move), tl]),
       h("aside", { class: "trp-side" }, [dayMap(day), fold("구간별 직선거리 보기", legBars(day)), feeCard(plan.fees), checkBox(plan)])]);
     var notes = (plan.notes || []).length ? h("ul", { class: "trp-notes" }, plan.notes.map(function (n) { return h("li", {}, [h("span", { class: "trp-ai", text: "AI" }), " " + n]); })) : null;
     var glance = h("section", { class: "trp-glance", "aria-labelledby": "h-glance" }, [h("h3", { id: "h-glance", text: "한눈에 보는 코스" }),
