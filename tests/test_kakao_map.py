@@ -14,8 +14,8 @@ from pipeline.build import KAKAO_SDK, build, css_source, kakao_sdk_url, site_css
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "templates" / "assets"
-# the key the site.json of the sample carries (a fake fixture key: this site's own key is the owner's to register —
-# data/incheon/site.json kakao_js_key is empty until then)
+# the key the site.json of the sample carries (a fake fixture key; this site's own key — data/incheon/site.json
+# kakao_js_key, the operator's of 2026-10-19 — is never used here)
 SITE = json.loads((ROOT / "data" / "sample" / "site.json").read_text("utf-8"))
 MAP_BOX = re.compile(r'<div class="map"[^>]*>')
 

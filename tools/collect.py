@@ -5,6 +5,7 @@
     python tools/collect.py --data data/incheon --max-calls 400
     python tools/collect.py --data data/incheon --districts 연수구,강화군   # 광역시에서 일부 구·군만
     python tools/collect.py --data data/incheon --offline               # 키·네트워크 없이 캐시로만 다시 만든다
+    python tools/collect.py --data data/incheon --lists-only            # 호출 없이: 캐시의 목록으로 아직 없는 장소를 draft로
 
 1. 키: 환경 변수 TOURAPI_KEY, 없으면 지금 폴더(저장소 루트)의 .env. 없으면 곧바로 멈추고 어디에 넣는지 알려 준다.
    키 값은 어디에도 출력하지 않는다(모든 출력에서 원문·인코딩 형태를 가림). 공급자 오류 메시지는 키만 가리고 그대로 보인다.
@@ -26,6 +27,13 @@
 호출 상한(--max-calls, 기본 900 — 공공데이터포털 개발계정 일일 한도 안)은 진단 호출을 포함한 이번 실행 전체의 실호출
 수다. 상한에 걸리면 받은 데까지 쓰고 멈춘다. 같은 명령을 다시 실행하면 캐시에 있는 응답은 호출 없이 쓰고 나머지를
 이어 받는다(다음 날 다시 — 일일 한도).
+
+--lists-only(호출 없음 — 키·진단·네트워크 없이 캐시만): 캐시에 있는 지역 목록(areaBasedList2) 응답으로 아직 places.json에
+없는 장소를 모두 draft/basic으로 더한다 — 목록 항목의 값만(이름·주소·구·군·좌표·목록에 있으면 전화·제1·3유형 사진과
+'출처: 한국관광공사'·분류 코드 lclsSystm1·2·3/cat1·2·3과 그에 따른 종류(카페·디저트·쇼핑 포함)), 값마다 출처·확인일(목록을 받은
+날), tourapi.details_pending 표시(tools/tourapi_details.list_place). 날마다 하는 수집(이 명령에서 --lists-only를 뺀 것)의 상세
+단계가 그 장소들의 상세를 받아 채우고 표시를 지운다 — contentid가 이미 places.json에 있어 새 장소로 다시 더하지 않는다. 사진
+크기 단계는 건너뛴다(사진 주소를 읽는 일이라 따로: python tools/image_sizes.py).
 
 종료 코드: 0 끝까지 받음 · 3 호출 상한·공급자 한도로 멈춤(같은 명령을 다시 실행) · 2 키 없음 · 1 진단·수집 오류
 """
@@ -117,15 +125,19 @@ def data_summary(data: Path, today: str) -> dict:
             "geo": sum(1 for p in places if (p.get("geo") or {}).get("lat") is not None),
             "with_photo": with_photo, "first_photo_license": images, "visit_facts": facts,
             "drafts": sum(1 for p in places if p.get("status") == "draft"),
+            "details_pending": sum(1 for p in places if (p.get("tourapi") or {}).get("details_pending")),
             "events": len(events), "events_upcoming": len(upcoming)}
 
 
-def next_commands(data: str, today: str, stopped: bool, max_calls: int, extra: str) -> list[str]:
+def next_commands(data: str, today: str, stopped: bool, max_calls: int, extra: str, pending: int = 0) -> list[str]:
     again = f"python tools/collect.py --data {data} --max-calls {max_calls}{extra}"
     lines = []
     if stopped:
         lines.append(f"0. 이어 받기: {again}   ← 캐시에 있는 응답은 호출 없이 쓰고 나머지를 받는다"
                      "(일일 한도가 남았으면 바로, 다 썼으면 다음 날)")
+    elif pending:
+        lines.append(f"0. 상세 받기(날마다): {again}   ← 목록만으로 더한 {pending}곳의 상세(전화·이용시간·쉬는 날·요금·주차·"
+                     "체크인)를 받아 채운다(새 장소로 다시 더하지 않음)")
     lines += [
         f"1. 미리보기 빌드·검증: python -m pipeline.build --data {data} --out dist-preview --mode preview && "
         f"python -m pipeline.validate --data {data} --out dist-preview --mode preview",
@@ -156,7 +168,8 @@ def summary_lines(stats: dict, summary: dict, doctor_calls: int, max_calls: int)
         lines.append("- 목록 크기(구·군별): " + " / ".join(
             f"{d} " + "·".join(f"{names.get(t, t)} {n}" for t, n in sorted(v.items())) for d, v in sizes.items()))
     kinds = " · ".join(f"{KIND_LABELS.get(k, k)} {n}" for k, n in sorted(s["kinds"].items()))
-    lines.append(f"- 장소 {s['places']}곳({kinds or '없음'}) · draft {s['drafts']} — 구·군: "
+    pending = f" · 상세 대기(목록 값만) {s['details_pending']}" if s.get("details_pending") else ""
+    lines.append(f"- 장소 {s['places']}곳({kinds or '없음'}) · draft {s['drafts']}{pending} — 구·군: "
                  + (", ".join(f"{d} {n}" for d, n in sorted(s["districts"].items())) or "없음"))
     lines.append(f"- 좌표 {s['geo']}곳 · 사진 {s['with_photo']}곳(대표 사진 제1유형 {s['first_photo_license'].get('KOGL-1', 0)}"
                  f" · 제3유형 {s['first_photo_license'].get('KOGL-3', 0)}; 제2·4유형·유형 없음은 받지 않음 "
@@ -165,17 +178,21 @@ def summary_lines(stats: dict, summary: dict, doctor_calls: int, max_calls: int)
         f"{label} {v['places']}" + ("" if v["with_source"] == v["places"] else f"(출처 있음 {v['with_source']})")
         for label, v in s["visit_facts"].items()))
     ev = stats.get("events") or {}
-    lines.append(f"- 행사 {s['events']}건(오늘 이후 진행 {s['events_upcoming']}건) — searchFestival2 "
-                 f"{ev.get('from', '')}부터 응답 {ev.get('festival_items', 0)}건")
-    det, new = stats.get("details") or {}, stats.get("new_places") or {}
+    lines.append(f"- 행사 {s['events']}건(오늘 이후 진행 {s['events_upcoming']}건)" + (
+        f" — searchFestival2 {ev.get('from', '')}부터 응답 {ev.get('festival_items', 0)}건" if "events" in stats
+        else " — 이번 실행은 행사를 받지 않음"))
+    det, new = stats.get("details") or {}, stats.get("new_places") or stats.get("list_only") or {}
     errors = len(det.get("errors") or []) + len(new.get("errors") or []) + len(ev.get("errors") or [])
+    listed = " (목록 값만 — 상세 대기)" if "list_only" in stats else ""
+    completed = f" (그중 목록만으로 더했던 곳 {det['listed_completed']})" if det.get("listed_completed") else ""
     lines.append(f"- 이번 실행: 실호출 {stats.get('live_calls', 0) + doctor_calls}(진단 {doctor_calls} 포함) · "
-                 f"캐시 {stats.get('cache_hits', 0)} · 새 장소 {len(new.get('added') or [])} · 중복 의심 보류 "
-                 f"{len(new.get('held_duplicate_candidates') or [])} · 기존 장소 상세 갱신 {det.get('done', 0)}곳 · "
+                 f"캐시 {stats.get('cache_hits', 0)} · 새 장소 {len(new.get('added') or [])}{listed} · 중복 의심 보류 "
+                 f"{len(new.get('held_duplicate_candidates') or [])} · 기존 장소 상세 갱신 {det.get('done', 0)}곳{completed} · "
                  f"항목 오류 {errors}")
     rem = stats.get("remaining_calls") or {}
     if rem:
-        ev_left = "행사 목록을 아직 못 받음" if rem.get("events") is None else f"행사 {rem.get('events', 0)}"
+        ev_left = ("행사는 이번 실행에서 세지 않음" if "events" not in stats else "행사 목록을 아직 못 받음"
+                   if rem.get("events") is None else f"행사 {rem.get('events', 0)}")
         lines.append(f"- 남은 호출(캐시에 없는 응답): 약 {rem.get('total', 0)}회 — 상세 {rem.get('details', 0)} · "
                      f"새 장소 {rem.get('new_places', 0)} · {ev_left}" + (f" · 사진 {rem['gallery']}" if rem.get("gallery") else ""))
     if stats.get("stopped"):
@@ -193,11 +210,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--events-from", default="", help="행사를 이 날짜(YYYYMMDD)부터(기본: 오늘)")
     ap.add_argument("--gallery", action="store_true", help="장소마다 detailImage2로 허용 사진 더 받기(장소당 1회)")
     ap.add_argument("--offline", action="store_true", help="네트워크 없이 캐시로만(키 없이)")
+    ap.add_argument("--lists-only", action="store_true",
+                    help="호출 없이 캐시의 목록 응답만으로 아직 없는 장소를 draft로 더한다(상세 대기 — 다음 수집이 채움)")
     a = ap.parse_args(argv)
     if a.max_calls < 1:
         ap.error("--max-calls는 1 이상")
     if a.events_from and not re.fullmatch(r"\d{8}", a.events_from):
         ap.error("--events-from은 YYYYMMDD")
+    if a.lists_only and (a.gallery or a.events_from):
+        ap.error("--lists-only는 목록만 읽는다(--gallery·--events-from 없이)")
+    offline = a.offline or a.lists_only
 
     load_dotenv(Path(".env"))
     raw = os.environ.get("TOURAPI_KEY", "").strip().strip('"').strip("'")
@@ -206,7 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     def say(text: str = "", err: bool = False) -> None:
         print(mask(text), file=sys.stderr if err else sys.stdout, flush=True)
 
-    if not a.offline and not raw:
+    if not offline and not raw:
         say(f"중단: {NO_KEY}", err=True)
         return 2
     site = doctor.load_site(a.data)
@@ -218,7 +240,7 @@ def main(argv: list[str] | None = None) -> int:
 
     region = None
     used = 0
-    if not a.offline:
+    if not offline:
         say("== 1. TourAPI 연결·지역 코드 진단 ==")
         keyword = str((site.get("tourapi") or {}).get("region_keyword") or site.get("region") or "관광")
         rep = doctor.run(keyword, raw, site)
@@ -232,10 +254,16 @@ def main(argv: list[str] | None = None) -> int:
             say(f"중단: 호출 상한 {a.max_calls}회를 진단이 다 썼습니다(진단 {used}회). --max-calls를 늘리세요.", err=True)
             return 3
 
-    say("== 2. 수집(목록·좌표·사진 → 행사 → 상세 → TourAPI에만 있는 장소) ==")
+    if a.lists_only:
+        say("== 2. 목록만으로 장소 더하기(캐시의 areaBasedList2 — TourAPI 호출 없음) ==")
+    else:
+        say("== 2. 수집(목록·좌표·사진 → 행사 → 상세 → TourAPI에만 있는 장소) ==")
     try:
-        stats = bulk.run(a.data, max(1, a.max_calls - used), a.offline, gallery=a.gallery, details=True,
-                         add_new=True, events=True, districts=only, events_from=a.events_from or None, echo=False)
+        if a.lists_only:
+            stats = bulk.run(a.data, max(1, a.max_calls), True, districts=only, echo=False, lists_only=True)
+        else:
+            stats = bulk.run(a.data, max(1, a.max_calls - used), a.offline, gallery=a.gallery, details=True,
+                             add_new=True, events=True, districts=only, events_from=a.events_from or None, echo=False)
     except TourAPIStopError as err:   # the cap or the provider's quota during the list phase: nothing to write yet
         say(f"멈춤: {err} — 받은 목록은 캐시에 있습니다. 같은 명령을 다시 실행하면 이어서 받습니다.", err=True)
         return 3
@@ -243,11 +271,13 @@ def main(argv: list[str] | None = None) -> int:
         say(f"중단: {err}", err=True)
         return 1
     except TourAPIError as err:   # provider message as given, key masked (the client masks it; say() again)
-        say(f"중단: {err}", err=True)
+        hint = (" — 목록 응답이 캐시에 없습니다. 키를 넣고 python tools/collect.py --data "
+                f"{a.data}를 한 번 실행하면 목록을 받습니다." if a.lists_only and "캐시가 없습니다" in str(err) else "")
+        say(f"중단: {err}{hint}", err=True)
         return 1
 
     sizes = None
-    if not a.offline and (a.data / "places.json").exists():
+    if not offline and (a.data / "places.json").exists():
         # the photo hosts, not TourAPI (no call against the cap); the file is its own cache, so only new photos are read
         say("== 3. 사진 크기(tools/image_sizes.py) ==")
         sizes = image_sizes.run(a.data, prober=image_sizes.probe)
@@ -263,11 +293,16 @@ def main(argv: list[str] | None = None) -> int:
     # the resume command repeats every option that shapes what is asked (the cache keys): districts, events date, gallery
     extra = (f" --districts {a.districts}" if only else "") + (f" --events-from {a.events_from}" if a.events_from else "") \
         + (" --gallery" if a.gallery else "")
-    steps = next_commands(str(a.data).replace(os.sep, "/"), today, bool(stats.get("stopped")), a.max_calls, extra)
+    steps = next_commands(str(a.data).replace(os.sep, "/"), today, bool(stats.get("stopped")), a.max_calls, extra,
+                          summary.get("details_pending", 0))
+    if a.lists_only:
+        lines.append(f"- 사진 크기: 건너뜀(--lists-only). 새 사진의 크기는 python tools/image_sizes.py --data {a.data}"
+                     "(사진 주소를 읽음, TourAPI 호출 아님) 또는 다음 수집이 끝에 채운다 — 그 전에는 목록 썸네일이 원본 사진")
     say("== 4. 결과 ==")
     for line in lines:
         say(line)
-    say(f"- 쓴 파일: {a.data / 'places.json'}, {a.data / 'events.json'}" + (f", {a.data / 'image_sizes.json'}" if sizes else "")
+    say(f"- 쓴 파일: {a.data / 'places.json'}" + ("" if a.lists_only else f", {a.data / 'events.json'}")
+        + (f", {a.data / 'image_sizes.json'}" if sizes else "")
         + ", reports/tourapi_bulk.md, reports/collect.md")
     say("")
     say("== 다음 명령 ==")

@@ -52,21 +52,21 @@
 | `id` | 불변 고유 ID | `incheon-0001`, TourAPI에서 새로 들어온 곳은 `tourapi-<contentid>` |
 | `slug` | URL. 임포트 때 한 번 정하고 공개 후 바꾸지 않음 | `경암동-철길마을` |
 | `name`, `kind` | 명칭, 유형 `attraction`/`stay`/`food`/`cafe`(카페·디저트: TourAPI 신분류 FD05…·FD030100, 신분류가 없으면 cat3 A05020900)/`shopping`(TourAPI 유형 38) — `pipeline/tourapi.kind_of`, 수집이 분류를 따라 맞춘다(`locks`에 `kind`가 있으면 그대로) | |
-| `tourapi` | `{contentid, contenttypeid, title, match_basis, modifiedtime, lclsSystm1, lclsSystm2, lclsSystm3, cat1, cat2, cat3, overview}` — 분류 코드는 TourAPI가 준 그대로(2026-10-19 전 수집분은 `lcls` = lclsSystm3). overview는 사실 확인용, 화면에 내지 않음 | `{"lclsSystm3": "FD050100"}` |
+| `tourapi` | `{contentid, contenttypeid, title, match_basis, modifiedtime, lclsSystm1, lclsSystm2, lclsSystm3, cat1, cat2, cat3, overview, details_pending?}` — 분류 코드는 TourAPI가 준 그대로(2026-10-19 전 수집분은 `lcls` = lclsSystm3). overview는 사실 확인용, 화면에 내지 않음. `details_pending: true`는 지역 목록 항목만으로 더한 곳(`tools/collect.py --lists-only`) — 다음 수집의 상세 단계가 채우고 지운다 | `{"lclsSystm3": "FD050100"}` |
 | `category`, `themes` | 원본 분류, 테마 slug 목록 | `["alleys-culture"]` |
 | `status` | `draft`(작성·검수 전) → `reviewed`(검수 완료·공개 대기) → `published` | |
 | `tier` | `full`/`basic` | |
 | `summary` | 블록1 (우리 작성) | |
 | `facts` | 블록2 값(출처 값 그대로). 키: address, usetime, usetime_restdate(영업시간·정기휴일이 한 칸인 출처), restdate, usefee, parking, parking_seats(주차·좌석이 한 칸인 출처), parkingfee, spendtime, checkin, checkout, menu, infocenter, homepage, babycarriage, pet, expagerange, useseason, accessible_parking, wheelchair, accessible_toilet, accessible_route | |
 | `facts_source` | `{provider, contentid, checked_at}` — **정보 확인일** | |
-| `fact_sources` | 항목별 출처 `{키: {provider, checked_at, url?, contentid?, confirmed_by?, raw?, note?}}`. 표기를 고친 값(도 이름 보정, 붙어 있던 전화번호 분리)은 원래 값을 `raw`, 사유를 `note`에 남긴다 | `{"address": {"raw": "○○시 ○○로 111-5(○○동)", …}}` |
+| `fact_sources` | 항목별 출처 `{키: {provider, checked_at, url?, contentid?, confirmed_by?, raw?, note?, via?}}` — `via`는 값을 가져온 TourAPI 기능이 상세가 아닐 때(목록 `areaBasedList2`). 표기를 고친 값(도 이름 보정, 붙어 있던 전화번호 분리)은 원래 값을 `raw`, 사유를 `note`에 남긴다 | `{"address": {"raw": "○○시 ○○로 111-5(○○동)", …}}` |
 | `fact_alternatives` | 다른 출처의 값 `{키: [{value, provider, checked_at, relation?}]}`. `relation: "also"`는 보완 값(둘째 메뉴·안내소 전화), 없으면 충돌 값 | |
 | `designations[]` | 공식 지정 목록(시가 운영하는 목록 — site.json `city.designations` — 과 모범음식점·백년가게·향토음식점·착한가격업소·안심식당) `{type, label, year, source_name, url, checked_at, match: {row_ref, confidence, basis}, confirmed_by?}`. 매칭 신뢰도 high·medium이고 `needs_check`가 없을 때만 화면에 나간다(`schema.designations`). 장소 첫 화면 칩(목록 링크)·방문 전 확인의 '지정' 줄(목록 링크·확인일)·목록 칩 하나·검색·llms.txt·JSON-LD `award`. 색인 기준에는 넣지 않는다 | `{"type": "mobeom", "label": "모범음식점(○○구 지정)", …}` |
-| `geo` | `{lat, lng, source}` | |
+| `geo` | `{lat, lng, source, checked_at?}` (TourAPI 목록에서 온 좌표는 목록을 받은 날을 `checked_at`에) | |
 | `map_ids` | `{naver_place_id, google_place_id}` — 있으면 정확 링크 | |
 | `official` | `{source_url, visitkorea_url, homepage}` | |
 | `original` | `{text, source_name, source_url, license, collected_at, sha256, body?}` — **원문 수집일**. 상세 본문이 상호·메뉴명뿐이면 `text`는 비우고 `body: "metadata_only"`(수집 원본은 `data/raw`에 보존) | |
-| `images[]` | `{url, alt, credit, license, source}` | |
+| `images[]` | `{url, alt, credit, license, source, checked_at?}` | |
 | `nearby[]`, `nearby_source` | `{name, kind, type_label, distance_m, contentid, internal_slug}` / `{provider, radius_m, distance_basis, checked_at}` | |
 | `media` | `{videos:[{youtube_id,title,channel,url}], news:[{title,publisher,date,url}]}` | |
 | `faq[]` | `{q, a, source}` | |

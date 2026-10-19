@@ -24,6 +24,7 @@
 1. **TourAPI 키**: 공공데이터포털의 '한국관광공사_국문 관광정보 서비스_GW' 일반 인증키(Encoding·Decoding 어느 쪽이든 된다). `.env`는 커밋되지 않습니다(`.gitignore`). 키 값을 문서·코드·커밋 메시지에 쓰지 않습니다.
 2. **진단**(`tools/collect.py`의 1단계, 따로: `python tools/tourapi_doctor.py --data data/incheon`): 키·네트워크·서비스 버전 문제를 한 번에 가리고, `site.json` `region_full`('인천광역시')의 법정동 시도 코드와 그 아래 구·군 코드를 TourAPI(ldongCode2)에서 받아 보여 줍니다(옛 지역코드 areaCode2는 참고). 코드는 저장하지 않고 수집할 때마다 같은 목록을 받아 씁니다(응답은 캐시). `site.json` `districts`와 이름이 다르면 '확인' 줄이 나옵니다. 키가 없으면 곧바로 멈추고 어디에 넣는지 알려 주며, 공급자 오류 메시지는 그대로 보이고 키 문자열만 가려집니다.
 3. **수집**(`tools/collect.py`의 2단계 = `tools/tourapi_bulk.py --details --add-new --events`): 인천광역시 아래 구·군을 TourAPI 법정동 코드 목록대로 모두 돌며(`site.json` `tourapi.scope` 'sido') 지역 목록(관광지·문화시설·레포츠·쇼핑·숙박·음식점, 모든 쪽) → 매칭·좌표·사진(공공누리 제1·3유형만, '출처: 한국관광공사') → 행사(searchFestival2, **오늘부터**, 시도 전체) → 상세(detailCommon2·detailIntro2, 관광지·레포츠는 detailInfo2도: 전화·이용시간·쉬는 날·요금·주차·체크인, 필드별 출처·확인일) → TourAPI에만 있는 장소(draft, 그 구·군을 `district`로). overview는 사실 확인용으로만 남기고 화면에 내지 않습니다. `places.json`이 없어도 시작합니다. 쓰는 파일: `data/incheon/places.json`·`events.json`, `data/cache/tourapi/`(커밋 안 함), `reports/collect.md`·`tourapi_bulk.md`. 끝에 장소·구·군·좌표·사진·방문 판단 정보 채움·행사·**남은 호출 수**와 다음 명령을 출력합니다. 구·군 일부만: `--districts 연수구,강화군`. 진행 중인 행사(오늘 전에 시작)도 받으려면 `--events-from YYYYMMDD`. 키 없이 캐시로만 다시 만들기: `--offline`.
+   - **목록만으로 먼저 싣기**(`--lists-only`, TourAPI 호출 없음·키 없이): 캐시에 있는 지역 목록(areaBasedList2) 응답으로 아직 `places.json`에 없는 장소를 모두 draft로 더합니다 — 목록 항목의 값만(이름·주소·구·군·좌표·목록에 있으면 전화·제1·3유형 사진과 '출처: 한국관광공사'·분류 코드와 그에 따른 종류(카페·디저트·쇼핑 포함)), 값마다 출처·확인일, `tourapi.details_pending` 표시. 날마다 하는 수집(`python tools/collect.py --data data/incheon`)이 그 장소들의 상세를 받아 채우고 표시를 지웁니다(같은 장소를 다시 더하지 않음, 주소(slug)는 그대로). 목록 응답이 캐시에 없으면 키를 넣고 수집을 한 번 돌리라고 알리고 멈춥니다. 따로: `python tools/tourapi_bulk.py --data data/incheon --lists-only`.
    - 끝으로 **사진 크기**(`tools/image_sizes.py`, TourAPI 호출이 아니라 상한에 넣지 않음): 싣는 사진과 한국관광공사가 함께 올린 작은 크기 파일(`…_image3_1`)의 가로·세로·용량을 읽어 `data/incheon/image_sizes.json`에 씁니다. 빌드는 이 파일로 목록 썸네일에 작은 파일을 쓰고(없으면 원본), 사진마다 크기를 적고(레이아웃 밀림 없음), 장소 첫 화면에 썸네일 줄을 둡니다. 기록한 사진은 다시 읽지 않습니다. 따로: `python tools/image_sizes.py --data data/incheon`.
 
 ### TourAPI 호출 예산
@@ -43,7 +44,7 @@
    - `ga4_id`: GA4 측정 ID. 운영자가 GA4를 공개 뒤에 달기로 정했다면 `site.json`에 `"launch_exceptions": {"ga4_id": "<운영자 사유>"}`를 두면 경고로 바뀝니다.
    - `operator.contact`: 정정 요청을 받을 연락처.
    
-   그 밖에 카카오 지도 JavaScript 키(`kakao_js_key`, 공개 키 — 그 도메인을 카카오 개발자 콘솔에 등록), 서치콘솔(구글·빙·네이버) 인증 토큰, GTM, IndexNow 키는 검증을 막지 않지만 공개 전에 넣습니다. 비어 있는 값과 할 일은 `python tools/launch_check.py --data data/incheon --stdout`이 보여 줍니다.
+   그 밖에 카카오 지도 JavaScript 키(`kakao_js_key`, 공개 키 — 그 도메인을 카카오 개발자 콘솔에 등록; 2026-10-19 받은 새 앱 '인천각'의 키가 들어 있고, https://incheon.webforai.kr 은 아직 콘솔에 등록 전이라 그때까지 SDK가 401 'domain mismatched'로 답함), 서치콘솔(구글·빙·네이버) 인증 토큰, GTM, IndexNow 키는 검증을 막지 않지만 공개 전에 넣습니다. 비어 있는 값과 할 일은 `python tools/launch_check.py --data data/incheon --stdout`이 보여 줍니다.
 9. **Vercel**: 저장소를 Vercel 프로젝트에 연결합니다(Framework Preset: Other — 설정은 `vercel.json`: 빌드 명령 없음, 출력 `public/`, 설치 `npm ci --omit=dev`). Settings → Environment Variables에 `ANTHROPIC_API_KEY`(Production·Preview)를 넣고 재배포합니다(아래 '사이트 도우미'). 키가 없으면 `/api/chat/`은 503 `not_configured`로 답하고, 화면의 도우미는 'AI 도우미 준비 중'과 사이트 검색을 보이며 나머지 사이트는 그대로입니다.
 
 ### 도시 설정(`data/incheon/site.json`)
@@ -73,6 +74,18 @@ curl -s http://127.0.0.1:8787/api/chat/         # {"ready":true}
 - 질문마다 실제 API를 부르므로 비용이 듭니다(질문 하나의 출력 상한 11,500토큰, `chatbot/server.js` `LIMITS`). `vercel dev`(Vercel CLI 로그인 필요, 같은 환경 변수)로도 됩니다.
 - 시험(`npm test`, `python -m pytest`)은 키 없이 가짜 모델 스트림으로 돌고 네트워크에 나가지 않습니다: 키 없음 503, 키를 넣으면 답과 링크(`tests/js/keyready.test.js`), 빌드한 지식으로 끝까지(`tests/test_chat_key_ready.py`), 화면의 준비 중 상태(`tests/test_chat_key_ready_browser.py`, Playwright).
 
+### 시나리오 QA용 로컬 미리보기(사이트 + 도우미 + 코스 만들기)
+```bash
+npm run preview                                  # = node tools/serve_preview.mjs → 미리보기 빌드 후 http://127.0.0.1:8788
+node tools/serve_preview.mjs --no-build          # 이미 만든 dist-preview를 그대로(데이터·템플릿을 고쳤으면 빼고 다시 띄운다)
+node tools/serve_preview.mjs --data data/incheon --out dist-qa --port 8790 --dotenv .env
+```
+- 빌드: `python -m pipeline.build --data <data> --out <out> --mode preview`(draft까지 보이고 전부 noindex, 파이썬 명령은 환경 변수 `PYTHON`, 없으면 `python`). 경로는 저장소 루트 기준.
+- `/api/chat/`(사이트 도우미)과 `/api/plan/`(AI 코스 만들기)은 Vercel이 배포하는 함수 모듈 `api/chat.js`·`api/plan.js`가 그대로 답합니다 — 함수가 읽는 `public/chat/` 자리를 이번 빌드 폴더로 이어 줍니다. 키는 환경 변수 `ANTHROPIC_API_KEY`, 없으면 `.env`(`--dotenv`로 다른 파일 — `--env-file`은 Node가 가로채 쓰지 않음)에서 그 한 줄만 읽고 출력하지 않습니다. 키가 있으면 질문·코스 만들기마다 실제 API를 부르고 비용이 듭니다. 함수 로그(요청마다 JSON 한 줄, 숫자만)는 그 터미널에 나옵니다.
+- 도우미 답의 사이트 링크는 `site_url`(https://incheon.webforai.kr)로 오지만 화면(`chat.js`)이 지금 주소(127.0.0.1)로 바꿔 엽니다.
+- 지도: `kakao_js_key`는 카카오 개발자 콘솔에 등록한 웹 도메인에서만 동작합니다. `http://127.0.0.1:<포트>`(와 아직 미등록인 https://incheon.webforai.kr)에서는 SDK가 401 'domain mismatched'로 답해 지도 상자에 '지도를 불러오지 못했습니다'만 보입니다 — 로컬에서 지도를 보려면 그 주소를 콘솔에 더합니다(시험할 때만).
+- 빌드를 다시 하면 서버도 다시 띄웁니다(함수가 처음 읽은 지식을 기억합니다). 시험: `tests/js/serve_preview.test.js`(가짜 빌드·가짜 키, 모델 호출 없음).
+
 ### Vercel에 키 넣기
 1. Vercel 프로젝트 → Settings → Environment Variables → Add: Key `ANTHROPIC_API_KEY`, Value에 키, Environments는 Production(미리보기 배포에서도 쓰려면 Preview도) → Save.
 2. 환경 변수는 새 배포부터 적용됩니다: Deployments → 최신 배포 → ⋯ → Redeploy(또는 `main`에 push).
@@ -101,6 +114,8 @@ python tools/perf_check.py --out public                              # 모바일
 python tools/link_check.py --data data/incheon                       # 홈페이지·예약 주소 점검(한국 네트워크에서 한 달에 한 번, --apply면 dead_links.json에 후보)
 python tools/image_sizes.py --data data/incheon                      # 사진 크기·작은 크기 파일 → image_sizes.json(collect.py가 끝에 부름)
 python tools/tourapi_bulk.py --data data/incheon --nearby-only       # 저장된 좌표로 주변 장소만 다시 계산(호출 없음)
+python tools/collect.py --data data/incheon --lists-only             # 캐시의 목록만으로 아직 없는 장소를 draft로(호출 없음, 상세는 날마다 수집이 채움)
+npm run preview                                                      # 시나리오 QA: 미리보기 빌드 + /api/chat/·/api/plan/ — http://127.0.0.1:8788
 python tools/tourapi_bulk.py --data data/incheon --barrier-free --max-calls 600   # 무장애 여행 정보(KorWithService2, 별도 활용신청)를 공개 장소에 병합
 ```
 - 챗봇을 로컬에서 실제 키로 시험: `npm run chat:dev`(위 '사이트 도우미'). 대화는 저장하지 않습니다.

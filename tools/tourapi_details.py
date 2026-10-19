@@ -396,6 +396,98 @@ def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: st
     return place
 
 
+LIST_OP = "areaBasedList2"   # the list operation a list-only record's values come from (fact_sources[key].via)
+
+
+def list_place(item: dict, today: str, allowed, taken: set) -> dict:
+    """A draft/basic place from one areaBasedList2 item only — no detail call (tools/tourapi_bulk.py --lists-only). The
+    list's own fields as given: name, address (addr1 + addr2), the 구·군 it was listed under (district), coordinates,
+    phone when the list carries one (tel), the list photo with cpyrhtDivCd Type1/Type3 only (credit 한국관광공사), the
+    classification codes and the kind they give (pipeline.tourapi.kind_of: 카페·디저트, 쇼핑). Every value names its
+    provider and check date (`today`: the day the list response was fetched); a fact also names the operation (via).
+    `tourapi.details_pending` marks it for the daily collection: --details fetches detailCommon2·detailIntro2 (and
+    detailInfo2) for it like any place with a contentid and complete_listed() then clears the mark — the contentid is
+    already in places.json, so --add-new never adds it twice. Nothing is inferred; overview is not in a list item."""
+    cid, ctype = str(item["contentid"]), str(item.get("contenttypeid") or "")
+    codes = classification(item)
+    kind = kind_of({"contenttypeid": ctype, **codes})
+    name = display_name(item.get("title"))
+    slug, n = slugify(name), 2
+    while slug in taken:
+        slug, n = f"{slugify(name)}-{n}", n + 1
+    taken.add(slug)
+    facts: dict[str, str] = {}
+    addr = " ".join(x for x in (clean(item.get("addr1")), clean(item.get("addr2"))) if x)
+    if addr:
+        facts["address"] = addr
+    tel = clean(item.get("tel"))
+    if tel:
+        facts["infocenter"] = GLUED_PHONES.sub(r"\1, ", tel)
+    src = {"provider": PROVIDER, "checked_at": today, "contentid": cid}
+    place = {
+        "id": f"tourapi-{cid}", "name": name, "slug": slug, "kind": kind,
+        "category": KIND_LABELS["cafe"] if kind == "cafe" else CONTENT_TYPES.get(ctype, ""), "themes": [],
+        "tier": "basic", "status": "draft",
+        "official": {}, "original": {}, "map_ids": {"naver_place_id": "", "google_place_id": ""}, "images": [],
+        "facts": facts,
+        "facts_source": dict(src),
+        "fact_sources": {k: {**src, "via": LIST_OP} for k in facts},
+        "summary": "",
+        "tourapi": {"contentid": cid, "contenttypeid": ctype, "title": item.get("title", ""),
+                    "match_basis": "tourapi_only", "modifiedtime": item.get("modifiedtime", ""), **codes,
+                    "details_pending": True},
+    }
+    try:
+        place["geo"] = {"lat": float(item.get("mapy")), "lng": float(item.get("mapx")), "source": "TourAPI",
+                        "checked_at": today}
+    except (TypeError, ValueError):
+        pass
+    if item.get("_signgu_name"):
+        place["district"] = item["_signgu_name"]
+    code = TOURAPI_LICENSE_MAP.get(str(item.get("cpyrhtDivCd") or ""), "UNKNOWN")
+    if item.get("firstimage") and license_allowed(code, allowed):
+        place["images"] = [{"url": https(item["firstimage"]), "alt": name, "credit": "한국관광공사", "license": code,
+                            "source": "TourAPI", "checked_at": today}]
+    return place
+
+
+def complete_listed(place: dict, common: dict, today: str, allowed) -> list[str]:
+    """After --details fetched a list-only place (list_place, tourapi.details_pending): what new_place takes from
+    detailCommon2 beyond the facts merge_facts already wrote — its classification codes (and the kind they give,
+    unless "kind" is in locks), the homepage as the official link, coordinates and an allowed photo when the list had
+    none — and the mark goes. The slug and name stay (the page address does not move). Returns the fields it filled."""
+    t = place.setdefault("tourapi", {})
+    locks = set(place.get("locks") or [])
+    done = []
+    t.update(classification(t, common))
+    t["title"] = common.get("title") or t.get("title", "")
+    kind = kind_of(t)
+    if kind and kind != place.get("kind") and "kind" not in locks:
+        place["kind"] = kind
+        place["category"] = KIND_LABELS["cafe"] if kind == "cafe" else CONTENT_TYPES.get(str(t.get("contenttypeid")), "")
+        done.append("kind")
+    homepage = (place.get("facts") or {}).get("homepage")
+    if homepage and not (place.get("official") or {}).get("homepage") and "official" not in locks:
+        place.setdefault("official", {})["homepage"] = homepage
+        done.append("official")
+    if (place.get("geo") or {}).get("lat") is None and "geo" not in locks:
+        try:
+            place["geo"] = {"lat": float(common.get("mapy")), "lng": float(common.get("mapx")), "source": "TourAPI",
+                            "checked_at": today}
+            done.append("geo")
+        except (TypeError, ValueError):
+            pass
+    code = TOURAPI_LICENSE_MAP.get(str(common.get("cpyrhtDivCd") or ""), "UNKNOWN")
+    if (common.get("firstimage") and license_allowed(code, allowed) and "images" not in locks
+            and not any(i.get("source") == "TourAPI" for i in place.get("images") or [])):
+        place.setdefault("images", []).append({"url": https(common["firstimage"]), "alt": place["name"],
+                                               "credit": "한국관광공사", "license": code, "source": "TourAPI",
+                                               "checked_at": today})
+        done.append("images")
+    t.pop("details_pending", None)
+    return done
+
+
 def duplicate_candidates(item: dict, places: list[dict], region: str) -> list[dict]:
     """The region's records that may be the same place as an unmatched TourAPI item (for a person or reviewer)."""
     from tools.tourapi_bulk import GENERIC, name_key, road_key

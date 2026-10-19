@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "node --test \"tests/js/*.test.js\"",
-    "chat:dev": "node tools/chat_dev.mjs"
+    "chat:dev": "node tools/chat_dev.mjs",
+    "preview": "node tools/serve_preview.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.133.0"

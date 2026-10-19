@@ -54,12 +54,16 @@ function fileFor(dir, pathname) {
   return st.isFile() ? { dir: false, file: full } : null;
 }
 
-/** An http.Server: /api/chat/ (and /api/chat) through `handler` (a fetch-style function), every other path a file of
- *  dir — a folder without its trailing slash is redirected to it, as on Vercel (trailingSlash: true). */
-export function createDevServer({ dir, handler }) {
+/** An http.Server: /api/chat/ (and /api/chat) through `handler` (a fetch-style function), each further function path
+ *  of `routes` ({"/api/plan": handler} — with or without its trailing slash, as vercel.json rewrites it) through its
+ *  own, every other path a file of dir — a folder without its trailing slash is redirected to it, as on Vercel
+ *  (trailingSlash: true). */
+export function createDevServer({ dir, handler, routes = {} }) {
+  const api = { ...(handler ? { "/api/chat": handler } : {}), ...routes };
   return createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || "127.0.0.1"}`);
-    if (url.pathname === "/api/chat/" || url.pathname === "/api/chat") {
+    const fn = Object.hasOwn(api, url.pathname.replace(/\/$/, "")) ? api[url.pathname.replace(/\/$/, "")] : null;
+    if (fn) {
       const ac = new AbortController();
       res.on("close", () => { if (!res.writableFinished) ac.abort(); });
       const hasBody = req.method !== "GET" && req.method !== "HEAD";
@@ -67,7 +71,7 @@ export function createDevServer({ dir, handler }) {
         body: hasBody ? Readable.toWeb(req) : undefined, duplex: hasBody ? "half" : undefined });
       let out;
       try {
-        out = await handler(request);
+        out = await fn(request);
       } catch (err) {
         res.writeHead(500, { "content-type": "text/plain; charset=utf-8" }).end(String(err?.name || "error"));
         return;

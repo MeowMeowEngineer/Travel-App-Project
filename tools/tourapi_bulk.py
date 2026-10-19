@@ -3,6 +3,7 @@
     python tools/tourapi_bulk.py --data data/incheon [--max-calls 120] [--offline]
     python tools/tourapi_bulk.py --data data/incheon --add-new --details --events --max-calls 900
     python tools/tourapi_bulk.py --data data/incheon --districts 연수구,강화군 --add-new   # some 구·군 only
+    python tools/tourapi_bulk.py --data data/incheon --lists-only    # no call: listed places from the cached lists
 
 1. ldongCode2 -> the region's lDongRegnCd and its 시군구 codes (site.json region_full: '인천광역시' or '<도> <시>').
    A 광역시 (site.json tourapi.scope 'sido') takes every 구·군 TourAPI lists under it — a name its site.json does not
@@ -23,7 +24,15 @@
 5. --events (searchFestival2, all pages) asks for the festivals from today (--events-from YYYYMMDD for an earlier
    day) and runs before --details/--add-new, so the time-sensitive festival list is refreshed first when the
    per-run call cap is reached. A 광역시 asks once for the whole 시도.
-6. The report ends with the live calls the collection still needs (responses not in the cache yet): details of
+6. --lists-only (no call, cache only, no key): every listed place of the place types not in places.json yet is added
+   from its list item alone (tools/tourapi_details.list_place): name, address, the 구·군 it was listed under,
+   coordinates, phone when the list has one, the list photo (Type1/Type3 only, credit 한국관광공사), classification
+   codes and the kind they give — each value with provider and check date (the day the list page was fetched), as a
+   draft with tourapi.details_pending. The daily --details run then fetches those places like any place with a
+   contentid and completes them (complete_listed: classification from detailCommon2, homepage, missing point or photo;
+   the mark goes); --add-new does not add them again (their contentid is in places.json). Overrides and duplicate
+   holds apply as for --add-new.
+7. The report ends with the live calls the collection still needs (responses not in the cache yet): details of
    the matched places, TourAPI-only places still to add and festival details — `remaining_calls` (cache-first runs).
 Fields named in an entity's "locks" are not touched. Values are copied as given; nothing is guessed.
 checked_at is the date the TourAPI response was fetched (a cached response keeps its own date), so a
@@ -92,13 +101,16 @@ def retry(fn, *args, **kwargs):
 
 
 def fetch_region(api, regn: str, signgu: str, rows: int = 200, name: str = "") -> list[dict]:
-    """Every list item of the content types in one 시군구 (all pages); each keeps the 구·군 name it was listed under."""
+    """Every list item of the content types in one 시군구 (all pages); each keeps the 구·군 name it was listed under
+    (`_signgu_name`) and the day its list page was fetched (`_listed_on`: a cached page keeps its own date)."""
     items: list[dict] = []
     for ctype in LIST_TYPES:
         page = 1
         while True:
             got = retry(api.area_based, regn, signgu, ctype, rows=rows, page=page)
-            items += [{**it, "_signgu_name": name} if name else it for it in got]
+            day = (getattr(api, "fetched_dates", None) or [""])[-1]
+            extra = {**({"_signgu_name": name} if name else {}), **({"_listed_on": day} if day else {})}
+            items += [{**it, **extra} if extra else it for it in got]
             total = getattr(api, "last_total", None)
             if len(got) < rows or (total is not None and page * rows >= total):
                 break
@@ -410,6 +422,36 @@ def fetched_on(api, start: int, today: str) -> str:
     return min(dates) if dates else today
 
 
+def unlisted(items: list[dict], places: list[dict], n: dict, region: str, overrides: dict, same: dict, skip: set,
+             hold: set, different: set):
+    """The list items of the place types (NEW_PLACE_TYPES) whose contentid is not in places.json yet, attractions
+    first. A contentid the overrides skip, hold or tie to a record of ours (same) is not given; one that may be a record
+    of ours (duplicate_candidates — unless the overrides say different) is held for a person. Skips and holds are
+    counted in `n` (skipped, held_duplicate_candidates). A generator: a place added while it runs is a candidate for the
+    items after it."""
+    from tools.tourapi_details import NEW_PLACE_TYPES, duplicate_candidates
+    have = {str((p.get("tourapi") or {}).get("contentid")) for p in places if (p.get("tourapi") or {}).get("contentid")}
+    todo = sorted((it for it in items if str(it.get("contenttypeid")) in NEW_PLACE_TYPES
+                   and str(it["contentid"]) not in have and str(it["contentid"]) not in same),
+                  key=lambda it: (str(it.get("contenttypeid")) not in ("12", "14", "28"), it.get("title", "")))
+    for it in todo:
+        cid = str(it["contentid"])
+        if cid in skip:
+            n["skipped"] += 1
+            continue
+        if cid in hold:
+            n["held_duplicate_candidates"].append({"contentid": cid, "title": it.get("title", ""),
+                                                   "addr": it.get("addr1", ""), "candidates": [],
+                                                   "note": (overrides.get("hold") or {})[cid]})
+            continue
+        cands = duplicate_candidates(it, places, region)
+        if cands and cid not in different:
+            n["held_duplicate_candidates"].append({"contentid": cid, "title": it.get("title", ""),
+                                                   "addr": it.get("addr1", ""), "candidates": cands})
+            continue
+        yield it
+
+
 def _details(api, cid: str, ctype: str) -> tuple[dict, dict, list]:
     common = retry(api.detail_common, cid)
     intro = retry(api.detail_intro, cid, ctype) if ctype else {}
@@ -419,12 +461,17 @@ def _details(api, cid: str, ctype: str) -> tuple[dict, dict, list]:
 
 def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, details: bool = False,
         add_new: bool = False, events: bool = False, refresh: bool = False, districts: list[str] | None = None,
-        events_from: str | None = None, echo: bool = True) -> dict:
+        events_from: str | None = None, echo: bool = True, lists_only: bool = False) -> dict:
+    """lists_only (--lists-only, cache only — the caller passes offline): after the lists, matching and reclassify,
+    every listed place not in places.json yet is added from its list item alone (tourapi_details.list_place, draft,
+    tourapi.details_pending) — no detail call; a later --details run fills those places like any other."""
     import datetime as dt
 
     from pipeline import city
-    from tools.tourapi_details import (NEW_PLACE_TYPES, alternate_name, clean, duplicate_candidates, event_key,
-                                       festival_event, merge_facts, new_place, tourapi_facts)
+    from tools.tourapi_details import (alternate_name, clean, complete_listed, event_key, festival_event, list_place,
+                                       merge_facts, new_place, tourapi_facts)
+    if lists_only and (details or add_new or events or gallery or refresh):
+        raise ValueError("lists_only runs without details, add_new, events, gallery and refresh")
     load_dotenv(Path(".env"))
     site = json.loads((data_dir / "site.json").read_text("utf-8"))
     city.activate(site)   # the city's names for name matching and photo titles (pipeline/city.py)
@@ -545,7 +592,7 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
             ev_path.write_text(json.dumps(existing, ensure_ascii=False, indent=2) + "\n", "utf-8")
         if details:
             d = stats["details"] = {"done": 0, "added": {}, "confirmed": {}, "conflicts": [], "alternate_names": 0,
-                                    "errors": []}
+                                    "listed_completed": 0, "errors": []}
             matched = sorted((p for p in places if not p.get("duplicate_of") and (p.get("tourapi") or {}).get("contentid")),
                              key=_priority)
             for p in matched:
@@ -559,7 +606,11 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
                 except TourAPIError as err:
                     d["errors"].append(f"{p['name']}: {err}")
                     continue
-                res = merge_facts(p, tourapi_facts(common, intro, info, ctype), fetched_on(api, start, today), cid)
+                checked = fetched_on(api, start, today)
+                res = merge_facts(p, tourapi_facts(common, intro, info, ctype), checked, cid)
+                if t.get("details_pending"):   # a place added from its list item (--lists-only): now complete
+                    complete_listed(p, common, checked, allowed)
+                    d["listed_completed"] += 1
                 t["modifiedtime"] = common.get("modifiedtime") or t.get("modifiedtime", "")
                 t["overview"] = clean(common.get("overview"))  # fact-checking reference only — never rendered
                 alt = alternate_name(p, common.get("title") or t.get("title"))
@@ -579,26 +630,9 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
                                       f"'{squash(p['fact_alternatives'][k][-1]['value'])}'")
         if add_new:
             n = stats["new_places"] = {"added": [], "held_duplicate_candidates": [], "skipped": 0, "errors": []}
-            have = {str((p.get("tourapi") or {}).get("contentid")) for p in places if (p.get("tourapi") or {}).get("contentid")}
             taken = {p["slug"] for p in places}
-            todo = sorted((it for it in items if str(it.get("contenttypeid")) in NEW_PLACE_TYPES
-                           and str(it["contentid"]) not in have and str(it["contentid"]) not in same),
-                          key=lambda it: (str(it.get("contenttypeid")) not in ("12", "14", "28"), it.get("title", "")))
-            for it in todo:
+            for it in unlisted(items, places, n, region, overrides, same, skip, hold, different):
                 cid = str(it["contentid"])
-                if cid in skip:
-                    n["skipped"] += 1
-                    continue
-                if cid in hold:
-                    n["held_duplicate_candidates"].append({"contentid": cid, "title": it.get("title", ""),
-                                                           "addr": it.get("addr1", ""), "candidates": [],
-                                                           "note": overrides["hold"][cid]})
-                    continue
-                cands = duplicate_candidates(it, places, region)
-                if cands and cid not in different:
-                    n["held_duplicate_candidates"].append({"contentid": cid, "title": it.get("title", ""),
-                                                           "addr": it.get("addr1", ""), "candidates": cands})
-                    continue
                 start = len(getattr(api, "fetched_dates", []))
                 try:
                     common, intro, info = _details(api, cid, str(it.get("contenttypeid")))
@@ -614,6 +648,18 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
                     lic = place["images"][0]["license"]
                     stats["images"][lic] = stats["images"].get(lic, 0) + 1
                 elif common.get("firstimage") or it.get("firstimage"):   # Type2·4 or no type: not taken
+                    stats["image_other_type"] += 1
+        if lists_only:   # no call: each listed place not in places.json yet, from its list item (details pending)
+            n = stats["list_only"] = {"added": [], "held_duplicate_candidates": [], "skipped": 0}
+            taken = {p["slug"] for p in places}
+            for it in unlisted(items, places, n, region, overrides, same, skip, hold, different):
+                place = list_place(it, it.get("_listed_on") or today, allowed, taken)
+                places.append(place)
+                n["added"].append(f"{place['kind']}:{place['name']}")
+                if place["images"]:
+                    lic = place["images"][0]["license"]
+                    stats["images"][lic] = stats["images"].get(lic, 0) + 1
+                elif it.get("firstimage"):   # Type2·4 or no type: not taken
                     stats["image_other_type"] += 1
     except TourAPIStopError as err:
         stats["stopped"] = str(err)
@@ -636,16 +682,21 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
     lines += [f"- 종류 변경(TourAPI 분류): {x}" for x in stats.get("reclassified") or []]
     if stats.get("stopped"):
         lines.append(f"- 중단: {stats['stopped']}")
-    if details:
+    if "details" in stats:   # not when the run stopped before the details (the call cap during the festivals)
         d = stats["details"]
         lines += ["", "## 상세(detailCommon2·detailIntro2·detailInfo2)", "",
                   f"- 처리 {d['done']}곳 · 새로 채운 항목 {d['added']} · 기존 값과 일치 {d['confirmed']}",
-                  f"- 값이 달라 둘 다 표시 {len(d['conflicts'])}건 · 다른 이름 {d['alternate_names']}곳 · 오류 {len(d['errors'])}"]
+                  f"- 값이 달라 둘 다 표시 {len(d['conflicts'])}건 · 다른 이름 {d['alternate_names']}곳 · 오류 {len(d['errors'])}"
+                  + (f" · 목록만으로 추가했던 곳 상세 완료 {d['listed_completed']}곳" if d["listed_completed"] else "")]
         lines += detail_log + [f"- 오류: {x}" for x in d["errors"]]
-    if add_new:
-        n = stats["new_places"]
-        lines += ["", "## TourAPI에만 있는 장소", "", f"- 추가 {len(n['added'])} · 중복 의심 보류 "
-                  f"{len(n['held_duplicate_candidates'])} · 제외 {n['skipped']} · 오류 {len(n['errors'])}"]
+    for part, head in (("new_places", "TourAPI에만 있는 장소"),
+                       ("list_only", "목록만으로 추가한 장소(--lists-only, 호출 없음 — 상세는 다음 수집)")):
+        n = stats.get(part)
+        if not n:
+            continue
+        lines += ["", f"## {head}", "", f"- 추가 {len(n['added'])} · 중복 의심 보류 "
+                  f"{len(n['held_duplicate_candidates'])} · 제외 {n['skipped']}"
+                  + (f" · 오류 {len(n['errors'])}" if "errors" in n else "")]
         lines += [f"- 추가: {x}" for x in n["added"]]
         for h in n["held_duplicate_candidates"]:
             lines.append(f"- 보류 {h['contentid']} {h['title']} ({h['addr']}) ↔ "
@@ -658,13 +709,15 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
     lines += ["", "## 미매칭"] + [f"- {x}" for x in stats["unmatched"]]
     (report / "tourapi_bulk.md").write_text("\n".join(lines) + "\n", "utf-8")
     (report / "tourapi_bulk.json").write_text(json.dumps(stats, ensure_ascii=False, indent=1) + "\n", "utf-8")
-    out = {k: v for k, v in stats.items() if k not in ("unmatched", "details", "new_places", "events", "geo_kept")}
+    out = {k: v for k, v in stats.items()
+           if k not in ("unmatched", "details", "new_places", "list_only", "events", "geo_kept")}
     out["unmatched"] = len(stats["unmatched"])
     out["geo_kept"] = len(stats.get("geo_kept") or [])
-    if details:
+    if "details" in stats:
         out["details"] = {k: (len(v) if isinstance(v, list) else v) for k, v in stats["details"].items()}
-    if add_new:
-        out["new_places"] = {k: (len(v) if isinstance(v, list) else v) for k, v in stats["new_places"].items()}
+    for part in ("new_places", "list_only"):
+        if part in stats:
+            out[part] = {k: (len(v) if isinstance(v, list) else v) for k, v in stats[part].items()}
     if events:
         out["events"] = {k: (len(v) if isinstance(v, list) else v) for k, v in stats["events"].items()}
     if echo:
@@ -770,6 +823,9 @@ def main(argv=None) -> int:
                     help="무장애 여행 정보(KorWithService2 detailWithTour2)를 공개 장소에 병합 — 이 옵션만 따로 실행")
     ap.add_argument("--nearby-only", action="store_true",
                     help="places.json의 좌표로 주변 장소(nearby)만 다시 계산 — TourAPI 호출 없음, 이 옵션만 따로 실행")
+    ap.add_argument("--lists-only", action="store_true",
+                    help="캐시의 목록 응답만으로 아직 없는 장소를 draft로 추가(상세 대기 표시) — TourAPI 호출 없음(캐시만, "
+                         "키 없이), 상세는 다음 --details 수집이 채운다. --districts만 함께 쓴다")
     a = ap.parse_args(argv)
     if a.nearby_only:
         if a.gallery or a.details or a.add_new or a.events or a.barrier_free or a.refresh:
@@ -779,7 +835,12 @@ def main(argv=None) -> int:
     only = [x.strip() for x in a.districts.split(",") if x.strip()] or None
     if a.events_from and not re.fullmatch(r"\d{8}", a.events_from):
         ap.error("--events-from은 YYYYMMDD")
+    if a.lists_only and (a.gallery or a.details or a.add_new or a.events or a.barrier_free or a.refresh):
+        ap.error("--lists-only는 --districts 말고 다른 옵션 없이 따로 실행합니다(호출 없음)")
     try:
+        if a.lists_only:
+            run(a.data, a.max_calls, True, districts=only, lists_only=True)
+            return 0
         if a.barrier_free:
             if a.gallery or a.details or a.add_new or a.events:
                 ap.error("--barrier-free는 다른 보강 옵션 없이 따로 실행합니다")

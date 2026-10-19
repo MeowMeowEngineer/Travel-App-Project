@@ -18,7 +18,8 @@
 
 ## 2. 지금 상태 (2026-10-19)
 - 엔진·템플릿·테스트·범용 도구를 군산 저장소에서 복사했고(이력 없이), 도시와 무관하게 고쳤다. **도시마다 다른 값은 `data/<도시>/site.json`(지역 키와 `city` 블록) 한 곳에 있고 `pipeline/city.py`가 읽는다** — 주소 앞부분, 공식 관광 사이트, 여행 권역과 그 기준, 거리 기준 장소, 지정 목록, 홈 이야기·사진 고르기·답 문구, 검색 예시, 챗봇 이름·추천 질문, 다른 언어판 이름. 엔진 코드(`pipeline/`·`templates/`·`tools/`·`chatbot/`)에 도시 이름을 쓰지 않는다(`tests/test_city.py`가 인천 설정 빌드에 다른 도시 이름이 없는지 본다).
-- `data/incheon/`: 설정 `site.json`·`icons.json`·`ask.json`·`art.json`과 수집 결과 `places.json`·`events.json`·`image_sizes.json`. **첫 TourAPI 수집(2026-10-19)**: 관광지 260곳(모두 draft, 요약 없음 — 좌표 260·사진 245, 필드별 출처)과 행사 6건을 받고 하루 한도로 멈췄다. 남은 호출(약 3,736회 — 목록 1,946곳 가운데 아직 상세를 받지 않은 나머지 관광지·문화시설·레포츠와 쇼핑 585·음식점(카페 포함) 577·숙소 78)은 `python tools/collect.py --data data/incheon`로 날마다 이어 받는다(실행당 900회, 4~5일). 이 명령이 끝에 사진 크기(`image_sizes.json`, `tools/image_sizes.py`)도 갱신한다. `places.json`·`events.json`은 수집 도구로만 바꾼다. 장소가 0곳인 빌드(새 도시의 첫 설정)는 미리보기가 빈 상태 사이트를 만들고(안내 출력), 공개 빌드는 '수집 전' 안내와 함께 멈춘다.
+- `data/incheon/`: 설정 `site.json`·`icons.json`·`ask.json`·`art.json`과 수집 결과 `places.json`·`events.json`·`image_sizes.json`. **첫 TourAPI 수집(2026-10-19)**: 관광지 260곳(모두 draft, 요약 없음 — 좌표 260·사진 245, 필드별 출처)과 행사 6건을 받고 하루 한도로 멈췄다. 남은 호출(약 3,736회 — 목록 1,946곳 가운데 아직 상세를 받지 않은 나머지 관광지·문화시설·레포츠와 쇼핑 585·음식점(카페 포함) 577·숙소 78)은 `python tools/collect.py --data data/incheon`로 날마다 이어 받는다(실행당 900회, 4~5일). 이 명령이 끝에 사진 크기(`image_sizes.json`, `tools/image_sizes.py`)도 갱신한다. `places.json`·`events.json`은 수집 도구로만 바꾼다.
+  - **목록만으로 먼저 실음(2026-10-19, `python tools/collect.py --data data/incheon --lists-only` — 호출 없음, 캐시의 목록 응답만)**: TourAPI 목록의 나머지 1,686곳을 draft로 더해 장소가 1,946곳(목록 전체)이다 — 관광지 706·카페·디저트 113·음식점 464·쇼핑 585·숙소 78, 구·군 강화군 350·연수구 372·서해구 227·영종구 193·제물포구 176·남동구 136·옹진군 122·부평구 125·미추홀구 114·계양구 77·검단구 54. 그 1,686곳은 목록 값만(이름·주소·구·군·좌표·제1·3유형 사진 1,478곳(제1유형 265·제3유형 1,213), 값마다 출처·확인일 — 목록에는 전화가 없다)이고 `tourapi.details_pending`이 붙어 있다. 날마다 하는 수집의 상세 단계가 그 장소들을 다른 장소처럼 받아 채우고 표시를 지운다(새 장소로 다시 더하지 않고 slug도 그대로, `tools/tourapi_details.complete_listed`). 그때까지 그 페이지의 방문 판단 정보는 '확인 필요'뿐이다. 사진 크기는 같은 날 `tools/image_sizes.py`(사진 주소, TourAPI 호출 아님)로 기록했다 — 원본 1,723장 전부, 작은 크기 파일 1,607장(116장은 제공처 404라 목록에서도 원본). 장소가 0곳인 빌드(새 도시의 첫 설정)는 미리보기가 빈 상태 사이트를 만들고(안내 출력), 공개 빌드는 '수집 전' 안내와 함께 멈춘다.
 - 광역시 처리: `tools/tourapi_bulk.py`가 `site.json` `tourapi.scope` 'sido'면 TourAPI 법정동 코드 목록의 구·군을 모두 돈다(`--districts`로 일부만). 새 장소는 그 구·군을 `district`로 단다. 시도·구·군 코드는 저장하지 않고 실행 때 TourAPI(ldongCode2)에서 받는다(`tools/tourapi_doctor.py`가 보여 준다).
 - 키를 받으면: `python tools/collect.py --data data/incheon` 한 명령(키 확인 → 진단 → 목록·좌표·사진 → 행사(오늘부터) → 상세 → TourAPI에만 있는 장소 → 요약·남은 호출·다음 명령). 호출 예산 식은 `README.md` 'TourAPI 호출 예산'.
 - 군산 실데이터(`data/gunsan`)·군산 그림·군산 문서에 기대던 테스트와 군산 측정 질문 도구는 옮기지 않았다: `tests/excluded_gunsan_tests.txt`. 인천 데이터가 생기면 같은 성질의 시험을 인천 데이터로 다시 쓴다. 엔진 시험의 고정 데이터는 `data/sample/`(군산 모양의 가짜 샘플)과 `tests/fixtures/incheon_tiny/`(인천 설정용 가짜 장소 5곳)다.
@@ -120,7 +121,7 @@
 - **구·군 이름**: 2026-07-01 「인천광역시 제물포구ㆍ영종구 및 검단구 설치 등에 관한 법률」 시행(국가법령정보센터 확인)으로 중구·동구가 폐지되고 제물포구·영종구·검단구가 생겼다. TourAPI ldongCode2가 서해구를 포함한 11곳을 돌려준다(2026-10-19). 옛 중구 주소를 나누는 영종구 법정동 8개(권역 규칙)는 위키백과에서 옮겼다 — 행정표준코드로 확인.
 - **거리 기준 장소**(`city.distance_anchors`: 인천국제공항·차이나타운·송도센트럴파크·월미도 제안), **홈 이야기·첫 화면 사진**(`city.home`), **시 지정 음식점 목록**(`city.designations`, 조사 전).
 - **출처 이용 조건**: 인천투어·인천관광공사 자료의 이용 조건, 추가 출처 수집 범위, TourAPI overview 게재 여부.
-- **카카오 지도 JavaScript 키**: 새 도메인을 카카오 개발자 콘솔에 등록하고 키를 보낸다.
+- **카카오 지도 JavaScript 키**: 키는 받았다(2026-10-19, 새 카카오 앱 '인천각' → `site.json` `kakao_js_key`). 남은 일: 카카오 개발자 콘솔(앱 → 플랫폼 → Web 사이트 도메인)에 https://incheon.webforai.kr 등록 — 2026-10-19 현재 미등록이라 SDK가 401 'domain mismatched'로 답하고 지도 상자는 글과 '지도를 불러오지 못했습니다' 줄만 남는다. 로컬·Vercel 미리보기 주소에서 지도를 보려면 그 주소도 시험할 때만 더한다.
 - `publish_rules`·`crawler_policy`: 군산 값을 기본으로 옮겼다. 인천용으로 확인한다.
 - 영어·다국어판을 할지(권장: 한국어만 먼저). 마스코트·일러스트는 운영자가 납품했다(2026-10-19, 2절). 글자처럼 보이는 무늬가 있는 그림(evkind-heritage 깃발의 금색 문양, mascot-404의 물음표)을 다시 그릴지.
 - **코스 만들기 출발·도착 장소**(`city.plan.hubs`: 역·터미널·공항 이름 — 비어 있으면 선택이 없다), **섬 권역**(`city.plan.island_regions`), **좌표 범위**(`city.geo_bounds`, 비어 있으면 범위 검사 없음), **긴급 연락처 절**(`site.json` `emergency`: 군산은 한국관광공사 VisitKorea 119·112·1330 — 인천판은 운영자 확인 뒤), **운영사 공식 정보**(`operator.business_no` 등이 있으면 바닥글·/about/#company에 나온다).
@@ -133,7 +134,9 @@ npm ci                                   # 챗봇 함수의 SDK(@anthropic-ai/sd
 python -m pytest                         # 파이썬 시험(Node가 있으면 챗봇 시험도 함께)
 npm test                                 # 챗봇 서버 시험만(node --test)
 npm run chat:dev -- --dir dist-preview   # 챗봇 로컬 시험(빌드 폴더 + /api/chat/, 키는 환경 변수 ANTHROPIC_API_KEY)
+npm run preview                          # 시나리오 QA: 미리보기 빌드 + /api/chat/·/api/plan/(api/*.js 그대로, 키는 환경 변수 또는 .env의 그 한 줄) — http://127.0.0.1:8788 (tools/serve_preview.mjs, README)
 python tools/collect.py --data data/incheon                           # 키 확인 → 진단(지역 코드) → 수집 → 다음 명령. 멈추면(종료 3) 같은 명령 다시
+python tools/collect.py --data data/incheon --lists-only              # 호출 없이 캐시의 목록으로 아직 없는 장소를 draft로(상세 대기 — 위 명령이 날마다 채움)
 python tools/tourapi_doctor.py --data data/incheon                   # 연결·지역 코드 진단만
 python tools/tourapi_bulk.py --data data/incheon --details --add-new --events --max-calls 900   # 수집만(collect.py가 부르는 것)
 python tools/image_sizes.py --data data/incheon                      # 사진 크기·작은 크기 파일(collect.py가 끝에 부르는 것) → image_sizes.json
@@ -163,6 +166,7 @@ python tools/brand_kit.py --data data/incheon --out templates/assets/brand --png
 | `templates/` | 화면(Jinja2)·CSS·JS·글꼴·3D 아이콘 |
 | `tools/` | TourAPI 진단·수집, 공개 빌드, 검수 시트·반영, 품질·성능·공개 전 점검, 브랜드 키트(`brand_kit.py`) |
 | `templates/assets/brand/` | 인천각 심볼·로고·앱 아이콘 SVG와 icon-*.png·favicon.ico(`tools/brand_kit.py`가 만든다), 운영사 로고 |
+| `tools/serve_preview.mjs` | 시나리오 QA용 로컬 미리보기: 미리보기 빌드를 127.0.0.1:8788에 띄우고 `/api/chat/`·`/api/plan/`을 `api/*.js`로 답한다(`npm run preview`) |
 | `chatbot/`, `api/chat.js` | 사이트 도우미(Vercel 함수). 사이트 주소·이름·도시 이름은 빌드가 쓴 `public/chat/site.json`에서 읽는다(`chatbot/site.js`) |
 | `api/plan.js`, `chatbot/planner.js`·`plan_*.js`, `templates/plan.html.j2`·`assets/plan.js` | AI 코스 만들기(`/plan/`, 같은 키 `ANTHROPIC_API_KEY`, vercel.json `api/plan.js`). 출발·도착 이름은 `public/chat/site.json` `hubs`(= `city.plan.hubs`) |
 | `pipeline/relations.py`·`tickets.py`·`fee_table.py`·`booking.py`·`notices.py` | 장소 관계(part_of)·통합권·요금표 읽기·예약하기·시설 공지(각각 `data/<도시>/` 파일이 있을 때만) |

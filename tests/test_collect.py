@@ -298,3 +298,121 @@ def test_doctor_reads_the_region_codes_live_and_compares_names(region, monkeypat
     assert "확인: TourAPI 목록에 없는 site.json districts 이름" in text and FAKE_KEY not in text
     missing = doctor.run("인천", FAKE_KEY, {**site, "region_full": "가상특별시"})
     assert missing["verdict"].startswith("실패") and "region_full '가상특별시'" in missing["verdict"]
+
+
+# the 카페·디저트 and 쇼핑 items of the list-only tests (invented like the rest): a 음식점 item TourAPI classifies as a
+# café (lclsSystm3 FD05…) with a phone in the list item, and a type-38 shop
+CAFE = {**_item("990006", "39", "[시험] 가상 카페", "인천광역시 미추홀구 시험커피길 6", 126.663, 37.453, "Type3"),
+        "lclsSystm1": "FD", "lclsSystm2": "FD05", "lclsSystm3": "FD050100", "tel": "032-000-0006"}
+SHOP = {**_item("990007", "38", "[시험] 가상 시장", "인천광역시 강화군 강화읍 시험장터길 7", 126.483, 37.743, "Type1"),
+        "lclsSystm1": "SH", "lclsSystm2": "SH06", "lclsSystm3": "SH060200"}
+
+
+def _lists_in_cache(region, monkeypatch, capsys) -> FakeTourAPI:
+    """A collection that stops at its call cap right after the lists (doctor 5 + region codes 2 + 3 구·군 × 6 types):
+    the list responses are in the cache, no detail of any place is."""
+    monkeypatch.setitem(LISTS, ("902", "39"), [CAFE])
+    monkeypatch.setitem(LISTS, ("903", "38"), [SHOP])
+    api = FakeTourAPI()
+    monkeypatch.setattr("urllib.request.urlopen", api)
+    monkeypatch.setenv("TOURAPI_KEY", FAKE_KEY)
+    code, out, err = _run(["--data", str(region), "--max-calls", "25"], capsys)
+    assert code == 3, err
+    assert len([op for op, _ in api.calls if op == "areaBasedList2"]) == 18
+    assert not [op for op, _ in api.calls if op.startswith("detail")]
+    assert json.loads((region / "places.json").read_text("utf-8")) == []
+    return api
+
+
+def test_lists_only_adds_every_listed_place_from_the_cache_without_a_call(region, monkeypatch, capsys, tmp_path):
+    _lists_in_cache(region, monkeypatch, capsys)
+    sizes = (region / "image_sizes.json").read_text("utf-8")   # written by that run's photo step (no photo yet)
+    monkeypatch.delenv("TOURAPI_KEY")
+    monkeypatch.setattr("urllib.request.urlopen", lambda *a, **k: pytest.fail("--lists-only makes no call"))
+    monkeypatch.setattr(image_sizes, "probe", lambda url: pytest.fail("--lists-only reads no photo host"))
+    code, out, err = _run(["--data", str(region), "--lists-only"], capsys)
+    assert code == 0, err
+
+    places = {p["tourapi"]["contentid"]: p for p in json.loads((region / "places.json").read_text("utf-8"))}
+    assert set(places) == {f"99000{i}" for i in range(1, 8)}
+    assert {cid: (p["name"], p["kind"], p["category"], p["district"]) for cid, p in places.items()} == {
+        "990001": ("가상 공원", "attraction", "관광지", "연수구"), "990002": ("가상 식당", "food", "음식점", "연수구"),
+        "990003": ("가상 호텔", "stay", "숙박", "미추홀구"), "990004": ("가상 미술관", "attraction", "문화시설", "미추홀구"),
+        "990005": ("가상 전망대", "attraction", "관광지", "강화군"), "990006": ("가상 카페", "cafe", "카페·디저트", "미추홀구"),
+        "990007": ("가상 시장", "shopping", "쇼핑", "강화군")}
+    today = TODAY.isoformat()   # the day the (cached) list pages were fetched
+    item = {i["contentid"]: i for i in [*sum(LISTS.values(), []), CAFE, SHOP]}
+    for cid, p in places.items():
+        assert (p["status"], p["tier"], p["summary"], p["id"]) == ("draft", "basic", "", f"tourapi-{cid}"), cid
+        assert p["tourapi"]["details_pending"] is True and "overview" not in p["tourapi"], cid
+        assert p["tourapi"].get("lclsSystm3", "") == item[cid]["lclsSystm3"], cid   # as listed (empty: left out)
+        # the list's own values only, each with its provider, check date and the operation it came from
+        assert p["facts"]["address"] == item[cid]["addr1"], cid
+        assert set(p["fact_sources"]) == set(p["facts"]) and all(
+            s == {"provider": "한국관광공사 TourAPI", "checked_at": today, "contentid": cid, "via": "areaBasedList2"}
+            for s in p["fact_sources"].values()), cid
+        assert p["facts_source"] == {"provider": "한국관광공사 TourAPI", "checked_at": today, "contentid": cid}
+        assert p["geo"] == {"lat": float(item[cid]["mapy"]), "lng": float(item[cid]["mapx"]), "source": "TourAPI",
+                            "checked_at": today}, cid
+    assert places["990006"]["facts"] == {"address": CAFE["addr1"], "infocenter": "032-000-0006"}   # phone: listed
+    assert set(places["990001"]["facts"]) == {"address"}                                         # nothing else known
+    # photos: Type1 and Type3 only, https, credited 한국관광공사; Type2 (식당), Type4 (호텔), none (전망대) not taken
+    assert places["990007"]["images"] == [{"url": IMG.format("990007").replace("http:", "https:"), "alt": "가상 시장",
+                                           "credit": "한국관광공사", "license": "KOGL-1", "source": "TourAPI",
+                                           "checked_at": today}]
+    assert [i["license"] for i in places["990006"]["images"]] == ["KOGL-3"]
+    assert places["990002"]["images"] == places["990003"]["images"] == places["990005"]["images"] == []
+
+    assert "실호출 0(진단 0 포함)" in out and "새 장소 7 (목록 값만 — 상세 대기)" in out
+    assert "장소 7곳(관광지 3 · 카페·디저트 1 · 음식점 1 · 쇼핑 1 · 숙소 1) · draft 7 · 상세 대기(목록 값만) 7" in out
+    assert "강화군 2, 미추홀구 3, 연수구 2" in out
+    assert "상세 받기(날마다): python tools/collect.py --data" in out and "사진 크기: 건너뜀" in out
+    assert "목록만으로 추가한 장소" in (tmp_path / "reports" / "tourapi_bulk.md").read_text("utf-8")
+    assert not (region / "events.json").exists() and (region / "image_sizes.json").read_text("utf-8") == sizes
+
+    # the preview build shows them (drafts, noindex) and validates; a page says what is still to be checked
+    dist = tmp_path / "dist-preview"
+    assert build(region, dist, "preview")["entities"] == 7
+    errors, _, _ = validate(region, dist, "preview")
+    assert errors == [], errors[:5]
+    page = (dist / "places" / places["990007"]["slug"] / "index.html").read_text("utf-8")
+    assert "가상 시장" in page and "출처: 한국관광공사" in page and "확인 필요" in page
+
+
+def test_the_daily_collection_completes_list_only_places_without_adding_them_twice(region, monkeypatch, capsys):
+    _lists_in_cache(region, monkeypatch, capsys)
+    code, out, err = _run(["--data", str(region), "--lists-only"], capsys)
+    assert code == 0, err
+    estimate = int(re.search(r"남은 호출\(캐시에 없는 응답\): 약 (\d+)회", out).group(1))
+    listed = {p["id"]: p for p in json.loads((region / "places.json").read_text("utf-8"))}
+    api = FakeTourAPI()
+    monkeypatch.setattr("urllib.request.urlopen", api)
+    code, out, err = _run(["--data", str(region)], capsys)
+    assert code == 0, err
+    places = json.loads((region / "places.json").read_text("utf-8"))
+    assert sorted(p["id"] for p in places) == sorted(listed)               # the same places, none added twice
+    by = {p["tourapi"]["contentid"]: p for p in places}
+    assert not [p["name"] for p in places if p["tourapi"].get("details_pending")]
+    assert all(p["slug"] == listed[p["id"]]["slug"] for p in places)      # page addresses stay
+    details = [(op, q.get("contentId")) for op, q in api.calls if op.startswith("detail") and q.get("contentId") != "990101"]
+    assert len(details) == len(set(details)) == estimate                  # each fetched once; the printed estimate exact
+    assert "새 장소 0" in out and "(그중 목록만으로 더했던 곳 7)" in out
+    today = TODAY.isoformat()
+    # the detail values now stand with their own source (no 'via': the details replaced the list's copies)
+    assert by["990001"]["facts"]["usetime"] == "09:00~18:00" and by["990001"]["facts"]["usefee"] == "무료(시험 값)"
+    assert by["990001"]["fact_sources"]["address"] == {"provider": "한국관광공사 TourAPI", "checked_at": today,
+                                                       "contentid": "990001"}
+    assert by["990003"]["facts"]["checkin"] == "15:00" and by["990002"]["facts"]["menu"] == "시험국수"
+    assert by["990006"]["kind"] == "cafe" and by["990007"]["kind"] == "shopping"
+    assert SENTINEL in by["990001"]["tourapi"]["overview"]                 # kept for fact checking only
+    assert [i["license"] for i in by["990004"]["images"]] == ["KOGL-3"] and by["990002"]["images"] == []
+
+
+def test_lists_only_without_cached_lists_says_what_to_run(region, monkeypatch, capsys):
+    monkeypatch.setattr("urllib.request.urlopen", lambda *a, **k: pytest.fail("--lists-only makes no call"))
+    code, out, err = _run(["--data", str(region), "--lists-only"], capsys)
+    assert code == 1 and "캐시가 없습니다" in err and "python tools/collect.py --data" in err
+    assert not (region / "places.json").exists() and "Traceback" not in out + err
+    from tools import tourapi_bulk
+    with pytest.raises(SystemExit):   # no detail, event or photo option beside it
+        tourapi_bulk.main(["--data", str(region), "--lists-only", "--details"])
