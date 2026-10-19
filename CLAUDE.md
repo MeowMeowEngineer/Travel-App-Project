@@ -152,6 +152,7 @@ python tools/brand_kit.py --data data/incheon --out templates/assets/brand --png
 ```
 - 도구의 `--data` 기본값은 `data/incheon`이다. 새 도시는 `data/<도시>/site.json`을 만들고 `--data`로 넘긴다(엔진은 바꾸지 않는다).
 - `main`에 push하면 Vercel이 `public/`을 배포한다. 공개 전환은 사람이 정한다.
+- **미리보기 배포(운영자 요청 2026-10-19)**: 공개 전까지 `public/`은 미리보기 빌드다 — draft 전부, 모든 페이지 noindex, robots.txt 전체 차단, `vercel.json`의 X-Robots-Tag `noindex, nofollow`(모든 경로). 갱신은 빌드로만: `python -m pipeline.build --data data/incheon --out public --mode preview && python -m pipeline.validate --data data/incheon --out public --mode preview`. 정식 공개 때 `tools/build_public.py`로 바꾸고 X-Robots-Tag를 공개 호스트에서 푸는 것은 사람이 정한다(`tools/launch_check.py`가 남은 헤더를 알린다).
 
 ## 8. 코드·데이터 지도
 | 경로 | 역할 |

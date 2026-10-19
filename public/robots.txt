@@ -1,0 +1,3 @@
+# 미리보기/샘플 빌드: 모든 수집 차단
+User-agent: *
+Disallow: /

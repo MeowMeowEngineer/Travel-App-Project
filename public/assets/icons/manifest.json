@@ -1,0 +1,2172 @@
+{
+ "cond-parking": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "cond-parking-64.avif",
+    64
+   ],
+   [
+    "cond-parking-128.avif",
+    128
+   ],
+   [
+    "cond-parking-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "cond-parking-64.webp",
+    64
+   ],
+   [
+    "cond-parking-128.webp",
+    128
+   ],
+   [
+    "cond-parking-240.webp",
+    240
+   ]
+  ]
+ },
+ "cond-stroller": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "cond-stroller-64.avif",
+    64
+   ],
+   [
+    "cond-stroller-128.avif",
+    128
+   ],
+   [
+    "cond-stroller-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "cond-stroller-64.webp",
+    64
+   ],
+   [
+    "cond-stroller-128.webp",
+    128
+   ],
+   [
+    "cond-stroller-240.webp",
+    240
+   ]
+  ]
+ },
+ "cond-wheelchair": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "cond-wheelchair-64.avif",
+    64
+   ],
+   [
+    "cond-wheelchair-128.avif",
+    128
+   ],
+   [
+    "cond-wheelchair-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "cond-wheelchair-64.webp",
+    64
+   ],
+   [
+    "cond-wheelchair-128.webp",
+    128
+   ],
+   [
+    "cond-wheelchair-240.webp",
+    240
+   ]
+  ]
+ },
+ "fact-checkin": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "fact-checkin-64.avif",
+    64
+   ],
+   [
+    "fact-checkin-128.avif",
+    128
+   ],
+   [
+    "fact-checkin-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "fact-checkin-64.webp",
+    64
+   ],
+   [
+    "fact-checkin-128.webp",
+    128
+   ],
+   [
+    "fact-checkin-240.webp",
+    240
+   ]
+  ]
+ },
+ "fact-closed": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "fact-closed-64.avif",
+    64
+   ],
+   [
+    "fact-closed-128.avif",
+    128
+   ],
+   [
+    "fact-closed-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "fact-closed-64.webp",
+    64
+   ],
+   [
+    "fact-closed-128.webp",
+    128
+   ],
+   [
+    "fact-closed-240.webp",
+    240
+   ]
+  ]
+ },
+ "fact-fee": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "fact-fee-64.avif",
+    64
+   ],
+   [
+    "fact-fee-128.avif",
+    128
+   ],
+   [
+    "fact-fee-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "fact-fee-64.webp",
+    64
+   ],
+   [
+    "fact-fee-128.webp",
+    128
+   ],
+   [
+    "fact-fee-240.webp",
+    240
+   ]
+  ]
+ },
+ "fact-hours": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "fact-hours-64.avif",
+    64
+   ],
+   [
+    "fact-hours-128.avif",
+    128
+   ],
+   [
+    "fact-hours-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "fact-hours-64.webp",
+    64
+   ],
+   [
+    "fact-hours-128.webp",
+    128
+   ],
+   [
+    "fact-hours-240.webp",
+    240
+   ]
+  ]
+ },
+ "fact-menu": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "fact-menu-64.avif",
+    64
+   ],
+   [
+    "fact-menu-128.avif",
+    128
+   ],
+   [
+    "fact-menu-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "fact-menu-64.webp",
+    64
+   ],
+   [
+    "fact-menu-128.webp",
+    128
+   ],
+   [
+    "fact-menu-240.webp",
+    240
+   ]
+  ]
+ },
+ "fact-parking": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "fact-parking-64.avif",
+    64
+   ],
+   [
+    "fact-parking-128.avif",
+    128
+   ],
+   [
+    "fact-parking-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "fact-parking-64.webp",
+    64
+   ],
+   [
+    "fact-parking-128.webp",
+    128
+   ],
+   [
+    "fact-parking-240.webp",
+    240
+   ]
+  ]
+ },
+ "fact-phone": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "fact-phone-64.avif",
+    64
+   ],
+   [
+    "fact-phone-128.avif",
+    128
+   ],
+   [
+    "fact-phone-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "fact-phone-64.webp",
+    64
+   ],
+   [
+    "fact-phone-128.webp",
+    128
+   ],
+   [
+    "fact-phone-240.webp",
+    240
+   ]
+  ]
+ },
+ "guide": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "guide-64.avif",
+    64
+   ],
+   [
+    "guide-128.avif",
+    128
+   ],
+   [
+    "guide-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "guide-64.webp",
+    64
+   ],
+   [
+    "guide-128.webp",
+    128
+   ],
+   [
+    "guide-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-abroad": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-abroad-64.avif",
+    64
+   ],
+   [
+    "icon-abroad-128.avif",
+    128
+   ],
+   [
+    "icon-abroad-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-abroad-64.webp",
+    64
+   ],
+   [
+    "icon-abroad-128.webp",
+    128
+   ],
+   [
+    "icon-abroad-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-ask": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-ask-64.avif",
+    64
+   ],
+   [
+    "icon-ask-128.avif",
+    128
+   ],
+   [
+    "icon-ask-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-ask-64.webp",
+    64
+   ],
+   [
+    "icon-ask-128.webp",
+    128
+   ],
+   [
+    "icon-ask-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-cafe": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-cafe-64.avif",
+    64
+   ],
+   [
+    "icon-cafe-128.avif",
+    128
+   ],
+   [
+    "icon-cafe-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-cafe-64.webp",
+    64
+   ],
+   [
+    "icon-cafe-128.webp",
+    128
+   ],
+   [
+    "icon-cafe-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-course": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-course-64.avif",
+    64
+   ],
+   [
+    "icon-course-128.avif",
+    128
+   ],
+   [
+    "icon-course-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-course-64.webp",
+    64
+   ],
+   [
+    "icon-course-128.webp",
+    128
+   ],
+   [
+    "icon-course-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-events": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-events-64.avif",
+    64
+   ],
+   [
+    "icon-events-128.avif",
+    128
+   ],
+   [
+    "icon-events-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-events-64.webp",
+    64
+   ],
+   [
+    "icon-events-128.webp",
+    128
+   ],
+   [
+    "icon-events-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-food": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-food-64.avif",
+    64
+   ],
+   [
+    "icon-food-128.avif",
+    128
+   ],
+   [
+    "icon-food-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-food-64.webp",
+    64
+   ],
+   [
+    "icon-food-128.webp",
+    128
+   ],
+   [
+    "icon-food-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-getting-here": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-getting-here-64.avif",
+    64
+   ],
+   [
+    "icon-getting-here-128.avif",
+    128
+   ],
+   [
+    "icon-getting-here-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-getting-here-64.webp",
+    64
+   ],
+   [
+    "icon-getting-here-128.webp",
+    128
+   ],
+   [
+    "icon-getting-here-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-map": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-map-64.avif",
+    64
+   ],
+   [
+    "icon-map-128.avif",
+    128
+   ],
+   [
+    "icon-map-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-map-64.webp",
+    64
+   ],
+   [
+    "icon-map-128.webp",
+    128
+   ],
+   [
+    "icon-map-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-plan": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-plan-64.avif",
+    64
+   ],
+   [
+    "icon-plan-128.avif",
+    128
+   ],
+   [
+    "icon-plan-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-plan-64.webp",
+    64
+   ],
+   [
+    "icon-plan-128.webp",
+    128
+   ],
+   [
+    "icon-plan-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-sights": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-sights-64.avif",
+    64
+   ],
+   [
+    "icon-sights-128.avif",
+    128
+   ],
+   [
+    "icon-sights-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-sights-64.webp",
+    64
+   ],
+   [
+    "icon-sights-128.webp",
+    128
+   ],
+   [
+    "icon-sights-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-stay": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-stay-64.avif",
+    64
+   ],
+   [
+    "icon-stay-128.avif",
+    128
+   ],
+   [
+    "icon-stay-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-stay-64.webp",
+    64
+   ],
+   [
+    "icon-stay-128.webp",
+    128
+   ],
+   [
+    "icon-stay-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-video": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-video-64.avif",
+    64
+   ],
+   [
+    "icon-video-128.avif",
+    128
+   ],
+   [
+    "icon-video-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-video-64.webp",
+    64
+   ],
+   [
+    "icon-video-128.webp",
+    128
+   ],
+   [
+    "icon-video-240.webp",
+    240
+   ]
+  ]
+ },
+ "info-center": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "info-center-64.avif",
+    64
+   ],
+   [
+    "info-center-128.avif",
+    128
+   ],
+   [
+    "info-center-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "info-center-64.webp",
+    64
+   ],
+   [
+    "info-center-128.webp",
+    128
+   ],
+   [
+    "info-center-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-attraction": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-attraction-64.avif",
+    64
+   ],
+   [
+    "kind-attraction-128.avif",
+    128
+   ],
+   [
+    "kind-attraction-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-attraction-64.webp",
+    64
+   ],
+   [
+    "kind-attraction-128.webp",
+    128
+   ],
+   [
+    "kind-attraction-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-cafe": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-cafe-64.avif",
+    64
+   ],
+   [
+    "kind-cafe-128.avif",
+    128
+   ],
+   [
+    "kind-cafe-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-cafe-64.webp",
+    64
+   ],
+   [
+    "kind-cafe-128.webp",
+    128
+   ],
+   [
+    "kind-cafe-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-experience": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-experience-64.avif",
+    64
+   ],
+   [
+    "kind-experience-128.avif",
+    128
+   ],
+   [
+    "kind-experience-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-experience-64.webp",
+    64
+   ],
+   [
+    "kind-experience-128.webp",
+    128
+   ],
+   [
+    "kind-experience-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-festival": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-festival-64.avif",
+    64
+   ],
+   [
+    "kind-festival-128.avif",
+    128
+   ],
+   [
+    "kind-festival-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-festival-64.webp",
+    64
+   ],
+   [
+    "kind-festival-128.webp",
+    128
+   ],
+   [
+    "kind-festival-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-food": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-food-64.avif",
+    64
+   ],
+   [
+    "kind-food-128.avif",
+    128
+   ],
+   [
+    "kind-food-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-food-64.webp",
+    64
+   ],
+   [
+    "kind-food-128.webp",
+    128
+   ],
+   [
+    "kind-food-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-museum": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-museum-64.avif",
+    64
+   ],
+   [
+    "kind-museum-128.avif",
+    128
+   ],
+   [
+    "kind-museum-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-museum-64.webp",
+    64
+   ],
+   [
+    "kind-museum-128.webp",
+    128
+   ],
+   [
+    "kind-museum-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-shopping": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-shopping-64.avif",
+    64
+   ],
+   [
+    "kind-shopping-128.avif",
+    128
+   ],
+   [
+    "kind-shopping-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-shopping-64.webp",
+    64
+   ],
+   [
+    "kind-shopping-128.webp",
+    128
+   ],
+   [
+    "kind-shopping-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-stay": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-stay-64.avif",
+    64
+   ],
+   [
+    "kind-stay-128.avif",
+    128
+   ],
+   [
+    "kind-stay-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-stay-64.webp",
+    64
+   ],
+   [
+    "kind-stay-128.webp",
+    128
+   ],
+   [
+    "kind-stay-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-airport": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-airport-64.avif",
+    64
+   ],
+   [
+    "mascot-airport-128.avif",
+    128
+   ],
+   [
+    "mascot-airport-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-airport-64.webp",
+    64
+   ],
+   [
+    "mascot-airport-128.webp",
+    128
+   ],
+   [
+    "mascot-airport-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-cafe": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-cafe-64.avif",
+    64
+   ],
+   [
+    "mascot-cafe-128.avif",
+    128
+   ],
+   [
+    "mascot-cafe-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-cafe-64.webp",
+    64
+   ],
+   [
+    "mascot-cafe-128.webp",
+    128
+   ],
+   [
+    "mascot-cafe-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-camera": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-camera-64.avif",
+    64
+   ],
+   [
+    "mascot-camera-128.avif",
+    128
+   ],
+   [
+    "mascot-camera-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-camera-64.webp",
+    64
+   ],
+   [
+    "mascot-camera-128.webp",
+    128
+   ],
+   [
+    "mascot-camera-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-eat": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-eat-64.avif",
+    64
+   ],
+   [
+    "mascot-eat-128.avif",
+    128
+   ],
+   [
+    "mascot-eat-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-eat-64.webp",
+    64
+   ],
+   [
+    "mascot-eat-128.webp",
+    128
+   ],
+   [
+    "mascot-eat-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-ferry": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-ferry-64.avif",
+    64
+   ],
+   [
+    "mascot-ferry-128.avif",
+    128
+   ],
+   [
+    "mascot-ferry-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-ferry-64.webp",
+    64
+   ],
+   [
+    "mascot-ferry-128.webp",
+    128
+   ],
+   [
+    "mascot-ferry-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-budget": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-budget-64.avif",
+    64
+   ],
+   [
+    "plan-budget-128.avif",
+    128
+   ],
+   [
+    "plan-budget-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-budget-64.webp",
+    64
+   ],
+   [
+    "plan-budget-128.webp",
+    128
+   ],
+   [
+    "plan-budget-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-dur-1n2d": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-dur-1n2d-64.avif",
+    64
+   ],
+   [
+    "plan-dur-1n2d-128.avif",
+    128
+   ],
+   [
+    "plan-dur-1n2d-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-dur-1n2d-64.webp",
+    64
+   ],
+   [
+    "plan-dur-1n2d-128.webp",
+    128
+   ],
+   [
+    "plan-dur-1n2d-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-dur-2n3d": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-dur-2n3d-64.avif",
+    64
+   ],
+   [
+    "plan-dur-2n3d-128.avif",
+    128
+   ],
+   [
+    "plan-dur-2n3d-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-dur-2n3d-64.webp",
+    64
+   ],
+   [
+    "plan-dur-2n3d-128.webp",
+    128
+   ],
+   [
+    "plan-dur-2n3d-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-dur-day": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-dur-day-64.avif",
+    64
+   ],
+   [
+    "plan-dur-day-128.avif",
+    128
+   ],
+   [
+    "plan-dur-day-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-dur-day-64.webp",
+    64
+   ],
+   [
+    "plan-dur-day-128.webp",
+    128
+   ],
+   [
+    "plan-dur-day-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-swap": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-swap-64.avif",
+    64
+   ],
+   [
+    "plan-swap-128.avif",
+    128
+   ],
+   [
+    "plan-swap-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-swap-64.webp",
+    64
+   ],
+   [
+    "plan-swap-128.webp",
+    128
+   ],
+   [
+    "plan-swap-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-with-couple": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-with-couple-64.avif",
+    64
+   ],
+   [
+    "plan-with-couple-128.avif",
+    128
+   ],
+   [
+    "plan-with-couple-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-with-couple-64.webp",
+    64
+   ],
+   [
+    "plan-with-couple-128.webp",
+    128
+   ],
+   [
+    "plan-with-couple-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-with-parents": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-with-parents-64.avif",
+    64
+   ],
+   [
+    "plan-with-parents-128.avif",
+    128
+   ],
+   [
+    "plan-with-parents-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-with-parents-64.webp",
+    64
+   ],
+   [
+    "plan-with-parents-128.webp",
+    128
+   ],
+   [
+    "plan-with-parents-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-with-solo": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-with-solo-64.avif",
+    64
+   ],
+   [
+    "plan-with-solo-128.avif",
+    128
+   ],
+   [
+    "plan-with-solo-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-with-solo-64.webp",
+    64
+   ],
+   [
+    "plan-with-solo-128.webp",
+    128
+   ],
+   [
+    "plan-with-solo-240.webp",
+    240
+   ]
+  ]
+ },
+ "pref-photo": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "pref-photo-64.avif",
+    64
+   ],
+   [
+    "pref-photo-128.avif",
+    128
+   ],
+   [
+    "pref-photo-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "pref-photo-64.webp",
+    64
+   ],
+   [
+    "pref-photo-128.webp",
+    128
+   ],
+   [
+    "pref-photo-240.webp",
+    240
+   ]
+  ]
+ },
+ "sit-carfree": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "sit-carfree-64.avif",
+    64
+   ],
+   [
+    "sit-carfree-128.avif",
+    128
+   ],
+   [
+    "sit-carfree-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "sit-carfree-64.webp",
+    64
+   ],
+   [
+    "sit-carfree-128.webp",
+    128
+   ],
+   [
+    "sit-carfree-240.webp",
+    240
+   ]
+  ]
+ },
+ "sit-free": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "sit-free-64.avif",
+    64
+   ],
+   [
+    "sit-free-128.avif",
+    128
+   ],
+   [
+    "sit-free-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "sit-free-64.webp",
+    64
+   ],
+   [
+    "sit-free-128.webp",
+    128
+   ],
+   [
+    "sit-free-240.webp",
+    240
+   ]
+  ]
+ },
+ "sit-kids": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "sit-kids-64.avif",
+    64
+   ],
+   [
+    "sit-kids-128.avif",
+    128
+   ],
+   [
+    "sit-kids-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "sit-kids-64.webp",
+    64
+   ],
+   [
+    "sit-kids-128.webp",
+    128
+   ],
+   [
+    "sit-kids-240.webp",
+    240
+   ]
+  ]
+ },
+ "sit-night": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "sit-night-64.avif",
+    64
+   ],
+   [
+    "sit-night-128.avif",
+    128
+   ],
+   [
+    "sit-night-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "sit-night-64.webp",
+    64
+   ],
+   [
+    "sit-night-128.webp",
+    128
+   ],
+   [
+    "sit-night-240.webp",
+    240
+   ]
+  ]
+ },
+ "sit-rainy": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "sit-rainy-64.avif",
+    64
+   ],
+   [
+    "sit-rainy-128.avif",
+    128
+   ],
+   [
+    "sit-rainy-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "sit-rainy-64.webp",
+    64
+   ],
+   [
+    "sit-rainy-128.webp",
+    128
+   ],
+   [
+    "sit-rainy-240.webp",
+    240
+   ]
+  ]
+ },
+ "sit-walk": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "sit-walk-64.avif",
+    64
+   ],
+   [
+    "sit-walk-128.avif",
+    128
+   ],
+   [
+    "sit-walk-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "sit-walk-64.webp",
+    64
+   ],
+   [
+    "sit-walk-128.webp",
+    128
+   ],
+   [
+    "sit-walk-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-alleys-culture": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-alleys-culture-64.avif",
+    64
+   ],
+   [
+    "theme-alleys-culture-128.avif",
+    128
+   ],
+   [
+    "theme-alleys-culture-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-alleys-culture-64.webp",
+    64
+   ],
+   [
+    "theme-alleys-culture-128.webp",
+    128
+   ],
+   [
+    "theme-alleys-culture-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-islands-sea": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-islands-sea-64.avif",
+    64
+   ],
+   [
+    "theme-islands-sea-128.avif",
+    128
+   ],
+   [
+    "theme-islands-sea-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-islands-sea-64.webp",
+    64
+   ],
+   [
+    "theme-islands-sea-128.webp",
+    128
+   ],
+   [
+    "theme-islands-sea-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-modern-history": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-modern-history-64.avif",
+    64
+   ],
+   [
+    "theme-modern-history-128.avif",
+    128
+   ],
+   [
+    "theme-modern-history-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-modern-history-64.webp",
+    64
+   ],
+   [
+    "theme-modern-history-128.webp",
+    128
+   ],
+   [
+    "theme-modern-history-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-parks-nature": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-parks-nature-64.avif",
+    64
+   ],
+   [
+    "theme-parks-nature-128.avif",
+    128
+   ],
+   [
+    "theme-parks-nature-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-parks-nature-64.webp",
+    64
+   ],
+   [
+    "theme-parks-nature-128.webp",
+    128
+   ],
+   [
+    "theme-parks-nature-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-sky-airport": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-sky-airport-64.avif",
+    64
+   ],
+   [
+    "theme-sky-airport-128.avif",
+    128
+   ],
+   [
+    "theme-sky-airport-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-sky-airport-64.webp",
+    64
+   ],
+   [
+    "theme-sky-airport-128.webp",
+    128
+   ],
+   [
+    "theme-sky-airport-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-tidal-flat": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-tidal-flat-64.avif",
+    64
+   ],
+   [
+    "theme-tidal-flat-128.avif",
+    128
+   ],
+   [
+    "theme-tidal-flat-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-tidal-flat-64.webp",
+    64
+   ],
+   [
+    "theme-tidal-flat-128.webp",
+    128
+   ],
+   [
+    "theme-tidal-flat-240.webp",
+    240
+   ]
+  ]
+ },
+ "transit-bus": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "transit-bus-64.avif",
+    64
+   ],
+   [
+    "transit-bus-128.avif",
+    128
+   ],
+   [
+    "transit-bus-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "transit-bus-64.webp",
+    64
+   ],
+   [
+    "transit-bus-128.webp",
+    128
+   ],
+   [
+    "transit-bus-240.webp",
+    240
+   ]
+  ]
+ },
+ "transit-ferry": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "transit-ferry-64.avif",
+    64
+   ],
+   [
+    "transit-ferry-128.avif",
+    128
+   ],
+   [
+    "transit-ferry-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "transit-ferry-64.webp",
+    64
+   ],
+   [
+    "transit-ferry-128.webp",
+    128
+   ],
+   [
+    "transit-ferry-240.webp",
+    240
+   ]
+  ]
+ },
+ "transit-plane": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "transit-plane-64.avif",
+    64
+   ],
+   [
+    "transit-plane-128.avif",
+    128
+   ],
+   [
+    "transit-plane-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "transit-plane-64.webp",
+    64
+   ],
+   [
+    "transit-plane-128.webp",
+    128
+   ],
+   [
+    "transit-plane-240.webp",
+    240
+   ]
+  ]
+ },
+ "transit-subway": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "transit-subway-64.avif",
+    64
+   ],
+   [
+    "transit-subway-128.avif",
+    128
+   ],
+   [
+    "transit-subway-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "transit-subway-64.webp",
+    64
+   ],
+   [
+    "transit-subway-128.webp",
+    128
+   ],
+   [
+    "transit-subway-240.webp",
+    240
+   ]
+  ]
+ }
+}
