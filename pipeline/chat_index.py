@@ -156,12 +156,22 @@ def _fact_url(e: dict, src: dict | None) -> str:
     return ""
 
 
-def _dates(checked: str = "", reviewed: str = "", approved: str = "", checked_label: str = "출처 확인") -> str:
+# what a place's dates are for (QA 2026-10-19 QA-35: with the date left to the '날짜:' line alone, the assistant still
+# wrote '(출처: 한국관광공사 TourAPI, 출처 확인 2026-10-19)' in 3 of 6 answers nobody asked about dates in). The site
+# shows no check date (CLAUDE.md 3절 2항); an answer names one only for the question prompt.js rule 11 names.
+# The note is how to read the line, not a word of the page: left out of the search tokens (index_json).
+DATES_ASKED_ONLY = "이용자가 확인 날짜·최신 여부를 물을 때만 답에 씀(출처 표기에도 붙이지 않음)"
+
+
+def _dates(checked: str = "", reviewed: str = "", approved: str = "", checked_label: str = "출처 확인",
+           asked_only: bool = False) -> str:
     """The page's dates, each named for what it is: when this site last checked the sources (출처 확인), when a person
-    reviewed the page (페이지 검수 — none yet means '검수 전'), when the operator approved publishing it."""
+    reviewed the page (페이지 검수 — none yet means '검수 전'), when the operator approved publishing it. asked_only: the
+    line says it is for a question about how current the information is (a place's; a guide's check date goes with its
+    timetables' times, prompt.js rule 12)."""
     parts = [f"{checked_label} {checked}" if checked else "", f"페이지 검수 {reviewed}" if reviewed else "페이지 검수 전(검수일 없음)",
              f"운영자 공개 승인 {approved}" if approved else ""]
-    return "날짜: " + " · ".join(p for p in parts if p)
+    return "날짜: " + " · ".join(p for p in parts if p) + (f" — {DATES_ASKED_ONLY}" if asked_only else "")
 
 
 EFFECTIVE_RX = re.compile(r"(\d{4})\.(\d{1,2})\.(\d{1,2})\.?\s*시행")
@@ -652,7 +662,7 @@ class Knowledge:
         if tourapi and official.get("visitkorea_url"):
             L.append("한국관광공사 TourAPI 값은 API 자료다. 같은 콘텐츠의 공개 페이지: 대한민국 구석구석 "
                      f"{web_url(official['visitkorea_url'])}")
-        L.append(_dates(day, _clean(e.get("reviewed_at")), _clean(e.get("approved_at"))))
+        L.append(_dates(day, _clean(e.get("reviewed_at")), _clean(e.get("approved_at")), asked_only=True))
         kf = present.key_facts(e, "hero")
         if kf["missing"]:
             L.append("사이트에 없는 값(확인 필요): " + "·".join(kf["missing"]))
@@ -1269,7 +1279,7 @@ class Knowledge:
             # Korean name does (review 2026-10-17 E03: 10 of 16 such names missed the top 8)
             head += [t for t in tokens(" ".join((d.get("n") or {}).values())) if t not in head]
             # web addresses (sources, official links) are not words a reader searches for: 'tour', 'view', '305395'
-            body = [t for t in tokens(URL_RX.sub(" ", d["x"])) if t not in set(head)]
+            body = [t for t in tokens(URL_RX.sub(" ", d["x"].replace(DATES_ASKED_ONLY, " "))) if t not in set(head)]
             out[key] = [" ".join(head), " ".join(body)]
         return {"v": VERSION, "docs": out}
 

@@ -323,6 +323,11 @@ def test_the_assistants_knowledge(site):
     docs = json.loads((site["out"] / "chat" / "docs.json").read_text("utf-8"))["docs"]
     x = docs["/places/test-museum-h/"]["x"]
     assert "(출처 확인 2026-10-19)" not in x and "날짜: 출처 확인 2026-10-19" in x
+    # second round: the line says it is for a question about dates only, and that note is no search word of the page
+    date_line = next(line for line in x.split("\n") if line.startswith("날짜: "))
+    assert date_line.endswith(" — 이용자가 확인 날짜·최신 여부를 물을 때만 답에 씀(출처 표기에도 붙이지 않음)")
+    index = json.loads((site["out"] / "chat" / "index.json").read_text("utf-8"))["docs"]
+    assert all("최신" not in body.split() and "붙이" not in body.split() for _head, body in index.values())
     assert "- 주차: 가능, 요금 대형 8,000원 / 소형 2,000원 — 한국관광공사 TourAPI" in x
     assert re.search(r"^기준 장소까지 직선거리: \[테스트\] 가상 해변 A /places/test-beach-a/ 직선 [\d.]+k?m", x, re.M)
     gym = docs["/places/test-gym-i/"]
