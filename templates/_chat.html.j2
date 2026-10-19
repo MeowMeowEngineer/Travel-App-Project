@@ -34,7 +34,8 @@
              ('up', '맨 위로', '#main-content')] %}
 <nav class="qm" aria-label="빠른 메뉴"><ul>{% for it in QM if it %}<li><a class="qm-i" href="{{ it[2] }}" aria-label="{{ it[1] }}" title="{{ it[1] }}" data-tip="{{ it[1] }}">{{ qui.icon(it[0]) }}</a></li>{% endfor %}</ul></nav>
 {% endif %}
-{#- the city's words for chat.js (site.json city.chat: names {lang: city name}, chips {lang: [starter questions]}) and
-    the public address it turns links into on-site paths for -#}
+{#- the city's words for chat.js (site.json city.chat: names {lang: city name}, chips {lang: [starter questions]}), the
+    public address it turns links into on-site paths for, and the Korean site search it offers while the assistant is
+    not set up (data-chat-search: '' when the build has no search page) -#}
 {% set chat_cfg = ((site.city or {}).chat or {}) if site is defined and site else {} %}
-<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}" data-chat-site="{{ site.site_url if site is defined and site else '' }}" data-chat-city="{{ (chat_cfg.names or {})|tojson|forceescape }}" data-chat-chips="{{ (chat_cfg.chips or {})|tojson|forceescape }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>
+<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}" data-chat-site="{{ site.site_url if site is defined and site else '' }}" data-chat-search="{{ '/search/' if has_search is defined and has_search else '' }}" data-chat-city="{{ (chat_cfg.names or {})|tojson|forceescape }}" data-chat-chips="{{ (chat_cfg.chips or {})|tojson|forceescape }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>

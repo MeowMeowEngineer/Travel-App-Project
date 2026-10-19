@@ -1,6 +1,8 @@
 // What the model is told: the rules (cached together with the catalog), the two tools, and the short status and
-// error texts the browser shows. CLAUDE.md 3.1/3.2/3.10 in prompt form: facts only from the site, both values when
-// sources differ, a link to every page used, the asker's language, no booking, no ranking of businesses.
+// error texts the browser shows. CLAUDE.md 3절 1·2·10·11항 in prompt form: facts only from the site, both values when
+// sources differ, a link to every page used, the asker's language, no booking, no ranking of businesses. Nothing
+// city-specific is written here: the site's address, name and the city's names come from public/chat/site.json
+// (chatbot/site.js), the facts from the knowledge files the build writes (pipeline/chat_index.py).
 //
 // The site's data reaches the model only inside <site_data source="…"> … </site_data> blocks (dataBlock): the
 // catalog, the reader's page and every search_site / get_pages result. Rule 8 says what is inside is data, never
@@ -10,9 +12,10 @@
 import { cityName } from "./site.js";
 
 export const MODEL = "claude-haiku-5-5";
-// how much the model thinks (output_config.effort; Haiku 5.5's default is medium). Measured on the external
-// evaluation's questions, low against medium (docs/handover/chatbot.md 10절): low skipped searches and wrote claims the
-// pages did not support; medium costs about 38% more per question.
+// how much the model thinks (output_config.effort; Haiku 5.5's default is medium). Measured on the engine's earlier
+// site with an external evaluation's questions, low against medium: low skipped searches and wrote claims the pages
+// did not support; medium cost about 38% more per question. Measure again on this site's own questions once it has
+// data.
 export const EFFORT = "medium";
 export const LANGS = ["ko", "en", "ja", "zh-Hans", "zh-Hant", "de", "fr", "es", "ru"];
 
@@ -272,14 +275,14 @@ export function statusText(lang, what, q = "") {
 
 const ERRORS = {
   ko: {
-    not_configured: "챗봇이 아직 연결되지 않았습니다.", rate_limited: "질문이 너무 잦습니다. 잠시 뒤 다시 물어보세요.",
+    not_configured: "AI 도우미가 아직 준비 중입니다. 사이트 검색을 이용해 주세요.", rate_limited: "질문이 너무 잦습니다. 잠시 뒤 다시 물어보세요.",
     daily_limit: "하루에 물을 수 있는 질문 수를 넘었습니다. 내일 다시 물어보세요.",
     too_long: "질문은 800자까지 쓸 수 있습니다.", busy: "지금 답을 만들 수 없습니다. 잠시 뒤 다시 시도해 주세요.",
     timeout: "답이 너무 오래 걸려 멈췄습니다. 다시 시도해 주세요.", refusal: "이 질문에는 답할 수 없습니다.",
     truncated: "답이 너무 길어 멈췄습니다. 질문을 나눠 물어보세요.", error: "답을 가져오지 못했습니다.",
   },
   en: {
-    not_configured: "The assistant is not connected yet.", rate_limited: "Too many questions. Please wait a minute.",
+    not_configured: "The site assistant is not set up yet.", rate_limited: "Too many questions. Please wait a minute.",
     daily_limit: "You have reached the daily number of questions. Please ask again tomorrow.",
     too_long: "A question can be up to 800 characters.", busy: "The assistant cannot answer right now. Try again shortly.",
     timeout: "The answer took too long and was stopped. Please try again.", refusal: "This question cannot be answered.",

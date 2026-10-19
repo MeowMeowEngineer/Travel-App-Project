@@ -56,10 +56,22 @@ def sse(event) -> bytes:
 
 
 class Site(http.server.SimpleHTTPRequestHandler):
-    """The static build, plus POST /api/chat/: a streamed answer (a chunk every API['gap'] seconds) or a 503."""
+    """The static build, plus /api/chat/: GET says the assistant is set up (chat.js asks it once); POST is a streamed
+    answer (a chunk every API['gap'] seconds) or — mode '503' — not_configured, as when the key was removed after the
+    page asked (tests/test_chat_key_ready_browser.py: a site that has no key from the start)."""
 
     def log_message(self, *args):
         return None
+
+    def do_GET(self):
+        if self.path.split("?")[0] != "/api/chat/":
+            return super().do_GET()
+        out = b'{"ready":true}'
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(out)))
+        self.end_headers()
+        self.wfile.write(out)
 
     def do_POST(self):
         body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
@@ -187,6 +199,8 @@ def open_public(browser, width, height, js=True):
 
     def api(route):
         r = route.request
+        if r.method == "GET":   # chat.js asks once whether the assistant is set up
+            return route.fulfill(status=200, body='{"ready":true}', headers={"content-type": "application/json"})
         requests.append({"url": r.url, "method": r.method, "origin": r.header_value("origin"), "body": r.post_data_json})
         body = sse({"type": "status", "text": "찾는 중: 은파호수공원"}) + b"".join(
             sse({"type": "text", "delta": ANSWER[i:i + 8]}) for i in range(0, len(ANSWER), 8)) + sse(DONE)

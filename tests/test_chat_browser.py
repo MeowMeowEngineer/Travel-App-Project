@@ -3,7 +3,7 @@ with scripted SSE: the 1440px card (non-modal) opens from the launcher with focu
 Enter does not send (a conversion) while the Enter that ends a Korean syllable does, a streamed answer is drawn with its checked links and link cards and announced once, Esc closes
 and returns focus to the launcher, the conversation comes back on the next page (sessionStorage); the 390px sheet is
 modal (page inert, full height), the launcher is there from the first paint (64px; owner 2026-10-13 night), the
-not-configured and error states (with retry), a text of its own for each 429 (the client's minute, its day, the whole
+error states (with retry; the not-configured state: tests/test_chat_key_ready_browser.py), a text of its own for each 429 (the client's minute, its day, the whole
 instance, the Vercel Firewall), a cut answer that goes on in place ('이어서 보기': continue: true with the cut answer as
 the last message), earlier answers sent back with their checked links as page paths and a stopped question left out —
 and no console errors. Skipped where Playwright or its Chromium is missing."""
@@ -48,7 +48,6 @@ def stream_of(text: str, **done) -> tuple:
     deltas = [{"type": "text", "delta": text[i:i + 7]} for i in range(0, len(text), 7)]
     end = {"type": "done", "links": [PARK], "fix": {"/places/eunpa-lake-park/": PARK["url"]}, **done}
     return 200, sse(*deltas, end), "text/event-stream; charset=utf-8"
-NOT_CONFIGURED = (503, json.dumps({"code": "not_configured"}), "application/json")
 BUSY = (200, sse({"type": "error", "code": "busy", "message": "x"}), "text/event-stream; charset=utf-8")
 # the function's 429s (chatbot/server.js: a code per limit) and the Vercel Firewall's own 429 (no code)
 LIMITED = [(429, json.dumps({"code": code, "message": "x"}), "application/json")
@@ -105,6 +104,8 @@ def browser():
 
 
 def open_page(browser, width, height, responses):
+    """A fresh tab whose /api/chat/ is scripted: GET (chat.js asks once whether the assistant is set up) answers ready;
+    each POST gets the next of `responses` and is recorded in `calls`."""
     ctx = browser.new_context(viewport={"width": width, "height": height}, locale="ko-KR")
     page = ctx.new_page()
     errors, calls = [], []
@@ -112,6 +113,9 @@ def open_page(browser, width, height, responses):
     page.on("pageerror", lambda e: errors.append(str(e)))
 
     def handle(route):
+        if route.request.method == "GET":
+            route.fulfill(status=200, body='{"ready":true}', headers={"content-type": "application/json"})
+            return
         calls.append(route.request.post_data_json)
         status, body, ctype = responses[min(len(calls), len(responses)) - 1]
         route.fulfill(status=status, body=body, headers={"content-type": ctype})
@@ -172,7 +176,7 @@ def test_desktop_card(browser, site):
 
 
 def test_phone_sheet_and_error_states(browser, site):
-    ctx, page, errors, calls = open_page(browser, 390, 844, [NOT_CONFIGURED, BUSY, OK])
+    ctx, page, errors, calls = open_page(browser, 390, 844, [BUSY, OK])
     page.goto(site + "/")
     fab = page.locator(".chat-fab")
     assert fab.is_visible()                                   # there from the first paint, on the home too
@@ -190,22 +194,18 @@ def test_phone_sheet_and_error_states(browser, site):
     sheet = {k: round(v) for k, v in panel.bounding_box().items()}
     assert sheet["x"] == 0 and sheet["y"] == 0 and sheet["width"] == 390 and sheet["height"] == 844
     assert page.evaluate("document.activeElement.id") == "chat-title"
-    page.locator(".chat-chip").first.click()                   # 503 not_configured: a plain message and the search link
-    page.wait_for_selector(".chat-err")
-    assert "아직 연결되지 않았습니다" in page.inner_text(".chat-err")
-    assert page.locator(".chat-err a[href='/search/']").count() == 1 and page.locator(".chat-retry").count() == 0
-    page.fill("#chat-q", "다시 물어볼게요")
-    page.click(".chat-send")
+    chip = page.locator(".chat-chip").first.inner_text()
+    page.locator(".chat-chip").first.click()
     page.wait_for_selector(".chat-retry")                      # an error event: retry
+    assert "지금은 답을 만들 수 없습니다" in page.inner_text(".chat-err")
     page.click(".chat-retry")
     page.wait_for_selector(".chat-a .chat-card")
-    assert len(calls) == 3 and calls[2]["messages"][-1]["content"] == "다시 물어볼게요"
+    assert len(calls) == 2 and calls[1]["messages"] == calls[0]["messages"] == [{"role": "user", "content": chip}]
     page.keyboard.press("Tab")
     assert page.evaluate("document.getElementById('chat').contains(document.activeElement)")
     page.click('.chat-ib[aria-label="닫기"]')
     assert panel.is_hidden() and not page.evaluate("document.querySelector('main').inert")
-    # Chromium logs the scripted 503 as a failed resource; nothing else may reach the console
-    assert [e for e in errors if "status of 503" not in e] == []
+    assert errors == []
     ctx.close()
 
 

@@ -71,6 +71,18 @@ html.chat-lock, html.chat-lock body { overflow: hidden; }
 .chat-retry { margin-top: 10px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 980px; background: var(--blue); color: #fff; font: 400 15px/1 var(--font); cursor: pointer; }
 .chat-retry:hover { background: var(--blue-hi); }
 
+/* not set up yet (no API key: GET /api/chat/ said not_configured): a calm resting block in place of the question box,
+   with the Korean site search when the build has one */
+.chat-off { margin-top: 2px; padding: 18px 18px 16px; border-radius: 16px; background: var(--bg-2); }
+.chat-off p { font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.chat-off .chat-off-h { font: 700 16px/1.4 var(--font); letter-spacing: -.01em; color: var(--ink); }
+.chat-off p + p { margin-top: 6px; }
+.chat-off-form { display: flex; gap: 8px; margin-top: 14px; }
+.chat-off-form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 16px; border: 1px solid var(--hair); border-radius: 22px; background: #fff; color: var(--ink); font: 400 16px/1.4 var(--font); }
+.chat-off-form input::placeholder { color: var(--ink-3); opacity: 1; }
+.chat-off-go { flex: none; min-height: 44px; padding: 0 18px; border: 0; border-radius: 980px; background: var(--blue); color: #fff; font: 400 15px/1 var(--font); cursor: pointer; }
+.chat-off-go:hover { background: var(--blue-hi); }
+
 /* the question box: grows with the text (to 140px), Enter sends, Shift+Enter breaks the line */
 .chat-form { flex: none; display: flex; align-items: flex-end; gap: 8px; margin: 0 12px; padding: 6px 6px 6px 16px; border: 1px solid var(--hair); border-radius: 26px; background: #fff; transition: border-color .2s var(--fb), box-shadow .2s var(--fb); }
 .chat-form:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0, 113, 227, .2); }

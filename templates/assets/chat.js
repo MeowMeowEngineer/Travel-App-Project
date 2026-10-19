@@ -1,7 +1,18 @@
 /* The site assistant (owner decision 2026-10-13, CLAUDE.md 3.10). site.js loads this file and chat.css on
    the first press of [data-chat-open] (or after load when this tab left the chat open), or — on a page with the centre
    question card — when the reader touches the card: never in the first paint.
-   window.gsChat = {open(opener), restore(), close(), ask(q), stop(), busy(), dock}.
+   window.gsChat = {open(opener), restore(), close(), ask(q), stop(), busy(), ready(), dock}.
+
+   - Key-ready (README '사이트 도우미'): on load the module asks GET /api/chat/ once — 200 {ready: true}, or 503
+     {code: 'not_configured'} while the site has no ANTHROPIC_API_KEY. The answer is kept for this tab for five minutes
+     (sessionStorage 'gs-chat-ready'); the panel waits for it up to 1.2 s before it opens. Not configured: the panel
+     shows a calm 'AI 도우미 준비 중' block instead of the question box — in Korean with the site search
+     (data-chat-search on the launcher: /search/ when the build has a search page) — and the homes' card
+     ([data-chat-dock]) gets data-chat-off (site.js: its box searches, its starters stay links) and resting words in
+     its line (_ask.html.j2 data-ask-line), placeholder and button ('검색하기'); a card with nothing to search rests
+     read-only. A question that
+     still meets 503 not_configured (the key was removed) turns the view the same way, with the question in the search
+     box. Any other answer, or none, leaves the assistant as it is: a failed question says why.
 
    - Asks /api/chat/ (POST {messages, lang, page}) and reads its text/event-stream: status · text · done {links, fix,
      cut} · error {code}. Text is drawn once per animation frame. Links in an answer stay plain while it is written and
@@ -39,14 +50,21 @@
   if (window.gsChat) return;
   var doc = document, root = doc.documentElement, win = window;
   var KEY = "gs-chat", API = "/api/chat/", MAX_Q = 800, KEEP = 24, SEND_PRIOR = 12, ANSWER_CHARS = 2000;
+  var READY_KEY = "gs-chat-ready", READY_MS = 5 * 60 * 1000, READY_WAIT = 1200;
   var FAB = doc.querySelector("[data-chat-site]");
   var SITE = (FAB && FAB.getAttribute("data-chat-site")) || win.location.origin;
+  // the Korean site search (the launcher says whether the build has one; an older page without the attribute: yes)
+  var SEARCH = FAB && FAB.hasAttribute("data-chat-search") ? FAB.getAttribute("data-chat-search") : "/search/";
   function pageJSON(name) {
     try { return JSON.parse((FAB && FAB.getAttribute(name)) || "{}") || {}; } catch (e) { return {}; }
   }
 
   var STR = {
     ko: {
+      offH: "AI 도우미 준비 중", offP: "준비가 끝나면 여기서 이 사이트의 정보로 답해 드립니다.",
+      offS: "지금은 사이트 검색을 이용해 주세요. 장소·음식점·숙소 이름이나 대표 메뉴, 동 이름으로 찾을 수 있습니다.",
+      offPh: "장소·메뉴·동 이름", offGo: "검색", offLine: "AI 도우미 준비 중 — 지금은 질문을 사이트 검색으로 찾아 드립니다.",
+      offBtn: "검색하기",
       title: ["{c} 여행 도우미", "여행 도우미"], note: "AI가 이 사이트 정보로 답합니다 · 방문 전 확인", about: "/about/#chatbot",
       intro: "장소·맛집·숙소·코스·행사를 이 사이트에 실린 정보로 찾아 드려요. 답마다 해당 페이지를 링크합니다.",
       chips: [],
@@ -55,7 +73,7 @@
       thinking: "답을 찾는 중…", you: "질문", ai: "답", pages: "관련 페이지", newTab: "(새 창)",
       foot: "이름·전화번호 같은 개인정보는 쓰지 마세요. 대화는 저장하지 않습니다.", search: "/search/", searchLabel: "사이트 검색으로 찾기",
       kinds: { place: "장소", guide: "가이드", course: "코스", event: "행사", video: "영상", abroad: "해외 기사", page: "페이지" },
-      err: { not_configured: "챗봇이 아직 연결되지 않았습니다.", rate_limited: "질문이 너무 잦습니다. 1분 뒤 다시 물어보세요.",
+      err: { not_configured: "AI 도우미가 아직 준비 중입니다.", rate_limited: "질문이 너무 잦습니다. 1분 뒤 다시 물어보세요.",
         daily_limit: "하루에 물을 수 있는 질문 수를 넘었습니다. 내일 다시 물어보세요.",
         too_long: "질문은 800자까지 쓸 수 있습니다.", busy: "지금은 답을 만들 수 없습니다. 잠시 뒤 다시 시도해 주세요.",
         timeout: "답이 너무 오래 걸려 멈췄습니다.", refusal: "이 질문에는 답할 수 없습니다.",
@@ -63,6 +81,8 @@
         error: "답을 가져오지 못했습니다." },
     },
     en: {
+      offH: "The AI helper is getting ready", offS: "", offPh: "", offGo: "", offLine: "", offBtn: "",
+      offP: "Once it is set up, it will answer here from this site's information.",
       title: ["{c} travel helper", "Travel helper"], note: "AI answers from this site's information · check before you go",
       about: "/en/about/#chatbot",
       intro: "Ask about places, food, stays, courses and events. Answers come from this site's pages, with links to them.",
@@ -72,7 +92,7 @@
       thinking: "Looking it up…", you: "You", ai: "Answer", pages: "Pages", newTab: "(new tab)",
       foot: "Don't type personal details such as names or phone numbers. Chats are not stored.", search: "", searchLabel: "",
       kinds: { place: "Place", guide: "Guide", course: "Course", event: "Event", video: "Video", abroad: "Article", page: "Page" },
-      err: { not_configured: "The assistant is not connected yet.", rate_limited: "Too many questions. Please wait a minute.",
+      err: { not_configured: "The AI helper is not set up yet.", rate_limited: "Too many questions. Please wait a minute.",
         daily_limit: "You have reached the daily number of questions. Please ask again tomorrow.",
         too_long: "A question can be up to 800 characters.", busy: "The assistant cannot answer right now. Please try again shortly.",
         timeout: "The answer took too long and was stopped.", refusal: "This question cannot be answered.",
@@ -80,6 +100,7 @@
         error: "Could not get an answer." },
     },
     ja: {
+      offH: "AIアシスタントは準備中です", offP: "準備ができしだい、ここでこのサイトの情報をもとにお答えします。",
       title: ["{c}旅行アシスタント", "旅行アシスタント"], note: "AIがこのサイトの情報で答えます・訪問前にご確認を",
       intro: "観光地・グルメ・宿・コース・イベントを、このサイトの情報で探します。答えには該当ページのリンクが付きます。",
       chips: [],
@@ -95,6 +116,7 @@
         truncated: "回答が長すぎて止まりました。質問を分けてください。", network: "接続が切れました。", error: "回答を取得できませんでした。" },
     },
     "zh-Hans": {
+      offH: "AI助手正在准备中", offP: "准备好后，将在这里根据本站信息回答。",
       title: ["{c}旅行助手", "旅行助手"], note: "AI根据本站信息回答 · 出发前请确认",
       intro: "用本站的信息查找景点、美食、住宿、路线和活动，每个回答都附有相关页面链接。",
       chips: [],
@@ -108,6 +130,7 @@
         truncated: "回答过长被截断，请把问题拆开提问。", network: "连接已断开。", error: "未能获取回答。" },
     },
     "zh-Hant": {
+      offH: "AI助手正在準備中", offP: "準備好後，將在這裡根據本站資訊回答。",
       title: ["{c}旅行助手", "旅行助手"], note: "AI根據本站資訊回答 · 出發前請確認",
       intro: "用本站的資訊查找景點、美食、住宿、路線和活動，每個回答都附有相關頁面連結。",
       chips: [],
@@ -121,6 +144,7 @@
         truncated: "回答過長被截斷，請把問題拆開提問。", network: "連線已中斷。", error: "未能取得回答。" },
     },
     de: {
+      offH: "Der KI-Helfer wird gerade eingerichtet", offP: "Sobald er bereit ist, antwortet er hier mit den Angaben dieser Website.",
       title: ["{c}-Reisehelfer", "Reisehelfer"], note: "KI antwortet mit den Angaben dieser Website · vor dem Besuch prüfen",
       intro: "Fragen Sie nach Orten, Essen, Unterkünften, Routen und Veranstaltungen. Die Antworten stammen von den Seiten dieser Website, mit Links.",
       chips: [],
@@ -137,6 +161,7 @@
         error: "Keine Antwort erhalten." },
     },
     fr: {
+      offH: "L'assistant IA est en préparation", offP: "Dès qu'il sera prêt, il répondra ici avec les informations de ce site.",
       title: ["Assistant voyage {c}", "Assistant voyage"], note: "L'IA répond avec les informations de ce site · vérifiez avant de partir",
       intro: "Posez vos questions sur les lieux, restaurants, hébergements, circuits et événements : les réponses viennent des pages de ce site, avec des liens.",
       chips: [],
@@ -153,6 +178,7 @@
         error: "Aucune réponse reçue." },
     },
     es: {
+      offH: "El asistente de IA se está preparando", offP: "Cuando esté listo, responderá aquí con la información de este sitio.",
       title: ["Asistente de viaje de {c}", "Asistente de viaje"], note: "La IA responde con la información de este sitio · confirme antes de ir",
       intro: "Pregunte por lugares, comida, alojamiento, rutas y eventos: las respuestas salen de las páginas de este sitio, con enlaces.",
       chips: [],
@@ -169,6 +195,7 @@
         error: "No se obtuvo respuesta." },
     },
     ru: {
+      offH: "ИИ-помощник готовится к работе", offP: "Когда он будет готов, он ответит здесь по данным этого сайта.",
       title: ["Помощник в поездке: {c}", "Помощник в поездке"], note: "ИИ отвечает по данным этого сайта · проверьте перед поездкой",
       intro: "Спрашивайте о местах, еде, жилье, маршрутах и событиях — ответы берутся со страниц этого сайта, со ссылками.",
       chips: [],
@@ -196,6 +223,7 @@
   var lang = pickLang(root.getAttribute("lang"));
   var T = Object.assign({}, STR.en, STR[lang]);
   if (lang !== "ko" && lang !== "en") T.about = STR.en.about;
+  if (lang === "ko") T.search = SEARCH;
   (function cityWords() {   // [with the city's name, without] -> one string; the starters from the page
     var names = pageJSON("data-chat-city"), city = names[lang] || "";
     ["title", "placeholder"].forEach(function (k) {
@@ -237,6 +265,47 @@
       return m.r === "u" ? { r: "u", t: m.t } : { r: "a", t: m.t, l: m.l || [], f: m.f || null, e: m.e || "", s: !!m.s, c: !!m.c, p: !!m.p };
     });
     try { win.sessionStorage.setItem(KEY, JSON.stringify({ v: 1, open: !!state.open, msgs: msgs })); } catch (e) { storageOff = true; }
+  }
+
+  // ------------------------------------------------------------ is the assistant set up? (GET /api/chat/)
+  // ready: true — it answers; false — not configured (no API key yet); null — not known yet. Only a clear answer is
+  // kept for this tab (READY_MS): 200 {ready: true} or 503 {code: 'not_configured'}. No answer, or another one, is
+  // taken as ready — a question then says what went wrong.
+  var ready = null, readyWait = null;
+  function remembered() {
+    try {
+      var r = JSON.parse(win.sessionStorage.getItem(READY_KEY) || "null"), age = r ? Date.now() - r.t : -1;
+      if (r && typeof r.ok === "boolean" && age >= 0 && age < READY_MS) return r.ok;
+    } catch (e) { /* storage off: ask again */ }
+    return null;
+  }
+  function remember(ok) {
+    try { win.sessionStorage.setItem(READY_KEY, JSON.stringify({ ok: ok, t: Date.now() })); } catch (e) { /* off */ }
+  }
+  function probe() {
+    if (readyWait) return readyWait;
+    var known = remembered();
+    if (known !== null) {
+      ready = known;
+      readyWait = Promise.resolve(known);
+      return readyWait;
+    }
+    readyWait = win.fetch(API, { method: "GET", headers: { Accept: "application/json" }, credentials: "same-origin", cache: "no-store" })
+      .then(function (res) {
+        return res.json().then(function (j) { return j; }, function () { return null; }).then(function (j) {
+          var off = res.status === 503 && !!j && j.code === "not_configured";
+          if (ready === null) ready = !off;   // a question answered meanwhile has already said
+          if (res.ok || off) remember(ready);
+          return ready;
+        });
+      }, function () {
+        if (ready === null) ready = true;
+        return ready;
+      });
+    return readyWait;
+  }
+  function probeSoon() {   // the panel waits for the answer, but not long
+    return Promise.race([probe(), new Promise(function (ok) { win.setTimeout(ok, READY_WAIT); })]);
   }
 
   // ------------------------------------------------------------ small DOM helpers (text only, never HTML)
@@ -417,7 +486,8 @@
     }));
     var hello = h("div", { class: "chat-hello" }, T.chips.length ? [h("p", { text: T.intro }), chips] : [h("p", { text: T.intro })]);
     var list = h("ol", { class: "chat-msgs" });
-    var log = h("div", { class: "chat-log" }, [hello, list]);
+    var off = offBlock();
+    var log = h("div", { class: "chat-log" }, [hello, list, off.box]);
     var live = h("p", { class: "vh", "aria-live": "polite", "data-chat-live": true });
     var input = h("textarea", { id: "chat-q", rows: "1", maxlength: String(MAX_Q), placeholder: T.placeholder,
       enterkeyhint: "send", autocomplete: "off" });
@@ -459,7 +529,64 @@
         save();
       }
     });
-    return { panel: panel, title: title, log: log, list: list, hello: hello, live: live, input: input, send: send };
+    return { panel: panel, title: title, log: log, list: list, hello: hello, live: live, input: input, send: send,
+      form: form, foot: foot, btnNew: btnNew, off: off.box, offInput: off.input };
+  }
+  // the panel while the assistant is not set up: what is going on, and — in Korean, when the build has one — the site
+  // search (a plain GET form: it works like the search page's own)
+  function offBlock() {
+    var kids = [h("p", { class: "chat-off-h", text: T.offH }), h("p", { text: T.search ? T.offS : T.offP })];
+    var input = null;
+    if (T.search) {
+      input = h("input", { type: "search", id: "chat-s", name: "q", maxlength: "100", placeholder: T.offPh,
+        enterkeyhint: "search", autocomplete: "off" });
+      var form = h("form", { class: "chat-off-form", action: T.search, method: "get", role: "search" }, [
+        h("label", { class: "vh", for: "chat-s", text: T.searchLabel }), input,
+        h("button", { type: "submit", class: "chat-off-go", text: T.offGo })]);
+      form.addEventListener("submit", function () {   // the results page opens without the panel over it
+        state.open = false;
+        save();
+      });
+      kids.push(form);
+    }
+    return { box: h("div", { class: "chat-off", "data-chat-offbox": true, hidden: true }, kids), input: input };
+  }
+  // not set up: the panel shows its resting block (q: a question that met 503, put in the search box), the card on a
+  // dock page its resting words — focus that was in a box now hidden goes to the search box or the title
+  function applyOff(q) {
+    if (dockEl) offDock();
+    if (!ui || ui.dock) return;
+    var had = ui.form.contains(doc.activeElement);
+    ui.panel.setAttribute("data-chat-off", "");
+    ui.off.hidden = false;
+    ui.hello.hidden = true;
+    ui.form.hidden = true;
+    ui.foot.hidden = true;
+    ui.btnNew.hidden = !state.msgs.length;
+    if (q && ui.offInput) ui.offInput.value = q;
+    if (had) (ui.offInput || ui.title).focus({ preventScroll: true });
+  }
+  function offDock() {
+    if (dockEl.hasAttribute("data-chat-off-shown")) return;
+    dockEl.setAttribute("data-chat-off", "");          // site.js: the box goes to the search page, starters are links
+    dockEl.setAttribute("data-chat-off-shown", "");
+    var form = dockEl.querySelector("[data-ask-form]");
+    var q = dockEl.querySelector("[data-ask-q]"), go = dockEl.querySelector("[data-ask-go]");
+    var search = !!form && form.getAttribute("data-ask-form") === "search" && !!T.offLine;
+    // the card's line on how it answers (_ask.html.j2 data-ask-line) says what is going on, read out once it changes;
+    // the line keeps its place and about its length, so nothing below it moves
+    Array.prototype.forEach.call(dockEl.querySelectorAll("[data-ask-line]"), function (el) {
+      el.setAttribute("role", "status");
+      win.setTimeout(function () { el.textContent = search ? T.offLine : T.offH; }, 60);
+    });
+    if (q) q.setAttribute("placeholder", search ? T.offPh : T.offH);
+    if (search) {   // the box searches now: its button says so (the stop label beside it keeps the button's width)
+      var label = go && go.querySelector(".ask-go-l:not(.ask-go-s)");
+      if (label) label.textContent = T.offBtn;
+    } else {        // nothing to search instead: the box rests
+      if (q) q.readOnly = true;
+      if (go) go.disabled = true;
+    }
   }
   // the dock: the conversation inside the page's [data-ask-log] (its fixed height and frame: css/46-home-open.css,
   // css/49-ask.css; the box, the button and the starters are the page's own — site.js routes them to ask / stop /
@@ -555,7 +682,7 @@
   }
   function trap(e) {
     if (ui.panel.getAttribute("aria-modal") !== "true") return;
-    var f = Array.prototype.slice.call(ui.panel.querySelectorAll("a[href], button:not([disabled]), textarea, [tabindex]:not([tabindex='-1'])"))
+    var f = Array.prototype.slice.call(ui.panel.querySelectorAll("a[href], button:not([disabled]), textarea, input, [tabindex]:not([tabindex='-1'])"))
       .filter(function (el) { return el.getClientRects().length; });
     if (!f.length) return;
     var first = f[0], last = f[f.length - 1];
@@ -601,9 +728,10 @@
   function open(from, quiet) {
     if (from) opener = from;
     if (dockEl) return quiet ? Promise.resolve() : openDock();   // no restore on a dock page: nothing moves on load
-    return cssReady().then(function () {
+    return Promise.all([cssReady(), probeSoon()]).then(function () {
       view();
       render();
+      if (ready === false) applyOff();
       ui.panel.hidden = false;
       root.classList.add("chat-open");
       state.open = true;
@@ -611,7 +739,8 @@
       setModal(sheetMQ.matches);
       mode(busy ? "stop" : "send");
       grow();
-      if (!quiet || sheetMQ.matches) (sheetMQ.matches ? ui.title : ui.input).focus({ preventScroll: true });
+      var first = ready === false ? ui.offInput || ui.title : ui.input;
+      if (!quiet || sheetMQ.matches) (sheetMQ.matches ? ui.title : first).focus({ preventScroll: true });
       if (!quiet) track("chat_open");
       ui.log.scrollTop = ui.log.scrollHeight;
     });
@@ -622,6 +751,7 @@
     return cssReady().then(function () {
       view();
       render();
+      if (ready === false) applyOff();
       if (state.msgs.length) showDock();
       mode(busy ? "stop" : "send");
       ui.log.scrollTop = ui.log.scrollHeight;
@@ -646,6 +776,11 @@
     root.classList.remove("chat-has");
     render();
     if (ui.dock) ui.box.hidden = true;   // the box as it was (the reader's own press: the shift is theirs)
+    if (ready === false && !ui.dock) {   // resting: nothing to clear any more, the focus to the search (or the title)
+      ui.btnNew.hidden = true;
+      (ui.offInput || ui.title).focus({ preventScroll: true });
+      return;
+    }
     ui.input.focus({ preventScroll: !ui.input2 });   // a panel of its own closes: back to the question field, in view
   }
   function stop() {
@@ -656,7 +791,7 @@
   function render() {
     ui.list.replaceChildren();
     state.msgs.forEach(function (m) { ui.list.append(msgEl(m)); });
-    ui.hello.hidden = state.msgs.length > 0;
+    ui.hello.hidden = state.msgs.length > 0 || (ready === false && !ui.dock);
   }
   function msgEl(m) {
     if (m.r === "u") {
@@ -781,6 +916,11 @@
   function ask(q) {
     q = String(q || "").trim();
     if (!q || busy) return;
+    if (ready === false) {   // not set up: the Korean search with the question, else the resting view
+      if (T.search) win.location.assign(T.search + "?q=" + encodeURIComponent(q));
+      else applyOff();
+      return;
+    }
     if (Array.from(q).length > MAX_Q) {
       flashErr("too_long");
       return;
@@ -808,16 +948,20 @@
     ui.log.scrollTop = ui.log.scrollHeight;
     announce(m);
   }
-  function toSearch(m) {
-    // the Korean card while the assistant is not connected (503 not_configured: no API key yet): it keeps working as
-    // the site search — the failed exchange leaves the conversation and the question goes to /search/
+  function dropFailed(m) {
+    // a question that met 503 not_configured (no API key yet) and its empty answer leave the conversation; returns the
+    // question
     var i = state.msgs.indexOf(m), u = i > 0 && state.msgs[i - 1].r === "u" ? state.msgs[i - 1] : null;
     if (i >= 0) state.msgs.splice(u ? i - 1 : i, u ? 2 : 1);
     save();
     if (!state.msgs.length) root.classList.remove("chat-has");
     mode("send");
     render();
-    win.location.assign(T.search + "?q=" + encodeURIComponent(u ? u.t : ""));
+    return u ? u.t : "";
+  }
+  function toSearch(m) {
+    // the Korean card while the assistant is not set up: it keeps working as the site search
+    win.location.assign(T.search + "?q=" + encodeURIComponent(dropFailed(m)));
   }
   function retry(m) {
     if (busy) return;
@@ -871,11 +1015,19 @@
         ctrl = null;
         m.p = false;
         m.st = "";
-        if (ui && ui.dock && m.e === "not_configured") {
-          // the card: its starters go back to being links (site.js); in Korean the question goes to the search
-          dockEl.setAttribute("data-chat-off", "");
-          if (T.search) {
-            toSearch(m);
+        if (m.e === "not_configured") {   // the key is not (or no longer) there: the resting view from now on
+          ready = false;
+          remember(false);
+          if (ui && ui.dock) {   // the card: its starters go back to being links (site.js), in Korean to the search
+            if (T.search) {
+              dockEl.setAttribute("data-chat-off", "");
+              toSearch(m);
+              return;
+            }
+            applyOff();
+          } else if (ui) {
+            applyOff(dropFailed(m));
+            announce({ e: "not_configured" });
             return;
           }
         }
@@ -969,6 +1121,9 @@
     },
     stop: stop,
     busy: function () { return busy; },
+    ready: function () { return ready; },
     dock: !!dockEl,
   };
+  // asked once, now: the module loads only when the reader turns to the assistant
+  probe().then(function (ok) { if (ok === false) applyOff(); });
 })();

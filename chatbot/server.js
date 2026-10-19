@@ -1,29 +1,36 @@
-// POST /api/chat/ → text/event-stream: the site assistant's request handler (owner decision 2026-10-13, CLAUDE.md
-// 3.10). createHandler(deps) takes everything it uses from outside — {client, knowledge, env, now, log, limiter} — so
-// the tests run it with a fake client that replays scripted stream events; the deployed function (api/chat.js) passes
-// nothing and gets the real Anthropic client (created on first use, so without ANTHROPIC_API_KEY it answers 503 at
-// once), the knowledge bundled from public/chat/ and the site it answers for (public/chat/site.json, chatbot/site.js:
-// its public address, name and the city's names — nothing city-specific is written in this file).
+// /api/chat/ — the site assistant's request handler (owner decision 2026-10-13, CLAUDE.md 3절 11항). createHandler(deps)
+// takes everything it uses from outside — {client, makeClient, knowledge, env, now, log, limiter, site} — so the tests
+// run it with a fake client that replays scripted stream events; the deployed function (api/chat.js) passes nothing
+// and gets the real Anthropic client (made on the first question, with the key from ANTHROPIC_API_KEY only), the
+// knowledge bundled from public/chat/ and the site it answers for (public/chat/site.json, chatbot/site.js: its public
+// address, name and the city's names — nothing city-specific is written in this file).
 //
-// One question = one request: the browser sends the conversation (it keeps it in sessionStorage; nothing is stored
-// here). The model answers from the cached catalog and two tools in a manual streaming loop (the Claude API skill's
-// "Streaming Manual Loop"): at most LIMITS.toolRounds rounds of tool calls, then one answer without tools, all calls
-// of the question sharing one output budget (LIMITS.outputTokens). An answer cut at max_tokens is continued once in the
-// same request while that budget lasts; one still cut ends with done.cut, and the browser can then ask to go on —
-// {continue: true} with the cut answer as the last assistant message — and the stream carries only the rest of the
+// Key-ready: without ANTHROPIC_API_KEY every question is answered 503 {code: 'not_configured'} at once and
+// GET /api/chat/ says the same ({ready: false}); the page (templates/assets/chat.js) asks GET first and shows a calm
+// 'AI 도우미 준비 중' state with the site search instead of a question box. With the key set (Vercel: Settings →
+// Environment Variables, then a redeploy) GET answers 200 {ready: true} and questions are answered — nothing else
+// changes. The key is never logged, never put in a response, and ANTHROPIC_AUTH_TOKEN or a profile on disk is never
+// used in its place (makeClient).
+//
+// POST: one question = one request: the browser sends the conversation (it keeps it in sessionStorage; nothing is
+// stored here). The model answers from the cached catalog and two tools in a manual streaming loop (the Claude API
+// skill's "Streaming Manual Loop"): at most LIMITS.toolRounds rounds of tool calls, then one answer without tools, all
+// calls of the question sharing one output budget (LIMITS.outputTokens). An answer cut at max_tokens is continued once
+// in the same request while that budget lasts; one still cut ends with done.cut, and the browser can then ask to go on
+// — {continue: true} with the cut answer as the last assistant message — and the stream carries only the rest of the
 // answer (cleanRequest, trimOverlap).
 //
 // SSE events: {type:'status', text} while a tool runs · {type:'text', delta} · {type:'done', links, fix, cut?} ·
 // {type:'error', code, message}. Logs: one JSON line per request with status, tool names and token numbers — never
-// the user's text, the answer or the address.
+// the user's text, the answer, the address or the key.
 //
-// What a request has to pass, cheapest first (docs/handover/chatbot.md '보안'): POST · an Origin from the allow-list
-// and no 'Sec-Fetch-Site: cross-site' (this only stops other websites' pages: a script sets any header it likes) ·
-// a key is configured · not already at a rate limit (looked at, nothing counted) · a body of at most 64KB that
-// parses · plain-text user/assistant messages · then the question is counted (per client per minute and per day, the
-// whole instance per minute and per day). Only a question that passed every check counts, so a body the checks
-// refuse uses up no one's share. The bounds across instances are the owner's two settings: a Vercel Firewall
-// rate-limit rule and the Anthropic Console spend limit.
+// What a question has to pass, cheapest first (README '사이트 도우미'): POST · an Origin from the allow-list and no
+// 'Sec-Fetch-Site: cross-site' (this only stops other websites' pages: a script sets any header it likes) · a key is
+// configured · not already at a rate limit (looked at, nothing counted) · a body of at most 64KB that parses ·
+// plain-text user/assistant messages · then the question is counted (per client per minute and per day, the whole
+// instance per minute and per day). Only a question that passed every check counts, so a body the checks refuse
+// uses up no one's share. The bounds across instances are the owner's two settings: a Vercel Firewall rate-limit rule
+// and the Anthropic Console spend limit.
 import { isIP } from "node:net";
 
 import { QUERY_CHARS, defaultKnowledge } from "./knowledge.js";
@@ -63,6 +70,20 @@ export const LIMITS = {
   callMs: 45000,         // one API call (4,000 output tokens take about 27 s at the measured ~150 tokens/s)
   jsonRetries: 2,
 };
+
+/** The key: ANTHROPIC_API_KEY only (Vercel Settings → Environment Variables; a local test: the environment), trimmed
+ *  — a value pasted with a trailing newline still works; '' when it is unset or blank. Never logged, never put in a
+ *  response: the SDK sends it to the Anthropic API and nowhere else. */
+export function apiKey(env = {}) {
+  return String(env?.ANTHROPIC_API_KEY ?? "").trim();
+}
+
+/** The real client for one key. authToken null: with apiKey set the SDK reads no ANTHROPIC_AUTH_TOKEN and no profile
+ *  on disk, so the key in ANTHROPIC_API_KEY is the only credential this function ever uses. */
+export async function makeClient(key) {
+  const { default: Anthropic } = await import("@anthropic-ai/sdk");
+  return new Anthropic({ apiKey: key, authToken: null, maxRetries: 1, timeout: LIMITS.callMs });
+}
 
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream; charset=utf-8",
@@ -358,7 +379,7 @@ export function cleanRequest(body, site = {}) {
 /** A continuation as the reader should see it after the cut answer: when it begins by writing again the end of the cut
  *  answer (its unfinished last line, or the last words), that repeat is dropped; a word cut in two is joined. When the
  *  cut fell right after a sentence and the rest starts a new one, they are kept apart: a list item, table row or heading
- *  on its own line, a sentence after a space (measured: '…노선이 없습니다.' + '- 테디베어박물관은 …'). */
+ *  on its own line, a sentence after a space (measured: '…노선이 없습니다.' + '- ○○박물관은 …'). */
 export function trimOverlap(prev, next) {
   const tail = String(prev).slice(-400);
   let rest = next;
@@ -372,7 +393,7 @@ export function trimOverlap(prev, next) {
     if (frag && next.startsWith(frag[1]) && next.length > frag[1].length) rest = next.slice(frag[1].length);
   }
   if (rest && /[.!?。]$/u.test(tail) && !/^\s/u.test(rest)) {
-    // not a sentence end: a cut inside an address ('(https://www.example.go.' + 'kr/…', '…view/305285?' + 's_idx=2)')
+    // not a sentence end: a cut inside an address ('(https://www.example.go.' + 'kr/…', '…view/12345?' + 's_idx=2)')
     // or a decimal number ('약 12.' + '5km')
     if (/(?:https?:\/\/|\]\()[^\s)]*$/u.test(tail)) return rest;
     if (/^(?:[-*•]\s|\d+\.\s|#{1,6}\s|\|)/u.test(rest)) return `\n${rest}`;
@@ -604,28 +625,57 @@ export function createHandler(deps = {}) {
   const limiter = deps.limiter ?? createLimiter();
   const knowledge = deps.knowledge ?? defaultKnowledge;
   const site = deps.site ?? loadSite();   // the public address, the site's and the city's names (chatbot/site.js)
+  const newClient = deps.makeClient ?? makeClient;
   let client = deps.client ?? null;
+  // a key is set (read on every request: nothing about the key is kept but the client made with it)
+  const configured = () => !!(deps.client || apiKey(env));
 
   async function getClient() {
-    if (!client) {
-      const { default: Anthropic } = await import("@anthropic-ai/sdk");
-      client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 1, timeout: LIMITS.callMs });
-    }
+    if (!client) client = await newClient(apiKey(env));
     return client;
+  }
+
+  /** GET /api/chat/: is the assistant ready? 200 {ready: true}, or 503 {ready: false, code} — 'not_configured' (no
+   *  key) or 'unavailable' (the knowledge files did not load). The page asks this once before it shows a question box
+   *  (chat.js). No model call, nothing counted; a same-origin GET carries no Origin, so only another website's page
+   *  (Sec-Fetch-Site: cross-site, or an Origin off the allow-list) is refused. HEAD: the same status, no body. */
+  async function status(request, done) {
+    const origin = request.headers.get("origin");
+    if ((request.headers.get("sec-fetch-site") || "").toLowerCase() === "cross-site"
+        || (origin && !originAllowed(request, env, site))) {
+      done("forbidden_origin");
+      return json(403, { code: "forbidden_origin" });
+    }
+    let res;
+    if (!configured()) {
+      done("not_configured", { probe: true });
+      res = json(503, { ready: false, code: "not_configured", message: errorText("en", "not_configured") });
+    } else {
+      try {
+        await knowledge();
+        done("ready", { probe: true });
+        res = json(200, { ready: true });
+      } catch (err) {
+        done("unavailable", { probe: true, reason: err?.code || err?.name || "load" });
+        res = json(503, { ready: false, code: "unavailable", message: errorText("en", "busy") });
+      }
+    }
+    return request.method === "HEAD" ? new Response(null, { status: res.status, headers: res.headers }) : res;
   }
 
   return async function handle(request) {
     const t0 = Date.now();
     const done = (status, extra = {}) => log({ evt: "chat", status, ms: Date.now() - t0, ...extra });
+    if (request.method === "GET" || request.method === "HEAD") return status(request, done);
     if (request.method !== "POST") {
       done("method");
-      return json(405, { code: "method_not_allowed" }, { Allow: "POST" });
+      return json(405, { code: "method_not_allowed" }, { Allow: "GET, HEAD, POST" });
     }
     if (!originAllowed(request, env, site)) {
       done("forbidden_origin");
       return json(403, { code: "forbidden_origin" });
     }
-    if (!deps.client && !env.ANTHROPIC_API_KEY) {
+    if (!configured()) {
       done("not_configured");
       return json(503, { code: "not_configured", message: errorText("en", "not_configured") });
     }
@@ -689,7 +739,10 @@ export function createHandler(deps = {}) {
           else if (status === 429 || status === 529 || status >= 500 || !status) code = "busy";
           else if (status === 401 || status === 403) code = "unavailable";
           if (code !== "client_gone") send({ type: "error", code, message: errorText(req.lang, code === "unavailable" ? "busy" : code) });
-          done(code, { api_status: status || undefined, lang: req.lang });
+          // 401/403: the Anthropic API refused the key (a wrong or revoked ANTHROPIC_API_KEY) — the log says which, the
+          // reader only that no answer can be made now
+          done(code, { api_status: status || undefined, lang: req.lang,
+            hint: status === 401 || status === 403 ? "check ANTHROPIC_API_KEY" : undefined });
         } finally {
           clearTimeout(timer);
           request.signal?.removeEventListener("abort", stop);

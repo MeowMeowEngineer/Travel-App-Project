@@ -20,8 +20,9 @@ function through functions.includeFiles).
                  Latin / Cyrillic / digit words; api/chat.js tokenizes queries the same way).
 
 Facts come only from the records and helpers the pages use (CLAUDE.md 3.1, 3.2). Never included: TourAPI overview text
-(3.4), the city tourism site's original text, photos. Single videos are not catalog lines (642 lines would take a third of the token
-budget): the catalog lists the video topic pages, docs/index hold every video.
+(3.4), the city tourism site's original text, photos. Single videos are not catalog lines (hundreds of them would take a large share of the
+token budget): the catalog lists the video topic pages, docs/index hold every video. Nothing here names a city: the
+site's name, address and region come from site.json (pipeline/city.py), every fact from the records.
 """
 from __future__ import annotations
 
@@ -234,7 +235,7 @@ TICKET_LABEL = re.compile(r"\[([^\]\n]{2,40})\]")   # a ticket's name in a fee t
 COMBINED_TICKET = "통합권"   # a ticket for several places — the fee table often names them only by kind ('미술관+건축관')
 NAME_MIN = 3                 # names shorter than this (without spaces) are not looked for in sentences ('연도')
 TOPIC = re.compile(r"^(.{1,40}?)[은는]\s")   # what a sentence is about: '박물관 통합권은 …' → '박물관 통합권'
-# the list a sentence about a ticket gives, right after its topic: '… 역사박물관·○○미술관·…·위봉함 네 곳을 묶은 표로'
+# the list a sentence about a ticket gives, right after its topic: '… ○○박물관·○○미술관·…·○○함 네 곳을 묶은 표로'
 TICKET_ITEMS = re.compile(r"^(.+?)(?:\s*(?:두|세|네|다섯|여섯|일곱|여덟|아홉|열|\d+)\s*곳)?[을를]\s*(?:묶은|함께|더한)")
 ITEM_SPLIT = re.compile(r"\s*[·,、]\s*")
 
@@ -550,17 +551,17 @@ class Knowledge:
         """The combined tickets (통합권) in the place's fee table, with what the guides say about them:
         [{label, said: [(guide path, sentence)], places: [{written, e, by}]}].
 
-        The fee table often names a ticket's places only by kind ('[통합권]인근 전시장(박물관+미술관+건축관+위봉함)'),
+        The fee table often names a ticket's places only by kind ('[통합권]인근 전시장(박물관+미술관+건축관+○○함)'),
         so a reader of one page cannot tell that '미술관' is ○○미술관 = 구 ○○은행 지점 (the external
         evaluation's assistant then 'corrected' a right answer). The guides' sentences about the ticket ('박물관 통합권은
         …' — the ticket is what the sentence is about) that name this place say which places it covers: `said` = the two
         that name the most places. `places` = the ticket's places, one per place, in the order those sentences list them
-        ('… 역사박물관·○○미술관·○○건축관·위봉함 네 곳을 묶은 표로'), each with the name the guides write
+        ('… ○○박물관·○○미술관·○○건축관·○○함 네 곳을 묶은 표로'), each with the name the guides write
         (`written`: the first of its names that names a place page — '○○공원 함정' rather than '함정'), the
         place (`e`, None when no place page has that name) and how the name points to it (`by`: 'name', or 'other' — one
         of its other names). Another sentence about the ticket adds its names only when every item of its list is
-        already one of the ticket's places under a shorter or longer name ('근대미술관', '위봉함'), never a new place
-        ('금강권 통합권은 박물관 통합권 네 곳에 …을 더한'); a sentence about something else that mentions the ticket is
+        already one of the ticket's places under a shorter or longer name ('근대미술관', '○○함'), never a new place
+        ('○○권 통합권은 박물관 통합권 네 곳에 …을 더한'); a sentence about something else that mentions the ticket is
         never used: the places it names need not be the ticket's."""
         if e["id"] in self._tickets:
             return self._tickets[e["id"]]
@@ -903,7 +904,7 @@ class Knowledge:
             ("/videos/", f"영상 {len(S.videos)}편, 주제별 (공식 채널 표시, 누를 때만 YouTube 불러옴)", ""),
             ("/abroad/", f"해외에서 본 {region}: 외신·해외 매체 기사 {len(S.abroad)}건과 외국어 영상 {len(S.abroad_videos)}편", ""),
             ("/about/", f"소개·출처: 운영 {op.get('name', '')}, 공식 사이트 아님(독립 운영), 원문 출처 {site.get('source', {}).get('name', '')}"
-                        f"·한국관광공사 TourAPI, 정정 요청 {contact}, 사이트 안내 챗봇 설명 /about/#chatbot", ""),
+                        f"·한국관광공사 TourAPI, {f'정정 요청 {contact}, ' if contact else ''}사이트 안내 챗봇 설명 /about/#chatbot", ""),
         ]
         out = []
         for path, line, extra in pages:

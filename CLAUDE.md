@@ -62,7 +62,8 @@
 10. **제3자 콘텐츠 금지**: 네이버 플레이스·블로그·리뷰·평점은 복제하지 않는다. 회원가입·예약·결제는 넣지 않는다. 특정 업체를 근거 없이 추천하지 않는다.
 11. **사이트 도우미(챗봇)**
     - 모델: Claude Haiku 5.5 `claude-haiku-5-5`(`chatbot/prompt.js` `MODEL`).
-    - 키: `ANTHROPIC_API_KEY` 환경 변수에만 둔다(Vercel Settings → Environment Variables). 키가 없으면 `/api/chat/`은 503 `not_configured`로 답하고, 사이트의 질문 상자는 사이트 검색으로 동작한다.
+    - 키: `ANTHROPIC_API_KEY` 환경 변수에만 둔다(Vercel Settings → Environment Variables, 넣은 뒤 재배포). 함수는 그 변수만 읽는다(`chatbot/server.js` `apiKey`·`makeClient`).
+    - 키가 없으면 `GET /api/chat/`과 질문(POST) 모두 503 `not_configured`로 답하고, 화면(`templates/assets/chat.js`)은 질문 칸 대신 'AI 도우미 준비 중'과 사이트 검색을 보인다. 키를 넣으면 다른 변경 없이 답한다(`GET`이 200 `{"ready":true}`). 로컬 시험: `npm run chat:dev`(README '사이트 도우미').
     - 이 사이트 데이터로만 답한다(1·2항 그대로 — 없는 값은 '사이트에 없음'과 공식 확인처, 출처가 다르면 둘 다). 답마다 해당 페이지 링크를 단다.
     - 질문한 언어로 답한다. 대화는 저장하지 않는다. 회원가입·예약·결제는 넣지 않는다.
     - 지식은 빌드가 만든다(`pipeline/chat_index.py` → `public/chat/`). 함수는 그 파일만 읽는다.
@@ -117,6 +118,7 @@ python -m pip install -r requirements.txt
 npm ci                                   # 챗봇 함수의 SDK(@anthropic-ai/sdk, 고정 버전)
 python -m pytest                         # 파이썬 시험(Node가 있으면 챗봇 시험도 함께)
 npm test                                 # 챗봇 서버 시험만(node --test)
+npm run chat:dev -- --dir dist-preview   # 챗봇 로컬 시험(빌드 폴더 + /api/chat/, 키는 환경 변수 ANTHROPIC_API_KEY)
 python tools/collect.py --data data/incheon                           # 키 확인 → 진단(지역 코드) → 수집 → 다음 명령. 멈추면(종료 3) 같은 명령 다시
 python tools/tourapi_doctor.py --data data/incheon                   # 연결·지역 코드 진단만
 python tools/tourapi_bulk.py --data data/incheon --details --add-new --events --max-calls 900   # 수집만(collect.py가 부르는 것)

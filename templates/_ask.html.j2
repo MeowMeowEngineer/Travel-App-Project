@@ -40,7 +40,11 @@
     panel: the conversation, right under the card — empty and hidden until the reader asks, with its height fixed in
     the first-paint CSS (css/46-home-open.css); chat.js (dock mode) draws its head ('대화' · '새 대화'), the messages,
     its own follow-up box (data-ask-more: the placeholder) and the line that the answers are written by AI from this
-    site's data and can be wrong (data-note) into it. -#}
+    site's data and can be wrong (data-note) into it.
+
+    data-ask-line: the line(s) on how the card answers. While the site has no ANTHROPIC_API_KEY (GET /api/chat/ said
+    not_configured) chat.js puts its resting words there ('AI 도우미 준비 중 — …'), the box's placeholder and button say
+    search, and the form goes to /search/ (site.js: data-chat-off); a card with nothing to search rests read-only. -#}
 {% import "_ui.html.j2" as ui %}
 {% import "_mascot.html.j2" as mm %}
 {% import "_pic.html.j2" as pk %}
@@ -49,7 +53,7 @@
   <div class="hk-head">
     {{ mm.pic('mascot-hello', 'small', 64, 'hk-mascot') }}
     <h2 id="h-ask" class="hk-h"><span class="hk-hn">{{ (region ~ ' ') if region }}여행 도우미에게</span> 물어보세요</h2>
-    <p class="hk-sub">AI가 이 사이트에 실린 정보로 답하고, 답마다 출처 페이지를 붙입니다.</p>
+    <p class="hk-sub" data-ask-line>AI가 이 사이트에 실린 정보로 답하고, 답마다 출처 페이지를 붙입니다.</p>
     <p class="hk-note">대화는 저장하지 않습니다 · <a href="/about/#chatbot">도우미 안내</a></p>
   </div>
   <form class="hk-box" action="/search/" method="get" data-ask-form="search">
@@ -132,7 +136,7 @@
         <input id="ask-q" name="q" type="text" maxlength="800" autocomplete="off" enterkeyhint="send" spellcheck="false" placeholder="{{ s.ph }}" data-ask-q>
         <button type="submit" class="ask-go" data-ask-go><span class="ask-go-l">{{ s.go }}</span><span class="ask-go-l ask-go-s">{{ s.stop }}</span></button>
       </div>
-      <p class="ask-meta"><span class="only-wide">{{ s.m }}</span><span class="only-narrow">{{ s.ms }}</span>{% if search and search_alt %}<button type="submit" class="ask-alt" formaction="/search/" data-ask-search>{{ ui.icon('search', 'icon') }}{{ s.alt }}</button>{% endif %}</p>
+      <p class="ask-meta"><span class="only-wide" data-ask-line>{{ s.m }}</span><span class="only-narrow" data-ask-line>{{ s.ms }}</span>{% if search and search_alt %}<button type="submit" class="ask-alt" formaction="/search/" data-ask-search>{{ ui.icon('search', 'icon') }}{{ s.alt }}</button>{% endif %}</p>
     </form>
     {% if starters %}<div class="ask-sug"><p class="ask-sug-l" id="ask-sug-l">{{ s.sug }}</p><ul class="ask-chips" aria-labelledby="ask-sug-l">{% for x in starters %}<li><a class="ask-chip" href="{{ x.href }}" data-ask="{{ x.q }}">{{ x.q }}</a></li>{% endfor %}</ul></div>{% endif %}
     <div class="ask-log" data-ask-log hidden data-fail="{{ s.fail }}"></div>

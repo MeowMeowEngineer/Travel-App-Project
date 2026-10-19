@@ -175,9 +175,14 @@ test("not configured: no key and no client answers 503 at once", async () => {
   assert.equal(logs[0].status, "not_configured");
 });
 
-test("method and origin: GET 405, a foreign or missing origin 403, public address / this deployment / localhost pass", async () => {
+test("method and origin: GET is the status, PUT 405, a foreign or missing origin 403, public address / this deployment / localhost pass", async () => {
   const { handle } = setup([textRound("a"), textRound("b"), textRound("c")]);
-  assert.equal((await handle(post(null, { method: "GET" }))).status, 405);
+  const status = await handle(post(null, { method: "GET", origin: null }));
+  assert.equal(status.status, 200);
+  assert.deepEqual(await status.json(), { ready: true });
+  const put = await handle(post(null, { method: "PUT" }));
+  assert.equal(put.status, 405);
+  assert.equal(put.headers.get("allow"), "GET, HEAD, POST");
   assert.equal((await handle(post(ask(), { origin: "https://evil.example" }))).status, 403);
   assert.equal((await handle(post(ask(), { origin: null }))).status, 403);
   // a preview passes by its own address from Vercel's system variables — not because the request names that host

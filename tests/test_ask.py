@@ -138,7 +138,7 @@ def test_the_korean_card_is_the_assistant_only_and_searches_without_js():
     assert 'for="ask-q"' in html and 'id="ask-q" name="q"' in html and "data-ask-q" in html
     assert 'placeholder="궁금한 것을 적어 주세요"' in html and '<svg class="hk-ico"' in html and 'aria-hidden="true"' in html
     assert '<h2 id="h-ask" class="hk-h"><span class="hk-hn">군산 여행 도우미에게</span> 물어보세요</h2>' in html
-    assert '<p class="hk-sub">AI가 이 사이트에 실린 정보로 답하고, 답마다 출처 페이지를 붙입니다.</p>' in html
+    assert '<p class="hk-sub" data-ask-line>AI가 이 사이트에 실린 정보로 답하고, 답마다 출처 페이지를 붙입니다.</p>' in html
     assert '<p class="hk-nojs">' in html and "사이트 검색" in html.split('<p class="hk-nojs">', 1)[1].split("</p>")[0]
     assert '<a class="hk-pill" href="/guides/a/" data-ask="선유도 가는 법">선유도 가는 법</a>' in html
     assert '<a class="hk-pill" href="/events/" data-ask="이번 달 행사·축제">' in html
