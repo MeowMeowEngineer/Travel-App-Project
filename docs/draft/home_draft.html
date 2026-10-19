@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>인천 여행의 모든 것</title>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>인천각</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +39,7 @@ h1,h2,h3{line-height:1.25;text-wrap:balance;margin:0}
 .hd{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--card);border-bottom:1px solid var(--line)}
 .hd .wrap{display:flex;align-items:center;gap:20px;min-height:64px}
 .logo{display:flex;align-items:baseline;gap:6px;text-decoration:none;font-weight:900;font-size:19px;letter-spacing:-.02em;white-space:nowrap}
-.logo small{font-size:11px;font-weight:700;color:var(--coral);border:1px solid currentColor;border-radius:var(--r-s);padding:0 6px}
+.logo{align-items:center;gap:8px}.logo .wm{display:flex;flex-direction:column;line-height:1}.logo .wm b{font-size:21px;font-weight:900;letter-spacing:-.03em}.logo .wm i{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.02em;margin-top:2px}.logo em{font-style:normal;color:var(--sea)}
 .nav{display:flex;gap:4px;flex:1;min-width:0}
 .nav a{text-decoration:none;font-size:14.5px;font-weight:500;padding:10px 10px;border-radius:10px;color:var(--ink);white-space:nowrap}
 .nav a:hover{background:var(--sea-soft)}
@@ -53,7 +53,7 @@ h1,h2,h3{line-height:1.25;text-wrap:balance;margin:0}
 .mnav .wrap{display:flex;gap:6px;padding-block:8px}
 .mnav a{flex:none;text-decoration:none;font-size:14px;font-weight:500;padding:8px 12px;border-radius:var(--r-s);background:var(--paper)}
 @media (max-width:980px){.mnav{display:block}}
-@media (max-width:560px){.hd .wrap{gap:10px}.srch{width:auto;flex:1;min-width:0;max-width:220px;padding-left:12px}.logo{font-size:16px}.logo small{display:none}}
+@media (max-width:560px){.hd .wrap{gap:10px}.srch{width:auto;flex:1;min-width:0;max-width:220px;padding-left:12px}.logo{font-size:16px}.logo .wm b{font-size:19px}}
 
 /* hero */
 .hero{position:relative;color:#fff;background:#14324f}
@@ -97,13 +97,13 @@ h1,h2,h3{line-height:1.25;text-wrap:balance;margin:0}
 .note.on{color:var(--coral);font-weight:500}
 @media (max-width:860px){.ask{grid-template-columns:1fr;gap:16px}.dock .card{padding:20px 18px}}
 
-.svc{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;border-top:1px solid var(--line);margin-top:22px;padding-top:18px}
+.svc{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;border-top:1px solid var(--line);margin-top:22px;padding-top:18px}
 .svc a{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;padding:10px 4px;border-radius:14px;text-align:center}
 .svc a:hover{background:var(--sea-soft)}
 .svc .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--sea-soft);color:var(--sea)}
 .svc strong{font-size:14px;font-weight:700}
 .svc span{font-size:12.5px;color:var(--muted)}
-@media (max-width:860px){.svc{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:1100px){.svc{grid-template-columns:repeat(5,minmax(0,1fr))}}@media (max-width:620px){.svc{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .cnote{margin:10px 0 0;font-size:12px;color:var(--muted);text-align:right}
 
 /* sections */
@@ -161,13 +161,13 @@ section.blk{padding-block:56px 8px}
 .ft strong{color:var(--ink);font-size:15px}
 </style>
 
-<div class="draft"><div class="wrap"><b>초안 미리보기</b><span>TourAPI(한국관광공사)에서 2026-10-19에 받은 실제 데이터 일부로 채운 홈 화면입니다. 장소별 운영시간·요금·주차는 수집 후 채워집니다.</span></div></div>
+<div class="draft"><div class="wrap"><b>인천각 초안 미리보기</b><span>TourAPI(한국관광공사)에서 2026-10-19에 받은 실제 데이터 일부로 채운 홈 화면입니다. 장소별 운영시간·요금·주차는 수집 후 채워집니다.</span></div></div>
 
 <header class="hd">
   <div class="wrap">
-    <a class="logo" href="#top">인천 여행의 모든 것 <small>가칭</small></a>
+    <a class="logo" href="#top" aria-label="인천각 Incheongak"><svg class="sym" width="26" height="34" viewBox="0 0 100 130" aria-hidden="true"><path fill="var(--sea)" d="M8 0h84a8 8 0 0 1 8 8v122L50 104 0 130V8a8 8 0 0 1 8-8Z"/><path fill="#fff" d="M50 18 62 70H38Z M30 72h40v6H30Z" opacity=".95"/><circle cx="70" cy="28" r="7" fill="var(--coral)"/></svg><span class="wm"><b>인천<em>각</em></b><i>Incheon<em>gak</em></i></span></a>
     <nav class="nav" aria-label="주 메뉴">
-      <a href="#places">관광지</a><a href="#places">숙소</a><a href="#places">음식점</a><a href="#events">행사</a><a href="#regions">권역·지도</a><a href="#places">코스</a><a href="#places">가이드</a>
+      <a href="#places">관광지</a><a href="#places">숙소</a><a href="#places">음식점</a><a href="#places">카페·디저트</a><a href="#events">행사</a><a href="#regions">권역·지도</a><a href="#places">코스</a><a href="#places">가이드</a>
     </nav>
     <form class="srch" role="search" id="srch">
       <label for="q" class="sr" style="position:absolute;left:-9999px">사이트 검색</label>
@@ -176,7 +176,7 @@ section.blk{padding-block:56px 8px}
     </form>
   </div>
   <div class="mnav"><div class="wrap">
-    <a href="#places">관광지</a><a href="#places">숙소</a><a href="#places">음식점</a><a href="#events">행사</a><a href="#regions">권역·지도</a><a href="#places">코스</a><a href="#places">가이드</a>
+    <a href="#places">관광지</a><a href="#places">숙소</a><a href="#places">음식점</a><a href="#places">카페·디저트</a><a href="#events">행사</a><a href="#regions">권역·지도</a><a href="#places">코스</a><a href="#places">가이드</a>
   </div></div>
 </header>
 
@@ -186,8 +186,8 @@ section.blk{padding-block:56px 8px}
     <div class="wrap">
       <div>
         <span class="eyebrow"><i></i>지금 인천 · 10월</span>
-        <h1>인천 여행의 모든 것</h1>
-        <p class="lead">관광지·음식점·숙소의 여는 시간과 요금, 가는 길을 한곳에 모읍니다. 11개 구·군, 바다와 섬, 개항장 골목까지 권역별로 찾아보세요.</p>
+        <h1>오늘, 인천 가는 각</h1>
+        <p class="lead">인천각은 관광지·음식점·카페·숙소의 여는 시간과 요금, 가는 길을 한곳에 모읍니다. 11개 구·군, 바다와 섬, 개항장 골목까지 권역별로 찾아보세요.</p>
         <div class="cta">
           <a class="btn pri" href="#regions">권역별로 보기 →</a>
           <a class="btn ghost" href="#events">이번 주 행사</a>
@@ -219,7 +219,8 @@ section.blk{padding-block:56px 8px}
     </div>
     <nav class="svc" aria-label="바로가기">
       <a href="#places"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span><strong>관광지</strong><span class="tn">456곳</span></a>
-      <a href="#places"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a3 3 0 0 0 6 0V3M9 3v18M17 21V3c-2 1.5-3 4-3 7h3"/></svg></span><strong>음식점</strong><span class="tn">577곳</span></a>
+      <a href="#places"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a3 3 0 0 0 6 0V3M9 3v18M17 21V3c-2 1.5-3 4-3 7h3"/></svg></span><strong>음식점</strong><span class="tn">464곳</span></a>
+      <a href="#places"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6Z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3"/></svg></span><strong>카페·디저트</strong><span class="tn">113곳</span></a>
       <a href="#places"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V7l9-4 9 4v13M3 20h18M9 20v-6h6v6"/></svg></span><strong>숙소</strong><span class="tn">78곳</span></a>
       <a href="#places"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-5h6v5"/></svg></span><strong>문화시설</strong><span class="tn">107곳</span></a>
       <a href="#places"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3.5"/><circle cx="18" cy="17" r="3.5"/><path d="M6 17l4-8h5l3 8M10 9 8.5 6H6"/></svg></span><strong>레포츠</strong><span class="tn">143곳</span></a>
@@ -228,7 +229,7 @@ section.blk{padding-block:56px 8px}
       <a href="#regions"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15M15 6v15"/></svg></span><strong>권역·지도</strong><span class="tn">11개 구·군</span></a>
       <a href="#places"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/></svg></span><strong>코스</strong><span>준비 중</span></a>
     </nav>
-    <p class="cnote">개수: TourAPI에 등록된 인천광역시 항목 수(2026-10-19 조회). 사이트에 공개되는 수는 검수 뒤 정해집니다.</p>
+    <p class="cnote">개수: TourAPI에 등록된 인천광역시 항목 수(2026-10-19 조회). 카페·디저트는 TourAPI 분류 '카페/찻집'·'제과'로 음식점에서 나눴습니다. 사이트에 공개되는 수는 검수 뒤 정해집니다.</p>
   </div></div></div>
 
   <section class="blk" id="events" aria-labelledby="ev-h"><div class="wrap">
@@ -275,9 +276,9 @@ section.blk{padding-block:56px 8px}
 </main>
 
 <footer class="ft"><div class="wrap">
-  <strong>인천 여행의 모든 것 (가칭)</strong>
+  <strong>인천각 <span style="font-weight:500;color:var(--muted)">Incheongak</span></strong>
   <span>장소·행사 정보와 사진: 한국관광공사 TourAPI(KorService2), 2026-10-19 조회 · 사진은 공공누리 제1유형</span>
-  <span>이 화면은 홈페이지 초안입니다. 사이트 이름·도메인·운영 표기는 정해지는 대로 바꿉니다.</span>
+  <span>이 화면은 홈페이지 초안입니다. 로고는 시안을 고른 뒤 바꾸고, 도메인·운영 표기는 정해지는 대로 넣습니다.</span>
 </div></footer>
 
 <script>
