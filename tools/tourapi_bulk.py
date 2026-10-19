@@ -15,8 +15,11 @@
 4. Fills tourapi.contentid, geo (TourAPI), images (cpyrhtDivCd Type1/Type3 only, https, credit 한국관광공사),
    with --gallery also detailImage2 photos named after the place, then straight-line nearby places
    (attraction/stay/food, within 2 km) computed from those coordinates.
-5. --events (searchFestival2) runs before --details/--add-new, so the time-sensitive festival list is refreshed
-   first when the per-run call cap is reached.
+5. --events (searchFestival2, all pages) asks for the festivals from today (--events-from YYYYMMDD for an earlier
+   day) and runs before --details/--add-new, so the time-sensitive festival list is refreshed first when the
+   per-run call cap is reached. A 광역시 asks once for the whole 시도.
+6. The report ends with the live calls the collection still needs (responses not in the cache yet): details of
+   the matched places, TourAPI-only places still to add and festival details — `remaining_calls` (cache-first runs).
 Fields named in an entity's "locks" are not touched. Values are copied as given; nothing is guessed.
 checked_at is the date the TourAPI response was fetched (a cached response keeps its own date), so a
 cache-first re-run does not bump 확인일 or sitemap lastmod (aeo_geo_spec P0-4). --refresh ignores the cache
@@ -78,10 +81,73 @@ def fetch_region(api, regn: str, signgu: str, rows: int = 200, name: str = "") -
         while True:
             got = retry(api.area_based, regn, signgu, ctype, rows=rows, page=page)
             items += [{**it, "_signgu_name": name} if name else it for it in got]
-            if len(got) < rows:
+            total = getattr(api, "last_total", None)
+            if len(got) < rows or (total is not None and page * rows >= total):
                 break
             page += 1
     return items
+
+
+def fetch_festivals(api, start: str, regn: str, signgu: str | None, rows: int = 100) -> list[dict]:
+    """searchFestival2 from `start` (YYYYMMDD), every page."""
+    items: list[dict] = []
+    page = 1
+    while True:
+        got = retry(api.search_festival, start, regn, signgu, rows=rows, page=page)
+        items += got
+        total = getattr(api, "last_total", None)
+        if len(got) < rows or (total is not None and page * rows >= total):
+            return items
+        page += 1
+
+
+def pending_detail_calls(api, cid: str, ctype: str) -> int:
+    """Live calls _details(cid, ctype) would still make (its responses not in the cache); 0 for a client that keeps
+    no cache."""
+    cached = getattr(api, "cached", None)
+    if cached is None:
+        return 0
+    n = 0 if cached("detailCommon", contentId=cid, **(getattr(api, "detail_common_params", None) or {})) else 1
+    if ctype:
+        n += not cached("detailIntro", contentId=cid, contentTypeId=ctype)
+    if ctype in ("12", "28"):
+        n += not cached("detailInfo", contentId=cid, contentTypeId=ctype)
+    return n
+
+
+def remaining_calls(api, places: list[dict], items: list[dict], fest: list[dict] | None, skip: set, same: dict,
+                    gallery: bool) -> dict:
+    """Live calls a cache-first collection still needs: details of every place with a TourAPI contentid, the
+    TourAPI-only list items not added yet (each as if added — a held duplicate candidate makes this an upper
+    bound), festival details (`fest` None: the festival list itself is not fetched yet) and, with --gallery,
+    detailImage2 per matched place."""
+    from tools.tourapi_details import NEW_PLACE_TYPES
+    cached = getattr(api, "cached", None)
+    out = {"details": 0, "new_places": 0, "events": 0, "gallery": 0}
+    have = set()
+    for p in places:
+        t = p.get("tourapi") or {}
+        if p.get("duplicate_of") or not t.get("contentid"):
+            continue
+        have.add(str(t["contentid"]))
+        out["details"] += pending_detail_calls(api, str(t["contentid"]), str(t.get("contenttypeid") or ""))
+        if gallery and cached is not None and not cached("detailImage", contentId=str(t["contentid"]), imageYN="Y",
+                                                         numOfRows=20, pageNo=1):
+            out["gallery"] += 1
+    for it in items:
+        cid = str(it.get("contentid"))
+        if str(it.get("contenttypeid")) in NEW_PLACE_TYPES and cid not in have and cid not in skip and cid not in same:
+            out["new_places"] += pending_detail_calls(api, cid, str(it.get("contenttypeid")))
+            have.add(cid)
+    if fest is None:
+        out["events"] = None
+    elif cached is not None:
+        out["events"] = sum((not cached("detailIntro", contentId=str(f["contentid"]), contentTypeId="15"))
+                            + (not cached("detailCommon", contentId=str(f["contentid"]),
+                                          **(getattr(api, "detail_common_params", None) or {})))
+                            for f in fest)
+    out["total"] = sum(v for v in out.values() if v)
+    return out
 
 
 class RegionError(RuntimeError):
@@ -262,7 +328,8 @@ def _details(api, cid: str, ctype: str) -> tuple[dict, dict, list]:
 
 
 def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, details: bool = False,
-        add_new: bool = False, events: bool = False, refresh: bool = False, districts: list[str] | None = None) -> dict:
+        add_new: bool = False, events: bool = False, refresh: bool = False, districts: list[str] | None = None,
+        events_from: str | None = None, echo: bool = True) -> dict:
     import datetime as dt
 
     from pipeline import city
@@ -297,7 +364,14 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
             by_road.setdefault(rk, []).append(it)
     allowed = (site.get("publish_rules") or {}).get("allowed_image_licenses")
     today = dt.date.today().isoformat()
-    stats = {"list_items": len(items), "districts": [n for _, n in signgus], "region_notes": region_notes,
+    sizes: dict[str, dict[str, int]] = {}
+    for it in items:   # list sizes per 구·군 and content type: the numbers the call budget is made of
+        where = sizes.setdefault(it.get("_signgu_name") or region, {})
+        ctype = str(it.get("contenttypeid") or "")
+        where[ctype] = where.get(ctype, 0) + 1
+    stats = {"list_items": len(items), "districts": [n for _, n in signgus], "region_codes": {
+                 "lDongRegnCd": regn, "signgu": [{"code": c, "name": n} for c, n in signgus]},
+             "list_sizes": sizes, "region_notes": region_notes,
              "live_calls": 0, "targets": 0, "matched": {}, "geo": 0,
              "images": {"KOGL-1": 0, "KOGL-3": 0}, "image_other_type": 0, "unmatched": []}
     forced = {slug: by_cid[cid] for cid, slugs in same.items() if cid in by_cid for slug in slugs}
@@ -323,14 +397,18 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
         stats["gallery_added"] = sum(add_gallery(api, p, allowed) for p in places
                                      if not p.get("duplicate_of") and (p.get("tourapi") or {}).get("match_basis"))
     detail_log: list[str] = []
+    fest: list[dict] | None = None
     try:
         if events:
             ev_path = data_dir / "events.json"
             existing = json.loads(ev_path.read_text("utf-8")) if ev_path.exists() else []
             e = stats["events"] = {"festival_items": 0, "added": [], "updated": [], "errors": []}
             mark = len(getattr(api, "fetched_dates", []))
-            # a 광역시: one call for the whole 시도 (each item's address names its 구·군); a 시: its 시군구
-            fest = retry(api.search_festival, f"{today[:4]}0101", regn, None if sido else signgus[0][0])
+            # a 광역시: one list for the whole 시도 (each item's address names its 구·군); a 시: its 시군구.
+            # From today: the home shows the festivals still to come (--events-from for an earlier day).
+            start_day = events_from or today.replace("-", "")
+            e["from"] = start_day
+            fest = fetch_festivals(api, start_day, regn, None if sido else signgus[0][0])
             list_date = fetched_on(api, mark, today)
             e["festival_items"] = len(fest)
             have_cid = {str(x.get("contentid")): x for x in existing if x.get("contentid")}
@@ -437,11 +515,17 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
                 place = new_place(it, common, intro, info, fetched_on(api, start, today), allowed, taken)
                 places.append(place)
                 n["added"].append(f"{place['kind']}:{place['name']}")
+                if place["images"]:
+                    lic = place["images"][0]["license"]
+                    stats["images"][lic] = stats["images"].get(lic, 0) + 1
+                elif common.get("firstimage") or it.get("firstimage"):   # Type2·4 or no type: not taken
+                    stats["image_other_type"] += 1
     except TourAPIStopError as err:
         stats["stopped"] = str(err)
     stats["nearby_pages"] = compute_nearby(places, today)
     stats["live_calls"] = api.live_calls
     stats["cache_hits"] = api.cache_hits
+    stats["remaining_calls"] = remaining_calls(api, places, items, fest if events else [], skip, same, gallery)
     places_path.write_text(json.dumps(places, ensure_ascii=False, indent=2) + "\n", "utf-8")
     report = Path("reports")
     report.mkdir(exist_ok=True)
@@ -451,7 +535,8 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
              f"- 대상 {stats['targets']} · 매칭 {stats['matched']} · 좌표 {stats['geo']}",
              f"- 허용 사진 Type1 {stats['images']['KOGL-1']} · Type3 {stats['images']['KOGL-3']}"
              f" · 사진은 있으나 허용 외 유형 {stats['image_other_type']}",
-             f"- 직선거리 주변이 생긴 장소 {stats['nearby_pages']}"]
+             f"- 직선거리 주변이 생긴 장소 {stats['nearby_pages']}",
+             f"- 남은 호출(캐시에 없는 응답, 캐시 우선 기준): {stats['remaining_calls']}"]
     if stats.get("stopped"):
         lines.append(f"- 중단: {stats['stopped']}")
     if details:
@@ -470,7 +555,8 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
                          + ", ".join(f"{c['name']}[{c['slug']}] {c['address']}" for c in h["candidates"]))
     if events:
         e = stats["events"]
-        lines += ["", "## 행사(searchFestival2)", "", f"- 응답 {e['festival_items']} · 추가 {len(e['added'])} · 갱신 {len(e['updated'])}"]
+        lines += ["", "## 행사(searchFestival2)", "", f"- {e.get('from', '')}부터 · 응답 {e['festival_items']} · "
+                  f"추가 {len(e['added'])} · 갱신 {len(e['updated'])}"]
         lines += [f"- 추가: {x}" for x in e["added"]] + [f"- 갱신: {x}" for x in e["updated"]]
     lines += ["", "## 미매칭"] + [f"- {x}" for x in stats["unmatched"]]
     (report / "tourapi_bulk.md").write_text("\n".join(lines) + "\n", "utf-8")
@@ -483,7 +569,8 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
         out["new_places"] = {k: (len(v) if isinstance(v, list) else v) for k, v in stats["new_places"].items()}
     if events:
         out["events"] = {k: (len(v) if isinstance(v, list) else v) for k, v in stats["events"].items()}
-    print(json.dumps(out, ensure_ascii=False))
+    if echo:
+        print(json.dumps(out, ensure_ascii=False))
     return stats
 
 
@@ -503,13 +590,17 @@ def main(argv=None) -> int:
     ap.add_argument("--details", action="store_true",
                     help="매칭된 장소마다 detailCommon2·detailIntro2(관광지·레포츠는 detailInfo2도) — 필드별 출처로 병합")
     ap.add_argument("--add-new", action="store_true",
-                    help="TourAPI에만 있는 장소(유형 12·14·28·32·39)를 draft/basic으로 추가(중복 의심은 보류)")
-    ap.add_argument("--events", action="store_true", help="searchFestival2(올해 1월 1일부터)로 행사 갱신")
+                    help="TourAPI에만 있는 장소(유형 12·14·28·32·38·39)를 draft/basic으로 추가(중복 의심은 보류)")
+    ap.add_argument("--events", action="store_true", help="searchFestival2(오늘부터, 모든 쪽)로 행사 갱신")
+    ap.add_argument("--events-from", default="", help="행사를 이 날짜(YYYYMMDD)부터 받는다(기본: 오늘)")
     ap.add_argument("--districts", default="", help="광역시에서 이 구·군만(쉼표로, 예: 연수구,강화군) — 호출 한도 안에서 나눠 받을 때")
     a = ap.parse_args(argv)
     only = [x.strip() for x in a.districts.split(",") if x.strip()] or None
+    if a.events_from and not re.fullmatch(r"\d{8}", a.events_from):
+        ap.error("--events-from은 YYYYMMDD")
     try:
-        run(a.data, a.max_calls, a.offline, a.gallery, a.details, a.add_new, a.events, a.refresh, only)
+        run(a.data, a.max_calls, a.offline, a.gallery, a.details, a.add_new, a.events, a.refresh, only,
+            a.events_from or None)
     except RegionError as err:
         print(f"중단: {err}", file=sys.stderr)
         return 1

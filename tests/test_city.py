@@ -127,5 +127,5 @@ def test_incheon_before_collection_preview_is_empty_state_and_production_stops(t
     assert errors == [], errors[:5]
     assert _foreign_hits(out) == []
     assert "여행지 안내를 준비하고 있습니다" in (out / "index.html").read_text("utf-8")
-    with pytest.raises(NoPlacesError, match="tools/tourapi_bulk.py --data"):
+    with pytest.raises(NoPlacesError, match="tools/collect.py --data"):
         build(data, tmp_path / "prod", "production")

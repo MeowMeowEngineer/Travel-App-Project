@@ -19,7 +19,8 @@
 ## 2. 지금 상태 (2026-10-19)
 - 엔진·템플릿·테스트·범용 도구를 군산 저장소에서 복사했고(이력 없이), 도시와 무관하게 고쳤다. **도시마다 다른 값은 `data/<도시>/site.json`(지역 키와 `city` 블록) 한 곳에 있고 `pipeline/city.py`가 읽는다** — 주소 앞부분, 공식 관광 사이트, 여행 권역과 그 기준, 거리 기준 장소, 지정 목록, 홈 이야기·사진 고르기·답 문구, 검색 예시, 챗봇 이름·추천 질문, 다른 언어판 이름. 엔진 코드(`pipeline/`·`templates/`·`tools/`·`chatbot/`)에 도시 이름을 쓰지 않는다(`tests/test_city.py`가 인천 설정 빌드에 다른 도시 이름이 없는지 본다).
 - `data/incheon/`: `site.json`·`icons.json`·`ask.json`. 장소 데이터는 아직 없다 — TourAPI 키가 오면 수집한다. 수집 전에는 미리보기 빌드가 빈 상태 사이트를 만들고(안내 출력), 공개 빌드는 '수집 전' 안내와 함께 멈춘다.
-- 광역시 처리: `tools/tourapi_bulk.py`가 `site.json` `tourapi.scope` 'sido'면 TourAPI 법정동 코드 목록의 구·군을 모두 돈다(`--districts`로 일부만). 새 장소는 그 구·군을 `district`로 단다.
+- 광역시 처리: `tools/tourapi_bulk.py`가 `site.json` `tourapi.scope` 'sido'면 TourAPI 법정동 코드 목록의 구·군을 모두 돈다(`--districts`로 일부만). 새 장소는 그 구·군을 `district`로 단다. 시도·구·군 코드는 저장하지 않고 실행 때 TourAPI(ldongCode2)에서 받는다(`tools/tourapi_doctor.py`가 보여 준다).
+- 키를 받으면: `python tools/collect.py --data data/incheon` 한 명령(키 확인 → 진단 → 목록·좌표·사진 → 행사(오늘부터) → 상세 → TourAPI에만 있는 장소 → 요약·남은 호출·다음 명령). 호출 예산 식은 `README.md` 'TourAPI 호출 예산'.
 - 군산 실데이터(`data/gunsan`)·군산 그림·군산 문서에 기대던 테스트와 군산 측정 질문 도구는 옮기지 않았다: `tests/excluded_gunsan_tests.txt`. 인천 데이터가 생기면 같은 성질의 시험을 인천 데이터로 다시 쓴다. 엔진 시험의 고정 데이터는 `data/sample/`(군산 모양의 가짜 샘플)과 `tests/fixtures/incheon_tiny/`(인천 설정용 가짜 장소 5곳)다.
 - 마스코트는 없다(군산 마스코트는 '군산 사이트 전용'). 엔진은 마스코트 없이 동작한다(`pipeline/icons.py` `mascot()`).
 
@@ -116,8 +117,9 @@ python -m pip install -r requirements.txt
 npm ci                                   # 챗봇 함수의 SDK(@anthropic-ai/sdk, 고정 버전)
 python -m pytest                         # 파이썬 시험(Node가 있으면 챗봇 시험도 함께)
 npm test                                 # 챗봇 서버 시험만(node --test)
-python tools/tourapi_doctor.py --data data/incheon                   # TourAPI 연결 진단 — 가장 먼저
-python tools/tourapi_bulk.py --data data/incheon --details --add-new --events --max-calls 900   # 수집(구·군 전부, 이어받기)
+python tools/collect.py --data data/incheon                           # 키 확인 → 진단(지역 코드) → 수집 → 다음 명령. 멈추면(종료 3) 같은 명령 다시
+python tools/tourapi_doctor.py --data data/incheon                   # 연결·지역 코드 진단만
+python tools/tourapi_bulk.py --data data/incheon --details --add-new --events --max-calls 900   # 수집만(collect.py가 부르는 것)
 python -m pipeline.build --data data/incheon --out dist-preview --mode preview
 python -m pipeline.validate --data data/incheon --out dist-preview --mode preview
 python tools/build_public.py --data data/incheon --out public          # 공개 빌드 + 검증(production)

@@ -10,8 +10,9 @@
    1단계를 캐시 전용(--offline)으로 돌린다(--offline이면 건너뜀).
 1. `python tools/tourapi_bulk.py --data <data> --details --add-new --events --max-calls 400 [--refresh | --offline]`
    — --fresh일 때만 --refresh(캐시 무시). 확인일은 응답을 받은 날짜라 캐시로 다시 돌려도 바뀌지 않는다.
-   캐시 우선은 캐시에 없는 응답만 받는다: 행사 목록(searchFestival2)은 연도별로 캐시되므로 새 행사·바뀐 일정과
-   바뀐 운영 정보를 받으려면 --fresh(행사 먼저, 그다음 대표·질문 장소 순으로 상한까지).
+   캐시 우선은 캐시에 없는 응답만 받는다: 행사 목록(searchFestival2, 오늘부터)은 날짜가 바뀌면 새로 받지만, 이미 받은
+   행사의 바뀐 일정과 장소의 바뀐 운영 정보를 받으려면 --fresh(행사 먼저, 그다음 대표·질문 장소 순으로 상한까지).
+   처음 수집은 tools/collect.py(키 확인 → 진단 → 수집 → 다음 명령)로 한다.
    실패해도 멈추지 않고 지금 데이터(마지막으로 받은 캐시 결과)로 2~3단계를 계속한다.
 2. `python tools/build_public.py --data <data> --out public` — 공개(production) 빌드·검증·IndexNow 키 파일
    (새로 들어온 장소는 draft라 공개 승인 전까지 나가지 않는다 — tools/approve_publication.py).

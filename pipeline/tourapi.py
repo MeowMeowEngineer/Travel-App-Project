@@ -6,6 +6,8 @@ Notes
 - Every successful response is cached under data/cache/tourapi/, so re-runs cost nothing.
 - `fetched_dates` records, per answered call, the date its data was fetched: today for a live call, the cache
   file's date for a cached one. Merges use it as checked_at, so a cache-first re-run never bumps a 확인일.
+- `last_total` is the provider's totalCount of the last answered call (list sizes for the call budget);
+  `cached(op, **params)` says whether a call would be answered from the cache (no live call needed).
 - Each client stops itself after `max_calls` live requests (default 900, inside the development
   account's daily limit). The next run continues from the cache.
 - Provider error messages (resultMsg, returnAuthMsg, errMsg) are shown as-is with only the key masked.
@@ -108,6 +110,15 @@ def _xml_error(body: str) -> tuple[str, str] | None:
     return (code, message) if code or message else None
 
 
+def total_count(payload: dict) -> int | None:
+    """The provider's body.totalCount (all pages of a list), None when the payload does not carry it."""
+    body = ((payload or {}).get("response") or {}).get("body") if isinstance(payload, dict) else None
+    try:
+        return int(body.get("totalCount")) if isinstance(body, dict) else None
+    except (TypeError, ValueError):
+        return None
+
+
 def parse_items(payload: dict, op: str = "") -> list[dict]:
     """Return the item list from a TourAPI JSON payload (handles dict/list/empty)."""
     label = op or "TourAPI"
@@ -159,6 +170,7 @@ class TourAPI:
         self.live_calls = 0
         self.cache_hits = 0
         self.fetched_dates: list[str] = []  # ISO date each answered call's data was fetched (see module notes)
+        self.last_total: int | None = None  # totalCount of the last answered call
 
     def _cache_path(self, op: str, params: dict) -> Path:
         key = json.dumps([self.base_url, op, sorted(params.items())], ensure_ascii=False)
@@ -182,13 +194,21 @@ class TourAPI:
             return type(err)(redact(prefix + str(err), self.service_key))
         return TourAPIError(redact(f"{label}: {prefix}JSON이 아닌 응답: {(body or '')[:300]}", self.service_key))
 
+    def cached(self, op: str, **params) -> bool:
+        """True when the response of call(op, **params) is in the cache (a cache-first run answers it without a
+        live call)."""
+        params = {k: v for k, v in params.items() if v not in (None, "")}
+        return self._cache_path(op, params).exists()
+
     def call(self, op: str, **params) -> list[dict]:
         label = f"{op}{self.op_suffix}"
         params = {k: v for k, v in params.items() if v not in (None, "")}
         path = self._cache_path(op, params)
         if path.exists() and not self.refresh:
             self.cache_hits += 1
-            items = parse_items(json.loads(path.read_text("utf-8")), label)
+            payload = json.loads(path.read_text("utf-8"))
+            items = parse_items(payload, label)
+            self.last_total = total_count(payload)
             self.fetched_dates.append(dt.date.fromtimestamp(path.stat().st_mtime).isoformat())
             return items
         if self.offline:
@@ -231,6 +251,7 @@ class TourAPI:
             raise type(err)(redact(str(err), self.service_key)) from None
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, ensure_ascii=False), "utf-8")
+        self.last_total = total_count(payload)
         self.fetched_dates.append(dt.date.today().isoformat())
         return items
 

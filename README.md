@@ -13,15 +13,23 @@
 |---|---|---|
 | 0 | 준비(Python 3.11 이상, Node 22 이상 — Vercel은 24) | `python -m pip install -r requirements.txt` · `npm ci` |
 | 1 | TourAPI 키 넣기 | `cp .env.example .env` 후 `TOURAPI_KEY=` 뒤에 키, 또는 `export TOURAPI_KEY=…` |
-| 2 | 연결 진단 | `python tools/tourapi_doctor.py --data data/incheon` |
-| 3 | 수집(한 번) | `python tools/tourapi_bulk.py --data data/incheon --details --add-new --events --max-calls 900` |
+| 2–3 | 진단 + 수집(한 명령) | `python tools/collect.py --data data/incheon` — 상한에 걸려 멈추면(종료 코드 3) 같은 명령을 다시 |
 | 4 | 미리보기 빌드·검증 | `python -m pipeline.build --data data/incheon --out dist-preview --mode preview` → `python -m pipeline.validate --data data/incheon --out dist-preview --mode preview` |
 | 5 | 공개 빌드·검증 | `python tools/build_public.py --data data/incheon --out public` |
 | 6 | Vercel 배포 + 챗봇 키 | Vercel 환경 변수 `ANTHROPIC_API_KEY` → `public/`을 커밋해 `main`에 push |
 
 1. **TourAPI 키**: 공공데이터포털의 '한국관광공사_국문 관광정보 서비스_GW' 일반 인증키(Encoding·Decoding 어느 쪽이든 된다). `.env`는 커밋되지 않습니다(`.gitignore`). 키 값을 문서·코드·커밋 메시지에 쓰지 않습니다.
-2. **연결 진단**: 키·네트워크·서비스 버전 문제를 한 번에 가립니다. 공급자 오류 메시지는 그대로 보이고 키 문자열만 가려집니다.
-3. **수집**: 인천광역시 아래 구·군을 TourAPI 법정동 코드 목록(ldongCode2)대로 모두 돌며(`site.json` `tourapi.scope` 'sido') 지역 목록 → 매칭·좌표·사진(공공누리 제1·3유형만) → 상세(detailCommon2·detailIntro2: 전화·이용시간·쉬는 날·요금·주차·체크인, 필드별 출처·확인일) → TourAPI에만 있는 장소(draft, 그 구·군을 `district`로) → 행사(시도 전체 한 번). `places.json`이 없어도 시작합니다. 실행당 호출 상한이 있고 응답은 `data/cache/`에 쌓이므로, 상한에 걸리면 같은 명령을 다시 실행하면 이어서 받습니다. 구·군 일부만: `--districts 연수구,강화군`. `site.json`에 없는 구·군 이름이 TourAPI에 있으면 `reports/tourapi_bulk.md`에 적힙니다.
+2. **진단**(`tools/collect.py`의 1단계, 따로: `python tools/tourapi_doctor.py --data data/incheon`): 키·네트워크·서비스 버전 문제를 한 번에 가리고, `site.json` `region_full`('인천광역시')의 법정동 시도 코드와 그 아래 구·군 코드를 TourAPI(ldongCode2)에서 받아 보여 줍니다(옛 지역코드 areaCode2는 참고). 코드는 저장하지 않고 수집할 때마다 같은 목록을 받아 씁니다(응답은 캐시). `site.json` `districts`와 이름이 다르면 '확인' 줄이 나옵니다. 키가 없으면 곧바로 멈추고 어디에 넣는지 알려 주며, 공급자 오류 메시지는 그대로 보이고 키 문자열만 가려집니다.
+3. **수집**(`tools/collect.py`의 2단계 = `tools/tourapi_bulk.py --details --add-new --events`): 인천광역시 아래 구·군을 TourAPI 법정동 코드 목록대로 모두 돌며(`site.json` `tourapi.scope` 'sido') 지역 목록(관광지·문화시설·레포츠·쇼핑·숙박·음식점, 모든 쪽) → 매칭·좌표·사진(공공누리 제1·3유형만, '출처: 한국관광공사') → 행사(searchFestival2, **오늘부터**, 시도 전체) → 상세(detailCommon2·detailIntro2, 관광지·레포츠는 detailInfo2도: 전화·이용시간·쉬는 날·요금·주차·체크인, 필드별 출처·확인일) → TourAPI에만 있는 장소(draft, 그 구·군을 `district`로). overview는 사실 확인용으로만 남기고 화면에 내지 않습니다. `places.json`이 없어도 시작합니다. 쓰는 파일: `data/incheon/places.json`·`events.json`, `data/cache/tourapi/`(커밋 안 함), `reports/collect.md`·`tourapi_bulk.md`. 끝에 장소·구·군·좌표·사진·방문 판단 정보 채움·행사·**남은 호출 수**와 다음 명령을 출력합니다. 구·군 일부만: `--districts 연수구,강화군`. 진행 중인 행사(오늘 전에 시작)도 받으려면 `--events-from YYYYMMDD`. 키 없이 캐시로만 다시 만들기: `--offline`.
+
+### TourAPI 호출 예산
+실행당 상한 `--max-calls`(기본 900, 진단 포함)은 공공데이터포털 개발계정 일일 한도 안의 값입니다. 상한에 걸리면 받은 데까지 쓰고 종료 코드 3으로 멈추며, 같은 명령을 다시 실행하면 캐시에 있는 응답은 호출 없이 쓰고 나머지를 이어 받습니다. 첫 실행 뒤 출력되는 '목록 크기'와 '남은 호출'이 실제 수치입니다. 그 전에는 아래 식으로 어림합니다(D = TourAPI가 주는 구·군 수, N = 6개 유형 목록 항목 수, N₁ = 그중 관광지·레포츠, F = 오늘 이후 행사 수, n_dt = 구·군 d·유형 t의 항목 수).
+
+- 진단: 검색 1(실패하면 최대 4) + 지역 코드 4
+- 목록: 2 + Σ_d Σ_t max(1, ⌈n_dt / 200⌉) — 최소 6·D
+- 행사: ⌈F / 100⌉ + 2F
+- 장소 상세: 2N + N₁ (detailCommon2·detailIntro2, 관광지·레포츠는 detailInfo2 하나 더) — `--gallery`면 장소당 +1
+- 합계 T ≈ 5 + 2 + 6D + ⌈F/100⌉ + 2F + 2N + N₁, 실행 횟수 ≈ ⌈T / 900⌉(하루 한 번)
 4. **미리보기**: `python -m http.server -d dist-preview 8000` 으로 열어 봅니다. 미리보기는 draft까지 보이고 전부 noindex입니다. 수집 전(장소 0곳)에도 미리보기는 빈 상태 사이트로 만들어지고(안내 문구 출력), 공개 빌드는 '수집 전' 안내와 함께 멈춥니다.
 5. **공개 빌드**: 공개(published) 레코드만, 색인 기준 미달 페이지는 noindex·sitemap 제외. 검증 오류가 있으면 종료 코드 1이고 배포하지 않습니다. 도메인(`site_url`)이 자리표시(`https://incheon.example.com`)인 동안은 production 검증이 막습니다 — 운영자가 도메인을 정해야 공개할 수 있습니다. 새 레코드는 draft로 들어오며, 공개는 운영자 승인(`python tools/approve_publication.py --data data/incheon --date <날짜> --apply`) 또는 검수 시트 반영(`tools/apply_review.py`)으로만 됩니다.
 6. **Vercel**: 저장소를 Vercel 프로젝트에 연결합니다(Framework Preset: Other — 설정은 `vercel.json`: 빌드 명령 없음, 출력 `public/`, 설치 `npm ci --omit=dev`). Settings → Environment Variables에 `ANTHROPIC_API_KEY`(Production·Preview)를 넣습니다. 키가 없으면 챗봇은 "챗봇이 아직 연결되지 않았습니다"(503 `not_configured`)로 답하고, 질문 상자는 사이트 검색으로 동작하며 나머지 사이트는 그대로입니다.

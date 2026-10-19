@@ -1163,8 +1163,8 @@ def event_answer(ev: dict, with_place: bool = True) -> str:
 # home says the guide is being prepared and links the official tourism site) and prints this; a production build stops
 # with it — a public site without places is not a site to publish.
 EMPTY_HINT = ("TourAPI 수집 전: {places}에 장소가 없습니다. TOURAPI_KEY를 .env나 환경 변수에 넣고 "
-              "python tools/tourapi_doctor.py --data {data} 로 연결을 확인한 뒤 "
-              "python tools/tourapi_bulk.py --data {data} --add-new --details --events --max-calls 900 를 먼저 실행하세요.")
+              "python tools/collect.py --data {data} 를 먼저 실행하세요(연결·지역 코드 진단 → 목록·사진 → 행사 → 상세, "
+              "호출 상한에 걸리면 같은 명령을 다시 실행하면 이어 받습니다).")
 
 
 class NoPlacesError(RuntimeError):

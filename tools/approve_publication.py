@@ -40,6 +40,9 @@ def main(argv=None) -> int:
     for name, pick in (("places", lambda r: r["id"] in selected), ("guides", lambda r: True),
                        ("courses", lambda r: True), ("events", lambda r: True)):
         path = a.data / f"{name}.json"
+        if not path.exists():   # a region right after its first collection has no guides or courses yet
+            counts[name] = {"published_now": 0, "held": 0, "published_total": 0, "file": "없음"}
+            continue
         rows = json.loads(path.read_text("utf-8"))
         n = held = 0
         for r in rows:
