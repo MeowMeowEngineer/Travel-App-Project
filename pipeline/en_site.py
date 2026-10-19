@@ -2576,7 +2576,7 @@ class Pages:
                 "robots": "noindex, follow"}
         words = {"kinds": {"attraction": t.s("cat_attraction"), "food": t.s("cat_food"), "stay": t.s("cat_stay"),
                            "course": t.s("courses"), "guide": t.s("guides"), "event": t.s("events")},
-                 **{k: w[k] for k in ("none", "menu", "other", "via", "des", "of", "sug", "diet", "related", "syn")}}
+                 **{k: w[k] for k in ("none", "menu", "other", "via", "des", "of", "sug", "diet", "related", "syn", "more")}}
         # the query words (Korean: this version's rows carry the Korean names) and the city in both versions; no
         # planner here (/plan/ is Korean only)
         city = " ".join(dict.fromkeys(x for x in (self.S.site.get("region"), site.region) if x))

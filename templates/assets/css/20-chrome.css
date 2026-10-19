@@ -100,7 +100,9 @@ html.is-scrolled .mast::before { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
 .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; font-size: 13px; color: var(--ink-3); }
 .crumbs a { color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; min-height: 32px; }
 .crumbs a:hover { color: var(--ink); text-decoration: underline; }
-.crumbs span[aria-hidden] { color: var(--ink-3); }
+/* the mark between them is drawn, not a '›' character: that one character is in a 36 KB Pretendard file of its own
+   (the general punctuation chunk) that every page with breadcrumbs fetched for it (QA 2026-10-19 QA-71) */
+.crumbs .crumb-sep { flex: none; width: 6px; height: 6px; margin: 0 3px 0 1px; border: solid var(--ink-3); border-width: 1.5px 1.5px 0 0; transform: rotate(45deg); }
 .crumbs [aria-current] { color: var(--ink); }
 @media (max-width: 1023px) { .crumbs a { min-height: 44px; } }
 

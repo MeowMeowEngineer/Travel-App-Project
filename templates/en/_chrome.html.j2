@@ -43,7 +43,7 @@
 {%- endmacro %}
 
 {% macro crumbs(items, t) -%}
-{% if items %}<nav class="crumbs" aria-label="{{ t.you_are_here }}">{% for name, url in items %}{% if not loop.last %}<a href="{{ url }}">{{ name }}</a><span aria-hidden="true">›</span>{% else %}<span aria-current="page">{{ name }}</span>{% endif %}{% endfor %}</nav>{% endif %}
+{% if items %}<nav class="crumbs" aria-label="{{ t.you_are_here }}">{% for name, url in items %}{% if not loop.last %}<a href="{{ url }}">{{ name }}</a><span class="crumb-sep" aria-hidden="true"></span>{% else %}<span aria-current="page">{{ name }}</span>{% endif %}{% endfor %}</nav>{% endif %}
 {%- endmacro %}
 
 {% macro footer(nav, site, langs, wordmark, tourapi_used, t, loc, sym='') -%}

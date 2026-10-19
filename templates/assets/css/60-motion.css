@@ -35,6 +35,18 @@ html.cv-off .cv, html.cv-off .pg-home .sec, html.cv-off .pg-home .gallery, html.
    scrolled to (QA 2026-10-19 QA-28: 508–822 KB of fonts on /places/, /food/, /map/; the budget is 300 KB). The
    section's estimated height is set inline (rows × a row's height). */
 .cvk { content-visibility: auto; contain-intrinsic-size: auto 1200px; }
+/* …and inside a group, row by row after its first few: Chromium draws a skipped box once it is within about one and a
+   half screens, so a whole group near the top (the directory's first 234 names, a list's second group) set every
+   name and fetched a font file for each rare syllable (QA 2026-10-19 QA-06: /search/ 404 KB, QA-71: /cafes/ 301 KB;
+   the budget is 300 KB). A row's estimated height until it is drawn: a list card 96px on a wide screen, 180px below
+   1024px (two lines of cells), a directory name 58px, a search result 80px (search.js prints up to 80 at a time: '맛집'
+   fetched 388 KB). Its paint is clipped 8px out (overflow-clip-margin), so a focus ring and a card's hover band still
+   show whole. */
+.recs > .rec:nth-child(n+4), .dir-list > li:nth-child(n+9), .res-g li:nth-child(n+9) { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+.dir-list > li:nth-child(n+9) { contain-intrinsic-size: auto 58px; }
+.res-g li:nth-child(n+9) { contain-intrinsic-size: auto 80px; }
+@media (max-width: 1023px) { .recs > .rec:nth-child(n+4) { contain-intrinsic-size: auto 180px; } }
+.cvk, .recs > .rec, .dir-list > li, .res-g li { overflow-clip-margin: 8px; }
 
 /* ---------------------------------------------------------------- reduced motion: final state, nothing moves */
 @media (prefers-reduced-motion: reduce) {
