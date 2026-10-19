@@ -7,6 +7,17 @@
    Ranking: name (exact, prefix, inside) > other names (a, o, v) > menu > designation > 동·권역·type. Spaces and
    ·-()[]|, are ignored when matching. A row says why it matched when it was not the name ("메뉴: 짜장면", "다른 이름: …",
    "경유: …", "지정: 모범음식점(○○시 지정)").
+   A word of two syllables the site sorts places by — a word of the rows' types ('박물관·전시' → 전시) or a kind's name
+   (숙소) — is found in a name (n, a, o, v) where a word starts, and inside a longer word unless the syllable before it
+   and its own first make a word of the index (a name's word, a 동·면·리 name without its last syllable: '작전시장' is
+   작전 + 시장, no 전시) or it is a kind's name that the search also reads as a concept, in a row of another kind
+   ('여선교사합숙소' is a sight; the stays have 숙소 by their type and the 숙소 words) (QA 2026-10-19 QA-24). Inside a
+   word it still finds '대불호텔전시관', '디지털전시체험관', '○○ 관광코스', and every other word as before ('낚시' →
+   '○○바다낚시터', '해장' → '○○해장국') — measured 2026-10-19 over a whole index of 1,952 rows and 6,715 queries
+   (every two syllables of its names, types, menus and 동, every concept word): only 작전시장 (전시) and
+   여선교사합숙소 (숙소 and its concept's other words) left a result.
+   At most LIMIT rows show; a button under them ([data-more]) shows LIMIT more each time and takes the focus to the
+   first of them (QA 2026-10-19 QA-70: '맛집' found 465 and showed 80 with no way to the rest).
    Query words (evaluation 2026-10-18: '비 오는 날 아이랑' found nothing although the site has a rainy-day guide and a
    guide for travelling with children; review round 3, 2026-10-18: the rows found are never fewer than this matching
    alone finds). The rows found are the rows the query finds whole (as above), then the rows that have every part of
@@ -47,11 +58,13 @@
                                 asks the chat that question), button[data-show-all] (shows the directory, focus #h-dir)
    Result markup (style hooks): p.f-result (count line), p.res-syn (the words also searched), p.res-plan (the
    planner's link), section.res-g > h2 (+ .tn count) > ol > li > a > span.res-nm (with <mark>), span.res-meta,
-   span.res-why, span.res-st; p.res-none when nothing matches, p.res-sug (a[data-sug] links), p.res-diet,
-   section.res-g.res-rel (the related guides, rows as above).
+   span.res-why, span.res-st (li[data-new]: the rows the last '더 보기' added), p.res-more > button[data-more];
+   p.res-none when nothing matches, p.res-sug (a[data-sug] links), p.res-diet, section.res-g.res-rel (the related
+   guides, rows as above).
    Without JS the form reloads this page and the directory answers.
    The other language versions (<home>search/, owner 2026-10-14): form[data-words] carries that version's words —
-   {kinds, none ('{q}'), menu, other, via, des, of ('{n}', '{m}'), sug, diet, related, syn} — and the index its rows;
+   {kinds, none ('{q}'), menu, other, via, des, of ('{n}', '{m}'), sug, diet, related, syn, more ('{n}')} — and the
+   index its rows;
    Korean is the default. form[data-concepts], [data-region], [data-planner]: present.search_form_data. */
 (function () {
   "use strict";
@@ -73,7 +86,7 @@
   var STRIP = /[\s·\-()（）\[\]|,]/g, LIMIT = 80, DOT = /\s*·\s*/;
   // query words (present.SEARCH_CONCEPTS): SAY [a word said (normalised), its concept]; SHOWN a normalised word as
   // the table writes it; the city's names; the planner's path (the Korean page only)
-  var CONCEPTS = [], SAY = [], SHOWN = {};
+  var CONCEPTS = [], SAY = [], SHOWN = {}, SAID = {};
   try { CONCEPTS = JSON.parse(form.getAttribute("data-concepts") || "[]"); } catch (e) { CONCEPTS = []; }
   var CITY = String(form.getAttribute("data-region") || "").split(/\s+/).map(norm).filter(Boolean);
   var PLANNER = form.getAttribute("data-planner") || "", RELATED = 5;
@@ -120,6 +133,56 @@
   // of them, so the note stays true); the Latin ones only at a word start ('navegan' is no 'vegan')
   var DIET = /\b(?:halal|kosher|koscher|casher|vegetari|végétari|vegan|végan|gluten|allerg|alerg|muslim|musulm)|할랄|코셔|채식|비건|글루텐|알레르기|알러지|무슬림|ハラール|ハラル|ベジタリアン|ヴィーガン|ビーガン|グルテン|アレルギー|ムスリム|菜食|清真|素食|纯素|純素|麸质|麩質|过敏|過敏|穆斯林|حلال|халял|веган|вегетари|глютен|аллерг|мусульм/i;
   var index = null, loading = null;
+  // the words of two syllables the site sorts places by (made from the index when it loads; QA-24, see the top):
+  // GENERIC those of the types and of the kinds' names, LABEL a kind's name → the kind (heeded for a name the search
+  // also reads as a concept, SAID: 숙소 — not '코스', which keeps '○○ 관광코스'), KNOWN the index's words of two
+  // syllables (a word of a name on its own, a 동·면·리 name without its last syllable)
+  var GENERIC = {}, LABEL = {}, KNOWN = {}, TWO = /^[가-힣]{2}$/, HANGUL = /[가-힣]/, SKIP = /[\s·\-()（）\[\]|,]/,
+    CUT = /[\s·\-()（）\[\]|,\/、，:：—–]/;
+  Object.keys(KIND).forEach(function (k) { var w = norm(KIND[k]); if (TWO.test(w)) { GENERIC[w] = 1; LABEL[w] = k; } });
+  function learn(row) {
+    String(row.t || "").split(DOT).forEach(function (w) { w = norm(w); if (TWO.test(w)) GENERIC[w] = 1; });
+    [row.n, row.a, row.o].forEach(function (s) {
+      String(s || "").split(/[^가-힣]+/).forEach(function (w) { if (TWO.test(w)) KNOWN[w] = 1; });
+    });
+    var d = /^([가-힣]{2})\d*[동면리읍가](?:\d|$)/.exec(row.d || "");
+    if (d) KNOWN[d[1]] = 1;
+  }
+  // where words start in norm(s): after a space or a mark that parts words (/, :, —), and where Hangul meets another
+  // script ('MLB키즈', '8퍼센트커피')
+  function starts(s) {
+    var at = [], n = 0, prev = "";
+    s = String(s || "").toLowerCase();
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i];
+      if (SKIP.test(c)) { prev = " "; continue; }   // what norm() drops
+      if (!prev || CUT.test(prev) || HANGUL.test(c) !== HANGUL.test(prev)) at.push(n);
+      prev = c;
+      n++;
+    }
+    return at;
+  }
+  // where q is in a row's name field f (n, a, o, v; normalised as row._<f>), -1 if not: a GENERIC word where a word
+  // starts, or inside a word unless the syllable before it and its own first are a KNOWN word ('작전시장': 작전) or
+  // it is a kind's name read as a concept in a row of another kind ('여선교사합숙소' in a sight); any other word
+  // anywhere
+  function at(row, f, q) {
+    var s = row["_" + f], i = s.indexOf(q), b;
+    if (i < 0 || !GENERIC[q]) return i;
+    b = row["_" + f + "b"] || (row["_" + f + "b"] = starts(row[f]));
+    for (; i > -1; i = s.indexOf(q, i + 1)) {
+      if (b.indexOf(i) > -1) return i;
+      if (!KNOWN[s.slice(i - 1, i + 1)] && !(LABEL[q] && SAID[q] && LABEL[q] !== row.k)) return i;
+    }
+    return -1;
+  }
+  // a row has the word w: in a name field as at() finds it, or anywhere in its menu, designations, 동·권역·type
+  function contains(row, w) {
+    if (row._w.indexOf(w) < 0) return false;
+    if (!GENERIC[w]) return true;
+    return at(row, "n", w) > -1 || at(row, "a", w) > -1 || at(row, "o", w) > -1 || at(row, "v", w) > -1 ||
+      row._m.indexOf(w) > -1 || row._g.indexOf(w) > -1 || row._d.indexOf(w) > -1;
+  }
 
   function norm(s) { return String(s || "").toLowerCase().replace(STRIP, ""); }
   // the directory shown or not; shown, it is no longer kept out by html.has-q (search.html.j2: a query in the address)
@@ -130,7 +193,7 @@
   }
   CONCEPTS.forEach(function (c, i) {
     c.f = (c.find || []).map(function (w) { var k = norm(w); SHOWN[k] = w; return k; });
-    (c.say || []).forEach(function (w) { var k = norm(w); if (k) { SAY.push([k, i]); if (!SHOWN[k]) SHOWN[k] = w; } });
+    (c.say || []).forEach(function (w) { var k = norm(w); if (k) { SAY.push([k, i]); SAID[k] = 1; if (!SHOWN[k]) SHOWN[k] = w; } });
   });
   // the words parse() reads as a concept: [a word, its concept | -1 the city's name], the longest first
   var PIECES = SAY.concat(CITY.map(function (w) { return [w, -1]; }))
@@ -148,6 +211,7 @@
             row._d = [row.d, row.r, row.t].map(norm).join("\u0001");
             row._w = [row._n, row._a, row._o, row._v, row._m, row._g, row._d].join("\n");   // every word it is found by
             row._l = [row.n, row.a, row.o, row.v, row.m, row.g, row.d, row.r, row.t].join("\n").toLowerCase();   // with its spaces
+            learn(row);
             return row;
           });
           return index;
@@ -183,14 +247,15 @@
   }
   function score(row, q) {
     if (row._n === q) return [0, ""];
-    if (row._n.indexOf(q) === 0) return [1, ""];
-    if (row._n.indexOf(q) > -1) return [2, ""];
-    if (row._a.indexOf(q) > -1) {
+    var i = at(row, "n", q);
+    if (i === 0) return [1, ""];
+    if (i > 0) return [2, ""];
+    if (at(row, "a", q) > -1) {
       if (row.k === "course") return [3, (W ? W.via : "경유: ") + piece(row.a, W ? DOT : /\s+/, q)];
       return [3, row.k === "guide" || row.k === "event" ? "" : (W ? W.other : "다른 이름: ") + (W ? row.a : piece(row.a, /\s+/, q))];
     }
-    if (row.o && row._o.indexOf(q) > -1) return [3, (W ? W.other : "다른 이름: ") + piece(row.o, DOT, q)];
-    if (row.v && row._v.indexOf(q) > -1) return [3, (W ? W.via : "경유: ") + piece(row.v, DOT, q)];
+    if (row.o && at(row, "o", q) > -1) return [3, (W ? W.other : "다른 이름: ") + piece(row.o, DOT, q)];
+    if (row.v && at(row, "v", q) > -1) return [3, (W ? W.via : "경유: ") + piece(row.v, DOT, q)];
     if (row.m && row._m.indexOf(q) > -1) return [4, (W ? W.menu : "메뉴: ") + piece(row.m, /\s*[,\/·、，]\s*/, q)];
     if (row.g && row._g.indexOf(q) > -1) return [5, (W ? W.des : "지정: ") + piece(row.g, /\s+·\s+/, q)];
     if (row._d.indexOf(q) > -1) return [6, ""];
@@ -341,7 +406,7 @@
   }
   // the words of a part a row has (inside the row's text, as score() matches)
   function has(row, p) {
-    return p.f.filter(function (w) { return row._w.indexOf(w) > -1; });
+    return p.f.filter(function (w) { return contains(row, w); });
   }
   // hits [tier, row, why, the word to mark, 0 | 1 (found by its parts), how many words]: the rows the query finds
   // whole (score), then the rows that have every part — the city's name no condition next to another part —, the
@@ -376,7 +441,7 @@
   var RX = {};
   function near(row, p) {
     return p.f.filter(function (w) {
-      if (!ALPHA.test(w)) return row._w.indexOf(w) > -1;
+      if (!ALPHA.test(w)) return contains(row, w);
       if (!RX[w]) RX[w] = new RegExp("(?:^|[^" + LETTER + "])" + w);
       return RX[w].test(row._l);
     });
@@ -395,7 +460,7 @@
     parts.forEach(function (p) {
       var w = p.f[0], stem;
       if (p.city || p.c < 0 && idle(w)) return;
-      if (p.c < 0 && !rows.some(function (r) { return r._w.indexOf(w) > -1; })) {
+      if (p.c < 0 && !rows.some(function (r) { return contains(r, w); })) {
         stem = w.replace(END, "").replace(TAIL, "");
         if (stem.length > 1 && !idle(stem)) p = { c: -1, at: p.at, f: [stem] };
       }
@@ -424,29 +489,37 @@
         x.first - y.first || x.row.n.localeCompare(y.row.n, LANG);
     }).slice(0, RELATED).map(function (x) { return [x.row, x.ws]; });
   }
-  // the words a concept was also searched as, those the rows shown have: '함께 찾은 말: 아이랑 → 아이와·가족'
+  // the words a concept was also searched as, those the rows shown have: '함께 찾은 말: 아이랑 → 아이와·가족' — each
+  // once: not a word that has another one of them in it, which found no row that one did not (QA 2026-10-19 QA-72:
+  // '… 전시관·박물관·전시 …' — the type 박물관·전시 after 박물관, read as 박물관 twice)
   function synLine(parts, rows) {
     var bits = [];
     parts.forEach(function (p) {
       if (p.c < 0) return;
       var also = p.f.filter(function (w) {
-        return p.say.indexOf(w) < 0 && p.typed.indexOf(w) < 0 && rows.some(function (r) { return r._w.indexOf(w) > -1; });
+        return p.say.indexOf(w) < 0 && p.typed.indexOf(w) < 0 && rows.some(function (r) { return contains(r, w); });
       });
-      if (also.length) bits.push(p.say.map(shown).join("·") + " → " + also.map(shown).join("·"));
+      also = also.filter(function (w) { return !also.some(function (x) { return x !== w && w.indexOf(x) > -1; }); });
+      if (also.length) bits.push(dots(p.say) + " → " + dots(also));
     });
-    return bits.length ? '<p class="res-syn">' + esc(((W && W.syn) || "함께 찾은 말: ") + bits.join(", ")) + "</p>" : "";
+    return bits.length ? '<p class="res-syn">' + esc((W && W.syn) || "함께 찾은 말: ") + bits.join(", ") + "</p>" : "";
   }
   function shown(w) { return SHOWN[w] || w; }
+  // words joined with '·', each kept whole with the '·' after it (span.nw): a line breaks after a '·', never before
+  // one ('…박물관 / ·전시' read as one more word)
+  function dots(list) {
+    return list.map(function (w, i) { return '<span class="nw">' + esc(shown(w)) + (i < list.length - 1 ? "·" : "") + "</span>"; }).join("");
+  }
   // a query that plans a trip: the AI course planner (the Korean page only)
   function planLine(raw) {
     if (!PLANNER || !PLAN.test(raw)) return "";
     return '<p class="res-plan"><a href="' + esc(PLANNER) + '" data-track="plan_cta">AI 코스 만들기</a> ' +
       "날짜·이동 수단·동행을 고르면 이 사이트의 장소 정보로 일정을 짜 드려요.</p>";
   }
-  // one result row; hl: the word to mark in its name and in why
-  function item(row, why, hl) {
+  // one result row; hl: the word to mark in its name and in why; fresh: one the last '더 보기' added
+  function item(row, why, hl, fresh) {
     var meta = [row.t, row.d, row.r].filter(Boolean);
-    return '<li><a href="' + esc(row.p) + '"><span class="res-nm">' + mark(row.n, hl) + "</span>" +
+    return "<li" + (fresh ? " data-new" : "") + '><a href="' + esc(row.p) + '"><span class="res-nm">' + mark(row.n, hl) + "</span>" +
       '<span class="res-meta">' + esc(meta.join(" · ")) + "</span>" +
       (why ? '<span class="res-why">' + mark(why, hl) + "</span>" : "") +
       (row.s ? '<span class="res-st">' + esc(row.s) + "</span>" : "") + "</a></li>";
@@ -487,8 +560,11 @@
     return '<p class="res-diet">' + esc(W ? W.diet : "이 사이트에는 음식점의 할랄·채식·알레르기 정보가 없습니다. " +
       "방문 전에 음식점에 직접 확인하세요. 전화번호가 있으면 장소 페이지에 있습니다.") + "</p>";
   }
-  function render(raw) {
+  // the results of raw, the first n of them (LIMIT; '더 보기' asks for LIMIT more: more = how many showed before)
+  function render(raw, n, more) {
     var q = norm(raw);
+    n = n || LIMIT;
+    out.setAttribute("aria-live", more ? "off" : "polite");
     if (help) help.hidden = true;
     if (!q) { out.innerHTML = ""; showDir(true); if (emptyArt) emptyArt.hidden = true; return; }
     load().then(function (rows) {
@@ -497,27 +573,33 @@
       if (emptyArt) emptyArt.hidden = hits.length > 0;
       if (!hits.length) { none(rows, raw, found.parts); return; }
       showDir(false);
-      var cut = hits.slice(0, LIMIT), groups = {};
-      cut.forEach(function (h) { (groups[h[1].k] = groups[h[1].k] || []).push(h); });
+      var cut = hits.slice(0, n), groups = {};
+      cut.forEach(function (h, i) { (groups[h[1].k] = groups[h[1].k] || []).push([h, more && i >= more]); });
       var counts = ORDER.filter(function (k) { return groups[k]; }).map(function (k) { return KIND[k] + " " + groups[k].length; });
       var places = hits.every(function (h) { return PLACES.indexOf(h[1].k) > -1; });
-      var unit = places ? "곳" : "건";
+      var unit = places ? "곳" : "건", rest = Math.min(LIMIT, hits.length - cut.length);
       // '‘짜장면’ 12곳', or with several kinds '‘○○’ 25건 · 관광지 10 · 숙소 3 · 코스 12' (the kind counts only
-      // when there is more than one kind; '중 20건' when the list is cut at LIMIT)
+      // when there is more than one kind; '중 80건' while some are not shown)
       var html = W ? '<p class="f-result">‘' + esc(raw.trim()) + "’ " +
-          (hits.length > LIMIT ? esc(W.of).replace("{n}", LIMIT).replace("{m}", hits.length) : hits.length) +
+          (hits.length > n ? esc(W.of).replace("{n}", cut.length).replace("{m}", hits.length) : hits.length) +
           (counts.length > 1 ? " · " + esc(counts.join(" · ")) : "") + "</p>"
         : '<p class="f-result">‘' + esc(raw.trim()) + "’ " + hits.length + unit +
-        (hits.length > LIMIT ? " 중 " + LIMIT + unit : "") + (counts.length > 1 ? " · " + esc(counts.join(" · ")) : "") + "</p>";
+        (hits.length > n ? " 중 " + cut.length + unit : "") + (counts.length > 1 ? " · " + esc(counts.join(" · ")) : "") + "</p>";
       html += synLine(found.parts, cut.map(function (h) { return h[1]; })) + planLine(raw);
       if (DIET.test(raw)) html += diet();
       ORDER.forEach(function (k) {
         if (!groups[k]) return;
         html += '<section class="res-g"><h2>' + KIND[k] + ' <span class="tn">' + groups[k].length + "</span></h2><ol>";
-        groups[k].forEach(function (h) { html += item(h[1], h[2], h[3]); });
+        groups[k].forEach(function (x) { html += item(x[0][1], x[0][2], x[0][3], x[1]); });
         html += "</ol></section>";
       });
+      // the rest, LIMIT at a time ('80곳 더 보기'); the rows it adds take the focus, and the results do not read
+      // themselves out again (aria-live off for that update)
+      if (rest > 0) html += '<p class="res-more"><button type="button" class="btn btn-ol" data-more="' + cut.length + '">' +
+        esc(W && W.more ? W.more.replace("{n}", rest) : rest + unit + " 더 보기") + "</button></p>";
       out.innerHTML = html;
+      var first = more && out.querySelector && out.querySelector("li[data-new] a");
+      if (first) first.focus();
     });
   }
   function remember(value) {
@@ -534,8 +616,15 @@
     render(input.value);
     remember(input.value.trim());
   });
-  // a suggested name searches at once (with a modifier key it stays a link: the same search in a new tab)
+  // a suggested name searches at once (with a modifier key it stays a link: the same search in a new tab); '더 보기'
+  // shows LIMIT more of the same query
   out.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest("button[data-more]");
+    if (b) {
+      var had = +b.getAttribute("data-more") || LIMIT;
+      render(input.value, had + LIMIT, had);
+      return;
+    }
     var a = ev.target.closest && ev.target.closest("a[data-sug]");
     if (!a || ev.button || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
     ev.preventDefault();
