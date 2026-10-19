@@ -29,7 +29,8 @@ publishes to /assets/art/ only the files a built page refers to (copy_used), so 
 yet ('개편 뒤 연결') adds nothing.
 
 The slots (known_slot(); data/<region>/art.json _notes):
-home.card.*, list.head.*, guide.banner.<guide id>, en.guide.banner.<guide id>, og.*, page.404, search.empty,
+home.card.*, list.head.*, guide.banner.<guide id>, en.guide.banner.<guide id>, intl.guide.banner.<guide id> (the
+banner without words: every other language, English where it has no en banner), og.*, page.404, search.empty,
 theme.head.<theme slug>, videos.head.<topic> (build.VIDEO_TOPIC_ART), course.banner.<course id>, area.<권역 art key>
 (the city's site.json city.travel_regions[].art, far_art), events.month.<MM>, events.kind.<kind> (event_kind), abroad.group.<group>, about.head.
 A '연결' picture whose slot is none of these is an error (data_problems); so is one whose guide, course or theme id
@@ -186,7 +187,7 @@ def for_lang(found: dict, lang: str) -> dict:
 
 
 PLACE_PAGE = re.compile(r"^/(?:[a-z]{2}(?:-[a-z]+)?/)?places/[^/]+/$")
-OG_SLOTS = {"/abroad/": "og.abroad"}
+OG_SLOTS = {"/abroad/": "og.abroad", "/plan/": "og.plan"}   # /plan/: the AI course planner (2026-10-17)
 
 
 def og_fallback(found: dict, path: str, lang: str = "ko") -> dict | None:
@@ -210,7 +211,7 @@ def slot_lang(slot: str) -> str | None:
     if head in LC.LOCALES:
         return head
     if head == "og":
-        return {"default": "ko", "abroad": "ko", "default-en": "en"}.get(rest) or (rest if rest in LC.LOCALES else None)
+        return {"default": "ko", "abroad": "ko", "plan": "ko", "default-en": "en"}.get(rest) or (rest if rest in LC.LOCALES else None)
     return None
 
 
@@ -225,9 +226,9 @@ def _slot_rules(areas: tuple = ()) -> re.Pattern:
     rules = (   # no home.hero.<season> since 2026-10-13 night: the Korean home opens on an official photo
         r"home\.card\.(?:event|abroad|video|guide|festival-[a-z0-9-]+)",
         r"list\.head\.(?:places|food|stays|courses|guides|events|videos|abroad|map)",
-        rf"og\.(?:default|default-en|abroad|{one(c for c in LC.CODES if c != 'en')})",
-        r"page\.404", r"search\.empty", r"about\.head",
-        r"(?:en\.)?guide\.banner\.[a-z0-9-]+", r"course\.banner\.[a-z0-9-]+", r"theme\.head\.[a-z0-9-]+",
+        rf"og\.(?:default|default-en|abroad|plan|{one(c for c in LC.CODES if c != 'en')})",
+        r"page\.404", r"search\.empty", r"about\.head", r"plan\.head",   # plan.*: the AI course planner (/plan/)
+        r"(?:en\.|intl\.)?guide\.banner\.[a-z0-9-]+", r"course\.banner\.[a-z0-9-]+", r"theme\.head\.[a-z0-9-]+",
         rf"videos\.head\.{one(B.VIDEO_TOPIC_ART.values())}",
         *([rf"area\.{one(areas)}"] if areas else []),
         r"events\.month\.(?:0[1-9]|1[0-2])",
@@ -261,6 +262,9 @@ def city_areas(data_dir: Path) -> list[str]:
 # what the id names. en/guides.json: the guides with an English translation (a page in English once it is current).
 ID_SLOTS = {"guide.banner": ("guides.json", "id", "가이드 id"),
             "en.guide.banner": ("en/guides.json", None, "영어 가이드 id"),
+            # the same banners without their words (2026-10-14 night, the operator's edits of the Korean ones): the head
+            # of a guide in every other language, and in English where en.guide.banner has none
+            "intl.guide.banner": ("guides.json", "id", "가이드 id"),
             "course.banner": ("courses.json", "id", "코스 id"),
             "theme.head": ("themes.json", "slug", "테마 slug")}
 

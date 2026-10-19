@@ -1,0 +1,160 @@
+{% extends "base.html.j2" %}
+{% import "_pic.html.j2" as pk %}
+{% import "_mascot.html.j2" as mm %}
+{% import "_art.html.j2" as artm %}
+{#- /plan/: the AI course planner (operator 2026-10-17 — its own page, very visible, many cute 3D pictures). The reader
+    picks conditions on cards (real radio and check boxes under the pictures: keyboard and screen readers use them as
+    such); assets/plan.js (attached by site.js for [data-plan]) asks /api/plan/ (chatbot/planner.js), shows the steps
+    while it works, then draws the plan from the site's own place data (/plan/places.json, present.plan_places): times,
+    each place's photo (TourAPI, credited) or its kind's 3D picture, the day's state the code checked, the first-screen
+    facts, the legs (straight-line distance, shared bus routes, a Kakao Map directions link — the map app gives the
+    time), a numbered map per day (map.js course map), the fee total, what still needs checking, and an edit box.
+    Choices: present.PLAN_CHOICES; pictures: present.PLAN_RESULT_PICS (cloned from <template>); mascots: present.plan_vm
+    (the planner's own poses once they exist). A utility page: noindex, not in the sitemap, Korean only. -#}
+{% set C = choices %}
+{#- before the first paint: an address that carries the form's keys (the assistant's hand-over, plan.js fromAddress)
+    marks <html> 'trp-handing', so the line over the form has its room from the start (plan.css) -#}
+{% block head %}<link rel="stylesheet" href="/assets/plan.css">
+<script>/[?&](date|days|start|end|from|to|move|with|adults|seniors|kids|prefs|needs|note)=/.test(location.search)&&document.documentElement.classList.add('trp-handing')</script>{% endblock %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-plan{% endblock %}
+{% block content %}
+<div class="trp" data-plan data-api="/api/plan/" data-places="/plan/places.json"{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-site="{{ site.site_url }}" data-site-name="{{ site.site_name }}" data-hubs="{{ hubs_json }}" data-courses="{{ n_courses }}" data-guides="{{ n_guides }}">
+{% set hero_art = (art_slots or {}).get('plan.head') %}
+<section class="trp-hero{{ ' has-art' if hero_art }}" aria-labelledby="h-plan">
+  <div class="wrap trp-hero-in">
+    <div class="trp-hero-t">
+      <p class="trp-eyebrow">{{ pk.pic('icon-plan', 'spark', 28, '', false) }}<span>AI 코스 만들기 · 시험판</span></p>
+      <h1 id="h-plan">조건만 고르면<br>{{ region }} 여행 코스를 짜 드려요</h1>
+      <p class="trp-lede">이 사이트에 실린 장소 <b class="tn">{{ n_places }}</b>곳의 운영시간·쉬는 날·요금으로 일정을 만들고, 그날 쉬는 곳과 문 닫은 뒤의 시각, 이동할 틈이 없는 구간은 코드가 한 번 더 확인합니다.</p>
+      <ul class="trp-promise">
+        <li>{{ pk.pic('fact-closed', 'calendar', 32, '', false) }}<span>그날 휴무·운영시간 확인</span></li>
+        <li>{{ pk.pic('plan-budget', 'wallet', 32, '', false) }}<span>입장료 합계 자동 계산</span></li>
+        <li>{{ pk.pic('plan-swap', 'swap', 32, '', false) }}<span>말로 고쳐 달라고 하기</span></li>
+      </ul>
+      <a class="btn trp-start" href="#trp-form">조건 고르기</a>
+    </div>
+    {% if not hero_art %}
+    <div class="trp-hero-art" aria-hidden="true">
+      <div class="trp-blob"></div>
+      <span class="trp-float f1">{{ pk.pic('theme-islands-sea', 'wave', 96, '', false) }}</span>
+      <span class="trp-float f2">{{ pk.pic('icon-food', 'bowl', 84, '', false) }}</span>
+      <span class="trp-float f3">{{ pk.pic('theme-modern-history', 'building', 92, '', false) }}</span>
+      <span class="trp-float f4">{{ pk.pic('icon-course', 'route', 80, '', false) }}</span>
+      <span class="trp-float f5">{{ pk.pic('sit-night', 'moon', 72, '', false) }}</span>
+      <span class="trp-hero-mascot">{{ mm.pic(mascots.done.name, mascots.done.kind, 200) }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% if hero_art %}<div class="trp-hero-bg">{{ artm.figure(hero_art, 'ko', '(min-width: 900px) 100vw, 170vw', eager=true, cls='trp-hero-fig', high=true) }}</div>{% endif %}
+</section>
+{#- the pages a reader can plan from without the planner: the official courses and the guides this build has, else the
+    places list (a site with places only) -#}
+<noscript><p class="wrap trp-nojs">코스 만들기는 자바스크립트가 켜져 있어야 동작합니다. {% if n_courses and n_guides %}<a href="/courses/">공식 코스 {{ n_courses }}개</a>와 <a href="/guides/">가이드 {{ n_guides }}편</a>에서도 일정을 찾을 수 있습니다.{% elif n_courses %}<a href="/courses/">공식 코스 {{ n_courses }}개</a>에서도 일정을 찾을 수 있습니다.{% elif n_guides %}<a href="/guides/">가이드 {{ n_guides }}편</a>에서도 일정을 찾을 수 있습니다.{% else %}<a href="/places/">가볼만한 곳 {{ n_places }}곳</a>에서 장소를 고를 수 있습니다.{% endif %}</p></noscript>
+
+{#- the line over the form when the assistant hands a reader over: plan.js puts its words in (a status region: they
+    come after it is in the page, so they are read out). Its room is laid out from the first paint under html.trp-handing
+    (review 2026-10-18, fourth round: added after the paint it pushed the form down, CLS 0.11–0.13 on 360–390px phones);
+    the hidden copy of the words gives the box their height at every width. A plain visit has no box. -#}
+<div class="wrap trp-handed-w"><div class="trp-handed-box"><span class="trp-handed-ghost" aria-hidden="true">대화에서 말한 조건을 채웠어요. 확인하고 코스 만들기를 누르세요.</span><p class="trp-handed" role="status" data-plan-handed></p></div></div>
+<form class="wrap trp-form" id="trp-form" data-plan-form novalidate>
+  <fieldset class="trp-step">
+    <legend><span class="trp-n">1</span>언제 가세요?</legend>
+    <div class="trp-when">
+      <label class="trp-field"><span>출발하는 날</span><input type="date" name="date" required data-plan-date></label>
+      <label class="trp-field"><span>하루 시작</span><select name="start">{% for h in range(7, 15) %}<option value="{{ '%02d' % h }}:00"{% if h == 10 %} selected{% endif %}>{{ h }}:00</option>{% endfor %}</select></label>
+      <label class="trp-field"><span>하루 끝</span><select name="end">{% for h in range(15, 23) %}<option value="{{ h }}:00"{% if h == 18 %} selected{% endif %}>{{ h }}:00</option>{% endfor %}</select></label>
+    </div>
+    {#- where the trip starts and ends (review 2026-10-17: '<station> 10시 출발' asked in words, the first museum at
+        10:00): a station or a terminal by name (site.json city.plan.hubs) — the plan leaves a margin after the start
+        and before the end; a city without hubs asks nothing here -#}
+    {% if C.hubs %}<div class="trp-when trp-hubs">
+      <label class="trp-field"><span>어디서 출발하세요?</span><select name="from"><option value="">정하지 않음(숙소·집 등)</option>{% for v, label in C.hubs %}<option value="{{ v }}">{{ label }}</option>{% endfor %}</select></label>
+      <label class="trp-field"><span>마지막 날 어디로 가세요?</span><select name="to"><option value="">정하지 않음</option>{% for v, label in C.hubs %}<option value="{{ v }}">{{ label }}</option>{% endfor %}</select></label>
+    </div>
+    <p class="trp-hint">출발 시각은 '하루 시작', 도착 시각은 '하루 끝'으로 봅니다. 그 사이 이동 시간은 사이트에 없어 여유만 둡니다.</p>{% endif %}
+    <div class="trp-cards trp-cards-3" role="radiogroup" aria-label="기간">
+      {% for v, label, pic, g in C.days %}<label class="trp-card"><input type="radio" name="days" value="{{ v }}"{% if loop.first %} checked{% endif %}><span class="trp-card-in">{{ pk.pic(pic, g, 72) }}<b>{{ label }}</b></span></label>{% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="trp-step">
+    <legend><span class="trp-n">2</span>어떻게 다니세요?</legend>
+    <div class="trp-cards trp-cards-2" role="radiogroup" aria-label="이동 수단">
+      {% for v, label, pic, g in C.move %}<label class="trp-card"><input type="radio" name="move" value="{{ v }}"{% if v == 'transit' %} checked{% endif %}><span class="trp-card-in">{{ pk.pic(pic, g, 72) }}<b>{{ label }}</b>{% if v == 'transit' %}<small>근처 정류장과 노선이 있는 곳 위주</small>{% else %}<small>주차 정보가 있는 곳 위주</small>{% endif %}</span></label>{% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="trp-step">
+    <legend><span class="trp-n">3</span>누구와 가세요?</legend>
+    <div class="trp-cards trp-cards-4" role="radiogroup" aria-label="함께 가는 사람">
+      {% for v, label, pic, g in C.with %}<label class="trp-card"><input type="radio" name="with" value="{{ v }}"{% if v == 'couple' %} checked{% endif %}><span class="trp-card-in">{{ pk.pic(pic, g, 72) }}<b>{{ label }}</b></span></label>{% endfor %}
+    </div>
+    <div class="trp-people">
+      <div class="trp-count" data-count="adults"><span id="trp-ad-l">어른</span><button type="button" data-step="-1" aria-label="어른 한 명 빼기">−</button><output class="tn" aria-labelledby="trp-ad-l" data-count-value>2</output><button type="button" data-step="1" aria-label="어른 한 명 더하기">+</button></div>
+      <div class="trp-count" data-count="kids"><span id="trp-kd-l">어린이·유아</span><button type="button" data-step="-1" aria-label="아이 한 명 빼기">−</button><output class="tn" aria-labelledby="trp-kd-l" data-count-value>0</output><button type="button" data-step="1" aria-label="아이 한 명 더하기">+</button></div>
+      <div class="trp-count" data-count="seniors"><span id="trp-sn-l">그중 65세 이상</span><button type="button" data-step="-1" aria-label="65세 이상 한 명 빼기">−</button><output class="tn" aria-labelledby="trp-sn-l" data-count-value>0</output><button type="button" data-step="1" aria-label="65세 이상 한 명 더하기">+</button></div>
+      <div class="trp-ages" data-ages></div>
+      <p class="trp-hint">아이 나이와 65세 이상 인원은 입장료 계산에 씁니다. 요금표에 나이 기준이나 경로 요금이 없으면 '확인 필요'로 남깁니다.</p>
+    </div>
+  </fieldset>
+
+  <fieldset class="trp-step">
+    <legend><span class="trp-n">4</span>무엇을 좋아하세요? <small>최대 4개</small></legend>
+    <div class="trp-cards trp-cards-chips" data-max="4">
+      {% for v, label, pic, g in C.prefs %}<label class="trp-card trp-chip"><input type="checkbox" name="prefs" value="{{ v }}"><span class="trp-card-in">{{ pk.pic(pic, g, 56) }}<b>{{ label }}</b></span></label>{% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="trp-step">
+    <legend><span class="trp-n">5</span>꼭 필요한 게 있나요? <small>선택</small></legend>
+    <div class="trp-cards trp-cards-chips">
+      {% for v, label, pic, g in C.needs %}<label class="trp-card trp-chip"><input type="checkbox" name="needs" value="{{ v }}"><span class="trp-card-in">{{ pk.pic(pic, g, 56) }}<b>{{ label }}</b></span></label>{% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="trp-step">
+    <legend><span class="trp-n">6</span>입장료 예산과 하고 싶은 말 <small>선택</small></legend>
+    <div class="trp-budget">
+      {{ pk.pic('plan-budget', 'wallet', 56) }}
+      <label class="trp-field"><span>일행 전체 입장료 예산(원)</span><input type="number" name="budget" inputmode="numeric" min="0" max="1000000" step="1000" placeholder="예: 10000"></label>
+      <div class="trp-quick" role="group" aria-label="예산 빠르게 고르기">{% for v in (0, 10000, 30000, 50000) %}<button type="button" data-budget="{{ v if v else '' }}">{{ '정하지 않음' if not v else (v // 10000) ~ '만 원' }}</button>{% endfor %}</div>
+      <p class="trp-hint">입장료만 계산합니다. 식비·교통비·숙박비는 사이트에 확인된 값이 없어 넣지 않습니다.</p>
+    </div>
+    <label class="trp-field trp-note"><span>하고 싶은 말</span><textarea name="note" maxlength="200" rows="2" placeholder="예: 점심은 국수가 좋아요. 오후엔 바다를 보고 싶어요."></textarea></label>
+  </fieldset>
+
+  <div class="trp-go">
+    <p class="trp-sum" data-plan-sum aria-live="polite"></p>
+    <button type="submit" class="btn trp-submit">{{ pk.pic('icon-plan', 'spark', 40, '', false) }}<span>AI로 코스 만들기</span></button>
+    <p class="trp-fine">하루 코스는 보통 20~40초, 2박 3일은 1분 넘게 걸릴 수 있습니다. 고른 조건은 코스를 만드는 데만 쓰고 서버에 저장하지 않으며, 이 탭에서만 임시로 보관합니다. 일정은 Anthropic의 Claude가 이 사이트 자료로 만들고, 휴무·운영시간·입장료·조건은 사이트의 코드가 검사합니다(<a href="/about/#plan">자세히</a>).</p>
+    <p class="trp-fine-s">Anthropic Claude가 사이트 자료로 만들어요 · 20초~1분 남짓 · 서버에 저장하지 않음(<a href="/about/#plan">자세히</a>)</p>
+    <p class="trp-err" data-plan-formerr role="alert" hidden></p>
+  </div>
+</form>
+
+<section class="wrap trp-work" data-plan-work hidden aria-labelledby="h-work">
+  <div class="trp-work-in">
+    <span class="trp-work-art">{{ mm.pic(mascots.work.name, mascots.work.kind, 200) }}</span>
+    <div>
+      <h2 id="h-work" tabindex="-1">코스를 짜고 있어요</h2>
+      <ol class="trp-steps" data-plan-steps>
+        <li data-step="search">장소 찾기</li>
+        <li data-step="read">장소 정보 읽기</li>
+        <li data-step="check">휴무·운영시간 확인</li>
+        <li data-step="submit">일정 정리</li>
+        <li data-step="fix">맞지 않는 곳 고치기</li>
+      </ol>
+      <p class="trp-live" data-plan-live aria-live="polite"></p>
+      <button type="button" class="btn btn-ol" data-plan-cancel>멈추기</button>
+    </div>
+  </div>
+</section>
+
+<section class="trp-result" data-plan-result hidden aria-labelledby="h-result"></section>
+
+<template id="trp-pics">{% for id in result_pics %}<span data-id="{{ id }}">{{ pk.pic(id, icon_glyph(id), 40) }}</span>{% endfor %}</template>
+<template id="trp-mascots"><span data-id="done">{{ mm.pic(mascots.done.name, mascots.done.kind, 96) }}</span><span data-id="rain">{{ mm.pic(mascots.rain.name, mascots.rain.kind, 96) }}</span><span data-id="sorry">{{ mm.pic(mascots.sorry.name, mascots.sorry.kind, 96) }}</span></template>
+<template id="trp-quick">{% for ask, label, pic in quick_edits %}<button type="button" class="trp-qe" data-ask="{{ ask }}">{{ pk.pic(pic, icon_glyph(pic), 32) }}<span>{{ label }}</span></button>{% endfor %}</template>
+</div>
+{% endblock %}

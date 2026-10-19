@@ -16,6 +16,7 @@ nav_items (the main navigation of common_vm).
 from __future__ import annotations
 
 import datetime as dt
+import functools
 import json
 import re
 from collections import Counter, defaultdict
@@ -24,12 +25,14 @@ from urllib.parse import quote
 
 from markupsafe import Markup, escape
 
-from . import art, city, jsonld, media
+from . import art, booking, city, jsonld, media, relations, tickets   # booking imports present only inside its functions
+from . import locales as LC          # locales imports nothing from the package
 from .enrich import haversine_m
-from .maplinks import kakao_route_url
-from .schema import FACT_ALIASES, FACT_LABELS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS, designations
+from .maplinks import kakao_route_url, kakao_transit_url
+from .schema import (FACT_ALIASES, FACT_LABELS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS, alias_holds,
+                     designations, fact_label, geo_provider, geo_providers, parking_seats_half)
 from .textutil import (TILDE, TIME, course_display_name, dash_times, display_address, display_value, josa, link_url,
-                       normalize_name, parking_text, restore_lines, squash_ws, url_domain, web_text, web_url)
+                       normalize_name, parking_text, phone_e164, restore_lines, squash_ws, url_domain, web_text, web_url)
 
 WEEK = "월화수목금토일"
 LIST_PATH = {"attraction": "/places/", "stay": "/stays/", "food": "/food/"}
@@ -150,17 +153,83 @@ def tel_digits(number: str) -> str:
     return re.sub(r"\D", "", number or "")
 
 
-def tel_markup(text: str | None, place: str = "") -> Markup:
-    """Phone numbers as tap-to-call links (tel_click, + data-place on a place page). The tel: digits are always
-    exactly the digits of the visible number (tests check it), and the number never breaks across lines (class tel)."""
+def tel_href(number: str, intl: bool = False) -> str:
+    """The tel: target of a visible number: its digits on Korean pages; on the other versions (intl) the +82 form a
+    caller abroad dials ('063-443-3077' -> '+82634433077') — never for a number with no international form
+    (nationwide 1577-…, 080, 060: textutil.phone_e164), which keeps its digits."""
+    digits = tel_digits(number)
+    return "+82" + digits[1:] if intl and phone_e164(squash_ws(number)) else digits
+
+
+# Official sites the data writes as bare text ('예매는 한국해운조합(island.theksa.co.kr)에서'), linked where the text
+# names them (QA 2026-10-15 SRC-05b) — only these hosts, each to the address checked on the given date: {host: (Korean
+# page's URL, the other versions' URL or None, checked)}. A host the data says does not open or one not checked
+# (www.kobus.co.kr: no answer from the build machine on 2026-10-15) stays plain text. These are the national ones; a
+# city adds its own (a campground, a race, an airline: site.json city.official_web) — official_web(), web_rx().
+OFFICIAL_WEB = {
+    "island.theksa.co.kr": ("https://island.theksa.co.kr/", "https://island.theksa.co.kr/page/booking?lang=en", "2026-10-15"),
+    "www.korail.com": ("https://www.korail.com/", None, "2026-10-15"),
+    # the passenger-ship service page guide-32 cites for '여객선 운항정보 조회'
+    "www.komsa.or.kr": ("https://www.komsa.or.kr/prog/pssgCurState/kor/sub03_0202/list.do", None, "2026-10-15"),
+    "kma.go.kr": ("https://www.kma.go.kr/weather/main.jsp", None, "2026-10-15"),     # a weather guide's source (→ 날씨누리)
+    "khoa.go.kr": ("https://www.khoa.go.kr/", None, "2026-10-15"),                   # a sea guide's source
+}
+
+
+def official_web() -> dict:
+    """The national hosts (OFFICIAL_WEB) and the city's own (site.json city.official_web {host: [Korean page, other
+    versions' page or null, checked]})."""
+    own = {h: tuple(v) for h, v in (city.current().get("official_web") or {}).items()
+           if isinstance(v, (list, tuple)) and len(v) == 3}
+    return {**OFFICIAL_WEB, **own}
+
+
+@functools.lru_cache(maxsize=8)
+def _web_rx(hosts: tuple) -> re.Pattern:
+    return re.compile(r"(?<![A-Za-z0-9.@/-])(" + "|".join(map(re.escape, sorted(hosts, key=len, reverse=True)))
+                      + r")(/[A-Za-z0-9._~%/?=&-]*[A-Za-z0-9/])?(?![A-Za-z0-9-])")
+
+
+def web_rx() -> re.Pattern:
+    """A host of official_web() written in a text, with the path written after it."""
+    return _web_rx(tuple(sorted(official_web())))
+
+
+def web_href(host: str, path: str | None = None, intl: bool = False) -> str:
+    """The link of an official host written in the text: the written path on that host when the text gives one
+    ('example.com/resv'), else the other versions' entry page (intl) when there is one, else the checked page."""
+    ko_url, intl_url, _ = official_web()[host]
+    if path:
+        return "https://" + host + path
+    return intl_url if intl and intl_url else ko_url
+
+
+def web_anchor(seg, url: str) -> Markup:
+    return Markup('<a class="xl" href="{}" rel="noopener" data-track="official_click">{}</a>').format(url, seg)
+
+
+def tel_markup(text: str | None, place: str = "", intl: bool = False, skip: int = 0) -> Markup:
+    """Phone numbers as tap-to-call links (tel_click, + data-place on a place page) and the official hosts the text
+    writes (OFFICIAL_WEB) as links (official_click). The tel: digits are always exactly the digits of the visible
+    number (tests check it) — on the other versions (intl) in the +82 form (tel_href) — and the number never breaks
+    across lines (class tel). The text of the result is `text`, character for character. skip: no link starts in the
+    first characters (an FAQ answer: FAQPage repeats it and pipeline.validate compares its first PLAIN_HEAD characters
+    with the page as one run, as in rich())."""
     text = str(text or "")
+    found = [(m.start(1), m.end(1), "tel", m) for m in PHONE.finditer(text)]
+    found += [(m.start(), m.end(), "web", m) for m in web_rx().finditer(text)]
     parts, last = [], 0
-    for m in PHONE.finditer(text):
-        parts.append(escape(text[last:m.start()]))
-        num = m.group(1)
-        pl = Markup(' data-place="{}"').format(place) if place else ""
-        parts.append(Markup(f'<a class="tel" data-track="tel_click"{pl} href="tel:{tel_digits(num)}">{escape(num)}</a>'))
-        last = m.end()
+    for a, b, kind, m in sorted(found, key=lambda x: x[0]):
+        if a < max(last, skip):
+            continue
+        parts.append(escape(text[last:a]))
+        if kind == "tel":
+            num = m.group(1)
+            pl = Markup(' data-place="{}"').format(place) if place else ""
+            parts.append(Markup(f'<a class="tel" data-track="tel_click"{pl} href="tel:{tel_href(num, intl)}">{escape(num)}</a>'))
+        else:
+            parts.append(web_anchor(escape(text[a:b]), web_href(m.group(1), m.group(2), intl)))
+        last = b
     parts.append(escape(text[last:]))
     return Markup("").join(parts)
 
@@ -196,6 +265,36 @@ def nowrap_numbers(text: str | None) -> Markup:
         last = m.end()
     out.append(escape(text[last:]))
     return Markup("").join(out)
+
+
+# the emphasised end of a site name of the '○○각' family (the engine's first site, operator 2026-10-17: ○○각 → 각,
+# ○○gak → gak); a city may name its own (site.json city.brand_em), a name without such an end has none
+BRAND_EM = ("각", "gak")
+
+
+def wordmark(name: str | None) -> Markup:
+    """The site name in the bar and the footer with its emphasised end in its own span (css .wm-em: the site blue, as
+    in the brand's logos); one word to a screen reader, the text unchanged."""
+    s = str(name or "")
+    for em in city.current().get("brand_em") or BRAND_EM:
+        if s.endswith(em) and len(s) > len(em):
+            return escape(s[:-len(em)]) + Markup('<span class="wm-em">') + escape(em) + Markup("</span>")
+    return escape(s)
+
+
+ADDRESS_WORD_MAX = 16   # the longest hyphenated word kept whole; the next in the data is 13 characters ('174-4,2층(미룡동)')
+
+
+def nowrap_address(text: str | None) -> Markup:
+    """An address on the page (templates/_p1.html.j2): each word holding a hyphen ('244-7(장미동)') in one no-wrap piece,
+    split at the spaces already there; a longer word — an address the source gives without spaces — stays plain, one
+    text run (the validator reads it whole, as JSON-LD has it), and the body's overflow-wrap breaks it on a phone.
+    Text unchanged."""
+    def word(w: str) -> Markup:
+        if "-" not in w or len(w) > ADDRESS_WORD_MAX:
+            return escape(w)
+        return Markup('<span class="nw">') + escape(w) + Markup("</span>")
+    return Markup(" ").join(word(w) for w in str(text or "").split(" "))
 
 
 def lines_html(text: str | None) -> Markup:
@@ -381,6 +480,28 @@ def mark_closed(text: str | None) -> Markup:
         out.append(Markup('<span class="closed">') + escape(text[a + lead:b]) + Markup("</span>"))
         last = b
     out.append(escape(text[last:]))
+    return Markup("").join(out)
+
+
+def closed_head(text: str | None) -> Markup:
+    """A closed-day phrase in a one-line row (templates/_near.html.j2): its first word — unspaced Japanese or Chinese,
+    its first two characters — in one no-wrap piece that carries the red square (css/71-nearby.css), so the square never
+    ends a line alone ('■ / Every Monday'); a ' / ' never starts a line ('/ 법정공휴일'). Text unchanged but that space."""
+    s = squash_ws(text).replace(" / ", "\u00a0/ ")
+    head, sep, tail = s.partition(" ")
+    if not sep and len(head) > 6:
+        head, tail = s[:2], s[2:]
+    return Markup('<span class="nw">') + escape(head) + Markup("</span>") + escape(sep + tail)
+
+
+def glue_dots(text: str | None) -> Markup:
+    """'… 무료 해설·스탬프투어': each middle dot kept with the character before it (a no-wrap pair), so a line never
+    starts with '·'. Text unchanged."""
+    t, out, last = squash_ws(text), [], 0
+    for m in re.finditer(r"\S·", t):
+        out += [escape(t[last:m.start()]), Markup('<span class="nw">') + escape(m.group(0)) + Markup("</span>")]
+        last = m.end()
+    out.append(escape(t[last:]))
     return Markup("").join(out)
 
 
@@ -570,7 +691,7 @@ def fact_rows(e: dict, keys, notes: Notes, tel: tuple = ("", "")) -> list[dict]:
         alts = alternatives(e, k)
         if not raw and not alts:
             continue
-        label = FACT_LABELS[k]
+        label = fact_label(e, k)
         src = src_of(e, k)
         view = value_view(k, raw, e.get("id") or "")
         row = {"key": k, "keys": [k], "label": label, **view, "n": notes.ref(src, label) if raw else None,
@@ -616,6 +737,43 @@ def fact_rows(e: dict, keys, notes: Notes, tel: tuple = ("", "")) -> list[dict]:
     return out
 
 
+FEE_ANCHOR = "f-usefee"   # the facts card's 요금 row, where a ticket row whose table it already holds points
+
+
+def ticket_rows(e: dict, notes: Notes) -> list[dict]:
+    """The facts card's rows for the combined tickets that open the place (pipeline/tickets.py), one per ticket, after
+    its own 요금: the ticket's name, what it opens in our words — its places by their page names, each linked but this
+    one ('4곳: 근대역사박물관 · …'; never the table's own words for them, tickets.json 'covers', CLAUDE.md 3.3) — and
+    its price table, with the table's source as the row's note: the combined price the fee tile sets beside the
+    place's own (fee_with_ticket) is on the page with its source, also where the place's own table does not name the
+    ticket. Where the place's own table already holds the ticket as a group with the same prices (same_ticket_group),
+    the row points to that group (FEE_ANCHOR) instead of printing the table twice."""
+    out = []
+    for t in e.get("_tickets") or []:
+        places = t.get("_places") or []
+        head = f"{len(places)}곳: "
+        same = same_ticket_group(e, t)
+        lines = [f"요금: 위 이용요금의 [{same}]"] if same else tickets.price_lines(t)
+        text = "\n".join([head + " · ".join(p["name"] for p in places), *lines])
+        html = escape(head) + Markup(" · ").join(
+            escape(p["name"]) if p["id"] == e["id"] else Markup('<a href="{}">{}</a>').format(p["path"], p["name"])
+            for p in places)
+        if same:
+            html += Markup('<br><a href="#{}">{}</a>').format(FEE_ANCHOR, lines[0])
+        else:
+            html += Markup("<br>") + lines_html("\n".join(lines))
+        src = t.get("src") or {}
+        label = squash_ws(t["name"])
+        out.append({"key": "tickets", "keys": ["tickets"], "label": label, "text": text, "html": html, "same": same,
+                    "tt": None, "fees": None, "grid": None, "closed": False, "wide": True,
+                    "n": notes.ref({"provider": src.get("provider"), "checked_at": src.get("checked_at"),
+                                    "url": src.get("url") or ""}, label),
+                    "provider": short_provider(src.get("provider")), "provider_full": squash_ws(src.get("provider")),
+                    "checked_at": squash_ws(src.get("checked_at")), "alts": [], "conflict": False,
+                    "same_times": False, "blocks": [], "flag": "", "flag_text": "", "tel": None})
+    return out
+
+
 # ----------------------------------------------------------------------------- status line (핵심 정보 줄)
 STATUS_KEYS = {"attraction": ("usetime", "restdate", "usefee", "parking"),
                "stay": ("checkin", "checkout", "parking", "roomcount"),
@@ -645,7 +803,7 @@ def missing_keys(e: dict) -> list[str]:
     keys = KEY_FACTS_BY_CATEGORY.get(e.get("category"), KEY_FACTS.get(e.get("kind"), ()))
     out = []
     for k in keys:
-        have = facts.get(k) or any(facts.get(a) for a in FACT_ALIASES.get(k, ())) or ({k, *FACT_ALIASES.get(k, ())} & alt)
+        have = facts.get(k) or any(alias_holds(e, k, a) for a in FACT_ALIASES.get(k, ())) or k in alt
         if k == "parking" and facts.get("parkingfee"):
             have = True
         if not have:
@@ -677,7 +835,10 @@ def status_items(e: dict, full: bool = False) -> list[dict]:
     for k in STATUS_KEYS.get(kind, ()):
         raw = facts.get(k)
         if not raw:
-            if k == "parking" and facts.get("parkingfee") and not any(x["key"] in ("parking", "parking_seats") for x in out):
+            # a seats-only parking_seats item ('좌석 30석') does not answer parking: the fee still goes in
+            answered = any(x["key"] == "parking" or (x["key"] == "parking_seats"
+                                                     and alias_holds(e, "parking", "parking_seats")) for x in out)
+            if k == "parking" and facts.get("parkingfee") and not answered:
                 fee = squash_ws(facts["parkingfee"])
                 if len(fee) <= STATUS_MAX and "\n" not in str(facts["parkingfee"]).strip() and not contested(e, "parkingfee"):
                     add("parkingfee", "주차 무료" if fee == "무료" else f"주차 요금 {display_value('parkingfee', fee)}")
@@ -726,11 +887,14 @@ def status_items(e: dict, full: bool = False) -> list[dict]:
         if k == "usefee" and text == "무료":
             add(k, "입장 무료" if kind == "attraction" else "요금 무료")
         elif k == "parking":
-            if any(x["key"] == "parking_seats" for x in out):
+            if any(x["key"] == "parking_seats" for x in out) and alias_holds(e, "parking", "parking_seats"):
                 continue
             add(k, "주차 가능(무료)" if text == "가능, 요금 무료" else f"주차 {text}")
         elif k == "roomcount":
             add(k, f"객실 {text}실" if text.isdigit() else f"객실 {text}")
+        elif k == "parking_seats" and parking_seats_half(e):
+            lab = fact_label(e, k)   # one half only: '좌석 30석', never '주차·좌석 30석'
+            add(k, text if text.startswith(lab) else f"{lab} {text}")
         else:
             add(k, f"{STATUS_PREFIX[k]} {text}" if k in STATUS_PREFIX else text)
     if not out:
@@ -811,13 +975,59 @@ def _closed_part(text: str) -> str:
     return re.sub(r"^휴(?:무|관)일?\s*[:：]\s*", "", t)
 
 
+# The last entry (operator-forwarded evaluation 2026-10-18: it belongs in the first summary whenever the data gives
+# it). A time ('입장마감 17:30') belongs to the range it follows; when the tile would leave it behind '외' (a second
+# season takes the sub line, or another secondary does), it is folded into that range as the source writes it
+# ('3~10월 09:00–18:00(입장마감 17:30)'). A rule without a time ('※ 20분 전 입장마감', '폐관 30분 전까지 입장') is
+# added to the sub line in its own words.
+LAST_ENTRY = re.compile(r"입장\s*(?:마감|종료)|마지막\s*입장")
+LAST_RULE = re.compile(r"[^,/※()]*\d+\s*분\s*전[^,/※()]*입장[^,/※()]*|[^,/※()]*입장[^,/※()]*?\d+\s*분\s*전[^,/※()]*")
+
+
 def brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
     """(hours brief, closed-day text found inside the hours value). The first primary range is the main part, the
-    next range (or a secondary one) the sub, more when anything else is left."""
+    next range (or a secondary one) the sub, more when anything else is left; the last entry always shows
+    (LAST_ENTRY, LAST_RULE)."""
+    b, closed = _brief_hours(raw, base)
+    if b and not LAST_ENTRY.search(f"{b['main']} {b['sub']}"):
+        # a last entry stated as a rule, in a '※' note or a clause of its own: its words on the sub line
+        rule = next((squash_ws(m.group(0)) for x in restore_lines(raw) for m in [LAST_RULE.search(x)] if m), "")
+        if rule:
+            b["sub"] = f"{b['sub']} · {rule}" if b["sub"] else rule
+    return b, closed
+
+
+def shows_last_entry(b: dict | None) -> bool:
+    """A brief hours value names a last entry: a time ('입장마감 17:30') or a rule ('폐관 30분 전까지 입장')."""
+    t = f"{(b or {}).get('main', '')} {(b or {}).get('sub', '')}"
+    return bool(LAST_ENTRY.search(t) or LAST_RULE.search(t))
+
+
+def last_entry_part(raw, base: str = "") -> str:
+    """The last entry an hours value gives, in a few words for the sub line of another value's tile (slot_value
+    'hours': a source that adds to the stored hours, relation 'also'): each range's last entry after its season, the
+    months in brackets left out ('하절기(입장마감 17:30), 동절기(입장마감 16:30)'), a lone one as written ('입장마감
+    20:30'), else a rule in its own words ('20분 전 입장마감'); '' when the value gives none."""
+    b, _ = brief_hours(raw, base)
+    out = []
+    for x in ((b["main"], b["sub"]) if b else ()):
+        m = re.fullmatch(r"(.*?)\s*\d{2}:\d{2}–\d{2}:\d{2}\s*\(([^()]*)\)", x)
+        if m and LAST_ENTRY.search(m.group(2)):
+            season = squash_ws(re.sub(r"\([^()]*\)", "", m.group(1)))
+            out.append(f"{season}({m.group(2)})" if season else m.group(2))
+        elif LAST_ENTRY.search(x) and not RANGE_FIND.search(x):
+            out.append(x)
+    if out:
+        return ", ".join(out)
+    return next((squash_ws(m.group(0)) for x in restore_lines(raw) for m in [LAST_RULE.search(x)] if m), "")
+
+
+def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
     lines = clean_lines(raw)
     if not lines:
         return None, ""
     group, prim, sec, closed, other, notes = "", [], [], [], [], 0
+    last_of: dict[int, str] = {}   # primary range index → the last entry time that follows it ('입장마감 17:30')
     for line in lines:
         m = re.fullmatch(r"\[([^\]]+)\]", line)
         if m:
@@ -838,14 +1048,18 @@ def brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
                 else:
                     other.append(part)
                 continue
-            pos = 0
+            pos, cur = 0, None
             for k, m in enumerate(found):
                 cond = squash_ws(part[pos:m.start()]).strip(" :,-()[]")
                 if cond in BASE_WORDS or cond == base:
                     cond = ""
                 head = " ".join(x for x in ((group if not cond or k == 0 else ""), cond) if x)
                 text = f"{head} {fmt_time(m.group(1))}–{fmt_time(m.group(2))}".strip()
-                (sec if SECONDARY.search(cond) else prim).append(text)
+                if SECONDARY.search(cond):   # a break inside the range: the last entry after it is still the range's
+                    sec.append(text)
+                else:
+                    prim.append(text)
+                    cur = len(prim) - 1
                 pos = m.end()
             tail = part[pos:].strip(" ,")
             if tail:
@@ -857,6 +1071,8 @@ def brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
                         closed.append(_closed_part(par))
                     elif re.search(TIME, par):
                         sec.append(dash_times(par))
+                        if cur is not None and LAST_ENTRY.search(par):
+                            last_of.setdefault(cur, sec[-1])
                     else:
                         notes += 1
                 rest = re.sub(r"\([^()]*\)", "", tail).strip(" ,")
@@ -869,6 +1085,17 @@ def brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
         prim, sec = sec[:1], sec[1:]
     if prim:
         rest = prim[1:] + sec
+        hidden = [x for x in sec if LAST_ENTRY.search(x) and x != rest[0]]
+        if hidden and last_of:
+            # the last entry would be left behind '외': each one joins the range it follows
+            prim = [f"{p}({last_of[i]})" if i in last_of else p for i, p in enumerate(prim)]
+            joined = set(last_of.values())
+            sec = [x for x in sec if x not in joined]
+            rest = prim[1:] + sec
+        late = next((x for x in rest[1:] if x in sec and LAST_ENTRY.search(x)), None)
+        if late and not LAST_ENTRY.search(f"{prim[0]} {rest[0]}"):
+            # a last entry of no range of its own ('… / 입장마감 17:30'): it takes the sub line
+            rest = [late] + [x for x in rest if x is not late]
         return _b(prim[0], rest[0] if rest else "", len(rest) > 1 or notes > 0 or bool(other)), ", ".join(closed)
     if other:
         return _b(other[0], "", len(other) > 1), ", ".join(closed)
@@ -922,6 +1149,106 @@ def brief_fee(raw) -> dict | None:
     if m:
         return _b(f"{m.group(1)} {m.group(2)}", "", True)
     return _b(text)
+
+
+# A place a combined ticket also opens (data/<region>/tickets.json, pipeline/tickets.py; operator-forwarded evaluation
+# 2026-10-18: 근대역사박물관's body gave the single-site 성인 2,000원 while its first screen showed the 박물관 통합권's
+# 3,000원 alone, as if it were the only price). Its fee tile shows both side by side: the visitor's own first price as
+# the place's table lists it — the table's combined-ticket groups and its residents' groups taken out ('[○○시민]
+# 성인 1,000원' first in the table is not the visitor's price; review 2026-10-18) — ('개별 성인 2,000원'), then the same
+# visitor's price of the narrowest ticket that opens it, from that ticket's table, under the ticket's name and the same
+# visitor's word ('박물관 통합권 성인 3,000원'; what it opens is the facts card's, in our words: ticket_rows). Each value
+# keeps its own source: the ticket's provider joins the providers under the tiles and its table is a row of the facts
+# card.
+COMBINED = "통합권"
+TICKET_CATS = (("성인", "성인"), ("청소년", "청소년·군인"), ("군인", "청소년·군인"), ("어린이", "어린이"))
+VISITOR_GROUP = re.compile(r"개별|개인|일반|타지역|관외")   # a group that is the visitor's own price: no condition shown
+PRICE_ROW = re.compile(r"^[-•]?\s*([가-힣][가-힣·,/ ]*?)\s*:?\s*([\d,]+)\s*원$")
+
+
+def fee_groups(raw) -> list[dict]:
+    """A fee table's groups in order: {label (the '[…]' line, '' before the first), lines}."""
+    groups = [{"label": "", "lines": []}]
+    for x in clean_lines(raw):
+        m = re.fullmatch(r"\[([^\]]+)\]", x)
+        if m:
+            groups.append({"label": squash_ws(m.group(1)), "lines": []})
+        else:
+            groups[-1]["lines"].append(x)
+    return [g for g in groups if g["label"] or g["lines"]]
+
+
+def own_fee_row(raw) -> dict | None:
+    """The visitor's first price row of a place's own fee table: the first group that is neither a combined ticket
+    ('[박물관 통합권] …') nor a residents' price ('[○○시민] …', tickets.is_resident): {who, price, group, index} — ('성인', '2,000원',
+    '타지역', 1), index = the group's place among the table's '[…]' groups (None for a table without them, for the
+    other versions to find the same group: en_site.own_fee_row); None when no such price row is left (free, a sentence,
+    a call, residents only)."""
+    groups = fee_groups(raw)
+    heads = [g for g in groups if g["label"]]
+    for g in groups:
+        if COMBINED in g["label"] or tickets.is_resident(g["label"]):
+            continue
+        lines = ([f"[{g['label']}]"] if g["label"] else []) + g["lines"]
+        text = " ".join(g["lines"])
+        idx = next((i for i, h in enumerate(heads) if h is g), None)
+        gr = fee_grid(text)
+        if gr:
+            r = gr["rows"][0]
+            return {"who": squash_ws(r["who"]), "price": f"{r['a']}원", "group": squash_ws(g["label"] or gr["cols"][0]),
+                    "index": idx}
+        fees = fee_table("\n".join(lines))
+        fg = next((x for x in (fees or {}).get("groups") or [] if x["rows"]), None)
+        if fg:
+            r = fg["rows"][0]
+            return {"who": squash_ws(r["who"]), "price": squash_ws(r["price"]), "group": squash_ws(fg["label"]),
+                    "index": idx}
+        m = FIRST_ADULT.search(text)
+        if m:
+            return {"who": "성인", "price": m.group(1), "group": squash_ws(g["label"]), "index": idx}
+    return None
+
+
+def same_ticket_group(e: dict, t: dict) -> str:
+    """The label of the place's own fee group that is ticket t's table ('박물관 통합권', '통합권'): a combined-ticket
+    group whose every price row is the ticket's individual price for that visitor; '' when the table has none."""
+    want = (t.get("prices") or {}).get("개인") or {}
+    for g in fee_groups((e.get("facts") or {}).get("usefee")):
+        if COMBINED not in g["label"]:
+            continue
+        got: dict[str, int] = {}
+        for m in (PRICE_ROW.match(x) for x in g["lines"]):
+            if m:
+                cat = next((c for w, c in TICKET_CATS if squash_ws(m.group(1)).startswith(w)), "")
+                got.setdefault(cat, int(m.group(2).replace(",", "")))
+        if got and set(got) == set(want) and all(got[c] == want[c][0] for c in want):
+            return g["label"]
+    return ""
+
+
+def fee_with_ticket(e: dict, raw) -> dict | None:
+    """The fee tile of a place a combined ticket also opens (COMBINED above): {main '개별 성인 2,000원', sub '박물관
+    통합권 성인 3,000원', more, ticket {id, name, price, cat, provider, provider_full, date, url}}; None when the place has
+    no ticket, no visitor's price row of its own, or a visitor the ticket's table has no price for. Both are the
+    visitor's prices (a resident's table first in the place's table is passed over: own_fee_row)."""
+    tks = e.get("_tickets") or []
+    own = own_fee_row(raw) if tks else None
+    if not own:
+        return None
+    t = tks[0]
+    cat = next((c for w, c in TICKET_CATS if own["who"].startswith(w)), "")
+    pair = ((t.get("prices") or {}).get("개인") or {}).get(cat)
+    if not pair:
+        return None
+    cond = own["group"] if own["group"] and not VISITOR_GROUP.search(own["group"]) else ""
+    src = t.get("src") or {}
+    # the ticket's price names its visitor as the place's own does ('박물관 통합권 성인 3,000원'; the other versions:
+    # en_site.fee_pair 'Museum combined ticket: Adults 3,000 won')
+    return {"main": squash_ws(f"개별 {cond} {own['who']} {own['price']}"),
+            "sub": squash_ws(f"{t['name']} {own['who']} {tickets.won(pair[0])}"), "more": True, "closed": False,
+            "ticket": {"id": t["id"], "name": t["name"], "price": pair[0], "cat": cat,
+                       "provider": slot_provider(src.get("provider")), "provider_full": squash_ws(src.get("provider")),
+                       "date": squash_ws(src.get("checked_at")), "url": web_url(src.get("url"))}}
 
 
 def brief_parking(raw) -> dict | None:
@@ -1039,7 +1366,21 @@ def slot_value(e: dict, name: str) -> dict | None:
             alt_b = alt_briefs(hkey, lambda v: brief_hours(v, base)[0])
             if alt_b and hb and all(x["main"] == hb["main"] and x["sub"] == hb["sub"] for x in alt_b):
                 alt_b = []
-            return pack(hkey, hb, alt_b or None)
+            out = pack(hkey, hb, alt_b or None)
+            shown = (out["vals"][0] if out["conflict"] else out) if out else None
+            if shown and not shows_last_entry(shown):
+                # the last entry belongs in the first summary (evaluation 2026-10-18): a source that adds to the stored
+                # hours (relation 'also', the facts card's '또는 …') and gives one puts it on the sub line, as
+                # brief_hours does for a rule of the value's own; its provider joins those under the tiles
+                for i, a in enumerate(a for a in alternatives(e, hkey) if a.get("relation") == "also"):
+                    extra = last_entry_part(a["value"], base)
+                    if extra:   # index: the other versions' 'also' values in the same order (en_site slot)
+                        shown["sub"] = f"{shown['sub']} · {extra}" if shown["sub"] else extra
+                        out["also"] = {"index": i, "provider": slot_provider(a.get("provider")),
+                                       "provider_full": squash_ws(a.get("provider")),
+                                       "date": squash_ws(a.get("checked_at"))}
+                        break
+            return out
         # closed day: its own field first, else the part found inside the hours value
         if f.get("restdate"):
             cb = brief_closed(" ".join(clean_lines(f["restdate"])))
@@ -1058,15 +1399,27 @@ def slot_value(e: dict, name: str) -> dict | None:
         return None
     if name == "fee":
         b = brief_fee(f.get("usefee"))
-        return pack("usefee", b, alt_briefs("usefee", brief_fee, lambda x: not b or x["main"] != b["main"]) or None)
+        alt_b = alt_briefs("usefee", brief_fee, lambda x: not b or x["main"] != b["main"])
+        # a place a combined ticket also opens: its own price beside the ticket's (fee_with_ticket) — unless the
+        # sources give the fee differently, where both of their values are the tile (never one of them settled here)
+        both = None if alt_b else fee_with_ticket(e, f.get("usefee"))
+        if both:
+            out = pack("usefee", {k: v for k, v in both.items() if k != "ticket"})
+            if out:
+                out["ticket"] = both["ticket"]
+            return out
+        return pack("usefee", b, alt_b or None)
     if name == "parking":
         if f.get("parking"):
             b = brief_parking(f["parking"])
             return pack("parking", b, alt_briefs("parking", brief_parking, lambda x: not b or x["main"] != b["main"]) or None)
-        if f.get("parking_seats"):
-            out = pack("parking_seats", brief_plain(f["parking_seats"]))
+        if f.get("parking_seats") and alias_holds(e, "parking", "parking_seats"):
+            # a seat count alone ('30석') is no parking value: the slot stays missing (seats_note under it)
+            b = brief_plain(f["parking_seats"])
+            out = pack("parking_seats", b, alt_briefs("parking_seats", brief_plain,
+                                                      lambda x: not b or x["main"] != b["main"]) or None)
             if out:
-                out["label"] = "주차·좌석"
+                out["label"] = "주차" if parking_seats_half(e) == "parking" else "주차·좌석"
             return out
         if f.get("parkingfee"):
             fee = " ".join(clean_lines(f["parkingfee"]))
@@ -1087,9 +1440,23 @@ def slot_value(e: dict, name: str) -> dict | None:
     return None
 
 
+def seats_note(e: dict) -> str:
+    """'좌석 30석' under a missing parking cell when the city's '주차 및 좌석수' gives seats only (one source, or every
+    source the same); '' otherwise."""
+    raw = (e.get("facts") or {}).get("parking_seats")
+    if not raw or parking_seats_half(e) != "seats" or contested(e, "parking_seats"):
+        return ""
+    text, lab = squash_ws(raw), FACT_LABELS["seat"]
+    return text if text.startswith(lab) else f"{lab} {text}"
+
+
 def missing_slot(e: dict, name: str, label: str = "") -> dict:
-    return {"key": name, "src_key": "", "label": label or _slot_label(e, name), "main": "", "sub": "", "more": False,
+    return {"key": name, "src_key": "", "label": label or _slot_label(e, name), "main": "",
+            "sub": seats_note(e) if name == "parking" else "", "more": False,
             "closed": False, "conflict": False, "vals": [], "provider": "", "date": "", "missing": True}
+
+
+SLOT_EXTRA = ("ticket", "also")   # a slot's part from another source: {provider, provider_full, date} (slot_value)
 
 
 def key_facts(e: dict, mode: str = "hero") -> dict:
@@ -1108,10 +1475,11 @@ def key_facts(e: dict, mode: str = "hero") -> dict:
             missing.append(_slot_label(e, n))
             if mode != "hero":
                 slots.append(missing_slot(e, n))
-    dates = [s["date"] for s in slots if s.get("date")]
+    dates = [d for s in slots for d in (s.get("date"), *((s.get(x) or {}).get("date") for x in SLOT_EXTRA)) if d]
     provs = []
-    for s in slots:
-        for p in [s.get("provider")] + [v["provider"] for v in s.get("vals") or []]:
+    for s in slots:   # a combined ticket's price beside the place's own fee comes from the ticket's table, a last
+        extra = [(s.get(x) or {}).get("provider") for x in SLOT_EXTRA]   # entry from a source that adds to the hours
+        for p in [s.get("provider")] + [v["provider"] for v in s.get("vals") or []] + extra:
             if p and p not in provs:
                 provs.append(p)
     tel = next((s for s in slots if s["key"] == "tel" and s.get("tel")), None)
@@ -1307,6 +1675,9 @@ def prepare(S, data_dir: Path) -> None:
     for xs in by_norm.values():
         for e in xs:
             e["_twins"] = [x for x in xs if x is not e]
+    # two pages for one building by the data (part_of rel same_building, pipeline/relations.py): twins both ways too
+    for e in S.entities:
+        e["_twins"] += [x for x in e.get("_same") or [] if x not in e["_twins"]]
     S.course_vms = {c["slug"]: course_vm(S, c) for c in S.courses}
 
 
@@ -1371,7 +1742,7 @@ def assign_regions(S) -> None:
 MEAL_RX = re.compile(r"(중식|석식|조식|점심|저녁|점심식사|저녁식사)")
 LODGING_RX = re.compile(r"(숙소|숙박)")
 ACTIVITY_RX = re.compile(r"^(야경|유람선)")
-STOP_KIND_LABELS = {"meal": "식사", "lodging": "숙박", "activity": "일정"}
+STOP_KIND_LABELS = {"meal": "식사", "lodging": "숙박", "activity": "일정", "day": "일차"}
 
 
 def split_course_name(name: str) -> tuple[str, str]:
@@ -1400,45 +1771,69 @@ MEASURED_SHARE = 0.8  # a course's distance sum is shown only when at least this
 
 def course_vm(S, c: dict) -> dict:
     """A course: place stops (numbered, coded, with straight-line legs), itinerary separators (meals, lodging,
-    activities), totals and the computed lede. The leg sum shows only when ≥80% of legs are measured; the
-    band positions follow real leg ratios only when every leg is measured, else equal spacing (order only)."""
+    activities, and the source's day / option headings '1일차', '2일차(1안)'), totals and the computed lede. The leg
+    sum shows only when ≥80% of legs are measured; the band positions follow real leg ratios only when every leg is
+    measured, else equal spacing (order only).
+    QA 2026-10-15 F09-b/c: no leg exists between two options of a day — the first stop of a '(2안)' block after a
+    '(1안)' block is a break (s['brk']: no prev/next across it) — nor into or out of a stop the source marks optional
+    ('어청도 (선택사항)': s['optional'], neighbours named, no distance); both stay out of legs, legs_possible and cum.
+    A day change keeps its leg (like the 숙소 rows). 'see': a stop that names two places ('○○도,△△도일원') links
+    both, with no coordinates and no leg."""
     region = S.site.get("region", "")
     code, title = split_course_name(c["name"])
     letter = code[0] if code and re.match(r"[A-Z]코스", code) else ""
     rows, stops = [], []
+    day_now, prev_day = "", ""
     for s in c.get("stops") or []:
         t = S.ent_by_slug.get(s.get("place_slug") or "")
         label = squash_ws(s.get("name") or "")
         kind = stop_kind(label, t)
+        day = squash_ws(s.get("day"))
+        if day and day != day_now:
+            rows.append({"sep": True, "kind": "day", "kind_label": day, "name": "", "note": ""})
+            day_now = day
         if kind != "place":
             rows.append({"sep": True, "kind": kind, "kind_label": STOP_KIND_LABELS[kind], "name": label,
                          "note": squash_ws(s.get("note"))})
             continue
-        name = t["name"] if t else label
+        part_of = bool(t) and str(s.get("link_basis", "")).startswith("part_of")
+        # a stop inside a place keeps the course's own name for it ('옥돌해변 명품 데크길' in 옥돌해변): the place's name
+        # twice in a row read as a mistake (review 2026-10-17); the row says whose place it is and links its page
+        name = label if part_of and label else t["name"] if t else label
         i = len(stops) + 1
         short = squash_ws(re.sub(r"\(.*$", "", name)) or name
         st = {"sep": False, "kind": "place", "n": i, "code": f"{letter}{i:02d}" if letter else f"{i:02d}",
               "name": name, "short": short, "paren": squash_ws(name[len(short):]) if "(" in name else "",
               "t": t, "geo": t["_geo"] if t else None, "path": t["_path"] if t else "",
-              "part_of": bool(t) and str(s.get("link_basis", "")).startswith("part_of"),
-              "label": label if label and t and normalize_name(label) != normalize_name(t["name"]) else "",
-              "note": squash_ws(s.get("note")),
+              "part_of": part_of,
+              "label": label if label and t and not part_of and normalize_name(label) != normalize_name(t["name"]) else "",
+              "note": squash_ws(s.get("note")), "day": day, "optional": bool(s.get("optional")),
+              "brk": bool(stops) and "(2안)" in day and "(1안)" in prev_day,
+              "see": [{"name": x["name"], "path": x["_path"], "id": x["id"]}
+                      for x in (S.ent_by_slug.get(k) for k in s.get("see") or []) if x],
+              "guide": _stop_guide(S, s.get("guide")),
               "search": "" if t else f"https://map.naver.com/p/search/{quote(f'{region} {label}'.strip(), safe='')}"}
+        prev_day = day
         stops.append(st)
         rows.append(st)
-    legs = []
+    legs, pairs = [], []
     for a, b in zip(stops, stops[1:]):
+        if b["brk"] or a["optional"] or b["optional"]:
+            continue
         d = 0.0 if a["t"] is not None and a["t"] is b["t"] else hav(a["geo"], b["geo"])
         a["next_m"], b["prev_m"] = d, d
         legs.append(d)
+        pairs.append((a, b))
     for i, s in enumerate(stops):
-        s["prev"] = stops[i - 1] if i else None
-        s["next"] = stops[i + 1] if i + 1 < len(stops) else None
+        s["prev"] = stops[i - 1] if i and not s["brk"] else None
+        s["next"] = stops[i + 1] if i + 1 < len(stops) and not stops[i + 1]["brk"] else None
         s.setdefault("prev_m", None)
         s.setdefault("next_m", None)
     measured = [d for d in legs if d is not None]
     complete = len(measured) == len(legs)
     show_total = bool(legs) and len(measured) >= MEASURED_SHARE * len(legs)
+    # whose coordinates the measured legs join (TourAPI first): '한국관광공사 TourAPI', or with another provider too
+    leg_geo = geo_providers([s["geo"] for a, b in pairs if a["geo"] and b["geo"] for s in (a, b)])
     cum, ok = 0.0, True  # the distance from the start, only while every earlier leg is measured
     for s in stops:
         s["cum"] = cum if ok else None
@@ -1449,8 +1844,8 @@ def course_vm(S, c: dict) -> dict:
     n = len(stops)
     if complete and n > 1 and sum(measured) > 0:
         pos, x = [0.0], 0.0
-        for d in legs:
-            x += d
+        for b in stops[1:]:
+            x += b["prev_m"] or 0.0
             pos.append(x)
         xs = [p / pos[-1] for p in pos]
     else:
@@ -1473,16 +1868,42 @@ def course_vm(S, c: dict) -> dict:
         closed_note = f"{day}요일 {'휴관' if kinds == {'attraction'} else '휴무'} {cnt}곳"
     vm = {"c": c, "slug": c["slug"], "path": c["_path"], "code": code, "letter": letter, "title": title,
           "display": course_display(c["name"]), "group": c.get("group") or "", "duration": c.get("duration") or "",
-          "rows": rows, "stops": stops, "seps": [r for r in rows if r["sep"]], "legs": legs,
+          # seps: the itinerary rows of the source's list (meals, lodging, activities); days: its day headings
+          "rows": rows, "stops": stops, "seps": [r for r in rows if r["sep"] and r["kind"] != "day"], "legs": legs,
+          "pairs": pairs, "days": [r["kind_label"] for r in rows if r["sep"] and r["kind"] == "day"],
+          "taketime": _taketime(c.get("taketime")),
+          "transit_guides": [x for x in c.get("transit_guides") or [] if x],
           "total": sum(measured), "measured": len(measured), "legs_possible": len(legs), "complete": complete,
           "show_total": show_total, "measure_note": f"좌표 있는 구간 {len(measured)}/{len(legs)}" if legs else "",
+          "geo_providers": leg_geo, "geo_src": "·".join(leg_geo),
           "n_places": n, "linked": len(linked), "geo_n": sum(1 for s in stops if s["geo"]),
           "first": stops[0]["name"] if stops else "", "last": stops[-1]["name"] if stops else "",
           "monday": by_day.get("월", 0), "closed_by_day": dict(by_day), "closed_note": closed_note,
           "orig_url": (c.get("original") or {}).get("source_url") or "",
-          "orig_name": (c.get("original") or {}).get("source_name") or (S.site.get("source") or {}).get("name", "")}
+          "orig_name": (c.get("original") or {}).get("source_name") or (S.site.get("source") or {}).get("name", ""),
+          # 예약하기 (pipeline/booking.py): the services of the stops' guides and places, a box under the lede
+          "booking": booking.view(booking.course_targets(S, c), "ko"), "bw": LC.BOOK_WORDS["ko"]}
     vm["lede"] = course_lede(c, vm)
     return vm
+
+
+def _taketime(v) -> dict | None:
+    """The one duration a course source gives ('B코스 | … 소요시간 : 12시간'): {value, source_name,
+    source_url, checked_at, hours} or None."""
+    if not isinstance(v, dict) or not squash_ws(v.get("value")):
+        return None
+    m = re.fullmatch(r"(\d+)시간", squash_ws(v["value"]))
+    return {**v, "value": squash_ws(v["value"]), "hours": int(m.group(1)) if m else None}
+
+
+def _stop_guide(S, ref) -> dict | None:
+    """A guide a course stop points to ('guide-32#h-b2': the island ferry guide on 어청도): {id, frag, label, path}."""
+    gid, _, frag = str(ref or "").partition("#")
+    g = (getattr(S, "guide_by_id", None) or {}).get(gid) if gid else None
+    if not g:
+        return None
+    return {"id": gid, "frag": frag, "label": squash_ws(g.get("label")) or squash_ws(g.get("title")),
+            "path": g["_path"] + (f"#{frag}" if frag else "")}
 
 
 def course_display(name: str) -> str:
@@ -1503,7 +1924,8 @@ def course_lede(c: dict, vm: dict) -> str:
     if vm["complete"] and vm["measured"]:
         i = max(range(len(vm["legs"])), key=lambda j: vm["legs"][j] or 0)
         if vm["legs"][i]:
-            longest = f"가장 긴 구간은 {stops[i]['name']}에서 {stops[i + 1]['name']}까지 직선 {dist(vm['legs'][i])}"
+            a, b = vm["pairs"][i]
+            longest = f"가장 긴 구간은 {a['name']}에서 {b['name']}까지 직선 {dist(vm['legs'][i])}"
     near = f"처음 {cluster}곳은 출발지에서 직선 1km 안에 모여 있" if cluster > 2 else ""
     if near and longest:
         return f"{near}고, {longest}입니다."
@@ -1537,6 +1959,98 @@ def course_stop_details(vm: dict) -> dict:
     return vm
 
 
+# ----------------------------------------------------------------------------- 차 없이 다니기 (QA 2026-10-15 F09)
+LONG_LEG_M = 3000                         # legs longer than this (straight line) are listed first
+
+
+def move_config() -> dict:
+    """The city's '차 없이 다니기' guides (site.json city.course_move): guides (every course, before its own transit
+    guides — a car-free day guide), guides_after (after them — a getting-here guide), island_guide (a course whose
+    transit guides point at it gets island_route's first and last times)."""
+    m = city.current().get("course_move") or {}
+    return {"guides": list(m.get("guides") or []), "guides_after": list(m.get("guides_after") or []),
+            "island_guide": str(m.get("island_guide") or ""), "island_route": str(m.get("island_route") or ""),
+            "timetable_guide": str(m.get("timetable_guide") or "")}
+
+
+def course_move(S, vm: dict) -> dict | None:
+    """The course page's '차 없이 다니기' block, from data the site already holds — never a mode, a time or 'walkable'
+    of our own (CLAUDE.md 3.1):
+    - bus: per place stop (each place once) its nearest bus stops from nearby.json (공공데이터포털 정류장 좌표; route
+      numbers only when the timetable names the stop — an empty list is not 'no bus'), the first and last stops first
+      (lead), the rest after (rest);
+    - legs: every measured leg between two places (straight line ≥ 10 m) with a public-transport directions link that
+      lets the map app compute the route and its times (Korean: Kakao /link/by/traffic, coordinates only), longer than
+      LONG_LEG_M first; a leg into a stop with a guide (the island ferry) carries that guide;
+    - routes: the city bus timetable's reference-stop first and last times (transit.json) of the routes the bus rows
+      name, and the island route when the course's transit_guides point at the island guide (move_config); it first;
+    - guides: the city's car-free guides, the course's transit_guides ('guide-NN#h-bN'), the city's getting-here guide;
+    - missing: what no source gives (per-leg travel time; the total time unless the source states one).
+    None for a course with no place stop."""
+    stops = vm["stops"]
+    if not stops:
+        return None
+    nb = getattr(S, "nearby", None) or {}
+    rows, seen = [], set()
+    for s in stops:
+        t = s["t"]
+        if not t or not t.get("_geo") or t["id"] in seen:
+            continue
+        bus = [{"name": squash_ws(x["stop_name"]), "m": int(x["meters"]), "routes": list(x.get("routes") or []),
+                "routes_text": "·".join(x.get("routes") or [])} for x in (nb.get(t["id"]) or {}).get("bus") or []]
+        if bus:
+            seen.add(t["id"])
+            rows.append({"n": s["n"], "s": s, "id": t["id"], "bus": bus})
+    ends = {rows[0]["n"], rows[-1]["n"]} if rows else set()   # where the course starts and ends (of the stops with data)
+    lead, rest = [r for r in rows if r["n"] in ends], [r for r in rows if r["n"] not in ends]
+    legs = []
+    for a, b in vm.get("pairs") or []:
+        d = a.get("next_m")
+        if d is None or d < 10 or not (a["geo"] and b["geo"]):
+            continue
+        legs.append({"a": a, "b": b, "d": d, "long": d > LONG_LEG_M, "guide": b.get("guide"),
+                     "url": kakao_transit_url(a["name"], a["geo"]["lat"], a["geo"]["lng"],
+                                              b["name"], b["geo"]["lat"], b["geo"]["lng"])})
+    legs.sort(key=lambda x: not x["long"])
+    transit = getattr(S, "transit", None) or {}
+    held = {r["no"]: r for r in transit.get("routes") or []}
+    nums = {n for r in rows for b in r["bus"] for n in b["routes"]}
+    mc = move_config()
+    island = mc["island_route"]
+    if island and any(g.split("#")[0] == mc["island_guide"] for g in vm.get("transit_guides") or []):
+        nums.add(island)
+    routes = sorted((held[n] for n in nums if n in held), key=lambda r: (r["no"] != island, r["no"]))
+    gids = mc["guides"] + list(vm.get("transit_guides") or []) + mc["guides_after"]
+    guides, seen_g = [], set()
+    for ref in gids:
+        g = _stop_guide(S, ref)
+        if g and g["path"] not in seen_g:
+            seen_g.add(g["path"])
+            guides.append(g)
+    missing = ["구간별 이동 시간"] + ([] if vm.get("taketime") else ["총 소요 시간"])
+    keys = (["stops"] if rows else []) + (["timetable"] if any(b["routes"] for r in rows for b in r["bus"]) else [])
+    meta = (getattr(S, "nearby_meta", None) or {}).get("bus") or {}
+    tt = transit.get("_meta") or {}
+    tel = ((tt.get("contact") or {}).get("tel") or "") if routes else ""
+    return {"lead": lead, "rest": rest, "legs": legs, "routes": [route_parts(r) for r in routes], "guides": guides,
+            "missing": missing, "sources": [access_sources()[k] for k in keys], "source_keys": keys, "tt": tt,
+            "tel": tel, "tel_html": tel_markup(tel) if tel else "", "bus_radius": meta.get("radius_m") or 500,
+            "island_route": island}
+
+
+def route_parts(r: dict) -> dict:
+    """One timetable route (transit.json) as the course block prints it: the weekday rows by direction, and the
+    Sat/Sun/holiday rows only where they differ ('same': every weekend value equals the weekday one)."""
+    times = r.get("times") or []
+    same = all(t["weekend"] == t["weekday"] and t["weekend_n"] == t["weekday_n"] for t in times)
+    # a row whose departures are not one even run ('pattern': '06:10, 09:10~20:10' at one stop) shows the source's
+    # pattern instead of the first~last range, so no hourly bus is implied in the gap
+    shown = lambda t: {**t, "weekday": t.get("pattern") or t["weekday"],
+                       "weekend": t["pattern"] if t.get("pattern") and t["weekend"] == t["weekday"] else t["weekend"]}
+    return {"no": r["no"], "out": [shown(t) for t in times if t["dir"] == "out"],
+            "back": [shown(t) for t in times if t["dir"] == "back"], "same": same, "alts": [t for t in times if t.get("alt")]}
+
+
 MAP_MIN_SHARE = 0.5  # a course map is drawn only when at least half of its stops have coordinates
 
 
@@ -1552,13 +2066,20 @@ def course_map(stops: list[dict]) -> dict | None:
     """The course map (ui.mapfig {'course': points}; map.js draws it with Kakao Maps): the stops that
     have coordinates, numbered as in the stop list (n), joined in course order by straight lines. None when fewer
     than half of the stops (or fewer than two) have coordinates — the numbered stop list is then the answer, and a
-    few dots joined by long lines would only mislead. Each point is named as the stop list names it (map_name)."""
-    pts = [s for s in stops if s.get("geo")]
-    if len(pts) < 2 or len(pts) < MAP_MIN_SHARE * len(stops):
+    few dots joined by long lines would only mislead. Each point is named as the stop list names it (map_name).
+    An optional stop (s['optional'], '어청도 (선택사항)') is not drawn nor counted for that share; a break between two
+    options of a day (s['brk']) starts a new line: points after it carry 'seg' (1, 2 …; map.js draws one line per seg)."""
+    pts, seg = [], 0
+    for s in stops:
+        if s.get("brk"):
+            seg += 1
+        if s.get("geo") and not s.get("optional"):
+            pts.append((s, seg))
+    if len(pts) < 2 or len(pts) < MAP_MIN_SHARE * sum(1 for s in stops if not s.get("optional")):
         return None
     return {"points": [{"lat": s["geo"]["lat"], "lng": s["geo"]["lng"], "name": map_name(s), "url": s.get("path") or "",
-                        "n": s["n"]} for s in pts],
-            "n_geo": len(pts), "n_all": len(stops)}
+                        "n": s["n"], **({"seg": k} if k else {})} for s, k in pts],
+            "n_geo": len(pts), "n_all": len(stops), "n_opt": sum(1 for s in stops if s.get("geo") and s.get("optional"))}
 
 
 def course_groups_vm(S) -> list[dict]:
@@ -1737,13 +2258,173 @@ def access_vm(S, e: dict) -> dict | None:
             "bus_radius": (meta.get("bus") or {}).get("radius_m") or 500}
 
 
+# ----------------------------------------------------------------------------- 주변·함께 가기 (templates/_near.html.j2)
+# the course segments through a place, the nearby rows with one stepped straight-line scale per page, the guide and
+# event cards. Words: locales.NEAR_WORDS. Every distance is a straight line between stored coordinates.
+NEAR_GLYPH = {"attraction": "pin", "stay": "bed", "food": "bowl"}
+NEAR_TRACK = {"stay": "stay_click", "food": "food_click"}
+NEAR_STEPS = (100, 250, 500, 1000, 2000)
+
+
+def same_shape(w, h, w2, h2, tol: float = 0.02) -> bool:
+    """Two sizes with the same width-to-height ratio (within tol): a small copy that kept its original's shape."""
+    return bool(w and h and w2 and h2) and abs((w2 / h2) / (w / h) - 1) <= tol
+
+
+def small_thumb(ph: dict | None) -> dict | None:
+    """A nearby row's picture: the provider's small copy when measured and of the original's shape (the provider
+    squeezes some 940×705 or 940×470 originals into 300×200 copies — a distorted KOGL-3 photo is an altered one, and a
+    squeezed KOGL-1 one looks wrong even cropped), else the smallest same-origin derivative of a KOGL-1 photo
+    (media.smallest), else None (the row shows its kind icon) — never the 300–500 KB original."""
+    if not ph:
+        return None
+    t = ph.get("th")
+    if t and same_shape(ph.get("w"), ph.get("h"), t.get("w"), t.get("h")):
+        return {"url": t["url"], "w": t["w"], "h": t["h"], "alt": ph.get("alt", ""), "type": ph["type"],
+                "lic": ph.get("lic", "")}
+    small = media.smallest(ph)
+    if small:
+        return {"url": small[0], "w": small[1], "h": small[2], "alt": ph.get("alt", ""), "type": ph["type"],
+                "lic": ph.get("lic", "")}
+    return None
+
+
+def photo_credits(rows) -> list[str]:
+    """The licences of the rows' pictures, once each, KOGL-1 before KOGL-3 (the same order on every page)."""
+    return [lic for _, lic in sorted({(r["photo"]["type"], r["photo"]["lic"]) for r in rows if r.get("photo")})]
+
+
+def near_scale(ms, radius=None) -> int:
+    """The page's one bar scale: the first step at or above the farthest row (100 · 250 · 500 · 1000 · 2000 m), else
+    the nearby radius."""
+    top = max(ms, default=0)
+    return next((s for s in NEAR_STEPS if s >= top), radius or 2000)
+
+
+def near_fill(m, scale: int) -> float:
+    """A row's bar length as a share of the page scale (0 under 10 m: '같은 좌표')."""
+    if not m or m < 10 or not scale:
+        return 0
+    return round(min(float(m) / scale, 1), 3)
+
+
+def one_value(v: dict | None) -> dict | None:
+    """A slot in a one-line row: the value, or {label, varies} when two sources give it differently — the row reads
+    '<label> 출처마다 다름' (NEAR_WORDS varies; never one value picked, CLAUDE.md 3.2) and the place's page shows both."""
+    if not v or v.get("skip"):
+        return None
+    return {"label": v["label"], "varies": True} if v.get("conflict") else v
+
+
+def near_row(S, t: dict | None, n: dict | None = None) -> dict:
+    """One row of the chapter: a nearby place (n: its nearby entry, t: its page or None) or a twin / related place
+    (n None: no distance). photo: its own first TourAPI photo, small copy only; icon: the kind glyph; closed: its weekly
+    closed day (not stays); fact: a stay's check-in. A value two sources give differently: {label, varies} (one_value)."""
+    if n is not None:
+        kind = n.get("kind")
+        lab = re.sub(r"^관광명소 > ", "", n.get("type_label") or KIND_LABELS.get(kind, ""))
+        lab = STAY_TYPE.get(lab, lab)
+        m = n.get("distance_m")
+        row = {"name": n["name"], "href": t["_path"] if t else n.get("href", ""), "m": m or 0,
+               "d": dist(m) if m is not None else "", "track": n.get("track") or NEAR_TRACK.get(kind, "nearby_click"),
+               "type": (t["_type"] or KIND_LABELS.get(t["kind"], "")) if t else lab}
+    else:
+        kind = t.get("kind")
+        row = {"name": t["name"], "href": t["_path"], "m": None, "d": None,
+               "track": NEAR_TRACK.get(kind, "nearby_click"), "type": t["_type"] or KIND_LABELS.get(kind, "")}
+    cl = slot_value(t, "closed") if t and t.get("kind") != "stay" else None
+    fact = slot_value(t, "checkin") if t and t.get("kind") == "stay" else None
+    return {**row, "internal": bool(t), "kind": kind, "geo": t["_geo"] if t else None,
+            "closed": one_value(cl), "fact": one_value(fact),
+            "photo": small_thumb(t["_photos"][0]) if t and t.get("_photos") else None,
+            "icon": (t.get("_visual") or ("", "pin"))[1] if t else NEAR_GLYPH.get(kind, "pin")}
+
+
+def route_segs(boards: list[dict], dist_fn, name_fn) -> list[dict]:
+    """The official courses through a place as segments: boards [{display, path, stops, at}] (stops: the course's
+    place stops in order, at: the indexes of this place's stops — a course may pass it more than once) grouped by the
+    same neighbours at the same straight-line distances — {prev, next: {name, path, d, same} | None, courses:
+    [{display, path, n, N, p}]} (p: the position in the course, order only; same: under 10 m, d is then '같은 좌표').
+    Each visit is one board: consecutive stops at this place (C코스 은파호수공원야경 → 은파호수공원) are one visit,
+    its neighbours the stops around them and n its first stop; a later visit (B코스 장자도 6 · 8 · 13) is another.
+    Most courses first, then first appearance; every visit lands in exactly one group.
+    A break between two options of a day (s['brk'], present.course_vm) has no neighbour across it and never joins a
+    run: that side reads 'branch' (prev_branch / next_branch; NEAR_WORDS 'branch'), not the course's start or end."""
+    key = lambda x: None if x is None else (("t", id(x["t"])) if x.get("t") else ("s", x.get("short") or x.get("name")))
+    end = lambda x, m: None if x is None else {"name": name_fn(x), "path": x.get("path") or "", "d": dist_fn(m),
+                                               "same": m is not None and float(m) < 10}
+    groups: dict = {}
+    for b in boards:
+        stops = b["stops"]
+        runs: list[list[int]] = []
+        for k in sorted(b["at"] if b.get("at") is not None else [b["i"]]):
+            if runs and k == runs[-1][1] + 1 and not stops[k].get("brk"):
+                runs[-1][1] = k
+            else:
+                runs.append([k, k])
+        N = len(stops)
+        for i, j in runs:
+            pb, nb = i > 0 and bool(stops[i].get("brk")), j + 1 < N and bool(stops[j + 1].get("brk"))
+            prev = stops[i - 1] if i > 0 and not pb else None
+            nxt = stops[j + 1] if j + 1 < N and not nb else None
+            pm, nm = stops[i].get("prev_m") if prev else None, stops[j].get("next_m") if nxt else None
+            k = (key(prev), dist_fn(pm) if prev else None, key(nxt), dist_fn(nm) if nxt else None, pb, nb)
+            g = groups.setdefault(k, {"prev": end(prev, pm), "next": end(nxt, nm), "prev_branch": pb,
+                                      "next_branch": nb, "courses": []})
+            g["courses"].append({"display": b["display"], "path": b["path"], "n": i + 1, "N": N,
+                                 "p": round(i / (N - 1), 3) if N > 1 else 0})
+    return sorted(groups.values(), key=lambda g: -len(g["courses"]))
+
+
+def card_range(r: dict, today: str) -> str:
+    """An event card's dates (event_row's range) with the year in front when the edition starts in another year
+    ('2025. 10. 30.(목)–11. 2.(일)' seen in 2026): a past edition never reads as this year's."""
+    rng, start = r["range"], r["start"]
+    if not rng or not start or "period" in r["contested"] or start[:4] == str(today)[:4]:
+        return rng
+    return f"{start[:4]}. {rng}"
+
+
+def relation_vm(S, e: dict) -> tuple[list[dict], list[dict]]:
+    """The place's relation lines and parts rows (pipeline/relations.py; words: NEAR_WORDS part_of / same_building /
+    parts). Lines: [{rel, word ('속한 곳: {name}'), places [{name, path}]}] — an inside child names its parent, a
+    same-building page its partners (both ways, the same words). Parts: the places inside this one as nearby rows
+    (near_row), with the straight line between the two coordinates when both have them."""
+    w = LC.NEAR_WORDS["ko"]
+    lines = []
+    parent = e.get("_parent")
+    if parent is not None and e.get("_rel") == "inside":
+        lines.append({"rel": "inside", "word": w["part_of"], "places": [{"name": parent["name"], "path": parent["_path"]}]})
+    same = e.get("_same") or []
+    if same:
+        lines.append({"rel": "same_building", "word": w["same_building"],
+                      "places": [{"name": x["name"], "path": x["_path"]} for x in same]})
+    parts = []
+    for c in e.get("_parts") or []:
+        r = near_row(S, c)
+        m = hav(e.get("_geo"), c.get("_geo"))
+        if m is not None:
+            r["m"], r["d"] = m, dist(m)
+        parts.append(r)
+    return lines, parts
+
+
 def place_vm(S, e: dict, ctx: dict) -> dict:
     """Everything the redesigned place page prints (built on entity_ctx; no template logic)."""
     kind = ctx["kind"]
     facts = e.get("facts") or {}
     tel_text, tel = settled_phone(e)
     notes = Notes()
-    practical = fact_rows(e, PRACTICAL[kind], notes, (tel_text, tel))
+    # the combined tickets that open the place right after its own 요금 (ticket_rows), their notes numbered in that
+    # order; the call number stays on the first conflict row of the card
+    keys = PRACTICAL[kind]
+    cut = keys.index("usefee") + 1 if "usefee" in keys else len(keys)
+    practical = fact_rows(e, keys[:cut], notes, (tel_text, tel))
+    trows = ticket_rows(e, notes)
+    if any(r["same"] for r in trows):   # a ticket row points to the group of the 요금 row that is its table
+        next(r for r in practical if r["key"] == "usefee")["anchor"] = FEE_ANCHOR
+    practical += trows
+    practical += fact_rows(e, keys[cut:], notes, ("", "") if any(r["tel"] for r in practical) else (tel_text, tel))
     shown = {k for r in practical for k in r["keys"]}
     rest_keys = [k for k in FACT_LABELS if k not in shown and k not in MORE and k not in FIT and k not in PRACTICAL[kind]]
     more = fact_rows(e, [k for k in MORE if k not in shown] + rest_keys, notes, (tel_text, tel))
@@ -1760,15 +2441,12 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
     near = []
     for n in ctx["nearby_sights"] + ctx["nearby_biz"]:
         t = S.ent_by_slug.get(n.get("internal_slug") or "") or S.ent_by_cid.get(str(n.get("contentid")))
-        lab = re.sub(r"^관광명소 > ", "", n.get("type_label") or KIND_LABELS.get(n.get("kind"), ""))
-        lab = STAY_TYPE.get(lab, lab)
-        cl = slot_value(t, "closed") if t and t.get("kind") != "stay" else None
-        near.append({"name": n["name"], "href": t["_path"] if t else n["href"], "internal": bool(t), "kind": n.get("kind"),
-                     "closed": cl if cl and not cl["conflict"] else None,
-                     "type": (t["_type"] or KIND_LABELS.get(t["kind"], "")) if t else lab, "m": n.get("distance_m") or 0,
-                     "d": dist(n.get("distance_m")) if n.get("distance_m") else "", "geo": t["_geo"] if t else None,
-                     "track": n.get("track") or "nearby_click"})
+        near.append(near_row(S, t, n))
     near.sort(key=lambda x: x["m"])
+    # one stepped straight-line scale for the page (both groups), its end value printed under the rows
+    scale = near_scale([r["m"] for r in near], (ctx["nearby_source"] or {}).get("radius_m"))
+    for r in near:
+        r["f"] = near_fill(r["m"], scale)
     anchors = []
     if e["_geo"]:
         for a in getattr(S, "dist_anchors", None) or []:
@@ -1780,8 +2458,8 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
     if e["_geo"]:
         place_points = {
             "self": {"lat": e["_geo"]["lat"], "lng": e["_geo"]["lng"], "name": e["name"]},
-            "near": [{"lat": n["geo"]["lat"], "lng": n["geo"]["lng"], "name": n["name"], "d": n["d"], "url": n["href"],
-                      "kind": n["kind"]} for n in near if n["geo"]],
+            "near": [{"lat": n["geo"]["lat"], "lng": n["geo"]["lng"], "name": n["name"], "d": n["d"] if n["m"] else "",
+                      "url": n["href"], "kind": n["kind"]} for n in near if n["geo"]],
             "anchors": [{"lat": a["geo"]["lat"], "lng": a["geo"]["lng"], "name": a["name"],
                          "label": f"{a['name']} 직선 {a['d']}"} for a in anchors if a["m"] <= 3000]}
     boards = []
@@ -1790,6 +2468,21 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
         s = next((s for s in (cv or {}).get("stops", []) if s["t"] is e), None)
         if s:
             boards.append({"cv": cv, "s": s})
+    # every visit of every course (route_segs: consecutive stops here are one visit, a later one is another)
+    segs = route_segs([{"display": b["cv"]["display"], "path": b["cv"]["path"], "stops": b["cv"]["stops"],
+                        "at": [k for k, x in enumerate(b["cv"]["stops"]) if x["t"] is e]} for b in boards], dist,
+                      lambda x: x["t"]["name"] if x.get("t") else x["short"])
+    guide_cards = [{"label": squash_ws(g.get("label")) if squash_ws(g.get("label")) != squash_ws(g.get("title")) else "",
+                    "title": squash_ws(g.get("title")), "path": g["_path"]} for g in ctx["guides"]]
+    from . import build as B
+    event_cards = [{"name": sr["name"], "path": sr["_path"], "range": card_range(event_row(sr["newest"]), S.today),
+                    "past": B.event_last_day(sr["newest"]) < S.today} for sr in ctx["events"]]
+    twins = e.get("_twins") or []
+    twin_rows = [{**near_row(S, t), "track": ""} for t in twins]
+    near_hrefs = {r["href"] for r in near}
+    rel_rows = [near_row(S, x) for x in ctx["related"] if x not in twins and x["_path"] not in near_hrefs]
+    relation, parts = relation_vm(S, e)
+    photo_lics = photo_credits(near + twin_rows + rel_rows + parts)
     kicker = [(KIND_LABELS[kind], LIST_PATH[kind])]
     if e["_type"]:
         kicker.append((e["_type"], f"{LIST_PATH[kind]}?type={quote(e['_type'])}"))
@@ -1832,7 +2525,16 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
         "access": access_vm(S, e),
         "near_sights": [n for n in near if n["kind"] == "attraction"],
         "near_biz": [n for n in near if n["kind"] in ("stay", "food")],
-        "nearby_source": ctx["nearby_source"], "boards": boards,
+        "nearby_source": ctx["nearby_source"], "boards": boards, "near_scale": scale, "route_segs": segs,
+        # whose point this is: the map caption's '위치: …' (the nearby note prints nearby_source.provider, which
+        # tools/tourapi_bulk.compute_nearby writes from every point it used; validate.nearby_provenance_problems)
+        "geo_src": geo_provider(e["_geo"]) if e["_geo"] else "",
+        "guide_cards": guide_cards, "event_cards": event_cards, "twin_rows": twin_rows, "rel_rows": rel_rows,
+        # places that belong together (pipeline/relations.py): the line under the name, the parts list of a parent
+        "relation": relation, "parts": parts,
+        "photo_lics": photo_lics, "nw": LC.NEAR_WORDS["ko"],
+        # 예약하기 (pipeline/booking.py): the official booking pages, a row under the route row on the first screen
+        "booking": booking.view(booking.place_targets(S, e), "ko"), "bw": LC.BOOK_WORDS["ko"],
         "guides": ctx["guides"], "events": ctx["events"], "twins": e.get("_twins") or [],
         "area_same": area_same, "area_label": ctx["area_label"],
         "faq_vm": faqs, "faq_notes": fq.items, "details": details, "detail_notes": dn.items,
@@ -2004,7 +2706,29 @@ def list_vm(S, kind: str, theme: dict | None = None) -> dict:
             "themes": [(s, S.theme_names.get(s, s), n) for s, n in themes.most_common()] if kind == "attraction" and not theme else [],
             "check": (ck, clabel, sum(1 for it in items if it["flags"][ck])), "points": points, "n_geo": len(points),
             "map_open": len(points) >= 0.3 * max(1, len(items)), "n_photo": sum(1 for it in items if it["photo"]),
-            "theme": theme}
+            "theme": theme,
+            "filters": filter_vm(
+                len(items), [(t, t, n) for t, n in tagc.most_common() if n >= 2],
+                [(r, r, regions[r]) for r in S.region_names if regions[r]],
+                [(s, S.theme_names.get(s, s), n) for s, n in themes.most_common()] if kind == "attraction" and not theme else [],
+                (ck, clabel, sum(1 for it in items if it["flags"][ck])), len(points), LC.LIST_WORDS["ko"],
+                {"other": f"{theme['name'] if theme else cfg['title']} {{n}}곳"})}
+
+
+def filter_vm(count: int, types: list, regions: list, themes: list, check: tuple, n_geo: int, words: dict,
+              forms: dict) -> dict:
+    """The list filter bar (templates/_filters.html.j2) of Korean and every version: chips as (value, label, n) — the
+    value is the Korean key every version shares (?type=한식&region=원도심), the label the version's; check =
+    (flag, label, n); forms = the count line by plural category ({n}); words = locales.LIST_WORDS[code]. n_off = the
+    places of the list without coordinates (the map caption's '지도에 없는 n곳은 목록에서', _filters.off_map).
+    widest = the count line's widest filtered forms, one per plural form, {n} and {m} both the whole count (a shown
+    count has no more digits, and the line's digits are tabular): the room the desktop keeps for the line."""
+    form = forms.get("other") or next(iter(forms.values()), "{n}")
+    m = str(count)
+    widest = list(dict.fromkeys(f.replace("{n}", m) + words["of"].replace("{m}", m) for f in forms.values()))
+    return {"count": count, "types": types, "regions": regions, "themes": themes, "check": check, "n_geo": n_geo,
+            "n_off": max(0, count - n_geo), "w": words, "forms": forms, "result": form.replace("{n}", m),
+            "widest": widest}
 
 
 # ----------------------------------------------------------------------------- answers (home, guides index, 404)
@@ -2224,6 +2948,7 @@ def home_vm(S) -> dict:
          "lines": lines, "course_total": len(S.courses), "regions": regions,
          "region_rule": region_rule_vm(S),
          "counts": {k: len(v) for k, v in S.lists.items()}, "official": S.site.get("official_links") or [],
+         "starts": home_starts(S),   # the first screen's situational entries (words only)
          "slots": media.slot_photos(S)}  # hero / story / gallery photos (pipeline/media.py, licence-checked)
     h.update(home_showcase(S, h))
     return h
@@ -2317,21 +3042,26 @@ def purposes_vm(S) -> list[dict]:
 
 def date_parts(r: dict) -> dict:
     """The parts of a dated row's big date: a = start {md '10. 9.', wd '금'}, b = last day (or None), end_month ('10')
-    when the source gives only an end month."""
+    when the source gives only an end month — then b is None: the month's last day (build.event_last_day, the sort
+    key) is never shown as the end (QA 2026-10-15 SRC-06)."""
+    from . import build as B
+
     def one(iso):
         d = dt.date.fromisoformat(iso[:10])
         return {"md": f"{d.month}. {d.day}.", "wd": WEEK[d.weekday()]}
+    em = B.event_end_month(r.get("ev") or {})
     a = one(r["start"]) if r.get("start") else None
-    b = one(r["last"]) if r.get("last") and r.get("last") != r.get("start") else None
-    ev = r.get("ev") or {}
-    return {"a": a, "b": b, "end_month": (ev.get("end_month") or "")[5:] if not ev.get("end_date") else ""}
+    b = one(r["last"]) if not em and r.get("last") and r.get("last") != r.get("start") else None
+    return {"a": a, "b": b, "end_month": em[5:]}
 
 
 def ranked_events(S) -> list[dict]:
     """Dated editions still to come or running on the build date (S.today), ranked: today, tomorrow, this week,
     later; then the running ones by the day they end. Each row (event_row) gets chip (오늘 · 내일 시작 · n일 뒤 시작 ·
-    m월 d일 시작 · 진행 중 · m.d.까지), rank, days (to the start; < 0 while running) and dp (date_parts). The site is
-    rebuilt daily by the events command, so the chips stay true."""
+    m월 d일 시작 · 진행 중 · m.d.까지, or 진행 중 · m월 중 끝남 when the source gives the end only as a month), rank, days
+    (to the start; < 0 while running) and dp (date_parts). The site is rebuilt daily by the events command, so the
+    chips stay true."""
+    from . import build as B
     today = dt.date.fromisoformat(S.today)
     rows = []
     for ev in S.events:
@@ -2349,7 +3079,9 @@ def ranked_events(S) -> list[dict]:
         elif d > 6:
             chip, rank = f"{st.month}월 {st.day}일 시작", (3, d)
         else:
-            chip, rank = f"진행 중 · {last.month}.{last.day}.까지", (4, (last - today).days)
+            em = B.event_end_month(r["ev"])   # '~10월': the source gives no end day — never '10.31.까지'
+            chip = f"진행 중 · {int(em[5:])}월 중 끝남" if em else f"진행 중 · {last.month}.{last.day}.까지"
+            rank = (4, (last - today).days)
         rows.append({**r, "chip": chip, "rank": rank, "days": d, "dp": date_parts(r)})
     rows.sort(key=lambda r: (r["rank"], r["start"]))
     return rows
@@ -2388,14 +3120,19 @@ def _story_fig(S, spec: dict) -> dict | None:
         if not (e and e.get("_geo")):
             return None
         m = float(spec.get("m") or 1000)
-        n = sum(1 for x in S.lists["attraction"] if x is not e and x["_geo"] and hav(e["_geo"], x["_geo"]) <= m)
-        return {"n": str(n), "unit": "곳", "label": spec.get("label", ""), "src": e}
+        # one building counts once (a same_building pair, pipeline/relations.py) and the place's own building not
+        # at all
+        own = {e["id"], *(x["id"] for x in e.get("_same") or [])}
+        near = relations.one_per_building([x for x in S.lists["attraction"] if x["id"] not in own and x["_geo"]
+                                           and hav(e["_geo"], x["_geo"]) <= m])
+        return {"n": str(len(near)), "unit": "곳", "label": spec.get("label", ""), "src": e,
+                "geo": [e["_geo"]] + [x["_geo"] for x in near]}
     if spec.get("kind") == "between":
         a, b = find_place(S, spec.get("a", "")), find_place(S, spec.get("b", ""))
         if not (a and b and a.get("_geo") and b.get("_geo")):
             return None
         return {"n": str(round(hav(a["_geo"], b["_geo"]) / 1000)), "unit": "km", "label": spec.get("label", ""),
-                "src": None}
+                "src": None, "geo": [a["_geo"], b["_geo"]]}
     return None
 
 
@@ -2441,6 +3178,8 @@ def home_story(S) -> list[dict]:
         out.append({"id": cid, "big": str(c.get("big") or (steps[0]["y"] if steps else "")),
                     "kicker": str(c.get("kicker") or ""), "title": title, "text": text, "steps": steps,
                     "figs": [{k: f[k] for k in ("n", "unit", "label")} for f in figs], "src": src,
+                    # geo_src: whose coordinates the figures join ('한국관광공사 TourAPI', …), named in the cite
+                    "geo_src": "·".join(geo_providers([g for f in figs for g in f["geo"]])),
                     "photo": ph.get(cid)})
     return out
 
@@ -2724,27 +3463,51 @@ def home_opening(S) -> dict:
 
 def home_services(S, n_events: int = 0) -> list[dict]:
     """The round service icons under the opening: each list or page this build has, with its count where it has
-    one ({label, href, icon, n, unit, track})."""
+    one ({label, href, icon, n, unit, track, core}). Operator 2026-10-15 (mobile UX review): the four a traveller
+    needs first lead — 가볼만한 곳, 맛집, 숙소, 가는 법 (core=True: one row of four larger tiles on phones) — then
+    코스, 지도, 행사 달력, 영상, 해외에서 본 <city> (a compact row under them on phones; one row of all of them from
+    1024px, as before)."""
     gm = {g["id"]: g for g in S.guides}
     way = home_answer_default()   # the city's 'how to get here' guide (city.home.answer_default)
     lists = S.lists
     abroad = sum(a.get("kind") == "article" for a in getattr(S, "abroad", None) or [])
-    rows = [("맛집", "/food/", "bowl", len(lists.get("food") or []), "곳", "", bool(lists.get("food"))),
-            ("숙소", "/stays/", "bed", len(lists.get("stay") or []), "곳", "", bool(lists.get("stay"))),
-            ("가볼만한 곳", "/places/", "pin", len(lists.get("attraction") or []), "곳", "", True),
-            ("코스", "/courses/", "route", len(S.courses), "개", "course_click", bool(S.courses)),
-            ("행사 달력", "/events/", "calendar", n_events, "건", "", bool(S.events)),
-            ("지도", "/map/", "map", 0, "", "", bool(S.entities)),
-            ("영상", "/videos/", "play", len(getattr(S, "videos", None) or []), "편", "", bool(getattr(S, "videos", None))),
-            (f"해외에서 본 {S.site.get('region', '')}", "/abroad/", "globe", abroad, "건", "",
-             bool(getattr(S, "abroad", None) or getattr(S, "abroad_videos", None))),
+    rows = [("가볼만한 곳", "/places/", "pin", len(lists.get("attraction") or []), "곳", "", True, True),
+            ("맛집", "/food/", "bowl", len(lists.get("food") or []), "곳", "", bool(lists.get("food")), True),
+            ("숙소", "/stays/", "bed", len(lists.get("stay") or []), "곳", "", bool(lists.get("stay")), True),
             ("가는 법", gm[way[1]]["_path"] if way and way[1] in gm else "", "bus", 0, "",
-             "guide_click", bool(way and way[1] in gm))]
+             "guide_click", bool(way and way[1] in gm), True),
+            ("코스", "/courses/", "route", len(S.courses), "개", "course_click", bool(S.courses), False),
+            ("지도", "/map/", "map", 0, "", "", bool(S.entities), False),
+            ("행사 달력", "/events/", "calendar", n_events, "건", "", bool(S.events), False),
+            ("영상", "/videos/", "play", len(getattr(S, "videos", None) or []), "편", "", bool(getattr(S, "videos", None)),
+             False),
+            (f"해외에서 본 {S.site.get('region', '')}", "/abroad/", "globe", abroad, "건", "",
+             bool(getattr(S, "abroad", None) or getattr(S, "abroad_videos", None)), False)]
     pics = {"/food/": "icon-food", "/stays/": "icon-stay", "/places/": "icon-sights", "/courses/": "icon-course",
             "/events/": "icon-events", "/map/": "icon-map", "/videos/": "icon-video", "/abroad/": "icon-abroad"}
-    return [{"label": label, "href": href, "icon": icon, "n": n, "unit": unit, "track": track,
+    return [{"label": label, "href": href, "icon": icon, "n": n, "unit": unit, "track": track, "core": core,
              "pic": pics.get(href, "icon-getting-here")}   # the 3D picture's ID (pipeline/icons.py, _pic.html.j2)
-            for label, href, icon, n, unit, track, ok in rows if ok and href]
+            for label, href, icon, n, unit, track, ok, core in rows if ok and href]
+
+
+# '처음 가는 <city>' on the home's first screen: the guide whose title starts with these words (the whole-city overview,
+# its places by 권역); without such a guide the entry is the guide index
+FIRST_VISIT_TITLE = "{region} 가볼만한 곳"
+
+
+def home_starts(S) -> list[dict]:
+    """The home's three situational entries under its two actions (operator-forwarded evaluation 2026-10-18), words
+    only ({label, href, track}): '처음 가는 <city>' (the FIRST_VISIT_TITLE guide, else /guides/), '내 조건으로 코스
+    만들기' (/plan/, the AI planner) and '지도에서 찾기' (/map/, every place by 권역 on one map — no 'near me': the
+    page has no location of the reader; review 2026-10-18). /plan/ and /map/ are built when the site has places
+    (build.common has_plan, has_map: the same rule); an entry whose page this build does not write is left out."""
+    region = S.site.get("region") or S.site.get("locality", "")
+    want = FIRST_VISIT_TITLE.format(region=region)
+    first = next((g for g in S.guides if squash_ws(g.get("title")).startswith(want)), None)
+    rows = [(f"처음 가는 {region}", first["_path"] if first else "/guides/", "guide_click", bool(S.guides)),
+            ("내 조건으로 코스 만들기", "/plan/", "plan_cta", bool(S.entities)),
+            ("지도에서 찾기", "/map/", "", bool(S.entities))]
+    return [{"label": label, "href": href, "track": track} for label, href, track, ok in rows if ok]
 
 
 # ----------------------------------------------------------------------------- events
@@ -2798,10 +3561,43 @@ def event_row(ev: dict) -> dict:
             "checked": ev.get("checked_at") or ""}
 
 
+SEASON_DAYS = 92   # /events/ 'held around this time': the next three months of the year
+
+
+def season_ahead(start: str, today: str) -> int | None:
+    """Days from `today` to the same day of the year as `start` (ISO dates), when `start` is one or two years back
+    and that day comes within SEASON_DAYS; else None."""
+    d, t = dt.date.fromisoformat(start[:10]), dt.date.fromisoformat(today[:10])
+    if not 1 <= t.year - d.year <= 2:
+        return None
+    same_day = [dt.date(y, d.month, 28 if (d.month, d.day) == (2, 29) else d.day) for y in (t.year, t.year + 1)]
+    ahead = next((x - t).days for x in same_day if x >= t)
+    return ahead if ahead <= SEASON_DAYS else None
+
+
+def season_rows(S) -> list[dict]:
+    """The series whose newest dated edition — one or two years ago, nothing newer dated — began in the next
+    SEASON_DAYS of the year (review 2026-10-17: two events on the calendar for a reader looking for festivals). The
+    edition as it was, with its year; the page says this year's dates are not in the data yet, never that it will
+    be held. Soonest first."""
+    from . import build as B
+    out = []
+    for sr in S.series:
+        ev = sr["newest"]
+        if not ev.get("start_date") or B.event_last_day(ev) >= S.today:
+            continue
+        ahead = season_ahead(ev["start_date"], S.today)
+        if ahead is None:
+            continue
+        # the year is in the title the series gives its newest edition ('2025 어촌 섬마을 장터', build._title)
+        out.append((ahead, {**event_row(ev), "title": ev.get("_title") or squash_ws(ev.get("name"))}))
+    return [r for _, r in sorted(out, key=lambda x: (x[0], x[1]["title"]))]
+
+
 def events_vm(S) -> dict:
-    """/events/: editions still running or to come (by month), finished ones by month (newest first), the
-    '매년 …' records (only text that says 매년, period as sourced) and records with no date at all. A month's mm
-    ('05') names its AI art picture (events.month.<mm>)."""
+    """/events/: editions still running or to come (by month), the series held around this time in an earlier year
+    (season_rows), finished ones by month (newest first), the '매년 …' records (only text that says 매년, period as
+    sourced) and records with no date at all. A month's mm ('05') names its AI art picture (events.month.<mm>)."""
     rows = [event_row(ev) for ev in S.events]
     upcoming = sorted([r for r in rows if r["start"] and r["last"] >= S.today], key=lambda r: r["start"])
     past = sorted([r for r in rows if r["start"] and r["last"] < S.today], key=lambda r: r["start"], reverse=True)
@@ -2820,7 +3616,8 @@ def events_vm(S) -> dict:
     up = by_month(upcoming, "u")
     ranked = ranked_events(S)
     return {"ranked": ranked, "next": pick_next_event(ranked),
-            "up": up, "up_months": up, "upcoming": upcoming, "months": by_month(past, "m"), "past": past,
+            "up": up, "up_months": up, "upcoming": upcoming, "season": season_rows(S), "season_days": SEASON_DAYS,
+            "months": by_month(past, "m"), "past": past,
             "past_undated": old, "annual": [r for r in rows if not r["start"] and "매년" in r["period_text"]],
             "textonly": [r for r in textonly if r not in old],
             "series": S.series, "n_records": len(rows), "n_series": len(S.series)}
@@ -2984,6 +3781,8 @@ def event_vm(S, sr: dict) -> dict:
     if tel:
         slots.append(tile("문의", "tel", Markup(f'<a class="tel" href="tel:{tel}" data-track="tel_click">{escape(tel_text)}</a>')))
     need = [lab for lab, k in (("시간", "playtime"), ("요금", "fee")) if not ev.get(k)]
+    if B.event_end_month(ev):   # the source names only the end month (CLAUDE.md 3.1: the day is not filled in)
+        need.insert(0, "끝나는 날")
     front = []
     if point:
         nm = place_short or sr["name"]
@@ -3078,10 +3877,12 @@ def mentions(text: str | None, names: list[dict], lang: str = "ko") -> list[dict
 def rich(text: str | None, lang: str = "ko", names: list[dict] | None = None, seen: set | None = None,
          skip: int = 0, roll: bool = False, links: bool = True) -> Markup:
     """The guide's own text with its figures emphasised (<b class="gk">), the first mention of each guide place
-    linked (names [{name, path, id}]; `seen` carries the ids already linked in this section) and phone numbers as
-    tap-to-call links. The text of the result is `text`, character for character. skip: the first characters stay
-    one plain run (PLAIN_HEAD). roll: a figure with digits gets data-numroll (motion.js: its own digits roll into
-    place once it scrolls in — never a count from 0, which would show numbers that are not in the data)."""
+    linked (names [{name, path, id}]; `seen` carries the ids already linked in this section), phone numbers as
+    tap-to-call links (+82 on the other versions: tel_href) and the official hosts it writes as links (OFFICIAL_WEB;
+    the other versions' entry page where there is one). The text of the result is `text`, character for character.
+    skip: the first characters stay one plain run (PLAIN_HEAD). roll: a figure with digits gets data-numroll
+    (motion.js: its own digits roll into place once it scrolls in — never a count from 0, which would show numbers
+    that are not in the data)."""
     t = str(text or "")
     taken: list[tuple[int, int]] = [(0, skip)] if skip else []
     spans: list[tuple[int, int, str, object]] = []
@@ -3102,6 +3903,11 @@ def rich(text: str | None, lang: str = "ko", names: list[dict] | None = None, se
                 spans.append((a, b, "place", n))
                 if seen is not None:
                     seen.add(n["id"])
+    for m in web_rx().finditer(t):
+        a, b = m.span()
+        if free(a, b):
+            taken.append((a, b))
+            spans.append((a, b, "web", m))
     for m in PHONE.finditer(t):
         a, b = m.span(1)
         if free(a, b):
@@ -3119,7 +3925,9 @@ def rich(text: str | None, lang: str = "ko", names: list[dict] | None = None, se
         if kind == "place":
             out.append(Markup('<a class="gl" href="{}" data-track="nearby_click" data-place="{}">{}</a>').format(v["path"], v["id"], seg))
         elif kind == "tel":
-            out.append(Markup('<a class="tel" data-track="tel_click" href="tel:{}">{}</a>').format(tel_digits(v), seg))
+            out.append(Markup('<a class="tel" data-track="tel_click" href="tel:{}">{}</a>').format(tel_href(v, lang != "ko"), seg))
+        elif kind == "web":
+            out.append(web_anchor(seg, web_href(v.group(1), v.group(2), lang != "ko")))
         else:
             r = Markup(" data-numroll") if roll and re.search(r"\d", v) else Markup("")
             out.append(Markup('<b class="gk"{}>{}</b>').format(r, seg))
@@ -3305,7 +4113,9 @@ def guide_vm(S, g: dict) -> dict:
             "week": week_grid([t for t in unique if t["kind"] in ("attraction", "food")]),
             "caveat_said": "실제 이동 거리와 다릅니다" in (g.get("summary") or ""),
             "faqs": faqs, "faq_notes": fq.items, "sources": g.get("sources") or [], "checked": g.get("checked_at") or "",
-            "answer": guide_answer(g, S)}
+            "answer": guide_answer(g, S),
+            # 예약하기 (pipeline/booking.py): the booking services the guide cites, a box under the answer card
+            "booking": booking.view(booking.guide_targets(S, g), "ko"), "bw": LC.BOOK_WORDS["ko"]}
 
 
 # ----------------------------------------------------------------------------- map page
@@ -3335,10 +4145,13 @@ def map_vm(S) -> dict:
                         "basis": Counter(e["_region_basis"] for e in members)})
     n_by = {r["name"]: len(r["members"]) for r in regions}
     rule = region_rule_vm(S)
+    # k_all: the kind toggles' counts (site.js keeps them to the chosen 권역); list_words: the list filters' Korean words
+    # (the zero-result panel, the caption's places not on the map)
     return {"regions": regions, "anchors": [{**a, "n": n_by.get(a["name"], 0)} for a in S.anchors],
             "far_m": rule["far_m"], "far_label": rule["far_label"], "none_label": rule["none_label"], "rule": rule,
             "n_geo": sum(1 for e in S.entities if e["_geo"]), "n_all": len(S.entities),
-            "n_dong": len({(e.get("_district"), e["_area"]) for e in S.entities if e["_area"]})}
+            "n_dong": len({(e.get("_district"), e["_area"]) for e in S.entities if e["_area"]}),
+            "k_all": Counter(e["kind"] for e in S.entities), "list_words": LC.LIST_WORDS["ko"]}
 
 
 # ----------------------------------------------------------------------------- search
@@ -3349,14 +4162,97 @@ def menu_words(e: dict) -> str:
     return " · ".join(dict.fromkeys(words))
 
 
+SEARCH_STRIP = re.compile(r"[\s·\-()（）\[\]|,]")   # what assets/search.js norm() ignores when matching
+
+# The site search's query words (evaluation 2026-10-18: '비 오는 날 아이랑' found nothing although the site has a guide
+# for rainy days and one for travelling with children; only the chat was offered). One row per concept a reader asks
+# about: say — the words a reader types for it (Korean first; each written once with its spaces: search.js ignores
+# spaces and ·-()[]|, as norm() does, so '비 오는' is '비오는' too), find — the words of the site's own titles,
+# labels, names, dishes and types that stand for it. Every find word finds at least one row of the engine's first
+# site's index (the sample city's in tests/test_present.py): the table points at real pages and never stands in for a
+# page the site lacks.
+# assets/search.js reads a said word as its concept: a row has the concept when it has any find word or the word as
+# typed; a query of several concepts and words finds the rows that have every one of them, ranked by how many of the
+# words they have; when none has, the guides whose title or label has one of the concepts follow as '관련 가이드',
+# before those that have only a plain word of the query (form[data-concepts], search_form_data). A said word counts
+# only as a word of the query, or with a particle, or next to another said word or a filler word in one
+# ('비오는날아이랑'), never as a run inside a longer word (review 2026-10-18: '아이스크림', '버스킹' and '가족사진관'
+# are no 아이, 버스, 가족). Built into every version's search page: the other versions' rows carry the Korean names
+# (o), so a Korean query finds there too.
+SEARCH_CONCEPTS = [
+    # travelling with children: a guide '아이와 함께 …' (label 가족여행), the places named 어린이…, a 어린이 dish
+    {"say": ["아이랑", "아이와", "아이", "아이들", "아이들과", "아이들이랑", "애들", "애들이랑", "애들과", "어린이", "키즈",
+             "가족", "가족여행", "유아", "아기랑"],
+     "find": ["아이와", "어린이", "가족"]},
+    # rain: a guide '비 오는 날 … 실내 관광지 …' (label 비 오는 날)
+    {"say": ["비 오는", "비 올 때", "비 오면", "비가 오면", "비가 오는", "비 와도", "우천", "우천시", "장마", "실내"],
+     "find": ["비 오는", "실내"]},
+    # no car: a guide '차 없이 …', the bus guides, a walking route ('걸어서', 도보 동선)
+    {"say": ["차 없이", "뚜벅이", "대중교통", "버스", "시내버스", "자차 없이", "자가용 없이", "걸어서", "도보"],
+     "find": ["차 없이", "시내버스", "시외버스", "고속버스", "걸어서", "도보"]},
+    # where to eat: the food guides (맛집, 음식점, 식당, 먹거리 in their titles), 모범음식점 and the city's own list, places
+    # named …식당
+    {"say": ["맛집", "밥집", "식당", "음식점", "먹을 곳", "밥 먹을 곳", "먹거리"],
+     "find": ["음식점", "맛집", "식당", "먹거리"]},
+    # coffee: a café guide, the cafés and the places with a coffee on the menu
+    {"say": ["카페", "커피", "커피숍", "찻집"], "find": ["카페", "커피"]},
+    # parking: the guides that list it (주차 in their titles), a public car park guide
+    {"say": ["주차", "주차장", "차 댈 곳", "차 세울 곳", "파킹"], "find": ["주차"]},
+    # night: a night-view guide (label '… 야경') and the courses that stop at a night view
+    {"say": ["야경", "밤", "야간", "밤 산책", "해 진 뒤"], "find": ["야경"]},
+    # no entry fee: a guide '입장료 없이 둘러보는 …, 어디가 무료일까?'
+    {"say": ["무료", "공짜", "무료입장", "입장료 없는", "입장료 없이"], "find": ["무료", "입장료 없이"]},
+    # a bed for the night: the stay guides (숙소·펜션·민박 in their titles), the places typed 숙박업소 or …민박업
+    {"say": ["숙소", "숙박", "잘 곳", "묵을 곳", "잠잘 곳"], "find": ["숙소", "숙박", "펜션", "민박"]},
+]
+
+
+def search_form_data(region: str, planner: str = "") -> dict:
+    """The search form's data attributes for assets/search.js: concepts (SEARCH_CONCEPTS as JSON), region (the city's
+    names, space-separated: a query word that only names the city is no condition — every row is in it — so '<city>
+    짬뽕' finds the places with 짬뽕), planner (the AI course planner's path, Korean only: a query that plans a trip —
+    dates, 코스, 일정, 당일, 1박 — links to it)."""
+    out = {"concepts": json.dumps(SEARCH_CONCEPTS, ensure_ascii=False, separators=(",", ":")), "region": region}
+    if planner:
+        out["planner"] = planner
+    return out
+
+
+def other_names(row: dict, *names, key: str = "o") -> None:
+    """row[key] = names joined with ' · ' (a search row's names in the other versions, or a course's stops there),
+    in their order, without empty ones and without a name that search.js would find anyway: one inside the row's
+    name or other names (n, a) or inside a longer name kept here ('○○축제' in '2026 ○○축제'), as
+    search.js compares them (lower case, without spaces and ·-()[]|,). Left out when none remain. Used by
+    search_index and by every other version's index (en_site Pages.search)."""
+    def flat(s):
+        return SEARCH_STRIP.sub("", s or "").lower()
+    cand = list(dict.fromkeys(n for n in (squash_ws(x) for x in names if x) if flat(n)))
+    have = [flat(row.get("n")), flat(row.get("a"))]
+    keep = set()
+    for n in sorted(cand, key=lambda n: -len(flat(n))):
+        if not any(flat(n) in h for h in have):
+            keep.add(n)
+            have.append(flat(n))
+    if keep:
+        row[key] = " · ".join(n for n in cand if n in keep)
+
+
 def search_index(S) -> list[dict]:
     """/search/index.json rows: n name, a other names, k kind, t type, d 동 (or road), r 권역, p path,
     m 대표 메뉴 + 취급 메뉴 (searched, weighted below the name), g official designations (schema.designations labels,
-    searched below the menu), s the status line as text (result meta)."""
+    searched below the menu), s the status line as text (result meta); o the names on the English version and v a
+    course's stops there, when it is built (QA 2026-10-15: a romanised island name, 'jjamppong' find the same as the
+    Korean name, 짬뽕 —
+    the romanised names on signs and maps)."""
+    en = getattr(S, "en", None)
+    en_courses = en.courses if en else {}
+    en_guides = en.guides if en else {}
+    en_series = {x["slug"]: x for x in (en.series if en else [])}
     out = []
     for e in S.entities:
         row = {"n": e["name"], "a": " ".join(jsonld.alternate_names(e)), "k": e["kind"], "t": e["_type"],
                "d": e["_area"] or e.get("_road") or "", "r": e["_region"], "p": e["_path"]}
+        other_names(row, (e.get("_en") or {}).get("name") if en else "")
         m = menu_words(e)
         if m:
             row["m"] = m
@@ -3364,17 +4260,30 @@ def search_index(S) -> list[dict]:
         if ds:  # '모범음식점', the city's own list name find the places on those lists
             row["g"] = " · ".join(d["label"] for d in ds)
         st = [x["text"] for x in status_items(e) if x.get("cls") != "st-missing"][:3]
+        if e.get("_alias_of") is not None:   # a second page for one building says so in the result (pipeline/relations.py)
+            st.insert(0, LC.NEAR_WORDS["ko"]["same_building"].format(name=e["_alias_of"]["name"]))
         if st:
             row["s"] = " · ".join(st)
         out.append(row)
     for c in S.courses:
         cv = S.course_vms[c["slug"]]
-        out.append({"n": cv["display"], "a": " ".join(s["name"] for s in cv["stops"]), "k": "course", "t": "코스",
-                    "d": "", "r": "", "p": c["_path"], "s": f"경유지 {cv['n_places']}곳"})
+        row = {"n": cv["display"], "a": " ".join(s["name"] for s in cv["stops"]), "k": "course", "t": "코스",
+               "d": "", "r": "", "p": c["_path"], "s": f"경유지 {cv['n_places']}곳"}
+        x = en_courses.get(c["id"])
+        if x:
+            other_names(row, x["rec"].get("name"))
+            other_names(row, *(s.get("name") for s in en.cv(x)["stops"]), key="v")
+        out.append(row)
     for g in S.guides:
-        out.append({"n": g["title"], "a": g.get("label") or "", "k": "guide", "t": "가이드", "d": "", "r": "", "p": g["_path"]})
+        row = {"n": g["title"], "a": g.get("label") or "", "k": "guide", "t": "가이드", "d": "", "r": "", "p": g["_path"]}
+        x = en_guides.get(g["id"])
+        other_names(row, x and x["rec"].get("title"))
+        out.append(row)
     for sr in S.series:
-        out.append({"n": sr["name"], "a": "", "k": "event", "t": "행사", "d": "", "r": "", "p": sr["_path"]})
+        row = {"n": sr["name"], "a": "", "k": "event", "t": "행사", "d": "", "r": "", "p": sr["_path"]}
+        x = en_series.get(sr["slug"])
+        other_names(row, x and x["rec"].get("series_name"))
+        out.append(row)
     return out
 
 
@@ -3435,7 +4344,7 @@ def common_vm(S) -> dict:
             "n_guides": len(S.guides), "n_series": len(S.series), "n_videos": len(getattr(S, "videos", []) or [])}
 
 
-CURRENT = {"place-attraction": "/places/", "places": "/places/", "theme": "/places/", "place-stay": "/stays/",
+CURRENT = {"plan": "/plan/", "place-attraction": "/places/", "places": "/places/", "theme": "/places/", "place-stay": "/stays/",
            "list-stay": "/stays/", "place-food": "/food/", "list-food": "/food/", "course": "/courses/",
            "courses": "/courses/", "guide": "/guides/", "guides": "/guides/", "events": "/events/", "map": "/map/",
            "search": "/search/", "about": "/about/", "videos": "/videos/", "abroad": "/abroad/"}
@@ -3443,11 +4352,117 @@ CURRENT = {"place-attraction": "/places/", "places": "/places/", "theme": "/plac
 
 def page_chrome(page_kind: str, has_courses: bool) -> dict:
     """nav_current (the nav path to mark; `current` is taken by the events index) and ctxbtn, the contextual
-    header button (CLAUDE.md 7: a place page offers 길찾기, a course its stop list, every other page 코스 보기)."""
+    header button (CLAUDE.md 7: a place page offers 길찾기, a course its stop list, every other page the courses).
+    The courses button reads '추천 코스' (operator-forwarded evaluation 2026-10-18: '코스 보기' beside 'AI 코스' did
+    not say which courses — these are the city's own; the planner's door keeps its own name)."""
     if page_kind.startswith("place-"):
         btn = ("길찾기", "#h-dir")
     elif page_kind == "course":
         btn = ("경유지 목록", "#h-stops")
     else:
-        btn = ("코스 보기", "/courses/") if has_courses else None
+        btn = ("추천 코스", "/courses/") if has_courses else None
     return {"nav_current": CURRENT.get(page_kind, ""), "ctxbtn": btn}
+
+
+# ----------------------------------------------------------------------------- the AI course planner (/plan/)
+# Operator 2026-10-17: 'AI 여행 코스 생성기' on its own page, very visible, many cute 3D pictures. The page asks
+# /api/plan/ (chatbot/planner.js) and draws the plan from the site's own place data (plan_places, /plan/places.json):
+# the model's words are only the title, the summary, a reason per stop and the notes; every fact on a card is a value
+# of the place's first screen, every photo a TourAPI KOGL-1/3 photo with its credit (CLAUDE.md 3.4), and a place with
+# no photo gets its kind's 3D picture (never an illustration in a photo's place, CLAUDE.md 4).
+KIND_PIC = {"bed": "kind-stay", "bowl": "kind-food", "museum": "kind-museum", "spark": "kind-experience",
+            "building": "theme-modern-history", "wave": "theme-islands-sea", "tree": "theme-parks-nature",
+            "lamp": "theme-alleys-culture", "pin": "kind-attraction", "cup": "kind-cafe"}   # _ui.html.j2 KIND_PIC
+
+
+def plan_places(S) -> dict:
+    """{path: {n name, k kind, t type, a area, r 권역, ic its kind's picture ID, img? {u, w, h, alt, t KOGL type, s/sw the
+    provider's small copy},
+    h hours, c closed days, f fee, m menu, p parking, ci check-in, g [lat, lng]}} for every published place — each
+    value as the place's first screen shows it (key_facts 'hero'; both sources where they differ)."""
+    out = {}
+    for e in S.entities:
+        slots = {s["key"]: s for s in key_facts(e, "hero")["slots"]}
+
+        def val(k):
+            s = slots.get(k)
+            if not s or s.get("missing"):
+                return ""
+            if s.get("vals"):
+                return " / ".join(squash_ws(f"{v.get('provider') or ''} {v.get('main') or ''}") for v in s["vals"])
+            return " · ".join(x for x in (s.get("main"), s.get("sub")) if x)
+
+        ph = e["_photos"][0] if e.get("_photos") else None
+        th = thumb(ph) if ph else None
+        geo = e.get("_geo") or {}
+        row = {"n": e["name"], "k": e["kind"], "t": e.get("_type") or KIND_LABELS.get(e["kind"], ""),
+               "a": e.get("_area") or "", "r": e.get("_region") if e.get("_region") != none_label() else "",
+               "ic": KIND_PIC.get((e.get("_visual") or ("", "pin"))[1], "kind-attraction")}
+        if ph:   # the provider's own file (KOGL-3 is never cropped: the card frames it whole), its small copy in srcset
+            row["img"] = {"u": ph["url"], "w": ph["w"], "h": ph["h"], "alt": ph["alt"], "t": ph["type"],
+                          **({"s": th["url"], "sw": th["w"]} if th and th["url"] != ph["url"] and th.get("w") else {})}
+        for key, slot in (("h", "hours"), ("c", "closed"), ("f", "fee"), ("m", "menu"), ("p", "parking"), ("ci", "checkin")):
+            v = val(slot)
+            if v:
+                row[key] = v
+        if isinstance(geo.get("lat"), (int, float)) and isinstance(geo.get("lng"), (int, float)):
+            row["g"] = [round(geo["lat"], 6), round(geo["lng"], 6)]
+        out[e["_path"]] = row
+    return out
+
+
+# the planner's choices: (value, label, picture ID, glyph for the interim look) — the values are chatbot/plan_prompt.js
+# MOVE / WITH / PREFS / NEEDS keys, the pictures docs/handover/gpt_image_requests_2026-10-17_plan.md (new) or the
+# registry's existing ones
+PLAN_CHOICES = {
+    "days": [(1, "당일치기", "plan-dur-day", "sun"), (2, "1박 2일", "plan-dur-1n2d", "moon"), (3, "2박 3일", "plan-dur-2n3d", "bag")],
+    "move": [("car", "자가용", "fact-parking", "car"), ("transit", "대중교통·걷기", "sit-carfree", "bus")],
+    "with": [("solo", "혼자", "plan-with-solo", "user"), ("couple", "연인·친구", "plan-with-couple", "heart"),
+             ("kids", "아이와 가족", "sit-kids", "family"), ("parents", "부모님과", "plan-with-parents", "cup")],
+    "prefs": [("history", "역사·문화", "theme-modern-history", "building"), ("food", "맛집", "icon-food", "bowl"),
+              ("islands", "섬·바다", "theme-islands-sea", "wave"), ("nature", "자연·힐링", "theme-parks-nature", "tree"),
+              ("alleys", "골목 산책", "theme-alleys-culture", "lamp"), ("cafe", "카페·빵집", "kind-cafe", "cup"),
+              ("experience", "체험", "kind-experience", "spark"), ("night", "야경", "sit-night", "moon"),
+              ("photo", "사진 명소", "pref-photo", "camera")],
+    "needs": [("rain", "비 와도 실내 위주", "sit-rainy", "umbrella"), ("stroller", "유모차", "cond-stroller", "family"),
+              ("wheelchair", "휠체어", "cond-wheelchair", "access"), ("parking", "주차 편한 곳", "cond-parking", "car"),
+              ("free", "입장료 없는 곳 위주", "sit-free", "ticket"), ("lesswalk", "걷기 적게", "sit-walk", "walk")],
+}
+# the pictures the result draws by ID (plan.js clones them from the page's <template>; one missing here is drawn as an
+# empty pale circle: every pic("…") of plan.js and every KIND_PIC value — tests/test_plan_page.py)
+PLAN_RESULT_PICS = ("kind-attraction", "kind-food", "kind-stay", "kind-cafe", "kind-museum", "kind-experience",
+                    "theme-modern-history", "theme-islands-sea", "theme-parks-nature", "theme-alleys-culture",
+                    "transit-bus", "sit-walk", "fact-parking", "plan-budget", "plan-swap", "icon-map", "fact-hours",
+                    "fact-closed", "fact-fee", "cond-wheelchair", "icon-course")
+PLAN_QUICK_EDITS = [("비가 오면 실내 위주로 바꿔 주세요", "비 오면 실내로", "sit-rainy"),
+                    ("걷는 거리를 줄여 주세요", "덜 걷게", "sit-walk"),
+                    ("점심 맛집을 다른 곳으로 바꿔 주세요", "점심 바꾸기", "icon-food"),
+                    ("입장료 없는 곳 위주로 바꿔 주세요", "입장료 줄이기", "sit-free"),
+                    ("카페나 빵집을 한 곳 넣어 주세요", "카페 넣기", "kind-cafe")]
+
+
+def plan_hubs() -> list[tuple[str, str]]:
+    """Where a trip may start and end (site.json city.plan.hubs; chatbot/plan_prompt.js reads the same from
+    public/chat/site.json): (key, name) — names only, the site has no point for them; none: the form asks no hub."""
+    return [(h["key"], h["name"]) for h in city.current().plan["hubs"]]
+
+
+def plan_vm(S) -> dict:
+    """The /plan/ page's context: the choices, the result pictures and quick edits, the courses to fall back on."""
+    # the planner's own mascot poses once tools/mascot_media.py has made them, else the nearest existing pose; a site
+    # without a mascot (pipeline/icons.py mascot) draws none
+    path = Path(__file__).resolve().parent.parent / "templates" / "assets" / "mascot" / "manifest.json"
+    have = json.loads(path.read_text("utf-8")) if path.is_file() else {}
+
+    def pose(own, other):   # {name, kind}: 'medium' (200·400) when its files exist, else 'small' (96·192)
+        name = own if own in have else other
+        files = [f for f, *_ in (have.get(name) or {}).get("webp", [])]
+        return {"name": name, "kind": "medium" if f"{name}-200.webp" in files else "small"}
+    hubs = plan_hubs()
+    return {"choices": {**PLAN_CHOICES, "hubs": hubs}, "result_pics": PLAN_RESULT_PICS,
+            "hubs_json": json.dumps(dict(hubs), ensure_ascii=False, separators=(",", ":")),
+            "quick_edits": PLAN_QUICK_EDITS,
+            "n_places": len(S.entities), "n_courses": len(S.courses), "n_guides": len(S.guides),
+            "region": S.site.get("region") or "",
+            "mascots": {"work": pose("mascot-plan", "mascot-think"), "done": pose("mascot-plan-done", "mascot-hello"),
+                        "rain": pose("mascot-plan-rain", "mascot-point"), "sorry": pose("mascot-sorry", "mascot-sorry")}}

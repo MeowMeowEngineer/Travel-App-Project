@@ -52,6 +52,19 @@ def kakao_route_url(name: str, lat: float | None = None, lng: float | None = Non
     return ""
 
 
+def kakao_transit_url(a_name: str, a_lat, a_lng, b_name: str, b_lat, b_lng) -> str:
+    """Kakao public-transport directions between two coordinates ('/link/by/traffic/이름,위도,경도/이름,위도,경도',
+    apis.map.kakao.com/web/guide 길찾기 바로가기; the transit mode takes no via points and no place IDs here): the map
+    computes the route and its times — the site states none (course pages, QA 2026-10-15 F09)."""
+    return f"https://map.kakao.com/link/by/traffic/{_q(a_name)},{a_lat},{a_lng}/{_q(b_name)},{b_lat},{b_lng}"
+
+
+def google_transit_url(a_lat, a_lng, b_lat, b_lng) -> str:
+    """Google Maps transit directions between two coordinates (Maps URLs: dir, travelmode=transit)."""
+    return "https://www.google.com/maps/dir/?" + urlencode(
+        {"api": "1", "origin": f"{a_lat},{a_lng}", "destination": f"{b_lat},{b_lng}", "travelmode": "transit"})
+
+
 def _with_region(name: str, region: str | None) -> str:
     if region and region not in name:
         return f"{region} {name}"

@@ -18,9 +18,23 @@
     <h1 id="h-list" class="h-list">해외에서 본 {{ site.region }}</h1>
     <p class="lede">외신·해외 매체 기사{% if posts %}와 SNS 게시물이{% else %}가{% endif %} {{ site.region }}의 어디를 다뤘는지 우리가 한 줄로 정리하고, 원문으로 연결합니다. 외국어로 만든 {{ site.region }} 여행 영상도 함께 모았습니다.</p>
     {% if highlights %}{{ hlm.row(highlights, site.region) }}{% endif %}
-    <nav class="v-nav" aria-label="이 페이지의 묶음">{% for g in article_groups %}<a href="#{{ g.id }}">{{ g.title }} <span class="tn">{{ g['items']|length }}</span></a>{% endfor %}{% if abroad_videos %}<a href="#ab-video">외국어 영상 <span class="tn">{{ abroad_videos|length }}</span></a>{% endif %}{% if posts %}<a href="#ab-sns">SNS <span class="tn">{{ posts|length }}</span></a>{% endif %}</nav>
+    <nav class="v-nav" aria-label="이 페이지의 묶음">{% if posts %}<a href="#ab-sns">SNS <span class="tn">{{ posts|length }}</span></a>{% endif %}{% for g in article_groups %}<a href="#{{ g.id }}">{{ g.title }} <span class="tn">{{ g['items']|length }}</span></a>{% endfor %}{% if abroad_videos %}<a href="#ab-video">외국어 영상 <span class="tn">{{ abroad_videos|length }}</span></a>{% endif %}</nav>
   </div>
 </section>
+{% if posts %}
+{#- the SNS wall (owner 2026-10-14 '화면 꽉 차게 바둑판식 배열로'; and 'SNS 게시물이 좀 더 잘 보이면 좋겠는데 지금은 너무
+    구석에 있는 것 같아서': right under the page's head, before the articles): a tinted band across the page; the tiles are rounded
+    white cards in 1 / 2 / 3 columns (4 from 1760px, where the band's column widens) packed without holes
+    (css/48-abroad.css, site.js [data-wall]); the list's order is the reading and Tab order -#}
+<section class="ab-sns ab-sns-top" id="ab-sns" aria-labelledby="ab-sns-h">
+  <div class="wrap">
+    <h2 id="ab-sns-h" class="ab-h">SNS 게시물 <span class="tn">{{ posts|length }}</span></h2>
+    {% set svc_n = [] %}{% for g in posts|groupby('platform_label') %}{% set _ = svc_n.append((g.list|length, g.grouper)) %}{% endfor %}
+    <p class="ab-sns-lede">{% for n, label in svc_n|sort(reverse=true) %}{{ label }} <span class="tn">{{ n }}</span>{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %} — 게시물마다 우리가 쓴 한 줄 소개를 달고, 게시물은 각 서비스의 공식 임베드로 보여 줍니다.</p>
+    <ul class="ab-wall" data-wall>{% for a in posts %}{{ ab.post(a) }}{% endfor %}</ul>
+  </div>
+</section>
+{% endif %}
 <div class="wrap ab-wrap">
   {% if articles %}
   <section class="ab-sec" id="ab-articles" aria-labelledby="ab-articles-h">
@@ -40,12 +54,9 @@
     <ul class="vids vids-4">{{ p1.vgrid(abroad_videos, places) }}</ul>
   </section>
   {% endif %}
-  {% if posts %}
-  <section class="ab-sec cv" id="ab-sns" aria-labelledby="ab-sns-h">
-    <h2 id="ab-sns-h" class="ab-h">SNS 게시물 <span class="tn">{{ posts|length }}</span></h2>
-    <ul class="ab-list ab-posts">{% for a in posts %}{{ ab.post(a) }}{% endfor %}</ul>
-  </section>
-  {% endif %}
+</div>
+
+<div class="wrap ab-wrap ab-wrap-end">
   <p class="note ab-src-note">기사와 게시물의 글·사진은 각 매체와 작성자의 것입니다. 한 줄 소개는 우리가 쓴 문장이고, 제목과 인용문은 원문 그대로입니다. 인용문은 원문의 짧은 한두 문장을 번역하지 않고 원문 언어로 옮긴 것으로, 매체·필자와 원문 링크를 함께 답니다. 기사 화면은 옮겨 싣지 않습니다. 기사 옆 사진은 각 매체가 링크 미리보기용으로 공개한 대표 이미지를 매체 주소에서 그대로 불러온 것입니다.{% if posts %} SNS 게시물은 화면에 가까워지면 해당 서비스의 공식 임베드로 불러옵니다.{% endif %}{% if abroad_videos %} 영상·썸네일: 각 채널의 YouTube.{% endif %}{% if highlights %} 하이라이트는 원문을 직접 열어 {{ site.region|josa('이나/나') }} {{ site.region }}의 장소를 좋게 평가한 대목을 확인한 글만 골랐습니다.{% endif %}</p>
 </div>
 {% endblock %}

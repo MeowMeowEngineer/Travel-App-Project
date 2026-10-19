@@ -54,8 +54,9 @@ def extract_phones(value: str | None) -> list[str]:
 
 
 def phone_intl(phone: str) -> str:
-    """Domestic '063-454-7870' -> '+82-63-454-7870'; nationwide '1577-4050' -> '+82-1577-4050'."""
-    return "+82-" + (phone[1:] if phone.startswith("0") else phone)
+    """The number as structured data writes it: domestic '063-454-7870' -> '+82-63-454-7870' (phone_e164); a number
+    that has no international form — nationwide '1577-4050', free 080, premium 060 — stays as written."""
+    return phone_e164(phone) or phone
 
 
 def phone_domestic(phone: str) -> str:
@@ -64,6 +65,27 @@ def phone_domestic(phone: str) -> str:
         return phone
     rest = phone[4:]
     return rest if re.match(r"1\d{3}-\d{4}$", rest) else "0" + rest
+
+
+def phone_e164(phone: str) -> str:
+    """'063-454-7870' -> '+82-63-454-7870' (also 010 mobiles, 070 and 0507): the form a caller abroad dials. '' for a
+    number that cannot be dialled from abroad: nationwide 15xx/16xx/18xx (and 1330, 114, 119 …), free 080, premium
+    060 (QA 2026-10-15: never +82 on a domestic-only number)."""
+    if not phone.startswith("0") or phone.startswith(("080", "060")):
+        return ""
+    return "+82-" + phone[1:]
+
+
+# Area codes (02, 031–033, 041–044, 051–055, 061–064), mobiles (010, 011, 016–019) and 070: numbers that are known to
+# answer a call from abroad. 0507 (a personal relay number) gets a +82 link but no visible +82 form: its reach from
+# abroad is not verified.
+_INTL_SHOWN = re.compile(r"0(?:2|3[1-3]|4[1-4]|5[1-5]|6[1-4]|1[016789]|70)-")
+
+
+def phone_intl_shown(phone: str) -> str:
+    """The visible international form under a number on a foreign-language place page: '02-530-6311' ->
+    '+82 2-530-6311'; '' for 0507, 15xx/16xx, 080 and 060 numbers."""
+    return "+82 " + phone[1:] if _INTL_SHOWN.match(phone) else ""
 
 
 def display_address(raw: str | None) -> str:
@@ -138,6 +160,25 @@ def road_from_address(address: str | None) -> str:
     return m.group(1).replace(" ", "") if m else ""
 
 
+_ROAD_NO = re.compile(r"([가-힣0-9]+(?:로|길))\s*([0-9]+(?:-[0-9]+)?)")
+
+
+def address_norm(address: str | None) -> str:
+    """An address without brackets, spaces and the leading province and city ('전북특별자치도 ○○시 ○○면
+    △△도리 (일원)' -> '○○면△△도리'), for comparing two spellings of one address."""
+    a = re.sub(r"\([^)]*\)", "", address or "").strip()
+    a = re.sub(r"^(?:전북특별자치도|전라북도)\s*", "", a)
+    a = re.sub(r"^[가-힣]{1,4}시\s+", "", a)   # the city as its own word ('○○시 '), never '신시도'
+    return re.sub(r"\s+", "", a)
+
+
+def address_key(address: str | None) -> str:
+    """One building's key: road + number ('○○시 ○○4길 14(○○동)' -> '○○4길14', as tools/tourapi_bulk.road_key),
+    else the normalized address (address_norm)."""
+    m = _ROAD_NO.search(re.sub(r"\s+", " ", address or ""))
+    return f"{m.group(1)}{m.group(2)}" if m else address_norm(address)
+
+
 def josa(word: str, pair: str) -> str:
     """Attach the right Korean particle: josa('코스', '으로/로') -> '코스로', josa('공원', '은/는') -> '공원은'."""
     with_final, without_final = pair.split("/")
@@ -190,6 +231,91 @@ def web_text(url: str | None) -> str:
         seg = [s for s in re.split(r"[/?#]", path) if s][:1]
         return f"{host}/{seg[0]}" if seg else host
     return host
+
+
+def url_key(url: str | None) -> str:
+    """Comparison key for a URL: no scheme, no trailing '/' or '?', lower case."""
+    return re.sub(r"^https?://", "", (url or "").strip().lower()).rstrip("/?")
+
+
+# ---------------------------------------------------------------- dead homepage links (QA 2026-10-15 SRC-02)
+# data/<region>/dead_links.json lists, with a reason and the date it was checked, homepage/booking addresses that no
+# longer lead to the place: whole hosts ('modoo.at': the service ended, every address shows the same notice) and
+# single URLs (a domain that is gone or now belongs to someone else). build.State drops them before anything is
+# rendered (pages in every language, cards, JSON-LD sameAs, llms-full, chat docs) and validate fails a page that
+# still links or prints one. tools/link_check.py proposes entries; a person reviews them in git diff.
+DEAD_LINK_KEYS = ("homepage", "reservationurl")
+
+
+def _dead_key(url: str | None) -> str:
+    return re.sub(r"^www\.", "", url_key(url))
+
+
+def dead_reason(url: str | None, dead: dict | None) -> str:
+    """The reason `url` is listed as dead in a dead_links.json mapping, '' when it is not listed (or not a URL)."""
+    link = link_url(url)
+    if not link or not dead:
+        return ""
+    host = url_domain(link)
+    for h, info in (dead.get("hosts") or {}).items():
+        h = h.lower().removeprefix("www.")
+        if host == h or host.endswith("." + h):
+            return squash_ws((info or {}).get("reason")) or "종료된 주소"
+    key = _dead_key(link)
+    for u, info in (dead.get("urls") or {}).items():
+        if key == _dead_key(link_url(u) or u):
+            return squash_ws((info or {}).get("reason")) or "종료된 주소"
+    return ""
+
+
+def dead_tokens(dead: dict | None) -> list[str]:
+    """How a listed address would appear in visible text: each host, and each URL's web_text (its domain, or
+    domain/first-segment for shared hosts such as blog.naver.com/<id>)."""
+    out = [h.lower().removeprefix("www.") for h in (dead or {}).get("hosts") or {}]
+    out += [web_text(link_url(u) or u) for u in (dead or {}).get("urls") or {}]
+    return [t for t in dict.fromkeys(out) if t]
+
+
+def drop_dead_links(records: list[dict], dead: dict | None) -> list[dict]:
+    """Remove listed dead addresses from places and events in place: facts.homepage/reservationurl (with their
+    fact_sources entry), the same keys' fact_alternatives, official.homepage and an event's homepage. When a main
+    value goes and another source's live value remains, that one becomes the main value with its own source.
+    Returns one row per removed address: {id, key, url, reason}."""
+    dropped: list[dict] = []
+    if not (dead and ((dead.get("hosts") or {}) or (dead.get("urls") or {}))):
+        return dropped
+
+    def gone(rec: dict, key: str, url) -> bool:
+        reason = dead_reason(url, dead)
+        if reason:
+            dropped.append({"id": rec.get("id", ""), "key": key, "url": squash_ws(url), "reason": reason})
+        return bool(reason)
+
+    for rec in records:
+        facts = rec.get("facts") if isinstance(rec.get("facts"), dict) else {}
+        sources = rec.get("fact_sources") if isinstance(rec.get("fact_sources"), dict) else {}
+        alts = rec.get("fact_alternatives") if isinstance(rec.get("fact_alternatives"), dict) else {}
+        for key in DEAD_LINK_KEYS:
+            if alts.get(key):
+                alts[key] = [a for a in alts[key] if not gone(rec, f"fact_alternatives.{key}", a.get("value"))]
+            if facts.get(key) and gone(rec, f"facts.{key}", facts[key]):
+                facts.pop(key)
+                sources.pop(key, None)
+                if alts.get(key):   # another source's live address takes its place, with that source
+                    first = alts[key].pop(0)
+                    facts[key] = first["value"]
+                    sources = rec.setdefault("fact_sources", sources)
+                    sources[key] = {k: first[k] for k in ("provider", "checked_at", "contentid", "url") if first.get(k)}
+            if key in alts and not alts[key]:
+                alts.pop(key)
+        if "fact_alternatives" in rec and not alts:
+            rec.pop("fact_alternatives")
+        official = rec.get("official") if isinstance(rec.get("official"), dict) else {}
+        if official.get("homepage") and gone(rec, "official.homepage", official["homepage"]):
+            official.pop("homepage")
+        if isinstance(rec.get("homepage"), str) and rec["homepage"] and gone(rec, "homepage", rec["homepage"]):
+            rec.pop("homepage")
+    return dropped
 
 
 def dash_times(text: str | None) -> str:

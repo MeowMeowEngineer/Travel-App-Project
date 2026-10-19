@@ -32,6 +32,9 @@
                                   settles 1.06 → 1 at the same time
      [data-numroll]               a figure (guide answer card, present.rich): its own digits roll into place once it
                                   scrolls in (never a count from 0); the plain text is restored afterwards
+     [data-draw]                  a line or bar (a place's course segment, a nearby row's distance bar): its --p goes
+                                  0 → 1 once it scrolls in (0.7s, 60ms stagger), the CSS scales its wires / bars / dots
+                                  with it; a segment's own place dot then rings once (.is-lit)
    Home opening (first screen; ui.showcase):
      [data-hero]                  section; gets .is-live after load, .is-paused when paused (site.js)
        [data-slide]               slides; the first has class is-on in the HTML. Slides 2..n use data-src /
@@ -349,6 +352,26 @@
     });
   }
 
+  // ------------------------------------------------------------ 6b. lines and bars draw themselves (a place's 주변·함께 가기)
+  // [data-draw] below the first screen (templates/_near.html.j2: a course segment's line, a nearby row's distance bar):
+  // the element's --p goes 0 → 1 once it scrolls in, and its wires / bars / dots scale with it (css/71-nearby.css,
+  // transforms only, fixed boxes: nothing shifts). The segment's wires draw out of this place's dot; when the line is
+  // drawn, this place's dot rings once (.is-lit). The targets are inner elements, never REVEAL tiles (show() overwrites
+  // the tiles' tweens). Without this file --p is unset (= 1): the final state; nothing on the first screen is touched.
+  function draws(g, ST, els) {
+    if (!els.length) return;
+    els.forEach(function (el) { el.style.setProperty("--p", "0"); });
+    ST.batch(els, { start: "top 88%", once: true, onEnter: function (b) {
+      g.to(b, { "--p": 1, duration: 0.7, delay: 0.2, ease: easeLine, stagger: 0.06, onComplete: function () {
+        b.forEach(function (el) {
+          el.style.removeProperty("--p");
+          var h = el.querySelector(".seg-n.here");
+          if (h) h.classList.add("is-lit");
+        });
+      } });
+    } });
+  }
+
   // ------------------------------------------------------------ 7. carousels: KOGL-1 photos drift with the row
   // (no library). Each image is at rest where the page put it and moves only with the reader's own scroll of the
   // row (at most ±4%, inside the 112%-wide KOGL-1 frame of css/40-showcase.css)
@@ -410,20 +433,25 @@
     drift();
     root.classList.add("cv-off"); // lift content-visibility so ScrollTrigger measures true heights
     var REVEAL = ".answers > li, .cards > li, .evrows > .evr, .regs, .reg-map, .co-teaser, .v-feat, .v-rows, " +
-      ".v-chips, .gal-track > li, .gitem, .board, .stop-body, .week-scroll, .near-cols2 > .tile, .facts-more, .pl-side, " +
+      ".v-chips, .gal-track > li, .gitem, .board, .stop-body, .week-scroll, .nb-seg, .nr-list > .nr, .xc-list > .xc, " +
+      ".facts-more, .pl-side, " +
       ".place-map, .faq .qa, .vids > .vid, .ev-annual, .tickets > li, .prog, .src-dl, .lines > .line-row, .strip-line, " +
       ".map-side, .co-map, .gd-map, .ans-more, .gd-sec-n, .gd-pts, .gd-p, .gd-sec .mcs-box, .gd-sec .mcr, [data-reveal]";
     var outside = function (el) { return !el.closest("[data-story]"); };
+    // inside a closed <details> ('다른 구간 보기', '가이드 더 보기'): never given a starting state — opened later, it shows
+    // its rows as they are
+    var shown = function (el) { return !el.closest("details:not([open])"); };
     var T = {
       split: all("[data-split]").filter(below),
-      reveal: all(REVEAL).filter(below).filter(outside),
+      reveal: all(REVEAL).filter(below).filter(outside).filter(shown),
       photo: all("[data-reveal-ph]").filter(below).filter(function (el) { return outside(el) && !el.parentNode.closest(REVEAL); }),
-      numroll: all("[data-numroll]").filter(below)
+      numroll: all("[data-numroll]").filter(below),
+      draw: all("[data-draw]").filter(below).filter(shown)
     };
     var zoom = all("[data-hero-zoom] img").filter(k1).length > 0;
     var staged = wideQ.matches && !!doc.querySelector("[data-story] [data-stage] [data-ch]");
     var useLenis = fine && wideQ.matches;
-    var need = T.split.length || T.reveal.length || T.photo.length || T.numroll.length || zoom || staged;
+    var need = T.split.length || T.reveal.length || T.photo.length || T.numroll.length || T.draw.length || zoom || staged;
     var files = [];
     if (need || useLenis) files.push("gsap/gsap.min.js", "gsap/ScrollTrigger.min.js");
     if (T.split.length) files.push("gsap/SplitText.min.js");
@@ -449,6 +477,7 @@
         photos(g, keep(T.photo).filter(off));
         if (zoom) heroZoom(g);
         numRolls(g, keep(T.numroll));
+        draws(g, ST, keep(T.draw));
         ST.refresh();
         // filters, the list map and 권역 tabs move rows: measure again, so a row waiting for its reveal that is now
         // on screen is revealed (and never left invisible)

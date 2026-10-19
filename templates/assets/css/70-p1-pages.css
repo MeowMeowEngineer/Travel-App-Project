@@ -41,16 +41,16 @@
 .src-dl dd .note { margin-top: 6px; }
 .pl-src .src-dl a { min-height: 44px; }
 
-/* ---------------------------------------------------------------- place: 주변·함께 가기 link groups (events, guides, twins,
-   names that run on) — a grey label over hairline rows */
-.xl-g { margin-top: 28px; }
-.xl-g .xlinks { margin-top: 0; border-top: 1px solid var(--hair); }
+/* ---------------------------------------------------------------- place: the news rows of the media chapter (the
+   주변·함께 가기 chapter is css/71-nearby.css) */
 .xlinks .same-t { margin-left: auto; text-align: right; }
 
 /* ---------------------------------------------------------------- lists: the filter bar is JS-only furniture laid out from the
    first paint — the `hidden` attribute keeps it out without JS (site.js removes it), html.js lays it out at once, so
    nothing moves when site.js runs */
 html.js .filters[data-filters][hidden] { display: block !important; }
+/* nothing matches the filters: the ledger's column heads go with the rows (the zero-result panel above says why) */
+.ledger:not(:has(.rec:not([hidden]))) > .lg-head { display: none; }
 .list-empty { padding-bottom: var(--sec); }
 .list-empty .empty { padding-top: 0; }
 .list-empty a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
@@ -67,6 +67,27 @@ html.js .filters[data-filters][hidden] { display: block !important; }
 .list-hub .arr { margin-left: 4px; }
 /* desktop: the result count and the filter button sit apart from the scrolling type row (a hairline between) */
 @media (min-width: 1024px) { .f-top .f-tools { padding-left: 14px; border-left: 1px solid var(--hair); } }
+/* ... and keep their width whatever the filters, so applying one moves no type chip (outside evaluation 2026-10-18:
+   '관광지 219곳' → '관광지 28곳 (전체 219곳 중)' pushed a chip onto the next line): the count line holds the room of its
+   widest filtered forms (_filters.html.j2 .f-w, present.filter_vm widest: invisible copies with no height; its digits
+   tabular, so a shown count is never wider than the whole one), the 필터 button the room of its badge (one digit: at
+   most three filters in the panel; !important over the base [hidden] rule). The same from 761px with a mouse, whose
+   chips wrap beside the tools there too (css/30-info.css; review 2026-10-18, fourth round); a phone's row is its own */
+.f-w { display: none; }
+@media (min-width: 1024px), (min-width: 761px) and (hover: hover) and (pointer: fine) {
+  .f-tools .f-result { font-variant-numeric: tabular-nums; }
+  .f-w { display: block; height: 0; overflow: hidden; visibility: hidden; }
+  .f-tools .f-badge[hidden] { display: inline-flex !important; visibility: hidden; }
+}
 /* the 목록 | 지도 switch never wraps a label; on the narrowest phones the result line may take two lines instead */
 .seg button { white-space: nowrap; }
 @media (max-width: 400px) { .f-tools .f-result { white-space: normal; min-width: 0; line-height: 1.3; } .seg button { min-width: 0; padding: 0 12px; } }
+/* the 필터 button and the 목록 | 지도 switch never shrink (ja '絞り込み' would wrap inside its button); below 761px the tools
+   may wrap, but the count line starts from a 5.5em basis, so the Korean line keeps its two-line wrap on one row and only
+   a count that cannot fit ('160 достопримечательностей') takes its own row — no horizontal scroll at 401–450px either
+   (QA 2026-10-15 SRC-01, SRC-01d) */
+.f-tools .f-more, .f-tools .seg { flex: none; }
+@media (max-width: 760px) {
+  .f-tools { flex-wrap: wrap; row-gap: 6px; }
+  .f-tools .f-result { flex: 1 1 5.5em; min-width: min-content; white-space: normal; line-height: 1.3; }
+}

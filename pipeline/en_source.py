@@ -251,6 +251,15 @@ class Glossary:
         return found
 
 
+def conflict_alternatives(p: dict, key: str) -> list[dict]:
+    """The other sources' values of one fact that differ from it, in the order the translation batches carry them
+    (a translated record's facts[key].alternatives[i] is the translation of item i)."""
+    value = display_value(key, (p.get("facts") or {}).get(key))
+    return [a for a in ((p.get("fact_alternatives") or {}).get(key) or [])
+            if a.get("relation") != "also" and squash_ws(str(a.get("value") or ""))
+            and squash_ws(display_value(key, a["value"])) != squash_ws(value)]
+
+
 def _fact_rows(p: dict, names_row: dict) -> list[dict]:
     facts = p.get("facts") or {}
     rows = []
@@ -259,8 +268,7 @@ def _fact_rows(p: dict, names_row: dict) -> list[dict]:
             continue
         value = display_value(key, facts.get(key))
         alts = (p.get("fact_alternatives") or {}).get(key) or []
-        conflict = [a for a in alts if a.get("relation") != "also" and squash_ws(str(a.get("value") or ""))
-                    and squash_ws(display_value(key, a["value"])) != squash_ws(value)]
+        conflict = conflict_alternatives(p, key)
         also = [a for a in alts if a.get("relation") == "also" and squash_ws(str(a.get("value") or ""))]
         if not value and not conflict:
             continue

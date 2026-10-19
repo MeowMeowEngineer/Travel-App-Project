@@ -7,6 +7,8 @@
 - 표준 라이브러리만 쓴다. 데이터와 빌드 결과(--out)만 읽고 아무것도 고치지 않는다.
 - '화면에 나간 장소' = --out/places/<slug>/index.html 이 있는 장소. 데이터 전체가 아니라 사람이 보는 범위를 잰다.
 - 판정 기준은 아래 상수에 모아 두었다. 기준을 바꾸면 전/후 비교가 깨지므로, 바꿀 때는 보고서에 적는다.
+- (2026-10-15 기준 변경) data/<region>/dead_links.json에 오른 종료·없는 홈페이지 주소는 빌드처럼 빼고 센다
+  (pipeline.textutil.drop_dead_links, 표준 라이브러리만 쓰는 모듈) — 홈페이지 채움률과 숙소 '얇은 페이지'가 빌드와 같다.
 """
 from __future__ import annotations
 
@@ -23,6 +25,7 @@ if __package__ in (None, ""):
 
 from pipeline import city  # noqa: E402
 from pipeline.schema import taut_pattern  # noqa: E402
+from pipeline.textutil import drop_dead_links  # noqa: E402  (stdlib only)
 
 # 실용 정보로 치는 facts 키(출처별 이름이 달라 묶어서 본다)
 GROUPS = {
@@ -78,9 +81,12 @@ def analyse(data: Path, out: Path, today: str) -> dict:
     city.activate(site)
     allowed = set((site.get("publish_rules") or {}).get("allowed_image_licenses") or ["KOGL-1", "KOGL-3"])
     places = [p for p in load(data / "places.json") if not p.get("duplicate_of")]
+    dead = json.loads((data / "dead_links.json").read_text("utf-8")) if (data / "dead_links.json").exists() else {}
+    dead_dropped = drop_dead_links(places, dead)   # as build.State does: a dead homepage is no homepage
     shown = built_slugs(out, "places")
     live = [p for p in places if p.get("slug") in shown]
-    rep: dict = {"today": today, "data_places": len(places), "shown_places": len(live), "kinds": {}}
+    rep: dict = {"today": today, "data_places": len(places), "shown_places": len(live), "kinds": {},
+                 "dead_links_dropped": len(dead_dropped)}
 
     faq_q = defaultdict(list)
     hygiene = Counter()
@@ -175,7 +181,8 @@ def analyse(data: Path, out: Path, today: str) -> dict:
 
 def to_md(rep: dict) -> str:
     L = [f"# 정보 품질 리포트 ({rep['today']})", "",
-         f"- 데이터 장소 {rep['data_places']}곳(중복 제외) · 화면에 나간 장소 {rep['shown_places']}곳 · 상태 {rep['status']}", ""]
+         f"- 데이터 장소 {rep['data_places']}곳(중복 제외) · 화면에 나간 장소 {rep['shown_places']}곳 · 상태 {rep['status']}",
+         f"- 종료·없는 홈페이지 주소(dead_links.json) {rep.get('dead_links_dropped', 0)}건은 빌드처럼 빼고 셈", ""]
     L += ["## 유형별 채움률(화면에 나간 장소 기준)", "", "| 유형 | 수 | 좌표 | 허용 사진 | 필수 정보 채움 | 얇은 페이지 | 요약 첫 문장이 '○○은 ○○시 ○○에 있는 ○○입니다' |", "|---|---|---|---|---|---|---|"]
     for k, v in rep["kinds"].items():
         need = " · ".join(f"{g} {s}" for g, s in v["need"].items())

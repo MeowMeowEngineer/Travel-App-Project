@@ -39,6 +39,15 @@
 @media (max-width: 1023px) { .p2-stops { width: 100%; } }
 .p2-orig { margin: 20px 0 0; padding: 18px 22px; border-radius: var(--r); background: var(--bg-2); font-size: 16px; line-height: 1.7; color: var(--ink-2); }
 .sep-v { color: var(--ink); }
+/* the source's day / option heading (1일차, 2일차(1안)) */
+.sep-day { background: none; border-radius: 0; border-top: 2px solid var(--ink); padding: 12px 0 0; }
+.sep-day .sep-v { font-weight: 700; }
+.en-stop-opt { font-weight: 400; color: var(--ink-3); }
+/* 차 없이 다니기 (QA 2026-10-15 F09): the rows of the place page's access block (30-info .acc-*) */
+.mv-n { display: inline-block; min-width: 1.5em; color: var(--ink-3); font-size: 14px; }
+.mv-tt-h { margin-top: 20px; }
+.mv-guides { margin-top: 16px; font-size: 15px; line-height: 1.7; }
+.co-move .kf-need { margin-top: 8px; font-size: 15px; }
 
 /* ---------------------------------------------------------------- courses index */
 .p2-courses { padding-bottom: var(--sec); }

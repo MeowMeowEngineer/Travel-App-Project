@@ -1,0 +1,65 @@
+{#- _filters.html.j2 — the list filter bar of Korean and every version (list.html.j2, en/list.html.j2; site.js 'list
+    filters'). F = present.filter_vm: chips (value, label, n) — the value is the Korean key every version shares, so the
+    URL (?type=…&region=…&theme=…&check=1&view=map) means the same in every language; F.w the words
+    (locales.LIST_WORDS); [data-result] carries the count line's plural forms (data-forms, {n}) and the 'of all' tail
+    (data-of, {m}) for site.js; the '지도 n' count of the list | map switch is the shown rows with coordinates (rows
+    data-geo, kept by site.js). Laid out from the first paint with JS, absent without it (the hidden attribute).
+    The chips' counts are the whole list's here; site.js turns them into faceted counts as soon as it runs (each chip:
+    the rows the list would show with that chip and the other groups' filters), so a chip that would show nothing reads
+    0 (outside evaluation 2026-10-18). After the count line, its widest filtered forms (F.widest, .f-w): invisible
+    copies that keep the line's width on a desktop, where it sits beside the type chips (css 70-p1), so no chip moves
+    when a filter is applied. -#}
+{% macro bar(F) -%}
+<div class="filters" data-filters hidden>
+  <div class="f-top">
+    {% if F.types|length > 1 %}
+    <div class="f-row f-types" role="group" aria-label="{{ F.w.type }}">
+      <button type="button" data-f="type" data-v="" aria-pressed="true">{{ F.w.all }} <span class="tn">{{ F.count }}</span></button>
+      {% for v, lab, n in F.types %}<button type="button" data-f="type" data-v="{{ v }}" aria-pressed="false">{{ lab }} <span class="tn">{{ n }}</span></button>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="f-tools">
+      <p class="f-result" aria-live="polite"><span data-result data-forms="{{ F.forms|tojson_attr }}" data-of="{{ F.w.of }}">{{ F.result }}</span>{% for w in F.widest %}<span class="f-w" aria-hidden="true">{{ w }}</span>{% endfor %}</p>
+      <button type="button" class="f-more" aria-expanded="false" aria-controls="f-panel" data-f-more>{{ F.w.filters }}<span class="f-badge tn" data-f-badge hidden></span></button>
+      {% if F.n_geo %}<div class="seg" role="group" aria-label="{{ F.w.view }}"><button type="button" data-view="list" aria-pressed="true">{{ F.w.list }}</button><button type="button" data-view="map" aria-pressed="false">{{ F.w.map }} <span class="tn">{{ F.n_geo }}</span></button></div>{% endif %}
+    </div>
+  </div>
+  <div class="f-panel" id="f-panel" data-f-panel hidden>
+    {% if F.regions|length > 1 %}
+    <div class="f-row" role="group" aria-label="{{ F.w.area }}">
+      <button type="button" data-f="region" data-v="" aria-pressed="true">{{ F.w.all_areas }}</button>
+      {% for v, lab, n in F.regions %}<button type="button" data-f="region" data-v="{{ v }}" aria-pressed="false">{{ lab }} <span class="tn">{{ n }}</span></button>{% endfor %}
+    </div>
+    {% endif %}
+    {% if F.themes %}
+    <div class="f-row" role="group" aria-label="{{ F.w.theme }}">
+      <button type="button" data-f="theme" data-v="" aria-pressed="true">{{ F.w.all_themes }}</button>
+      {% for v, lab, n in F.themes %}<button type="button" data-f="theme" data-v="{{ v }}" aria-pressed="false">{{ lab }} <span class="tn">{{ n }}</span></button>{% endfor %}
+    </div>
+    {% endif %}
+    {% if F.check and F.check[1] %}<label class="f-check"><input type="checkbox" data-f="check" value="{{ F.check[0] }}"> {{ F.check[1] }} <span class="tn">{{ F.check[2] }}</span></label>{% endif %}
+  </div>
+</div>
+{%- endmacro %}
+
+{#- the zero-result panel, between the bar and the ledger (so the phone's 지도 view, which hides the ledger, shows it
+    too): the sentence, then site.js puts one '<값> 조건 해제' button per filter that brings rows back on its own
+    (data-one: {v} = the chip's label in this version) before the reset of every filter. Hidden until nothing matches;
+    never shown without JS (the list is then complete). -#}
+{% macro zero(F) -%}
+<p class="empty" data-empty hidden>{{ F.w.empty }}</p>
+<div class="f-undo" data-f-undo data-one="{{ F.w.clear_one }}" hidden><button type="button" data-f-reset>{{ F.w.clear_all }}</button></div>
+{%- endmacro %}
+
+{#- after a map's '좌표가 있는 n곳' caption: the places of the page that are not on the map (outside evaluation
+    2026-10-18) — n with words.off_map ({n}); site.js keeps it to the shown rows (data-tpl) and hides it at 0. Nothing
+    when every place has coordinates. -#}
+{% macro off_map(n, words) -%}
+{% if n %}<span data-geo-off data-tpl=" · {{ words.off_map }}"> · {{ words.off_map|replace('{n}', n|string) }}</span>{% endif %}
+{%- endmacro %}
+
+{#- the filter keys of one list row (present.list_vm item; en_site.list_vm passes the same keys): empty ones left out;
+    data-geo marks a row that is a point of the list map (site.js counts the shown ones: '지도 n', the map caption) -#}
+{% macro rec_attrs(it) -%}
+{% if it.geo %} data-geo="1"{% endif %}{% if it.tags %} data-types="|{{ it.tags|join('|') }}|"{% endif %} data-region="{{ it.region }}"{% if it.themes %} data-themes="{{ it.themes|join(' ') }}"{% endif %}{% for k, v in it.flags.items() %}{% if v %} data-{{ k }}="1"{% endif %}{% endfor %}
+{%- endmacro %}

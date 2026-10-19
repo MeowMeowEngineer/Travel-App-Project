@@ -2,7 +2,7 @@
     Spanish, Russian), called by base.html.j2 when lang != 'ko' (the head is shared). t = the version's words
     (pipeline/en_site.UIText), loc = its locale (pipeline/locales.py: home path, separators).
     header(nav, current, page_kind, langs, wordmark, t, loc): skip link and the global bar — the version's site name,
-      the nav (Things to do · Food · Stay · Guides · Courses · Events) and the language menu (_lang.html.j2: Korean
+      the nav (Things to do · Food · Stay · Guides · Courses · Events), the site search (owner 2026-10-14) and the language menu (_lang.html.j2: Korean
       and every version this build has, each this page's counterpart, else its home); phones get the menu panel
       (a <details>, works without JS) with the other versions listed.
     crumbs(items, t): the breadcrumb line (page.crumbs; the JSON-LD BreadcrumbList repeats these names).
@@ -15,18 +15,27 @@
 {% for label, href in nav %}<li{% if stagger %} style="--i:{{ loop.index0 }}"{% endif %}><a href="{{ href }}"{% if current == href %} aria-current="page"{% endif %}{% if href == loc.home ~ 'courses/' %} data-track="course_click"{% endif %}>{{ label }}</a></li>{% endfor %}
 {%- endmacro %}
 
-{% macro header(nav, current, page_kind, langs, wordmark, t, loc) -%}
+{% macro header(nav, current, page_kind, langs, wordmark, t, loc, sym='') -%}
 <a class="skip-link" href="#main-content">{{ t.skip }}</a>
 <header class="mast mast-en" data-mast>
   <div class="wrap mast-in">
-    <a class="wordmark" href="{{ loc.home }}"{% if page_kind == 'home' %} aria-current="page"{% endif %}><span class="wm-a">{{ wordmark }}</span></a>
+    <a class="wordmark" href="{{ loc.home }}"{% if page_kind == 'home' %} aria-current="page"{% endif %}>{{ sym }}<span class="wm-a">{{ wordmark|wordmark }}</span></a>
     <nav class="mast-nav" aria-label="{{ t.main_menu }}"><ul>{{ nav_items(nav, current, false, loc) }}</ul></nav>
+    {#- the site search, as in the Korean bar (owner 2026-10-14): this version's search page <home>search/ (Pages.search);
+        phones open the form over the bar from the round icon (site.js [data-hs-open]; a link without JS) -#}
+    {% set sw = t.search_words() %}{% set on_search = current == loc.home ~ 'search/' %}
+    <a class="mast-search" href="{{ loc.home }}search/"{% if on_search %} aria-current="page"{% else %} data-hs-open{% endif %}>{{ ui.icon('search', 'icon') }}<span>{{ sw.open }}</span></a>
+    {% if not on_search %}<form class="hs" id="hs" action="{{ loc.home }}search/" method="get" role="search" data-hs>
+      <label for="hs-q" class="vh">{{ sw.open }}</label>
+      <span class="hs-f"><input id="hs-q" name="q" type="search" maxlength="100" placeholder="{{ sw.bar }}" autocomplete="off" enterkeyhint="search" spellcheck="false"><button type="submit" class="hs-go">{{ ui.icon('search', 'icon') }}<span class="vh">{{ sw.go }}</span></button></span>
+      <button type="button" class="hs-x" data-hs-close>{{ ui.icon('close', 'icon') }}<span class="vh">{{ sw.close }}</span></button>
+    </form>{% endif %}
     {% if langs %}{{ lg.menu(langs, t.language) }}{% endif %}
     <details class="menu" data-menu>
       <summary><span class="vh">{{ t.menu }}</span><i class="bars" aria-hidden="true"></i></summary>
       <nav class="menu-panel" aria-label="{{ t.full_menu }}">
         <ul>{{ nav_items(nav, current, true, loc) }}</ul>
-        <ul class="menu-sub"><li><a href="{{ loc.home }}about/"{% if current == loc.home ~ 'about/' %} aria-current="page"{% endif %}>{{ t.about_sources }}</a></li>{{ lg.others(langs) }}</ul>
+        <ul class="menu-sub"><li><a href="{{ loc.home }}search/"{% if current == loc.home ~ 'search/' %} aria-current="page"{% endif %}>{{ t.search_words().open }}</a></li><li><a href="{{ loc.home }}about/"{% if current == loc.home ~ 'about/' %} aria-current="page"{% endif %}>{{ t.about_sources }}</a></li>{{ lg.others(langs) }}</ul>
       </nav>
     </details>
   </div>
@@ -37,7 +46,7 @@
 {% if items %}<nav class="crumbs" aria-label="{{ t.you_are_here }}">{% for name, url in items %}{% if not loop.last %}<a href="{{ url }}">{{ name }}</a><span aria-hidden="true">›</span>{% else %}<span aria-current="page">{{ name }}</span>{% endif %}{% endfor %}</nav>{% endif %}
 {%- endmacro %}
 
-{% macro footer(nav, site, langs, wordmark, tourapi_used, t, loc) -%}
+{% macro footer(nav, site, langs, wordmark, tourapi_used, t, loc, sym='') -%}
 <footer class="foot">
   <div class="wrap">
     <div class="foot-in">
@@ -59,9 +68,20 @@
       </nav>
     </div>
     <div class="foot-id">
-      <p class="foot-mark"><span class="wm-a">{{ wordmark }}</span></p>
+      <p class="foot-mark">{{ sym }}<span class="wm-a">{{ wordmark|wordmark }}</span></p>
       {% set ed_role = (site.editor.role_en if loc.code == 'en' and site.editor else '') or t.editor_role %}
       <p class="foot-op">{{ t.run_by }} {% if site.operator.logo %}<span class="op-logo" aria-hidden="true">{% include "assets/brand/aio2o-wordmark.svg" %}</span> {% endif %}{% if site.operator.name_en %}{{ site.operator.name_en }} (<span lang="ko">{{ site.operator.name }}</span>){% else %}<span lang="ko">{{ site.operator.name }}</span>{% endif %}{% if site.editor and site.editor.name %} · {{ ed_role }}{{ loc.colon }}<span lang="ko">{{ site.editor.name }}</span>{% endif %}{% if site.operator.contact %} · <a href="mailto:{{ site.operator.contact }}">{{ site.operator.contact }}</a>{% endif %}</p>
+      {%- set op = site.operator %}
+      {#- the company's official record (operator 2026-10-17, the CEO's mail) in Latin script: the registered Korean
+          name beside the English one, the address as the company's English site writes it -#}
+      {%- if op.business_no %}
+      {%- set coname %}{% if op.name_en %}{{ op.name_en }} (<span lang="ko">{{ op.legal_name or op.name }}</span>){% else %}<span lang="ko">{{ op.legal_name or op.name }}</span>{% endif %}{% endset %}
+      {%- set tel = op.tel|replace('-', '')|replace('0', '', 1) %}
+      <p class="foot-biz">{% if op.ceo %}<span>{{ t.co_ceo }}{{ loc.colon }}{% if loc.code == 'en' and op.ceo_en %}{{ op.ceo_en }}{% else %}<span lang="ko">{{ op.ceo }}</span>{% endif %}</span>{% endif %}<span>{{ t.co_biz_no }}{{ loc.colon }}{{ op.business_no }}</span>{% if op.corporate_no %}<span>{{ t.co_corp_no }}{{ loc.colon }}{{ op.corporate_no }}</span>{% endif %}{% if op.founded %}<span>{{ t.co_founded }}{{ loc.colon }}{{ loc.date_bare(op.founded) }}</span>{% endif %}</p>
+      <p class="foot-biz foot-addr">{% if op.head_office_en %}<span>{{ t.co_head_office }}{{ loc.colon }}{{ op.head_office_en }}</span>{% endif %}{% if op.lab_en %}<span>{{ t.co_lab }}{{ loc.colon }}{{ op.lab_en }}</span>{% endif %}</p>
+      <p class="foot-biz">{% if op.tel %}<span>{{ t.co_tel }} <a href="tel:+82{{ tel }}">{{ op.tel }}</a></span>{% endif %}{% if op.email %}<span><a href="mailto:{{ op.email }}">{{ op.email }}</a></span>{% endif %}{% if op.url %}<span>{{ t.co_site }}{{ loc.colon }}<a href="{{ op.url }}" rel="noopener">{{ op.url|replace('https://', '')|replace('http://', '')|trim('/') }}</a></span>{% endif %}<span><a href="{{ loc.home }}about/#company">{{ t.co_info }}</a></span></p>
+      <p class="foot-copy">{{ t.f('co_copyright', name=coname) }}</p>
+      {%- endif %}
     </div>
   </div>
 </footer>

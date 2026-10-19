@@ -12,6 +12,9 @@ Notes
   account's daily limit). The next run continues from the cache.
 - Provider error messages (resultMsg, returnAuthMsg, errMsg) are shown as-is with only the key masked.
 - base_url / op_suffix / detail_common_params come from site.json -> "tourapi".
+- 한국관광공사 무장애 여행 정보 (KorWithService2, detailWithTour2) is a separate service with its own data.go.kr
+  활용신청: barrier_free_client() builds its own client (base_url from site.json tourapi.barrier_free_base_url, else
+  BARRIER_FREE_BASE_URL) with its own cache folder, so its calls and cache never mix with KorService2's.
 """
 from __future__ import annotations
 
@@ -26,6 +29,8 @@ import urllib.request
 from pathlib import Path
 
 DEFAULT_MAX_CALLS = 900
+BARRIER_FREE_BASE_URL = "https://apis.data.go.kr/B551011/KorWithService2"
+BARRIER_FREE_CACHE = "barrier_free"   # sub-folder of the TourAPI cache for KorWithService2 responses
 
 CONTENT_TYPES = {
     "12": "관광지", "14": "문화시설", "15": "축제·공연·행사", "25": "여행코스",
@@ -274,6 +279,12 @@ class TourAPI:
     def detail_image(self, content_id: str) -> list[dict]:
         return self.call("detailImage", contentId=content_id, imageYN="Y", numOfRows=20, pageNo=1)
 
+    def detail_with_tour(self, content_id: str) -> dict:
+        """KorWithService2 detailWithTour2 (무장애여행 조회): one item of barrier-free fields (parking, route,
+        wheelchair, restroom, stroller, … — 개방데이터 활용매뉴얼(무장애여행) v4.3), {} when the service has none.
+        Call it on a barrier_free_client(); the KorService2 base_url has no such operation."""
+        return (self.call("detailWithTour", contentId=content_id) or [{}])[0]
+
     def location_based(self, lat: float, lng: float, radius: int = 2000,
                        content_type_id: str | None = None, rows: int = 40) -> list[dict]:
         # arrange=E : distance order. Items carry 'dist' (metres).
@@ -325,6 +336,25 @@ def from_site_config(site: dict, service_key: str, cache_dir: str | Path, offlin
         cache_dir=cache_dir,
         min_interval=float(t.get("min_interval", 0.3)),
         detail_common_params=t.get("detail_common_params") or {},
+        offline=offline,
+        refresh=refresh,
+        max_calls=max_calls,
+    )
+
+
+def barrier_free_client(site: dict, service_key: str, cache_dir: str | Path, offline: bool = False,
+                        refresh: bool = False, max_calls: int = DEFAULT_MAX_CALLS) -> TourAPI:
+    """A client for 한국관광공사 무장애 여행 정보 (KorWithService2): the same key and settings as KorService2, its own
+    base_url (site.json tourapi.barrier_free_base_url, else BARRIER_FREE_BASE_URL) and cache folder (cache_dir /
+    BARRIER_FREE_CACHE). The KorService2 default stays as it is."""
+    t = site.get("tourapi") or {}
+    return TourAPI(
+        service_key=service_key,
+        base_url=t.get("barrier_free_base_url") or BARRIER_FREE_BASE_URL,
+        op_suffix=t.get("op_suffix", "2"),
+        mobile_app=t.get("mobile_app", "WebforAI"),
+        cache_dir=Path(cache_dir) / BARRIER_FREE_CACHE,
+        min_interval=float(t.get("min_interval", 0.3)),
         offline=offline,
         refresh=refresh,
         max_calls=max_calls,

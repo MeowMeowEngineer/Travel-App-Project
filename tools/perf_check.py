@@ -3,6 +3,7 @@
     python tools/perf_check.py --out public                      # 기본 페이지 3개, 모션 켬/끔 비교
     python tools/perf_check.py --out dist-preview --pages / /places/<장소-slug>/ --json
     python tools/perf_check.py --out public --block-external      # 외부 사진·지도 타일 없이(재현성 우선)
+    python tools/perf_check.py --out dist-preview --pages "/places/?type=박물관·전시" "/map/#r-<권역>"   # 필터 주소·앵커도
 
 - 필요: pip install playwright && python -m playwright install chromium
 - 로컬 정적 서버로 --out 폴더를 띄우고 측정한다. 압축(gzip·br)이 없는 로컬 서버라 전송량은 실제보다 크게 나온다.
@@ -81,7 +82,7 @@ def measure(out: Path, pages: list[str], block_external: bool, port: int = 8790)
                                                                   "downloadThroughput": 1.6 * 1024 * 1024 / 8,
                                                                   "uploadThroughput": 750 * 1024 / 8})
                     cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
-                    page.goto(f"http://127.0.0.1:{port}" + urllib.parse.quote(path), wait_until="domcontentloaded", timeout=90000)
+                    page.goto(f"http://127.0.0.1:{port}" + urllib.parse.quote(path, safe="/?=&#"), wait_until="domcontentloaded", timeout=90000)
                     r = page.evaluate(PROBE)
                     r.update(page=path, motion="on" if motion == "no-preference" else "off(reduced)")
                     rows.append(r)

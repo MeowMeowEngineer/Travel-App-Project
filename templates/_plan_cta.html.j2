@@ -1,0 +1,12 @@
+{#- The AI course planner's door (operator 2026-10-17: 'AI 여행 코스 생성기', very visible): banner() on the home under the
+    3D icon menu and at the top of /courses/. One link to /plan/ (GA4 plan_cta via track.js data-track); the pictures
+    are decorative (the words say where it goes). {% import "_plan_cta.html.j2" as pc %} -#}
+{% import "_pic.html.j2" as pk %}
+{% import "_mascot.html.j2" as mm %}
+{% macro banner(region, where='home') -%}
+<a class="pcta pcta-{{ where }}" href="/plan/" data-track="plan_cta">
+  <span class="pcta-art" aria-hidden="true">{{ mm.pic('mascot-hello', 'small', 88) }}<span class="pcta-p p1">{{ pk.pic('icon-course', 'route', 44) }}</span><span class="pcta-p p2">{{ pk.pic('icon-food', 'bowl', 40) }}</span><span class="pcta-p p3">{{ pk.pic('theme-islands-sea', 'wave', 44) }}</span></span>
+  <span class="pcta-t"><span class="pcta-eb">{{ pk.pic('icon-plan', 'spark', 24) }}새 기능 · AI 코스 만들기</span><b>조건만 고르면 {{ region }} 여행 코스를 짜 드려요</b><span class="pcta-s">날짜·이동·동행·취향을 고르면, 그날 휴무·운영시간과 입장료 합계까지 사이트 자료로 확인한 일정이 나와요.</span></span>
+  <span class="pcta-go">코스 만들기<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+</a>
+{%- endmacro %}

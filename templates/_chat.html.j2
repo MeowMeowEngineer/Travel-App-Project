@@ -4,28 +4,30 @@
     assets/chat.js + assets/chat.css on its first press, or after load when this tab left the chat open on the
     previous page — nothing else of the chat is in the first paint (its rules are css/49-chat.css). Hidden without JS.
     Any other element with data-chat-open opens the chat too.
-    Owner 2026-10-13 night ('챗봇 버튼을 조금 더 크게', the mascot B): a 64px round button with the mascot's face
-    (_mascot.html.j2, mascot-icon-3d at 1× and 2×, width/height set) on every page from the first paint, and from
-    700px the label beside it. The accessible name starts with the visible label and says plainly what it is for —
-    no product name. On the Korean home it puts the focus in the opening's question box instead (site.js).
+    Owner 2026-10-13 night ('챗봇 버튼을 조금 더 크게', the mascot B): a round button with the mascot's face
+    (_mascot.html.j2, mascot-icon-3d at 1× and 2×, width/height set) on every page from the first paint. Owner
+    2026-10-14 ('우측 하단에 지금 뭔지 잘 모르겠는데, AI 챗봇인 거 더 크게 잘 보이면 좋겠네'): bigger (68px, 84px from
+    1024px) and always labelled — the words 'AI 챗봇' (in each language) on a sea-blue tag across the bottom of the
+    circle, at every width. The accessible name starts with that label and says what it is for.
     UI4 (owner 2026-10-14: '첫 화면부터 우측 하단에 챗봇 잘 보이게'): visible bottom-right at load on every page and
-    every width, the home included (nothing hides it while the question card is on screen), above every other fixed
-    thing. On the Korean pages from 1024px the floating quick menu sits above it (css/49-chat.css): a white vertical
+    every width, above every other fixed thing — except on the homes below 1024px, where it steps aside while their
+    own question box is on screen (operator 2026-10-15: at 390x844 it covered the box's '#' tags; css/49-chat.css,
+    site.js html.ask-out). On the Korean pages from 1024px the floating quick menu sits above it (css/49-chat.css): a white vertical
     pill with the few real actions — 검색, 지도, 행사 달력 (on a place page 길찾기, its own block), 맨 위로 (#main-content,
     the top of the page's content, without JS too) — 44px round targets with their names (aria-label + title, a tooltip on hover/focus);
     it comes after the footer in the reading order. Phones: only the launcher. -#}
 {% import "_mascot.html.j2" as mm %}
 {% set region_ko = site.region if site is defined and site and site.region else '' %}
 {% set chat_ui = {
-  'ko': ('물어보기', '물어보기 — ' ~ ((region_ko ~ ' ') if region_ko else '') ~ '여행 질문'),
-  'en': ('Ask', 'Ask a travel question'),
-  'ja': ('質問する', '質問する — 旅行の質問'),
-  'zh-Hans': ('提问', '提问 — 旅行问题'),
-  'zh-Hant': ('提問', '提問 — 旅行問題'),
-  'de': ('Fragen', 'Fragen zur Reise'),
-  'fr': ('Demander', 'Demander — une question sur le voyage'),
-  'es': ('Preguntar', 'Preguntar sobre el viaje'),
-  'ru': ('Спросить', 'Спросить о поездке'),
+  'ko': ('AI 챗봇', 'AI 챗봇 — ' ~ ((region_ko ~ ' ') if region_ko else '') ~ '여행 질문하기'),
+  'en': ('AI chat', 'AI chat — ask a travel question'),
+  'ja': ('AIチャット', 'AIチャット — 旅行について質問する'),
+  'zh-Hans': ('AI助手', 'AI助手 — 提出旅行问题'),
+  'zh-Hant': ('AI助手', 'AI助手 — 提出旅行問題'),
+  'de': ('KI-Chat', 'KI-Chat — Fragen zur Reise'),
+  'fr': ('Chat IA', 'Chat IA — une question sur le voyage'),
+  'es': ('Chat IA', 'Chat IA — preguntar sobre el viaje'),
+  'ru': ('ИИ-чат', 'ИИ-чат — вопрос о поездке'),
 } %}
 {% set cl = chat_ui.get(lang) or chat_ui['en'] %}
 {% if lang == 'ko' and site is defined %}{% import "_ui.html.j2" as qui %}
@@ -38,4 +40,6 @@
     public address it turns links into on-site paths for, and the Korean site search it offers while the assistant is
     not set up (data-chat-search: '' when the build has no search page) -#}
 {% set chat_cfg = ((site.city or {}).chat or {}) if site is defined and site else {} %}
-<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}" data-chat-site="{{ site.site_url if site is defined and site else '' }}" data-chat-search="{{ '/search/' if has_search is defined and has_search else '' }}" data-chat-city="{{ (chat_cfg.names or {})|tojson|forceescape }}" data-chat-chips="{{ (chat_cfg.chips or {})|tojson|forceescape }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>
+{#- the planner's start and end points ({key: name}, site.json city.plan.hubs): planQuery reads a time said at one -#}
+{% set plan_hub_names = {} %}{% if site is defined and site %}{% for h in ((site.city or {}).plan or {}).hubs or [] %}{% if h.key and h.name %}{% set _ = plan_hub_names.update({h.key: h.name}) %}{% endif %}{% endfor %}{% endif %}
+<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}" data-chat-site="{{ site.site_url if site is defined and site else '' }}" data-chat-search="{{ '/search/' if has_search is defined and has_search else '' }}" data-chat-city="{{ (chat_cfg.names or {})|tojson|forceescape }}" data-chat-chips="{{ (chat_cfg.chips or {})|tojson|forceescape }}" data-chat-hubs="{{ plan_hub_names|tojson|forceescape }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>

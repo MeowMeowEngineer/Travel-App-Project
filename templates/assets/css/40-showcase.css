@@ -174,8 +174,11 @@
   .story.is-staged .st-stage { padding: 0; height: 250vh; height: 250svh; }
   .story.is-staged .st-grid { position: sticky; top: 0; height: 100vh; height: 100svh; display: grid;
     grid-template-columns: var(--ml) minmax(0, calc((min(100vw, var(--maxw) + 2 * var(--m)) - 2 * var(--m)) * .4)) clamp(32px, 4vw, 72px) minmax(0, 1fr) var(--ml);
-    grid-template-rows: calc(var(--bar) + clamp(24px, 5vh, 56px)) auto auto minmax(0, 1fr) auto clamp(28px, 5vh, 56px);
-    grid-template-areas: ". . . . ." ". head . photo ." ". big . photo ." ". text . photo ." ". rail . photo ." ". . . . ."; }
+    /* the height a tall window adds goes to the two margin rows alike: the heading, the text and the years stay one
+       block in the middle, the photo (all six rows) on the same centre line (operator 2026-10-17: on a 1840px-tall
+       window the text sat at the top, the photo in the middle and the years at the bottom, 1276px from the text) */
+    grid-template-rows: minmax(calc(var(--bar) + clamp(24px, 5vh, 56px)), 1fr) auto auto minmax(0, auto) auto minmax(clamp(28px, 5vh, 56px), 1fr);
+    grid-template-areas: ". . . photo ." ". head . photo ." ". big . photo ." ". text . photo ." ". rail . photo ." ". . . photo ."; }
   .story.is-staged .st-head { grid-area: head; margin: 0; padding: 0; max-width: none; text-align: left; }
   .story.is-staged .st-head .h2 { font-size: clamp(28px, 2.6vw, 40px); }
   .story.is-staged .st-big { display: block; grid-area: big; margin-top: clamp(10px, 2.4vh, 28px); color: var(--ink); font-size: clamp(88px, 9.6vw, 148px); line-height: .95; letter-spacing: -.05em; overflow: hidden; height: 1em; }
@@ -198,7 +201,7 @@
   .story.is-staged .st-year { display: none; }
   .story.is-staged .st-title { font-size: clamp(22px, 2vw, 30px); margin-top: 0; }
   .story.is-staged .st-p { font-size: 17px; color: var(--ink-2); }
-  .story.is-staged .st-rail { display: flex; grid-area: rail; gap: 4px; padding: 4px; border-radius: 980px; background: #1d1d1f; align-self: end; justify-self: start; }
+  .story.is-staged .st-rail { display: flex; grid-area: rail; gap: 4px; margin-top: clamp(20px, 3vh, 32px); padding: 4px; border-radius: 980px; background: #1d1d1f; align-self: end; justify-self: start; }
   .st-rail button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 980px; background: transparent; color: var(--ink-3); font: 700 14px/1 var(--font); cursor: pointer; transition: color .2s var(--fb), background-color .3s var(--ease); white-space: nowrap; }
   .st-rail button .num { font-size: 15px; color: inherit; letter-spacing: -.02em; }
   .st-rail button[aria-current] { color: #1d1d1f; background: #f5f5f7; }

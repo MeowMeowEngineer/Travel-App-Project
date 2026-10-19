@@ -1,19 +1,23 @@
 /* ================================================================ Korean home, UI4 (owner 2026-10-14, after the AIO2O
    proposal demo for KT Skylife — its design language only: layout, parts, spacing, type, radii, colour roles, motion;
-   docs/handover/specs/ui4_mapping.md, skyref_study.md, home_redesign.md; templates/home.html.j2). body.pg-ko-home.
+   docs/handover/specs/ui4_mapping.md, skyref_study.md, home_redesign.md; templates/home.html.j2). body.pg-h4.
    1. .ho      the LIGHT opening: a soft sea-blue gradient (g0 → white, a g1 glow behind the picture side). Left: the
-               eyebrow pill, the H1, one lede, the sea pill button, the slide controls (one white pill: pause, ‹ n/N ›,
-               a 6 s progress line) and '소식 전체'. Right (from 1024px): ONE big rounded white card per news item —
-               the real photo (never darkened; KOGL-1 fills its frame, KOGL-3 sits whole on a tinted frame), the
-               outlet's preview image or the illustration, then the chip, the title and the date. A native scroll-snap
-               row ([data-hcar], site.js): it works without JS (the controls hide), one card in view at a time.
-               Phones: eyebrow · H1 · lede, the card (photo on top, text under it, swipeable), the controls row.
+               eyebrow pill, the H1, one lede, the two pill buttons and the three entries (.ho-cta, .ho-go), the slide
+               controls (one white pill: pause, ‹ n/N ›, a 6 s progress line) and '소식 전체'. Right (from 1024px):
+               ONE big rounded white card per news item — the real photo (never darkened; KOGL-1 fills its frame,
+               KOGL-3 sits whole on a tinted frame), the outlet's preview image or the illustration, then the chip,
+               the title and the date. A native scroll-snap row ([data-hcar], site.js): it works without JS (the
+               controls hide), one card in view at a time.
+               768–1023px: eyebrow · H1 · lede, the two buttons and the entries, the card (photo on top, text under
+               it, swipeable), the controls row;
+               phones (< 768px): 5. below.
    2. .hq      the white question card, overlapping the opening's bottom edge (a fixed negative margin in the first
                paint: no layout shift): the question box (2px sea border, a 5px tint ring on focus), the '#' tags and
-               the 3D icon menu (_pic.html.j2 pictures; one row from 1024px, 4 columns on phones).
+               the 3D icon menu (_pic.html.j2 pictures; one row from 1024px, 5 columns from 700px; phones: 5.).
    3. .hk-conv the conversation (chat.js dock): hidden until the reader asks; its height is fixed here.
    4. the sections below in the reference's parts: sea eyebrow label + big bold title, white cards with a hairline
       border and radius 24, soft tinted panels instead of colour blocks; <city> 이야기 is light now.
+   5. phones (< 768px, operator 2026-10-15): the course button, one compact news card, the core four tiles + chips.
    Contrast (00-tokens.css head): ink on g0/white ≥ 15; ink-2 9.36; sea-deep on tint 7.13; white on sea 4.96; sea on
    white 4.96 (eyebrows, figures); ink-3 on white 5.62 / g0 5.22. Targets ≥ 44px below 1024px; visible focus. */
 .hk { display: block; }
@@ -27,12 +31,23 @@
 .ho-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sea); }
 .hk-h1 { order: 2; margin: 0 0 8px; font: 700 clamp(30px, 8.2vw, 36px)/1.18 var(--font); letter-spacing: -.04em; color: var(--ink); text-wrap: balance; }
 .ho-lede { order: 3; margin: 0 0 18px; max-width: 30em; font: 400 16px/1.6 var(--font); letter-spacing: -.01em; color: var(--ink-2); word-break: keep-all; }
-.ho-cta { order: 4; display: none; margin: 0; }
+/* the two actions (operator-forwarded evaluation 2026-10-18): '내 일정 만들기' (the planner, filled) beside '<city> 추천
+   코스' (the city's own courses, white: .btn-sea-w) — shown at every width now (768–1023px hid the one course button),
+   then .ho-go, the three situational entries as words: one row of three outlined cells, no picture. */
+.ho-cta { order: 4; display: flex; flex-wrap: wrap; gap: 10px 12px; margin: 0 0 18px; }
+.ho-go { order: 4; margin: 0 0 18px; }
+.ho-go ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ho-go li { display: flex; min-width: 0; }
+.ho-go a { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 6px 10px; border: 1px solid var(--hair); border-radius: 14px; background: rgba(255, 255, 255, .9); font: 700 14px/1.3 var(--font); letter-spacing: -.02em; color: var(--sea-deep); text-align: center; text-decoration: none; word-break: keep-all; transition: background-color .2s var(--fb); }
+.ho-go a:hover { background: var(--tint); color: var(--sea-deep); text-decoration: none; }
+.ho-go a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .btn-sea { display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 28px; border-radius: 999px; background: var(--sea); color: #fff; font: 700 17px/1 var(--font); letter-spacing: -.01em; text-decoration: none; box-shadow: 0 10px 24px -12px rgba(29, 79, 150, .55); transition: background-color .2s var(--fb), transform .3s var(--ease-out); }
 .btn-sea:hover { background: var(--sea-hi); color: #fff; text-decoration: none; }
 .btn-sea:focus-visible { outline: 3px solid var(--sea-deep); outline-offset: 3px; }
 .btn-sea .arr { transition: transform .3s var(--ease-out); }
 .btn-sea:hover .arr { transform: translateX(3px); }
+.btn-sea-w { background: #fff; color: var(--sea-deep); }   /* sea-deep on white ≥ 7.13 (on tint) */
+.btn-sea-w:hover { background: var(--tint); color: var(--sea-deep); }
 .ho-ctl { order: 5; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
 .ho-all { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font: 700 15px/1 var(--font); color: var(--sea-deep); text-decoration: none; }
 .ho-all:hover { text-decoration: underline; text-underline-offset: 4px; }
@@ -87,9 +102,10 @@ html:not(.js) .ho-ctl { display: none; }
    Owner 2026-10-14 ('중앙 부분에는 AI챗봇으로 확실히 구분하고 눈에 더 잘 띄고 직관적으로'): the card is the AI assistant
    only (the site search is the header's). Its head: the mascot, the heading (the assistant's name) and one line on how
    it answers; ONE box — a chat bubble, the field, ONE sea button '물어보기' — with a soft sea glow, its border turning
-   sea-deep with a two-tone sea ring on focus (tint, then sea: 4.96 on white); the '#' tags ask it. Phones keep the box where it was in the 390x844 first
-   screen (above the launcher's corner): the heading sits on the box's top edge as its legend (no height of its own),
-   the line on how it answers and the note come under the tags. From 1024px: the head is a column at the box's left. */
+   sea-deep with a two-tone sea ring on focus (tint, then sea: 4.96 on white); the '#' tags ask it. Phones keep the box,
+   with its tags, in the 360x800 / 390x844 first screen (the launcher steps aside while it is on screen, css/49-chat.css):
+   the heading sits on the box's top edge as its legend (no height of its own), the line on how it answers and the
+   note come under the tags. From 1024px: the head is a column at the box's left. */
 .hq { position: relative; z-index: 2; margin-top: -16px; }
 .hq-card { position: relative; padding: 18px 16px 12px; border: 1px solid var(--hair); border-radius: 28px; background: #fff; box-shadow: var(--shadow-3); }
 .hk-ask { position: relative; display: flex; flex-direction: column; }
@@ -105,6 +121,7 @@ html:not(.js) .ho-ctl { display: none; }
 .hk-ico { flex: none; width: 22px; height: 22px; color: var(--sea); stroke-width: 1.9; }
 .hk-box input { flex: 1; min-width: 0; height: 46px; padding: 0 0 0 4px; border: 0; background: transparent; font: 400 16px/1.2 var(--font); letter-spacing: -.01em; color: var(--ink); }
 .hk-box input::placeholder { color: var(--ink-3); opacity: 1; }
+.hk-box input[aria-invalid="true"]::placeholder { color: #c9252c; }   /* an empty question's hint (site.js): 5.7:1 on white */
 .hk-box input:focus { outline: none; }
 .hk-box .hk-go { flex: none; display: inline-grid; place-items: center; min-width: 96px; height: 46px; padding: 0 16px; border: 0; border-radius: 13px; background: var(--sea); color: #fff; font: 700 16px/1 var(--font); letter-spacing: -.01em; cursor: pointer; transition: background-color .2s var(--fb); }
 .hk-box .hk-go:hover { background: var(--sea-hi); }
@@ -130,12 +147,12 @@ html.js .hk-nojs { display: none; }
 .hq-i:focus-visible { outline: 3px solid var(--focus); outline-offset: 0; }
 .hq-l { font: 700 13px/1.25 var(--font); letter-spacing: -.03em; word-break: keep-all; }
 .hq-n { margin-top: -3px; font: 500 12px/1.2 var(--font); color: var(--ink-3); letter-spacing: -.01em; }
+.hq-ls { display: none; }   /* a tile's short label (the other versions' 'getting there' guide): phones only, 5. */
 .hq-i .pic { transition: transform .45s var(--ease-bounce); }
 .hq-i:hover .pic { transform: translateY(-6px) rotate(-4deg); }
-@media (prefers-reduced-motion: reduce) { .hq-i .pic, .btn-sea, .btn-sea .arr { transition: none; } .hq-i:hover .pic { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hq-i .pic, .btn-sea, .btn-sea .arr, .ho-go a { transition: none; } .hq-i:hover .pic { transform: none; } }
 
-/* phones: nine (or six) services in rows of three, no item left alone on the last row */
-@media (max-width: 699px) { .hq-row:has(> li:nth-child(9):last-child), .hq-row:has(> li:nth-child(6):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* phones: the core four as tiles, the rest as chips (5. below) */
 
 /* ---------------------------------------------------------------- 3. the conversation (chat.js dock): fixed height */
 .hk .ask-panel { height: 70vh; height: 70svh; margin: 16px 0 0; border: 1px solid var(--hair); border-radius: 24px; background: #fff; box-shadow: var(--shadow-2); scroll-margin-top: calc(var(--bar) + 12px); }
@@ -175,7 +192,9 @@ html.js .hk-nojs { display: none; }
   .ho-k { margin-bottom: 18px; }
   .hk-h1 { max-width: 9em; margin-bottom: 14px; font-size: clamp(44px, 4.2vw, 60px); line-height: 1.14; }
   .ho-lede { margin-bottom: 28px; font-size: 18px; }
-  .ho-cta { display: block; }
+  .ho-cta { margin: 0; }
+  .ho-cta-2 .btn-sea { padding: 0 22px; }   /* the pair stays one row in the 382px column at 1024px */
+  .ho-go { align-self: stretch; max-width: 34em; margin: 14px 0 0; }
   .ho-ctl { justify-content: flex-start; gap: 18px; margin-top: 28px; }
   .hv-c { width: 36px; height: 36px; }
   .hv-prog { width: 88px; }
@@ -204,28 +223,28 @@ html.js .hk-nojs { display: none; }
 }
 
 /* ---------------------------------------------------------------- 4. the sections below, in the reference's parts */
-.pg-ko-home .sh .eyebrow { color: var(--sea); font-weight: 700; letter-spacing: .02em; }
-.pg-ko-home .tone-2 .sh .eyebrow { color: var(--sea-hi); }
-.pg-ko-home .sh .h2 { letter-spacing: -.035em; }
-.pg-ko-home .tone-2 { background: var(--bg-2); }
-.pg-ko-home .pc { border: 1px solid var(--hair); border-radius: var(--r-card); background: #fff; box-shadow: none; transition: box-shadow .25s var(--fb); }
-.pg-ko-home .pc:hover { box-shadow: var(--shadow-2); }
+.pg-h4 .sh .eyebrow { color: var(--sea); font-weight: 700; letter-spacing: .02em; }
+.pg-h4 .tone-2 .sh .eyebrow { color: var(--sea-hi); }
+.pg-h4 .sh .h2 { letter-spacing: -.035em; }
+.pg-h4 .tone-2 { background: var(--bg-2); }
+.pg-h4 .pc { border: 1px solid var(--hair); border-radius: var(--r-card); background: #fff; box-shadow: none; transition: box-shadow .25s var(--fb); }
+.pg-h4 .pc:hover { box-shadow: var(--shadow-2); }
 /* the big numerals: one soft tinted panel */
-.pg-ko-home .nums { padding: clamp(36px, 5vw, 64px) 0; }
-.pg-ko-home .nums > .wrap { padding-block: clamp(22px, 3vw, 36px); border-radius: 28px; background: linear-gradient(135deg, var(--g0), var(--g1)); }
-.pg-ko-home .nums-h { border-bottom-color: var(--g2); padding-inline: clamp(18px, 3vw, 36px); }
-.pg-ko-home .nums-h h2 { color: var(--ink); }
-.pg-ko-home .nums-row { padding-inline: clamp(18px, 3vw, 36px); }
-.pg-ko-home .nums .num { color: var(--sea-deep); }
-.pg-ko-home .nums a { color: var(--ink); }
+.pg-h4 .nums { padding: clamp(36px, 5vw, 64px) 0; }
+.pg-h4 .nums > .wrap { padding-block: clamp(22px, 3vw, 36px); border-radius: 28px; background: linear-gradient(135deg, var(--g0), var(--g1)); }
+.pg-h4 .nums-h { border-bottom-color: var(--g2); padding-inline: clamp(18px, 3vw, 36px); }
+.pg-h4 .nums-h h2 { color: var(--ink); }
+.pg-h4 .nums-row { padding-inline: clamp(18px, 3vw, 36px); }
+.pg-h4 .nums .num { color: var(--sea-deep); }
+.pg-h4 .nums a { color: var(--ink); }
 /* <city> 이야기: light — the black band is gone (ui4_mapping: soft tinted panels instead of loud colour blocks) */
-.pg-ko-home .story { background: linear-gradient(180deg, #fff 0, var(--g0) 100%); color: var(--ink);
+.pg-h4 .story { background: linear-gradient(180deg, #fff 0, var(--g0) 100%); color: var(--ink);
   --ink: #172033; --ink-2: #3E4757; --ink-3: #5F6878; --hair: #D8E0EA; --tile: #fff; --bg-2: #F4F7FB; --bg-3: #E7EDF4;
   --link: var(--sea-hi); --red: #C9252C; --focus: var(--sea); }
-.pg-ko-home .story .pill-l span, .pg-ko-home .story .eyebrow.pill-l span { background: var(--tint); color: var(--sea-deep); }
-.pg-ko-home .story .st-big .num { color: var(--tint2); }
+.pg-h4 .story .pill-l span, .pg-h4 .story .eyebrow.pill-l span { background: var(--tint); color: var(--sea-deep); }
+.pg-h4 .story .st-big .num { color: var(--tint2); }
 /* owner 2026-10-14 ('AI 같고 촌스럽다'): no poster-size year on the Korean home — each chapter's own year line stays */
-.pg-ko-home .story .st-big { display: none !important; }
+.pg-h4 .story .st-big { display: none !important; }
 
 /* ---------------------------------------------------------------- 1b. the opening photo (owner 2026-10-14: '고화질 실사
    배경'): media.HOME_COVER — an official KOGL-1 photo (cropping allowed, CLAUDE.md 3.4) full-bleed behind the opening,
@@ -256,4 +275,90 @@ html.js .hk-nojs { display: none; }
     linear-gradient(90deg, rgba(8, 25, 52, .7) 0, rgba(8, 25, 52, .55) 30%, rgba(8, 25, 52, .18) 58%, rgba(8, 25, 52, .06) 100%),
     linear-gradient(180deg, rgba(8, 25, 52, .2) 0, rgba(8, 25, 52, 0) 28%); }
   .ho-cap { left: auto; right: max(24px, calc((100% - 1200px) / 2)); bottom: 80px; }
+}
+/* phones: on the other language versions' homes the location kicker gives way and the photo credits drop the licence
+   words (the photo's own page carries them); the compact news cards are 5. below */
+@media (max-width: 699px) {
+  .pg-intl-home .ho-k { display: none; }
+  .pg-intl-home .cr-lic { display: none; }
+}
+/* Japanese headings break between phrases, never inside a word ('…に聞 / いてみましょう'): Chrome's phrase breaking */
+:lang(ja) :is(.hk-h, .nc-t, .hk-h1) { word-break: auto-phrase; }
+
+/* ---------------------------------------------------------------- 5. phones (< 768px), operator 2026-10-15 (after an
+   outside mobile UX review): the 360x800 / 390x844 first screen shows the header, the kicker, the H1, the lede, the
+   two actions and the three entries, ONE compact news card with its controls and the whole question box with its '#'
+   tags.
+   - the two actions (.ho-cta: '내 일정 만들기' · '<city> 추천 코스', evaluation 2026-10-18) share one row under the
+     lede, the three situational entries (.ho-go) one row of cells under them;
+   - each news card is one compact row (~110–130px): an 88px square frame at the left — a KOGL-1 photo fills it; a
+     KOGL-3 photo (and any non-KOGL-1 one) and the outlet's preview image sit whole on the tinted frame (object-fit:
+     contain, never cropped); the square illustrations fill it whole — and at its right the chip/status line, the
+     title (two lines) and the date · venue line (one line); the photo credit runs under both, small, always shown.
+     The row still scroll-snaps without JS; below 768px site.js never advances it on its own (the reader does);
+   - the controls stay one row of 44px targets (pause/play · ‹ n/N › · '소식 전체'), without the 6 s progress line;
+   - the icon menu: the core four (가볼만한 곳 · 맛집 · 숙소 · 가는 법, present.home_services core) as one row of four
+     tiles (picture, label, count), the others as compact chips under them (a smaller picture and the label, 44px
+     tall) that wrap. From 768px the menu is the grid it was (one row from 1024px), in the new order. */
+@media (max-width: 767px) {
+  .ho-lede { margin-bottom: 14px; }
+  /* the cover photo's credit in the flow under the controls (absolute, a two-line credit — the French, German and
+     Russian ones — ran into the controls row) */
+  .ho.ho-ph { padding-bottom: 26px; }
+  .ho-cap { position: relative; right: auto; bottom: auto; left: auto; margin: 10px var(--m) 0; }
+  /* the two actions share the row (each half; one alone fills it), their arrows give way to the words; the three
+     entries one row of cells under them, two lines at most */
+  .ho-cta { flex-wrap: nowrap; gap: 8px; margin: 0 0 14px; }
+  .ho-cta .btn-sea { display: flex; flex: 1 1 0; justify-content: center; min-width: 0; box-sizing: border-box; min-height: 50px; padding: 8px 10px; font-size: 16px; line-height: 1.25; letter-spacing: -.03em; text-align: center; word-break: keep-all; }
+  .ho-cta-2 .btn-sea .arr { display: none; }
+  .ho-go { margin: -4px 0 14px; }
+  .ho-go ul { gap: 6px; }
+  .ho-go a { padding: 4px 6px; border-radius: 12px; font-size: 13px; }
+  /* the compact news card */
+  .hv-view { border-radius: 20px; }
+  .nc { display: grid; grid-template-columns: 88px minmax(0, 1fr); grid-template-rows: repeat(4, auto); column-gap: 12px; align-content: center; padding: 10px; border-radius: 20px; }
+  .nc-frame { grid-column: 1; grid-row: 1 / 4; align-self: start; width: 88px; height: 88px; aspect-ratio: auto; border-radius: 14px; }
+  .nc-frame:not(.t1):not(.nc-ogf) img.t3, .nc-frame:not(.t1):not(.nc-ogf) img.t0,
+  .nc-frame.nc-ogf img { inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); object-fit: contain; }
+  .nc-frame .pic { width: 64px; height: 64px; }
+  .nc-body { display: contents; }
+  .nc-chips { grid-column: 2; grid-row: 1; gap: 4px; margin: 0 0 4px; }
+  .nc-chip, .nc-st { min-height: 22px; padding: 0 8px; font-size: 12px; letter-spacing: -.015em; }
+  .nc-t { grid-column: 2; grid-row: 2; font-size: 15px; line-height: 1.36; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .nc-t a::after { border-radius: 20px; }
+  .nc-meta { grid-column: 2; grid-row: 3; align-self: start; margin: 2px 0 0; font-size: 12.5px; line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
+  .nc-cr { grid-column: 1 / -1; grid-row: 4; margin: 0; padding: 6px 2px 0; font-size: 11px; line-height: 1.35; letter-spacing: -.01em; }
+  /* the controls: one row, 44px targets, no progress line */
+  .ho-ctl { gap: 8px; margin-top: 10px; }
+  .hv-ctl { flex: none; gap: 0; padding: 1px; }
+  .hv-count { min-width: 3em; font-size: 13.5px; }
+  .hv-prog { display: none; }
+  .ho-all { flex: 0 1 auto; min-width: 0; white-space: normal; text-align: right; font-size: 14px; line-height: 1.25; }
+  .ho-all .arr { flex: none; }
+  /* the icon menu: the core four as one row of tiles, the rest as chips */
+  .hq-menu { margin: 14px -8px 0; padding-top: 14px; }
+  .hq-row { display: flex; flex-wrap: wrap; gap: 8px 6px; }
+  .hq-row > li { display: flex; min-width: 0; }
+  .hq-core { flex: 0 0 calc((100% - (var(--core, 4) - 1) * 6px) / var(--core, 4)); }
+  .hq-core .hq-i { min-height: 100px; padding: 10px 2px 9px; gap: 4px; border-radius: 18px; background: var(--g0); }
+  .hq-core .hq-i:hover { background: var(--g1); }
+  .hq-core .pic { width: 50px; height: 50px; }
+  .hq-core .hq-l { font-size: 13.5px; line-height: 1.22; overflow-wrap: anywhere; -webkit-hyphens: auto; hyphens: auto; }
+  .pg-intl-home .hq-core .hq-l { font-size: 12.5px; letter-spacing: -.02em; }
+  .hq-core .hq-n { margin-top: 0; }
+  .hq-lw { display: none; }
+  .hq-ls { display: inline; }
+  .hq-more { flex: 0 1 auto; }
+  .hq-more .hq-i { flex-direction: row; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px 0 7px; border: 1px solid var(--hair); border-radius: 999px; background: #fff; text-align: left; }
+  .hq-more .pic { width: 30px; height: 30px; }
+  .hq-more .hq-l { font-size: 13.5px; line-height: 1.2; }
+  .hq-more .hq-n { display: none; }
+  .hq-more .hq-i:hover .pic { transform: none; }
+}
+/* narrow phones (360px): the question field keeps room for its whole placeholder — the chat glyph gives way and the
+   button is a little narrower (its two labels still share one cell) */
+@media (max-width: 379px) {
+  .hk-ico { display: none; }
+  .hk-box { padding-left: 14px; }
+  .hk-box .hk-go { min-width: 84px; padding: 0 14px; }
 }

@@ -52,7 +52,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from pipeline import city, intl_text
+from pipeline import city, intl_text, tickets
 from pipeline import locales as LC
 from pipeline.schema import FACT_LABELS, designations, index_status
 from pipeline.textutil import extract_phones, normalize_name, squash_ws
@@ -81,7 +81,7 @@ def _letters(s: str) -> str:
 
 
 def _title_ko(title: str) -> str:
-    """Korean in an English title: 'Seonyudo Island (선유도)' -> '선유도'."""
+    """Korean in an English title: '○○do Island (○○도)' -> '○○도'."""
     m = re.search(r"\(([^()]*[가-힣][^()]*)\)", title or "")
     return m.group(1) if m else ""
 
@@ -379,6 +379,16 @@ def strings_items(data: Path, places: list[dict]) -> list[dict]:
              for v in dz_labels]
     rows += [{"id": f"designation_source:{v}", "ko": v, "where": "places.json designations source_name (the list)"}
              for v in dz_lists]
+    # combined tickets: each ticket's name and the short '통합권' (en_site.fee_pair: a place's fee tile sets the
+    # ticket's price beside its own, under the ticket's name in the language, or the short name when that is long)
+    names = [squash_ws(t.get("name")) for t in (_load(data, "tickets.json", {}) or {}).get("tickets") or []]
+    rows += [{"id": f"ticket:{v}", "ko": v, "where": "tickets.json ticket name (fee tile)",
+              "note": "A ticket for several museums: as the places' own fee tables name it in this language."}
+             for v in [*names, "통합권"] if v] if names else []
+    # the words of a ticket's table on the facts card (en_site.ticket_rows), as the places' own fee tables write them
+    rows += [{"id": f"ticket:{v}", "ko": v, "where": "tickets.json price table (facts card)",
+              "note": "A word of a museum ticket's price table: as the places' own fee tables write it in this language."}
+             for v in tickets.table_words()] if names else []
     seen: dict[str, dict] = {}
     for path in sorted((ROOT / "templates").glob("*.j2")):
         for s in template_strings(path):
@@ -470,7 +480,9 @@ KO_HOUR = re.compile(r"(오전|오후|낮|밤|저녁|새벽|아침)?\s*(?<![\d.]
                      r"이고|입니다|이며|이다|이에요|예요|이라|이었|였|(?:가|은|는|도|을|를)(?![가-힣]))"
                      r"(?:\s*(\d{1,2})\s*분|\s*(반))?")
 WON_EN = re.compile(r"(\d[\d,]*)\s*won\b")
-WON_KO = re.compile(r"(\d[\d,]*)\s*원")
+# an amount never starts inside a time and never ends in a comma: '14:00~17:00, 원풍갈비' is a time and a name, not
+# 0 won (review 2026-10-14, zh-hans)
+WON_KO = re.compile(r"(?<![\d:])(\d(?:[\d,]*\d)?)\s*원")
 MONTHS = {m: i + 1 for i, m in enumerate(("january", "february", "march", "april", "may", "june", "july", "august",
                                           "september", "october", "november", "december"))}
 MONTHS.update({"jan": 1, "feb": 2, "mar": 3, "apr": 4, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "sept": 9, "oct": 10,
@@ -485,7 +497,8 @@ KO_DAY_BARE = re.compile(r"(?<![가-힣])([월화수목금토일](?:\s*[·,~∼�
 KO_DAY_PAREN = re.compile(r"\(([월화수목금토일])\)")
 KO_DAY_LONE = re.compile(r"(?<![가-힣\d])([월화수목금토일])[은는]?\s*(?=\d{1,2}:\d{2})")  # '금 11:00', '금은 11:00'
 _BIG = {"억": 100_000_000, "만": 10_000, "천": 1_000}
-KO_BIG = re.compile(r"((?:\d(?:[\d,]*\d)?(?:\.\d+)?\s*여?\s*[억만천](?!\s*\d+\s*세)\s*)+)(\d[\d,]*)?(?=\s*(?:원|명|개|평|㎡|여|곳|권|마리|그루|송이|대|석|실|"
+# a big-number unit never follows a time's minutes: '07:00~16:00만 엽니다' is 'only 07:00–16:00', not 0 × 10,000
+KO_BIG = re.compile(r"(?<![\d:])((?:\d(?:[\d,]*\d)?(?:\.\d+)?\s*여?\s*[억만천](?!\s*\d+\s*세)\s*)+)(\d[\d,]*)?(?=\s*(?:원|명|개|평|㎡|여|곳|권|마리|그루|송이|대|석|실|"
                     r"m|km|$|[\s,.)·~\-]))")
 EN_BIG = re.compile(r"(\d+(?:\.\d+)?)\s*(million|billion)\b", re.I)
 WORDS_MAX = 40

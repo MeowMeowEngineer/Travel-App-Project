@@ -71,7 +71,8 @@
   ],
   "city": {
     "_notes": [
-      "테스트용 샘플 도시(군산 모양의 가짜 데이터)의 도시 설정. 엔진의 도시별 값은 pipeline/city.py가 이 블록에서 읽는다."
+      "테스트용 샘플 도시(군산 모양의 가짜 데이터)의 도시 설정. 엔진의 도시별 값은 pipeline/city.py가 이 블록에서 읽는다.",
+      "2026-10-19 엔진 재동기화: 시험용 가짜 도시(군산 모양)의 새 설정 — 코스 만들기 출발·도착(plan.hubs)과 섬 권역, '차 없이 다니기' 가이드(course_move), 좌표 범위·지도 기본점(geo_bounds·geo_default_points), 본문에 적힌 공식 사이트(official_web), 다른 언어판의 정류장·시간표 출처 이름(intl.<code>.course_sources). 군산 엔진이 코드에 두던 값을 옮겼다."
     ],
     "address_prefixes": [
       "전북특별자치도 군산시",
@@ -176,35 +177,67 @@
             "군산시"
           ],
           "tail": "Gunsan-si, Jeonbuk State"
+        },
+        "course_sources": {
+          "stops": "Gunsan bus stop list, Public Data Portal",
+          "timetable": "Gunsan city bus timetable (in effect from October 21, 2024)"
         }
       },
       "ja": {
         "site_name": "群山旅行のすべて",
-        "city": "群山"
+        "city": "群山",
+        "course_sources": {
+          "stops": "群山市バス停現況（公共データポータル）",
+          "timetable": "群山市内バス時刻表（2024年10月21日施行）"
+        }
       },
       "zh-hans": {
         "site_name": "群山旅游全攻略",
-        "city": "群山"
+        "city": "群山",
+        "course_sources": {
+          "stops": "群山市公交站现状（公共数据门户）",
+          "timetable": "群山市内公交时刻表（2024年10月21日起施行）"
+        }
       },
       "zh-hant": {
         "site_name": "群山旅遊全攻略",
-        "city": "群山"
+        "city": "群山",
+        "course_sources": {
+          "stops": "群山市公車站現況（公共資料入口網）",
+          "timetable": "群山市區公車時刻表（2024年10月21日起施行）"
+        }
       },
       "de": {
         "site_name": "Alles über Gunsan",
-        "city": "Gunsan"
+        "city": "Gunsan",
+        "course_sources": {
+          "stops": "Bushaltestellen der Stadt Gunsan, Portal für öffentliche Daten",
+          "timetable": "Stadtbusfahrplan Gunsan (gültig ab 21. Oktober 2024)"
+        }
       },
       "fr": {
         "site_name": "Tout sur Gunsan",
-        "city": "Gunsan"
+        "city": "Gunsan",
+        "course_sources": {
+          "stops": "Liste des arrêts de bus de Gunsan, portail des données publiques",
+          "timetable": "Horaires des bus urbains de Gunsan (en vigueur depuis le 21 octobre 2024)"
+        }
       },
       "es": {
         "site_name": "Todo sobre Gunsan",
-        "city": "Gunsan"
+        "city": "Gunsan",
+        "course_sources": {
+          "stops": "Lista de paradas de autobús de Gunsan, portal de datos públicos",
+          "timetable": "Horario de autobuses urbanos de Gunsan (vigente desde el 21 de octubre de 2024)"
+        }
       },
       "ru": {
         "site_name": "Всё о Кунсане",
-        "city": "Кунсан"
+        "city": "Кунсан",
+        "course_sources": {
+          "stops": "Список автобусных остановок Кунсана, портал открытых данных",
+          "timetable": "Расписание городских автобусов Кунсана (действует с 21 октября 2024 г.)"
+        }
       }
     },
     "chat": {
@@ -324,6 +357,70 @@
     ],
     "kakao_large_categories": [
       "금강"
-    ]
+    ],
+    "plan": {
+      "hubs": [
+        {
+          "key": "station",
+          "name": "군산역"
+        },
+        {
+          "key": "bus",
+          "name": "군산시외버스터미널"
+        },
+        {
+          "key": "express",
+          "name": "군산고속버스터미널"
+        },
+        {
+          "key": "airport",
+          "name": "군산공항"
+        }
+      ],
+      "island_regions": [
+        "고군산"
+      ]
+    },
+    "course_move": {
+      "guides": [
+        "guide-01"
+      ],
+      "guides_after": [
+        "guide-12"
+      ],
+      "island_guide": "guide-31",
+      "island_route": "99",
+      "timetable_guide": "guide-31"
+    },
+    "geo_bounds": [
+      35.7,
+      36.16,
+      125.93,
+      127.0
+    ],
+    "geo_default_points": [
+      [
+        35.96761,
+        126.73684,
+        "군산시 문화관광 지도 스크립트의 기본점"
+      ]
+    ],
+    "official_web": {
+      "mndcamp.com": [
+        "https://mndcamp.com/",
+        null,
+        "2026-10-15"
+      ],
+      "www.suair.kr": [
+        "https://www.suair.kr/",
+        null,
+        "2026-10-15"
+      ],
+      "www.gunsanmarathon.com": [
+        "https://www.gunsanmarathon.com/",
+        null,
+        "2026-10-15"
+      ]
+    }
   }
 }

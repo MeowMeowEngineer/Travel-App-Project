@@ -97,6 +97,12 @@ EN: dict[str, str | dict] = {
     "more": "more",
     "kf_differ": "{labels}: sources differ",
     "call_before": "Call before visiting",
+    # a dated notice of the facility under the key facts (pipeline/notices.py): label, then one of the three lines
+    "notice": "Notice",
+    "notice_open": "{dates}: open",
+    "notice_closed": "{dates}: closed",
+    "notice_hours": "{dates}: open {start}–{end}",
+    "notice_last_entry": "last entry {time}",
     "or_word": "or",
     "in_korean": "In Korean: {name}",
     "in_korean_paren": "{name} (in Korean)",
@@ -115,9 +121,13 @@ EN: dict[str, str | dict] = {
     "route_tmap": "TMAP (app)",
     "directions": "Directions",
     "map_loading": "Loading the map.",
+    # the map box's own text: what a reader without the map (no script, a text reader, an AI fetching the HTML) gets;
+    # map.js puts map_loading there when it starts drawing
+    "map_text": "The places on this map are also listed on this page.",
     "map_credit": "Map: Kakao Map",
     "map_of": "Map of {name}",
     "map_straight": "Distances are straight lines between coordinates",
+    "map_loc": "Location: {provider}",
     # place page
     "sec_facts": "Facts",
     "sec_photos": "Photos",
@@ -197,6 +207,8 @@ EN: dict[str, str | dict] = {
                              "coordinates",
                       "other": "{a} of {b} legs measured as straight lines between Korea Tourism Organization TourAPI "
                                "coordinates"},
+    "legs_measured_src": {"one": "{a} of {b} legs measured as straight lines between coordinates from {src}",
+                          "other": "{a} of {b} legs measured as straight lines between coordinates from {src}"},
     "courses_h1": "{r} travel courses",
     "courses_lede": "The official courses of {city_source}, stop by stop, with each stop's visit information.",
     "stops_of": "Stops of {name} in order",
@@ -238,6 +250,8 @@ EN: dict[str, str | dict] = {
     "past": "Past",
     "festivals": "Festivals and events",
     "past_editions": "Past editions",
+    "season_h": "Held around this time in earlier years",
+    "season_note": "Their newest edition, a year or two ago, began within the next three months of the year. This year's dates are not in our data yet; the cards below give each edition as it was.",
     "past_note": "The newest edition of each series, newest first.",
     "events_title": "{r} Festivals and Events: Dates, Venues and Fees",
     "events_desc": "{a} upcoming or ongoing and {b} past festivals and events in {r}: dates, venue, fee and organizer of "
@@ -277,6 +291,22 @@ EN: dict[str, str | dict] = {
     "about_report": "If a value is wrong or out of date, write to {mail} with the page address and the source that shows "
                     "the correct value.",
     "about_operator": "Operator: {op}. This site is run independently of {city_admin}.",
+    # the company's official record (operator 2026-10-17, the CEO's mail): footer line and about/#company
+    "co_heading": "The company behind this site",
+    "co_name": "Company",
+    "co_ceo": "CEO",
+    "co_biz_no": "Business registration no.",
+    "co_corp_no": "Corporate registration no.",
+    "co_founded": "Founded",
+    "co_head_office": "Head office",
+    "co_lab": "R&D center",
+    "co_tel": "Tel.",
+    "co_contact": "Contact",
+    "co_site": "Company website",
+    "co_info": "Company information",
+    "co_note": "This site is run by the company above, not by {city_admin} or any other public body. For questions about "
+               "a place or an event, use the phone number and official links on its page.",
+    "co_copyright": "Copyright © {name}. Photos and source texts belong to their sources.",
     "official_sites": "Official sites",
     # home
     "home_title": "{site}: {r} Attractions, Food, Stays, Courses and Festivals",
@@ -359,12 +389,21 @@ NOTES: dict[str, str] = {
     "foot_official": "Followed by the link with the name of the city's official tourism site.",
     "source_word": "Hidden word read by screen readers before a footnote number.",
     "kf_differ": "{labels} is a list of fact labels (Hours, Fee …).",
+    "notice": "A short label before a facility's dated notice (special opening, closure or hours on given dates).",
+    "notice_open": "{dates} is a date or a date range; the facility is open on those dates (e.g. a holiday Monday).",
+    "notice_closed": "{dates} is a date or a date range; the facility is closed on those dates.",
+    "notice_hours": "{dates} is a date or a date range; {start} and {end} are 24-hour times (18:00, 22:00).",
+    "notice_last_entry": "{time} is a 24-hour time; shown in brackets after notice_hours.",
     "about_how_2": "{note} is this language's 'sources differ' note, {missing} its 'Not listed'.",
     "plus_more": "After the first stops of a course: how many more there are.",
     "region_name": "A course name with the city's name in front when the name lacks it.",
     "lede_both": "{near} and {longest} are two clauses this file gives (lede_near, lede_longest).",
     "lede_one": "{text} is one sentence without its final punctuation.",
     "name_in_region": "A place name followed by the city's name, for a page title.",
+    "map_loc": "Under a place's map, after 'Distances are straight lines between coordinates': {provider} is who gives "
+               "the place's coordinates (Korea Tourism Organization TourAPI, the city's tourism site).",
+    "legs_measured_src": "On a course page: {src} names who gives the stops' coordinates, two names joined by a "
+                         "separator (Korea Tourism Organization TourAPI · the city's tourism site).",
 }
 
 

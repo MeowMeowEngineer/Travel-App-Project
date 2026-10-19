@@ -12,17 +12,22 @@
                                             bare text with no inner element, so the visible text holds the JSON-LD
                                             string as one run (pipeline.validate jsonld_visibility); the other values
                                             keep their marks (closed days, tel: links, unbroken house numbers). Text
-                                            rows keep both the row check and the round-2 probe exact (tests/test_present)
+                                            rows keep both the row check and the round-2 probe exact (tests/test_present).
+                                            A row with r.anchor has it as its id (the 요금 row a combined ticket's row
+                                            points to: present.ticket_rows)
       kfnote(K, place) / notes(items, place) / chnotes(items, place)
                                             ui.kfnote / ui.notes / ui.chnotes with data-place on their links
       faq(items, ns, place)                 ui.faq with each answer as plain text: FAQPage repeats the answer, and a
                                             tel: link inside it would split that run
       placemap(data, label, cls, caption)   a map box like ui.mapfig, with the JSON in data-points (map.js reads
                                             data-points first; the object forms {self, near, anchors} / {list} /
-                                            {all, anchor_pts} are accepted there as well)
-      rec(it, kind)                         ui.rec plus the list filter keys: data-types (type and street, "|a|b|":
-                                            the '유형' buttons, data-f="type" — the place kicker links ?type=…),
-                                            data-group (round-2 category group) and data-area (읍·면·동)
+                                            {all, anchor_pts} are accepted there as well); the caption sits in
+                                            <span data-geo-cap> (a list map's 'n곳만 표시': site.js keeps n in step
+                                            with the list's filter)
+      rec(it, kind)                         ui.rec plus the list filter keys of _filters.rec_attrs (shared with the
+                                            other versions: data-geo, data-types "|a|b|" — the '유형' buttons,
+                                            data-f="type", the place kicker links ?type=… —, data-region, data-themes,
+                                            the check flags), data-group (round-2 category group) and data-area (읍·면·동)
       hero_k3(ph, nm, n)                    the desktop product shot of a KOGL-3 lead photo: the provider's own file
                                             whole in a padded frame, no srcset (a small rendition must never be drawn
                                             larger than itself), lazy so phones (hidden there) never fetch it
@@ -45,20 +50,22 @@
     No 확인일 anywhere (operator decision 2026-10-09): check dates stay in the data and JSON-LD. -#}
 {% import "_ui.html.j2" as ui %}
 {% import "_media.html.j2" as md %}
+{% import "_filters.html.j2" as fb %}
 {# keep in step with pipeline/jsonld.PROP_KEYS (+ address → PostalAddress.streetAddress) #}
 {% set PLAIN = ('usetime', 'restdate', 'usefee', 'parking', 'spendtime', 'menu', 'babycarriage', 'pet', 'address') %}
 
 {% macro vtext(v, key, place='') -%}
 {#- an address keeps a house number like '244-7' on one line: the words holding a hyphen get their own nowrap span,
-    split at the spaces that are already there, so the visible text runs the same -#}
-{% if key == 'address' and '\n' not in v.text %}{% for w in v.text.split(' ') %}{% if '-' in w %}<span class="nw">{{ w }}</span>{% else %}{{ w }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}
+    split at the spaces that are already there, so the visible text runs the same; a long word (an address given
+    without spaces) keeps only its number together and wraps (present.nowrap_address) -#}
+{% if key == 'address' and '\n' not in v.text %}{{ v.text|addr_nw }}
 {%- elif key in PLAIN %}{% if v.closed %}<span class="closed">{{ v.text|nl2br }}</span>{% else %}{{ v.text|nl2br }}{% endif %}
 {%- elif v.url %}<a href="{{ v.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ v.text }}</a>
 {%- elif v.closed %}<span class="closed">{{ v.html }}</span>{% else %}{{ v.html }}{% endif %}
 {%- endmacro %}
 
 {% macro factrow(r, fn=true, place='') -%}
-<div class="fr{% if r.wide %} wide{% endif %}{% if r.conflict %} conflict{% endif %}" data-key="{{ r.key }}">
+<div class="fr{% if r.wide %} wide{% endif %}{% if r.conflict %} conflict{% endif %}" data-key="{{ r.key }}"{% if r.anchor %} id="{{ r.anchor }}"{% endif %}>
 <dt>{{ r.label }}</dt>
 <dd data-key="{{ (r['keys'] or [r.key])|join(' ') }}">
 {% if r.blocks %}
@@ -81,6 +88,12 @@
 {% if K.providers %}<p class="kf-prov">출처 {{ K.providers|join('·') }}</p>{% endif %}
 {%- endmacro %}
 
+{#- dated notices of the facility (S.notices, pipeline/notices.py): fixed words + dates + the provider's post, under the
+    key facts until their end date (operator decision 2026-10-15) -#}
+{% macro notices(items, place='') -%}
+{% for n in items %}<p class="kf-ntc" data-notice="{{ n.id }}"><span class="ntc-k">공지</span> {{ n.text }} · 출처 <a href="{{ n.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ n.provider }}</a></p>{% endfor %}
+{%- endmacro %}
+
 {% macro notes(items, place='') -%}
 {% if items %}
 <ol class="notes">{% for s in items %}<li>{% if items|length > 1 %}<span class="fn-n tn">{{ loop.index }}</span>{% else %}<span class="fn-k">출처</span>{% endif %}{% if s.url %}<a href="{{ s.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.provider }}</a>{% else %}{{ s.provider }}{% endif %}{% if s.confirmed_by %} · {{ s.confirmed_by }}로 재확인{% endif %}</li>{% endfor %}</ol>
@@ -99,20 +112,21 @@
 {{ chnotes(ns, place) }}
 {%- endmacro %}
 
-{% macro placemap(data, label, cls='', caption='') -%}
+{% macro placemap(data, label, cls='', caption='', tail='') -%}
 {#- the JSON sits in a single-quoted attribute, so its double quotes stay as they are (a 283-point map is 74KB with
-    every quote escaped, 58KB without); & ' < > are escaped by hand -#}
+    every quote escaped, 58KB without); & ' < > are escaped by hand. tail: markup after the caption (the list and
+    /map/ captions' '지도에 없는 n곳은 목록에서', _filters.off_map) -#}
 {% set json = (data|tojson_attr)|replace('&', '&amp;')|replace("'", '&#39;')|replace('<', '&lt;')|replace('>', '&gt;') %}
 <figure class="mapfig{% if cls %} {{ cls }}{% endif %}">
-<div class="map" role="region" aria-label="{{ label }}" data-points='{{ json|safe }}'{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-lenis-prevent><p class="map-off">지도를 불러오는 중입니다.</p></div>
-<figcaption>{% if caption %}{{ caption }} · {% endif %}지도: 카카오맵</figcaption>
+<div class="map" role="region" aria-label="{{ label }}" data-points='{{ json|safe }}'{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-lenis-prevent><p class="map-off">이 지도의 장소는 이 페이지에 글로도 적었습니다.</p></div>
+<figcaption>{% if caption %}<span data-geo-cap>{{ caption }}</span>{{ tail }} · {% endif %}지도: 카카오맵</figcaption>
 </figure>
 {%- endmacro %}
 
 {% macro rec(it, kind) -%}
 {#- empty type/theme keys are left out (a list page carries ~170 of these rows); the name link is the view-transition
     title without data-vt (site.js takes the link in .rec-name of a [data-vt-scope] row) -#}
-<li class="rec" data-vt-scope id="{{ it.id }}"{% if it.tags %} data-types="|{{ it.tags|join('|') }}|"{% endif %} data-group="{{ it.e._group }}" data-area="{{ it.dong }}" data-region="{{ it.region }}"{% if it.themes %} data-themes="{{ it.themes|join(' ') }}"{% endif %}{% for k, v in it.flags.items() %}{% if v %} data-{{ k }}="1"{% endif %}{% endfor %}>
+<li class="rec" data-vt-scope id="{{ it.id }}" data-group="{{ it.e._group }}" data-area="{{ it.dong }}"{{ fb.rec_attrs(it) }}>
 <div class="rec-name">
 <a class="rec-link" href="{{ it.path }}" data-track="{{ {'stay': 'stay_click', 'food': 'food_click'}.get(kind, 'nearby_click') }}" data-place="{{ it.e.id }}">{{ it.name }}</a>
 {% set bits = [] %}{% if it.type %}{% set _ = bits.append(it.type) %}{% endif %}{% if it.street %}{% set _ = bits.append(it.street) %}{% endif %}{% if it.dong %}{% set _ = bits.append(it.dong) %}{% endif %}{% if it.rooms %}{% set _ = bits.append('객실 ' ~ it.rooms ~ ('실' if it.rooms.isdigit() else '')) %}{% endif %}
@@ -160,11 +174,12 @@
 {% endfor %}
 {%- endmacro %}
 
-{% macro addr(t) %}{% for w in t.split(' ') %}{% if '-' in w %}<span class="nw">{{ w }}</span>{% else %}{{ w }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}{% endmacro %}
+{% macro addr(t) %}{{ t|addr_nw }}{% endmacro %}
 
 {% macro access(A, nm, place='') -%}
 <section class="block acc" aria-labelledby="h-access" data-block="access">
-<h2 id="h-access" class="h-sec"><span class="nm">{{ nm }}</span> 근처 주차·버스</h2>
+{#- the heading names only what the block lists: no stop rows (no bus file yet for most points) is not 'no bus' -#}
+<h2 id="h-access" class="h-sec"><span class="nm">{{ nm }}</span> 근처 {{ '주차·버스' if A.lots and A.stops else ('주차' if A.lots else '버스') }}</h2>
 <div class="acc-cols">
 {% if A.lots %}
 <div class="acc-g">

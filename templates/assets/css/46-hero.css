@@ -7,12 +7,6 @@
    The masthead is transparent with white text over the photo until the page scrolls (html.is-scrolled, site.js),
    then it takes its usual translucent white. Both homes open on this photo (owner 2026-10-13 night: the Korean home
    left its season field for it — 46-home-open.css lays out its question box and the news card beside it). */
-html:not(.is-scrolled) .pg-en-home .mast { background: transparent; color: #fff; }
-html:not(.is-scrolled) .pg-en-home .mast::before { -webkit-backdrop-filter: none; backdrop-filter: none; background: linear-gradient(180deg, rgba(4, 9, 16, .45), rgba(4, 9, 16, 0)); }
-html:not(.is-scrolled) .pg-en-home .mast :is(.wordmark, .wordmark:hover, .wm-a, .wm-b, .mast-nav a, .mast-nav a:hover, .mast-nav a[aria-current], .mast-search, .mast-v, .mast-ctx, .mast-lang, .menu summary) { color: #fff; }
-html:not(.is-scrolled) .pg-en-home .menu[open] summary { color: var(--ink); }
-html:not(.is-scrolled) .pg-en-home .mast:has(.menu[open]) { background: #fff; color: var(--ink); }
-html:not(.is-scrolled) .pg-en-home .mast:has(.menu[open]) :is(.wordmark, .wm-a, .mast-v, .mast-ctx, .mast-search) { color: var(--ink); }
 
 .hx { position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: flex-end;
   margin-top: calc(-1 * var(--bar)); min-height: max(560px, min(100svh, 940px)); color: #fff; background: #0c1724; overflow: hidden; }

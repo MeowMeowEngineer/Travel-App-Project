@@ -27,8 +27,9 @@
 출처: {{ ph.credit or '한국관광공사' }}{% if long and ph.lic %} · {{ ph.lic }}{% endif %}
 {%- endmacro %}
 
-{# preload(ph, sizes='100vw'): put in {% block head %} of the page whose first screen shows ph (home opening,
-   KOGL-1 place opening). Emits nothing unless ph is KOGL-1 with an AVIF derivative. #}
-{% macro preload(ph, sizes='100vw') -%}
-{% if ph and ph.type == 1 and ph.avif %}<link rel="preload" as="image" type="image/avif" imagesrcset="{{ ph.avif }}" imagesizes="{{ sizes }}" fetchpriority="high">{% endif %}
+{# preload(ph, sizes='100vw', media=''): put in {% block head %} of the page whose first screen shows ph (home opening,
+   KOGL-1 place opening). Emits nothing unless ph is KOGL-1 with an AVIF derivative. media: only on the screens where
+   ph is big in the first screen (the home's first news card: from 768px; a phone shows it as a small thumbnail). #}
+{% macro preload(ph, sizes='100vw', media='') -%}
+{% if ph and ph.type == 1 and ph.avif %}<link rel="preload" as="image" type="image/avif" imagesrcset="{{ ph.avif }}" imagesizes="{{ sizes }}"{% if media %} media="{{ media }}"{% endif %} fetchpriority="high">{% endif %}
 {%- endmacro %}

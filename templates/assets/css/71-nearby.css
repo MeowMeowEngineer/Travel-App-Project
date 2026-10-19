@@ -1,0 +1,140 @@
+/* 71-nearby — the place page's 주변·함께 가기 chapter (templates/_near.html.j2; owner 2026-10-14: 시각화·모션), every
+   language. The UI4 light look: white hairline cards, the nearby groups on a pale --g0 panel, one sea-blue line.
+   - Course segments: previous stop ── this place ── next stop. Phones: a vertical line, each name whole beside its
+     dot with its role after it (never an ellipsis); from 768px the three stops sit in equal columns, the line runs across and the
+     straight-line leg labels sit on it. Under it one chip per course that shares these neighbours, its position in
+     the course drawn as a dot on a short track (order only). The wires and the bars draw with --p (motion.js
+     [data-draw], 0 → 1, transforms only); without JS or with reduced motion --p is unset = 1, the final state.
+   - Nearby rows: 56px picture (KOGL-1 may fill its square; KOGL-3 sits whole in a 3px padded frame that never clips
+     its corners, never cropped or enlarged — the global img.t3 guard in 30-info.css still applies), the name (its
+     link covers the row), meta (a closed day's red square kept with its first word), the straight-line distance
+     (sea-deep on tint 7.13:1) and a bar on the page's one scale (--f). The groups sit one under the other; from 768px
+     each group's rows run in two columns.
+   - Guide and event cards: name, title or dates with the 진행·예정 / 지난 회차 tag (the heading carries the picture).
+   - Japanese names break between phrases (auto-phrase), Chinese between characters: the Korean keep-all is Korean's.
+   Text contrast: ink-3 on #fff 5.62 / g0 5.22, sea-deep on g0 ≈ 7.5, ink-2 on g0 ≈ 8.7. Touch targets ≥ 44px. */
+.nb-part + .nb-part { margin-top: 40px; }
+.nb .h-sub { font: 700 17px/1.35 var(--font); color: var(--ink); letter-spacing: -.015em; margin: 0 0 12px; }
+.nb-h { display: flex; align-items: center; gap: 10px; }
+.nb-part > .h-same { margin-top: 0; }
+.nb .note { margin-top: 10px; }
+.nb .note + .note { margin-top: 4px; }
+
+/* ---------------------------------------------------------------- course segments */
+.nb-segs { display: grid; gap: 12px; }
+.nb-seg { background: #fff; border: 1px solid var(--hair); border-radius: var(--r); padding: 18px; }
+.seg-line { display: grid; }
+.seg-n { position: relative; padding: 0 0 18px 38px; }
+.seg-n:last-child { padding-bottom: 0; }
+.seg-dot { position: absolute; z-index: 1; left: 7px; top: 4.5px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 3px var(--sea-deep); }
+.here .seg-dot { left: 3px; top: .5px; width: 22px; height: 22px; background: var(--sea); box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--g2); }
+.seg-n:not(.here) .seg-dot { transform: scale(calc(.4 + .6 * var(--p, 1))); }
+.seg-n.end .seg-dot { background: #fff; box-shadow: inset 0 0 0 2px var(--g2); }
+.seg-nm { font: 700 16px/1.45 var(--font); color: var(--ink); letter-spacing: -.015em; word-break: keep-all; overflow-wrap: anywhere; }
+a.seg-nm { position: relative; z-index: 1; padding: 13px 0; margin: -13px 0; text-decoration: none; }   /* a 44px hit area, no layout change */
+a.seg-nm:hover { color: var(--link); }
+.seg-end { font-size: 15px; font-weight: 400; color: var(--ink-3); }
+/* the stop's role follows its name after a space (it wraps as one piece, never indented): the names keep the whole
+   width in every language */
+.seg-tag { display: inline-block; margin-left: 2px; font-size: 13px; line-height: 1.45; color: var(--ink-3); white-space: nowrap; }
+.here .seg-tag { font-weight: 700; color: var(--sea-deep); }
+.here .seg-nm { color: var(--sea-deep); }
+.seg-d { display: block; margin-top: 4px; font-size: 13px; line-height: 1.4; color: var(--ink-3); }
+.seg-wire { position: absolute; left: 12.5px; top: 18px; bottom: -6px; width: 3px; border-radius: 2px; background: var(--sea); transform: scaleY(var(--p, 1)); transform-origin: top; }
+.prev .seg-wire { transform-origin: bottom; }   /* the line draws out of this place's dot */
+/* the course starts or ends here: a dashed stub to the 코스 시작 / 코스 끝 marker (the line never looks broken off) */
+.seg-wire.is-open { background: repeating-linear-gradient(to bottom, var(--g2) 0 5px, transparent 5px 9px); }
+.here .seg-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--sea); opacity: 0; pointer-events: none; }
+.here.is-lit .seg-dot::after { animation: seg-ping .9s var(--ease-out) 1; }
+@keyframes seg-ping { from { transform: scale(1); opacity: .45; } to { transform: scale(2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .here.is-lit .seg-dot::after { animation: none; } }
+
+.seg-courses { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--hair); }
+.crs { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 44px; padding: 8px 12px; border-radius: 12px; background: var(--g0); color: var(--ink-2); font-size: 14px; line-height: 1.35; text-decoration: none; }
+.crs:hover { background: var(--g1); }
+.crs-nm { font-weight: 700; color: var(--ink); word-break: keep-all; overflow-wrap: anywhere; }
+.crs-at { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }   /* n/N and its track never part */
+.crs-n { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.crs-pos { position: relative; flex: none; width: 36px; height: 4px; border-radius: 2px; background: var(--g2); }
+.crs-pos::after { content: ""; position: absolute; top: -2px; left: calc(var(--p, 0) * (100% - 8px)); width: 8px; height: 8px; border-radius: 50%; background: var(--sea-deep); }
+
+/* ---------------------------------------------------------------- nearby rows on one straight-line scale */
+.nb-cols { display: grid; gap: 16px; align-items: start; }
+.nb-grp { min-width: 0; padding: 16px; border-radius: var(--r-l); background: var(--g0); }
+.nb-gh { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; margin-bottom: 12px; }
+.nb-gh .h-sub { margin: 0; }
+.nb-map { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 700; color: var(--sea-deep); text-decoration: none; }
+.nb-map:hover { text-decoration: underline; }
+.nr-list { display: grid; gap: 8px; }
+.nr { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; min-height: 72px; padding: 8px 12px 8px 8px; border: 1px solid var(--hair); border-radius: 16px; background: #fff; }
+.nr:hover { border-color: var(--g2); }
+.nr-th { grid-column: 1; grid-row: 1 / span 3; align-self: center; display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; overflow: hidden; border-radius: 12px; background: var(--bg-2); }
+.nr-th.t1 img { width: 100%; height: 100%; object-fit: cover; }
+.nr-th.t3, .nr-th.t0 { padding: 3px; overflow: visible; }   /* contained, never clipped by the rounded corner */
+.nr-th.t3 img, .nr-th.t0 img { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+.nr-ico { background: transparent; overflow: visible; }
+.nr-nm { grid-column: 2; grid-row: 1; font: 700 16px/1.4 var(--font); color: var(--ink); letter-spacing: -.015em; text-decoration: none; word-break: keep-all; overflow-wrap: anywhere; }
+.nr-nm::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+.nr-nm:hover { color: var(--link); }
+.nr-nm:focus-visible { outline: none; }
+.nr-nm:focus-visible::after { outline: 2px solid var(--focus); outline-offset: 2px; }
+.nr-meta { grid-column: 2 / -1; grid-row: 2; font-size: 13px; line-height: 1.45; color: var(--ink-3); overflow-wrap: anywhere; }
+.nr-meta .nr-cl::before { content: none; }   /* the square moves into the no-wrap first word (present.closed_head) */
+.nr-meta .nr-cl > .nw::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 2px; background: var(--red); vertical-align: .1em; }
+.nr-d { grid-column: 3; grid-row: 1; align-self: center; padding: 5px 10px; border-radius: var(--r-pill); background: var(--tint); color: var(--sea-deep); font: 700 14px/1.3 var(--font); white-space: nowrap; }
+/* under 10 m ('같은 좌표', 'same coordinates'): not a distance — no pill, the words sit where the bar would be, so a long
+   word never squeezes the name */
+.nr-d.is-same { grid-column: 2 / -1; grid-row: 3; justify-self: start; margin-top: 2px; padding: 0; background: none; font-size: 13px; white-space: normal; }
+.nr-bar { grid-column: 2 / -1; grid-row: 3; height: 4px; margin-top: 6px; overflow: hidden; border-radius: 2px; background: var(--bg-3); }
+.nr-bar i { display: block; width: max(4px, calc(var(--f, 0) * 100%)); height: 100%; border-radius: 2px; background: var(--sea); transform: scaleX(var(--p, 1)); transform-origin: left; }
+@media (hover: hover) {
+  .nr-th.t1 img { transition: transform .5s var(--ease); }
+  .nr:hover .nr-th.t1 img { transform: scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nr-th.t1 img { transition: none; }
+  .nr:hover .nr-th.t1 img { transform: none; }
+}
+
+/* ---------------------------------------------------------------- guide and event cards */
+.xc-list { display: grid; gap: 10px; }
+.xc { position: relative; min-width: 0; min-height: 72px; padding: 14px 16px; border: 1px solid var(--hair); border-radius: 16px; background: #fff; }
+.xc:hover { border-color: var(--g2); }
+.xc-nm { display: block; font: 700 16px/1.4 var(--font); color: var(--ink); letter-spacing: -.015em; text-decoration: none; word-break: keep-all; overflow-wrap: anywhere; }
+.xc-nm::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+.xc-nm:hover { color: var(--link); }
+.xc-nm:focus-visible { outline: none; }
+.xc-nm:focus-visible::after { outline: 2px solid var(--focus); outline-offset: 2px; }
+.xc-sub { margin-top: 2px; font-size: 14px; line-height: 1.5; color: var(--ink-2); overflow-wrap: anywhere; }
+.xc-tag { display: inline-block; padding: 1px 8px; border-radius: var(--r-pill); background: var(--tint); color: var(--sea-deep); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.xc-tag.is-past { background: var(--bg-2); color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- '다른 구간 보기 (n)' / '가이드 더 보기 (n)' */
+.nb-more { margin-top: 10px; }
+.nb-more > summary { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px; border-radius: var(--r-pill); background: var(--g0); color: var(--sea-deep); font-size: 14px; font-weight: 700; cursor: pointer; list-style: none; }
+.nb-more > summary::-webkit-details-marker { display: none; }
+.nb-more > summary::before { content: ""; width: 7px; height: 7px; margin-top: -3px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .2s var(--fb); }
+.nb-more[open] > summary::before { margin-top: 3px; transform: rotate(-135deg); }
+.nb-more[open] > summary { margin-bottom: 10px; }
+
+/* ---------------------------------------------------------------- 768px and up: the line runs across */
+@media (min-width: 768px) {
+  .seg-line { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top: 28px; }
+  .seg-n { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 10px; text-align: center; }
+  .seg-dot, .here .seg-dot { position: relative; left: auto; top: auto; flex: none; margin: 4px 0; }
+  .here .seg-dot { margin: 0; }   /* every dot sits in a 22px band: the three names start on one line */
+  .seg-tag { margin: 0; line-height: 1.35; white-space: normal; }
+  .seg-wire { left: 50%; right: -50%; top: 9.5px; bottom: auto; width: auto; height: 3px; transform: scaleX(var(--p, 1)); transform-origin: left; }
+  .prev .seg-wire { transform-origin: right; }
+  .seg-wire.is-open { background: repeating-linear-gradient(to right, var(--g2) 0 5px, transparent 5px 9px); }
+  .seg-d { position: absolute; z-index: 2; top: -26px; left: 100%; margin: 0; padding: 0 6px; background: #fff; white-space: nowrap; transform: translateX(-50%); }
+  .nr-list { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (min-width: 1024px) {
+  .xc-list { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+/* Japanese: names break between phrases (Chromium; elsewhere between characters), Chinese between characters — the
+   Korean keep-all on these classes would hold a whole Japanese or Chinese name as one word */
+:lang(ja) :is(.seg-nm, .nr-nm, .crs-nm, .xc-nm, .xc-sub, .nr-meta, .nb .h-sub) { word-break: normal; word-break: auto-phrase; }
+:lang(zh) :is(.seg-nm, .nr-nm, .crs-nm, .xc-nm) { word-break: normal; }

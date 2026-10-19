@@ -4,16 +4,20 @@
 {#- An official course (Apple direction). Opening: the name, figures (stops · straight-line sum · the most common
     closed day · start → end), 카카오맵 길찾기 to the first stop with coordinates and the computed lede. Then the stop
     band (course.js) beside the station tiles and the course map (co.map = present.course_map: Kakao Maps, only
-    when at least half of the stops have coordinates; else the numbered stop list stands alone), the closed days by
-    weekday, and the sources with their dates. co = present.course_stop_details(course_vm). Above the head's text the
+    when at least half of the stops have coordinates; else the numbered stop list stands alone), '차 없이 다니기'
+    (move = present.course_move: nearest bus stops, a 카카오맵 대중교통 길찾기 link per measured leg, the timetable's
+    first and last buses, guides — QA 2026-10-15 F09), the closed days by weekday, and the sources with their dates.
+    The source's day / option headings are separator rows (F09-b); there is no leg between two options of a day. co = present.course_stop_details(course_vm). Above the head's text the
     course's AI art band (course.banner.<course id>, templates/_art.html.j2) — never in a stop card. -#}
 {% block bodyclass %}pg-course{% endblock %}
 {% block main_class %}{% endblock %}
 {% block lnav %}
 {% set links = [('경유지', '#stops')] %}
+{% if co.booking %}{% set _ = links.append((co.bw.nav, '#h-book')) %}{% endif %}
+{% if move %}{% set _ = links.append(('이동', '#h-move')) %}{% endif %}
 {% if week %}{% set _ = links.append(('쉬는 날', '#h-week')) %}{% endif %}
 {% set _ = links.append(('출처', '#h-src')) %}
-{{ ui.lnav(course_name, links, {'url': '#stops', 'label': '경유지 목록'}) }}
+{{ ui.lnav(course_name, links, {'url': '#stops', 'label': '경유지 목록'}, share={'id': co.c.id, 'lang': 'ko'}) }}
 {% endblock %}
 {% block content %}
 {% set fr = co.first_route %}
@@ -29,6 +33,7 @@
           <div><dt>경유지</dt><dd class="tn">{{ co.n_places }}곳</dd></div>
           {% if co.complete and co.measured %}<div><dt>경유지 사이 직선 합</dt><dd class="tn">{{ co.total|pdist }}</dd></div>
           {% elif co.legs_possible %}<div><dt>좌표 있는 구간</dt><dd class="tn">{{ co.measured }}/{{ co.legs_possible }}</dd></div>{% endif %}
+          {% if co.taketime %}<div><dt>소요시간</dt><dd class="tn">{{ co.taketime.value }}</dd></div>{% endif %}
           {% if co.closed_note %}<div class="dr-closed"><dt>쉬는 날</dt><dd>{% if week %}<a href="#h-week">{% endif %}<span class="closed">{{ co.closed_note }}</span>{% if week %}</a>{% endif %}</dd></div>{% endif %}
           {% if co.first %}<div class="dr-wide"><dt>출발 → 마지막</dt><dd>{{ co.first }} → {{ co.last }}</dd></div>{% endif %}
         </dl>
@@ -39,6 +44,8 @@
         <ol class="co-strip only-narrow" aria-label="경유지 순서">{% for s in co.stops %}<li><a href="#s{{ s.n }}"><span class="tn">{{ s.n }}</span>{{ s.short }}</a></li>{% endfor %}</ol>
         {% if lede %}<p class="lede" data-block="summary">{{ lede }}</p>{% endif %}
         <p class="note">경유지 순서: {% if orig_url %}<a href="{{ orig_url }}" rel="noopener" data-track="official_click">{{ orig_name }} 코스 안내</a>{% else %}{{ orig_name }} 코스 안내{% endif %}</p>
+        {#- 예약하기: the services of the stops' guides and places (pipeline/booking.py course_targets) -#}
+        {{ ui.book(co.booking, co.bw, '', true) }}
       </div>
     </div>
   </header>
@@ -56,7 +63,9 @@
     <h2 id="h-stops" class="vh">{{ course_name }} 경유지 {{ co.n_places }}곳</h2>
     <ol class="stops" id="stops">
       {% for s in co.rows %}
-      {% if s.sep %}
+      {% if s.sep and s.kind == 'day' %}
+      <li class="stop-sep sep-day"><span class="sep-k">코스 원문 일정</span><span class="sep-v">{{ s.kind_label }}</span></li>
+      {% elif s.sep %}
       <li class="stop-sep"><span class="sep-k">{{ s.kind_label }}</span><span class="sep-v">{{ s.name }}{% if s.note %} · {{ s.note }}{% endif %}</span></li>
       {% else %}
       <li class="stop" id="s{{ s.n }}" data-stop="{{ s.n }}" data-vt-scope>
@@ -69,11 +78,13 @@
             {% if s.line %}<p class="stop-line">{{ s.line }}</p>{% endif %}
             {% if s.kf %}{{ ui.kfrows(s.kf, s.t.id) }}{% endif %}
             {% if s.note %}<p class="stop-note">{{ s.note }}</p>{% endif %}
+            {% if s.guide %}<p class="stop-note"><a href="{{ s.guide.path }}" data-track="guide_click">가이드 '{{ s.guide.label }}'</a></p>{% endif %}
             <p class="stop-go"><a href="{{ s.path }}" data-track="nearby_click" data-place="{{ s.t.id }}">{{ s.t.name }} 방문 전 확인<span class="arr" aria-hidden="true">›</span></a></p>
           </div>
         </div>
         {% else %}
         {% if s.note %}<p class="stop-note">{{ s.note }}</p>{% endif %}
+        {% if s.see %}<p class="stop-go">{% for x in s.see %}<a href="{{ x.path }}" data-track="nearby_click" data-place="{{ x.id }}">{{ x.name }} 방문 전 확인<span class="arr" aria-hidden="true">›</span></a>{% if not loop.last %} {% endif %}{% endfor %}</p>{% endif %}
         <p class="stop-none"><a href="{{ s.search }}" rel="noopener" data-track="map_click" data-provider="naver">네이버 지도에서 {{ s.name }} 찾기(검색)</a></p>
         {% endif %}
       </li>
@@ -89,6 +100,12 @@
     {% endif %}
   </div>
 
+  {% if move %}
+  <section class="wrap chapter chapter-mid co-move" aria-labelledby="h-move" data-block="move">
+    {{ ui.move(move, course_name) }}
+  </section>
+  {% endif %}
+
   {% if week %}
   <section class="wrap chapter chapter-mid">
     {{ ui.week(week, 'h-week', course_name ~ ' 경유지의 요일별 쉬는 날') }}
@@ -100,7 +117,8 @@
     <div class="rail-body">
       <dl class="src-dl">
         <div><dt>코스 원문</dt><dd>{% if orig_url %}<a href="{{ orig_url }}" rel="noopener" data-track="official_click">{{ orig_name }}에서 보기</a>{% else %}{{ orig_name }}{% endif %}{% if orig.license %} · {{ orig.license|license_label }}{% endif %}</dd></div>
-        {% if co.legs_possible %}<div><dt>거리 계산</dt><dd>경유지 사이 {{ co.legs_possible }}구간 중 {{ co.measured }}구간을 한국관광공사 TourAPI 좌표 사이 직선으로 잼</dd></div>{% endif %}
+        {% if co.legs_possible %}<div><dt>거리 계산</dt><dd>경유지 사이 {{ co.legs_possible }}구간 중 {{ co.measured }}구간을 {% if co.geo_src %}{{ co.geo_src }} {% endif %}좌표 사이 직선으로 잼</dd></div>{% endif %}
+        {% if co.taketime %}<div><dt>소요시간</dt><dd>{% if co.taketime.source_url %}<a href="{{ co.taketime.source_url }}" rel="noopener" data-track="official_click">{{ co.taketime.source_name }} 코스 안내</a>{% else %}{{ co.taketime.source_name }} 코스 안내{% endif %}</dd></div>{% endif %}
       </dl>
       {% if show_original %}
       <blockquote class="p2-orig" cite="{{ orig.source_url }}">{{ orig.text|nl2br }}</blockquote>

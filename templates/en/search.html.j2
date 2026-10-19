@@ -1,0 +1,42 @@
+{% extends "base.html.j2" %}
+{% import "_mascot.html.j2" as mm %}
+{#- <home>search/ of every version but Korean (Pages.search; owner 2026-10-14): the Korean /search/ in this version.
+    assets/search.js (attached by site.js for [data-search]) reads <home>search/index.json on the first focus (or at
+    once with ?q=) and prints the results into [data-results] with this version's words (data-words); its rows are
+    this version's names (a place's Korean name finds it too), dishes, areas and groups. Without JS the form reloads
+    this page and the list below answers: every place by kind, alphabetically (kinds = [{kind, label, id, recs}]).
+    Nothing found (QA 2026-10-15 F08): search.js shows [data-none-help] — this version's list pages (nav), the AI chat
+    asked that query, and the whole list only when the reader asks for it (#h-dir takes the focus); hidden without JS.
+    Under the box one line (sw.scope) says what the search covers and that travel questions go to the AI chat
+    (evaluation 2026-10-18); search_data = present.search_form_data (the query words, the city's names). -#}
+{% set n_all = kinds|sum(attribute='recs', start=[])|length %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-search{% endblock %}
+{% block content %}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">
+  <div class="wrap">
+    <h1 id="h-list" class="h-list">{{ sw.h1.format(r=region) }}</h1>
+    <form class="search" action="{{ loc.home }}search/" method="get" role="search" data-search data-index="{{ loc.home }}search/index.json" data-words="{{ words }}"{% for k, v in search_data|dictsort %} data-{{ k }}="{{ v }}"{% endfor %}>
+      <label class="search-l" for="q">{{ sw.label }}</label>
+      <div class="search-row"><input id="q" name="q" type="search" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="{{ sw.ph }}" aria-describedby="q-note"><button type="submit" class="btn">{{ sw.go }}</button></div>
+      <p class="search-note" id="q-note">{{ sw.scope }}</p>
+    </form>
+    <div class="results" data-results aria-live="polite"></div>
+    <div class="res-help" data-none-help hidden>
+      <nav class="res-lists" aria-label="{{ sw.browse }}"><p class="res-help-l">{{ sw.browse }}</p><ul>{% for label, href in nav %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}</ul></nav>
+      <div class="res-acts"><button type="button" class="btn" data-chat-open data-chat-q="">{{ sw.ask }}</button><button type="button" class="btn btn-ol" data-show-all aria-controls="dir">{{ sw.all.format(n=n_all) }}</button></div>
+    </div>
+    <div class="empty-mascot" data-empty-art hidden>{{ mm.pic('mascot-search', 'small', 120) }}</div>
+  </div>
+</section>
+<section class="wrap chapter chapter-tight" id="dir" aria-labelledby="h-dir" data-directory>
+  <div class="ch-head"><h2 id="h-dir" tabindex="-1">{{ sw.dir }} <span class="count tn">{{ n_all }}</span></h2></div>
+  <nav class="jump" aria-label="{{ sw.jump }}">{% for g in kinds %}<a href="#{{ g.id }}">{{ g.label }}</a>{% endfor %}</nav>
+  {% for g in kinds %}
+  <section class="dir-g{% if not loop.first %} cv{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h">
+    <h3 id="{{ g.id }}-h" class="dir-ini">{{ g.label }} <span class="tn">{{ g.recs|length }}</span></h3>
+    <ul class="dir-list">{% for it in g.recs %}<li><a href="{{ it.path }}">{{ it.name }}</a><span>{{ [it.type, it.area]|select|join(loc.list_sep) }}</span></li>{% endfor %}</ul>
+  </section>
+  {% endfor %}
+</section>
+{% endblock %}

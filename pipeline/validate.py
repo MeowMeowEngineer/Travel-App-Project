@@ -20,7 +20,8 @@ What is checked
   a stored source text — a place's TourAPI overview or original, a guide's or course's places' texts — once names and
   fact values are taken out (pipeline/content_check.py; tools/content_check.py adds the number, source and wording
   checks a writer runs before approval)
-- canonical, title/description length, internal links, robots.txt, sitemap.xml, llms.txt
+- canonical, title/description length (a Korean page's description, og:description and twitter:description: a
+  warning over build.DESC_MAX = 80 characters), internal links, robots.txt, sitemap.xml, llms.txt
 - every stored fact is shown whole in its own row of the facts block (<dd data-key>, else the <dd> under its
   label): the whole textutil.display_value(raw) verbatim, every word and symbol in order (textutil.value_shown),
   and a homepage/booking URL linked in full (fact_shown). Only a row marked data-form that prints a parsed
@@ -63,6 +64,21 @@ What is checked
   checked are recorded; label_ko is short; the row on /abroad/ links every original, the viewer's markup
   (build.HL_VIEWER, fetched on the first press) holds every quote in a <blockquote> with its lang and the original's
   address, and each quoted article's card on /abroad/ shows it too
+- 예약하기 (pipeline/booking.py, booking_problems, booking.data_problems): every place, guide and course page of every
+  version links exactly the booking pages booking.view gives it (inside data-block="booking", data-track=
+  "booking_click"), each one an address of booking.json or a published place's own booking address, never on an
+  excluded host (OTA, Naver, blogs, social networks); a version never opens the Korean page of a service that has a
+  page in its language or in English; no other page (home, lists, search …) has a booking button; booking.json's
+  services have their address, basis and checked date and a name in every language, its places are published
+- places that belong together (data part_of, pipeline/relations.py, operator decision 2026-10-16; relation_page_problems):
+  every relation is well formed, points at a built place, does not loop or run deeper than 3 levels, and every basis
+  code it states reproduces from the two records (relations.evidence) — a relation cannot be invented; two built places
+  that share a TourAPI contentid have a relation. On each built page, Korean and every version: an inside child
+  links its parent in its relation line (a parent without a page in that version: its name, no link), same-building
+  pages link each other, a parent lists every part that has a page there and nothing else, the nearby rows and the
+  similar-name rows never show the page's own family nor an alias beside its parent, and JSON-LD containedInPlace /
+  containsPlace say exactly the same (same_building: neither). Warning: same-building partners whose shared facts
+  differ without each listing the other's value (relations.fact_differences)
 """
 from __future__ import annotations
 
@@ -77,15 +93,17 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from . import art, ask, en_site, present
+from . import art, ask, booking, city, en_site, notices, present, relations, tickets
 from .content_check import copy_issues, guide_issues
 from . import locales as LC
-from .build import HL_VIEWER, LISTS, MODES, State, fact_row, index_counts, load_abroad
+from .build import DESC_MAX, HL_VIEWER, LISTS, MODES, State, fact_row, index_counts, load_abroad
 from .jsonld import AMENITY_VALUES, amenity_value
 from .maplinks import DEFAULT_TMAP_SCHEME, build_links, precision_summary
-from .schema import (ENTITY_TYPES, FACT_LABELS, FACT_ORDER, FIT_ORDER, REQUIRED_BLOCKS, designation_problems, designations,
-                     license_allowed, node_types)
-from .textutil import display_value, link_url, phone_domestic, sha256_text, squash_ws, value_shown, value_tokens
+from .schema import (ENTITY_TYPES, FACT_LABELS, FACT_ORDER, FIT_ORDER, REQUIRED_BLOCKS,
+                     designation_problems, designations, geo_provider, is_default_point, license_allowed,
+                     nearby_geo_providers, nearby_provider, node_types, parking_seats_half, parking_seats_part)
+from .textutil import (address_key, dead_reason, dead_tokens, display_value, link_url, phone_domestic, sha256_text,
+                       squash_ws, url_key, value_shown, value_tokens)
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
 HANGUL = re.compile(r"[ᄀ-ᇿㄱ-ㆎ가-힣]")
@@ -121,6 +139,101 @@ CHECK_DATE = re.compile("|".join([
 def visible_check_dates(text: str) -> list[str]:
     """Check / update / review / collection dates (or their labels) in visible text — none may remain."""
     return [m.group(0) for m in CHECK_DATE.finditer(squash_ws(text))]
+
+
+def notice_problems(S, out: Path) -> list[tuple[str, str]]:
+    """data/<region>/notices.json (pipeline/notices.py, operator decision 2026-10-15): every entry has its provider,
+    url, checked_at and until and names published places only; a notice still current (until ≥ the build date) is
+    on each of its places' pages in every version this build has, and one past its `until` is on none of them."""
+    found = [("notices.json", x) for x in notices.problems(S.notices_all, {p["id"]: p for p in S.entities_all})]
+    paths: dict[str, list[str]] = {e["id"]: [e["_path"]] for e in S.entities}
+    for site in (getattr(S, "intl", None) and S.intl.sites or {}).values():
+        for p in site.places.values():
+            paths.setdefault(p["e"]["id"], []).append(p["path"])
+    current = {n["id"] for n in S.notices}
+    for n in S.notices_all:
+        nid = str(n.get("id") or "")
+        for path in [x for pid in (n.get("place_ids") or []) for x in paths.get(pid, [])] if nid else []:
+            f = _file_for(out, path)
+            if not f.exists():
+                continue
+            shown = f'data-notice="{nid}"' in f.read_text("utf-8")
+            if nid in current and not shown:
+                found.append((path, f"현재 공지가 화면에 없음: {nid}"))
+            elif nid not in current and shown:
+                found.append((path, f"끝난(until이 지난) 또는 잘못된 공지가 화면에 남음: {nid}"))
+    return found
+
+
+def dead_link_problems(text: str, hrefs: list[str], dead: dict | None) -> list[str]:
+    """A link to, or the written form of, an address data/<region>/dead_links.json lists (QA 2026-10-15 SRC-02):
+    build.State drops them from the data, so one found here came in through prose or a template."""
+    if not dead:
+        return []
+    out = []
+    for href in dict.fromkeys(hrefs):
+        reason = dead_reason(href, dead) if urlsplit(href).scheme in ("http", "https") else ""
+        if reason:
+            out.append(f"종료·없는 주소 링크: {href} ({reason})")
+    low = (text or "").lower()
+    out += [f"종료·없는 주소가 글에 남음: {t}" for t in dead_tokens(dead) if t.lower() in low]
+    return out
+
+
+def booking_expectations(S, out: Path) -> dict[str, list[dict]]:
+    """{page file as '/path/index.html': the booking buttons it must show (booking.view)} for every place, guide and
+    course page of Korean and every version; a page not in it may show none."""
+    def rel(path: str) -> str:
+        return "/" + str(_file_for(out, path).relative_to(out)).replace("\\", "/")
+    exp: dict[str, list[dict]] = {}
+    for e in S.entities:
+        exp[rel(e["_path"])] = booking.view(booking.place_targets(S, e), "ko")
+    for g in S.guides:
+        exp[rel(g["_path"])] = booking.view(booking.guide_targets(S, g), "ko")
+    for c in S.courses:
+        exp[rel(c["_path"])] = booking.view(booking.course_targets(S, c), "ko")
+    intl = getattr(S, "intl", None)
+    for code, site in (intl.sites.items() if intl else []):
+        ink = (lambda t: lambda n: t.s("in_korean_paren", name=n))(site.t)
+        for p in site.places.values():
+            exp[rel(p["path"])] = booking.view(booking.place_targets(S, p["e"]), code, ink)
+        for x in site.guides.values():
+            exp[rel(x["path"])] = booking.view(booking.guide_targets(S, x["g"]), code, ink)
+        for x in site.courses.values():
+            exp[rel(x["path"])] = booking.view(booking.course_targets(S, x["c"]), code, ink)
+    return exp
+
+
+def booking_problems(S, page: "PageScan", expect: list[dict] | None, code: str = "ko",
+                     allowed: set[str] | None = None) -> list[str]:
+    """예약하기 (pipeline/booking.py) on one page: expect = booking.view for a place, guide or course page, None for
+    any other page (which may have no booking button). Each booking_click link sits in data-block="booking", opens an
+    address of booking.json or a published place's own booking address (allowed: url_key forms) and never an excluded
+    host; the page shows exactly the expected addresses; a version (code) never opens a service's Korean page when the
+    service has a page in its language or in English."""
+    reg = booking.registry(S)
+    links = [x for x in page.tracked if x["track"] == "booking_click"]
+    if expect is None:
+        return [f"예약 버튼은 장소·가이드·코스 페이지에만 둔다 — 이 페이지에 {len(links)}개"] if links else []
+    allowed = booking.allowed_urls(S) if allowed is None else allowed
+    out = []
+    for x in links:
+        href = x["href"]
+        if "booking" not in x["blocks"]:
+            out.append(f"예약 버튼이 data-block=\"booking\" 밖에 있음: {href}")
+        if booking.excluded(href, reg):
+            out.append(f"예약 버튼이 버튼에서 빼는 호스트(OTA·네이버·블로그·SNS)로 감: {href}")
+        if url_key(href) not in allowed:
+            out.append(f"예약 버튼 주소가 booking.json·공개 장소의 예약 주소에 없음: {href}")
+        if code != "ko":
+            for s in (reg.get("services") or {}).values():
+                if url_key(href) == url_key(s.get("url")) and booking.page_lang(s.get("pages") or {}, code):
+                    out.append(f"{code} 페이지가 한국어 예약 페이지로 감 — 이 언어나 영어 페이지가 booking.json에 있음: {href}")
+    got = [x["href"] for x in links if "booking" in x["blocks"]]
+    want = [b["url"] for b in expect]
+    out += [f"데이터에 있는 공식 예약 페이지 버튼이 없음: {u}" for u in want if u not in got]
+    out += [f"데이터와 다른 예약 버튼: {u}" for u in got if u not in want]
+    return out
 
 
 # /abroad/ highlights (owner 2026-10-13; quotations 2026-10-14, CLAUDE.md 3.10): a short verbatim passage of the
@@ -213,7 +326,12 @@ class PageScan(HTMLParser):
         self.blocks: dict[str, str] = {}
         self.notes: list[str] = []          # text of citation lines (class ch-notes: '출처: …' and its translations)
         self._note_depth: int | None = None
+        # '확인 필요' lines: (class, text) of each <p class="kf-need"> (first screen) and <p class="need"> (facts card)
+        self.needs: list[tuple[str, str]] = []
+        self._need_depth: int | None = None
         self.block_hrefs: dict[str, list[str]] = {}   # links inside each data-block (nested blocks: every one)
+        # links with data-track: {track, href, hreflang, provider, blocks (the data-blocks around it)}
+        self.tracked: list[dict] = []
         self.hrefs: list[str] = []
         self.text: list[str] = []
         self.body_text: list[str] = []      # body text without <title>, <script> or <style> contents
@@ -301,6 +419,10 @@ class PageScan(HTMLParser):
             for _, b in self._stack:
                 if b:
                     self.block_hrefs.setdefault(b, []).append(a["href"])
+            if a.get("data-track"):
+                self.tracked.append({"track": a["data-track"], "href": a["href"], "hreflang": a.get("hreflang") or "",
+                                     "provider": a.get("data-provider") or "",
+                                     "blocks": [b for _, b in self._stack if b]})
         if self._dd is not None and tag != "dd" and a.get("data-form"):
             self._dd_form = True
         if tag == "br":
@@ -312,14 +434,20 @@ class PageScan(HTMLParser):
         self._lstack.append((tag, a.get("lang")))
         if self._note_depth is None and "ch-notes" in (a.get("class") or "").split():
             self._note_depth = len(self._stack)
+        need_cls = next((c for c in (a.get("class") or "").split() if c in ("kf-need", "need")), "")
+        if self._need_depth is None and need_cls:
+            self._need_depth = len(self._stack)
+            self.needs.append((need_cls, ""))
         if a.get("data-block"):
             self.blocks.setdefault(a["data-block"], "")
             if a["data-block"] == "access" and in_facts:
                 self.access_in_facts = True
-        if a.get("data-lot") or a.get("data-stop"):
-            self._rows_open.append({"kind": "lot" if a.get("data-lot") else "stop",
-                                    "id": a.get("data-lot") or a.get("data-stop"), "parts": [], "hrefs": [],
-                                    "in_facts": in_facts, "depth": len(self._stack)})
+        row_kind = next((k for k in ("lot", "stop", "bus", "leg") if a.get(f"data-{k}")), None)
+        if row_kind:
+            # a course page's '차 없이 다니기' (data-block="move"): bus rows (data-bus, data-for = the place) and legs
+            # (data-leg); its stop list's li data-stop are the stops' numbers, not bus stops (course_move_problems)
+            self._rows_open.append({"kind": row_kind, "id": a.get(f"data-{row_kind}"), "parts": [], "hrefs": [],
+                                    "in_facts": in_facts, "depth": len(self._stack), "for": a.get("data-for") or ""})
 
     def handle_endtag(self, tag):
         if tag == "title":
@@ -347,6 +475,8 @@ class PageScan(HTMLParser):
                 break
         if self._note_depth is not None and len(self._stack) < self._note_depth:
             self._note_depth = None
+        if self._need_depth is not None and len(self._stack) < self._need_depth:
+            self._need_depth = None
         for i in range(len(self._lstack) - 1, -1, -1):
             if self._lstack[i][0] == tag:
                 del self._lstack[i:]
@@ -354,7 +484,7 @@ class PageScan(HTMLParser):
         while self._rows_open and self._rows_open[-1]["depth"] > len(self._stack):
             r = self._rows_open.pop()
             self.access_rows.append({"kind": r["kind"], "id": r["id"], "text": squash_ws("".join(r["parts"])),
-                                     "hrefs": r["hrefs"], "in_facts": r["in_facts"]})
+                                     "hrefs": r["hrefs"], "in_facts": r["in_facts"], "for": r["for"]})
 
     def handle_data(self, data):
         if self._in_jsonld:
@@ -364,6 +494,9 @@ class PageScan(HTMLParser):
             self.hangul.append(squash_ws(data)[:30])
         if not self._in_code and self._lang() == self.html_lang:
             self.foreign.append(data)
+        if self._need_depth is not None:
+            cls, text = self.needs[-1]
+            self.needs[-1] = (cls, text + data)
         if self._note_depth is not None:
             self.notes.append(data)
         if self._in_title:
@@ -595,6 +728,26 @@ def designation_page_problems(e: dict, page: PageScan) -> list[str]:
     return out
 
 
+def seat_only_parking_problems(e: dict, page: PageScan) -> list[str]:
+    """A city source's '주차 및 좌석수' (facts.parking_seats) with a seat count only ('30석') is not a parking value
+    (schema.parking_seats_part). Never relaxed:
+    - no row labelled 주차 or 주차·좌석 (first-screen tile, facts card) shows a seat count alone;
+    - a place whose parking_seats holds seats only, with no parking or parking-fee value from any source, names 주차
+      in the first screen's '확인 필요' line and in the facts card's '확인 필요' line."""
+    out = []
+    labels = (FACT_LABELS["parking"], FACT_LABELS["parking_seats"])
+    for dt, dd in page.pairs:
+        if dt in labels and any(parking_seats_part(part) == "seats" for part in re.split(r"\s—\s", dd)):
+            out.append(f"좌석 수만 있는 값이 '{dt}' 칸에 보임: {dd[:30]}")
+    facts, alts = e.get("facts") or {}, e.get("fact_alternatives") or {}
+    if parking_seats_half(e) == "seats" and not any(facts.get(k) or alts.get(k) for k in ("parking", "parkingfee")):
+        for cls, where in (("kf-need", "첫 화면"), ("need", "방문 전 확인")):
+            lines = [squash_ws(t) for c, t in page.needs if c == cls]
+            if not any(FACT_LABELS["parking"] in line for line in lines):
+                out.append(f"좌석 수만 있고 주차 값이 없는데 {where}의 '확인 필요'에 주차가 없음")
+    return out
+
+
 def designation_awards(e: dict, node: dict, page: PageScan) -> list[str]:
     """JSON-LD `award` on a place node: each value is the label of a designation the page shows (schema.designations),
     whole in the visible body."""
@@ -659,6 +812,112 @@ def nearby_data_problems(S) -> list[str]:
     return out
 
 
+def _tt_segments(text: str) -> dict[str, str]:
+    """The timetable guide's number record ('… — 01 ○○ 평일 17(06:29~22:14)·주말 9, …; 08 △△ …') by route."""
+    out = {}
+    for part in re.split(r";\s*|\s—\s", text or ""):
+        m = re.match(r"\s*(\d{2}) ", part)
+        if m:
+            out[m.group(1)] = part
+    return out
+
+
+def transit_problems(S) -> list[str]:
+    """transit.json (the course pages' timetable rows, QA 2026-10-15 F09 / operator decision 4) against the reviewed
+    timetable guide (site.json city.course_move.timetable_guide, '시내버스로 관광지 가기'), so the two copies cannot drift: in the guide's timetable number record
+    (_number_sources, the line of route counts) each route's part names every reference stop with its weekday range and
+    count and its Sat/Sun/holiday range; another source's value ('<route> <stop> 매시 40분') and the timetable's own wording of
+    it (매시 35분) are in the guide's text; the source is the guide's timetable file."""
+    tr = getattr(S, "transit", None) or {}
+    routes = tr.get("routes") or []
+    if not routes:
+        return []
+    gid = present.move_config()["timetable_guide"]
+    g = next((x for x in S.guides_all if gid and x.get("id") == gid), None)
+    if not g:
+        return [f"transit.json: 대조할 시간표 가이드 {gid or '(site.json city.course_move.timetable_guide 없음)'}이 없음"]
+    meta = tr.get("_meta") or {}
+    out = []
+    if meta.get("url") not in [s.get("url") for s in g.get("sources") or []]:
+        out.append(f"transit.json: 출처 {meta.get('url')}가 {gid} 출처에 없음")
+    record = next((x for x in g.get("_number_sources") or [] if "기준 정류장 횟수" in x), "")
+    segs = _tt_segments(record)
+    body = " ".join(str(b.get("text") or "") for b in g.get("body") or [])
+    for r in routes:
+        seg = segs.get(r["no"], "")
+        if not seg:
+            out.append(f"transit.json {r['no']}번: {gid} 시간표 기록에 이 노선이 없음")
+            continue
+        for t in r.get("times") or []:
+            where = f"transit.json {r['no']}번 {t['stop']}"
+            if t["stop"] not in seg:
+                out.append(f"{where}: {gid} 시간표 기록의 이 노선에 정류장 이름이 없음")
+            if f"{t['weekday_n']}({t['weekday']})" not in seg and not (t["weekday"] in seg and str(t["weekday_n"]) in seg):
+                out.append(f"{where}: 평일 {t['weekday']}({t['weekday_n']}회)가 {gid} 시간표 기록과 다름")
+            if t["weekend"] not in seg and t["weekend"] != t["weekday"]:
+                out.append(f"{where}: 토·일·공휴일 {t['weekend']}가 {gid} 시간표 기록에 없음")
+            if t["weekend_n"] != t["weekday_n"] and f"주말 {t['weekend_n']}" not in seg:
+                out.append(f"{where}: 토·일·공휴일 {t['weekend_n']}회가 {gid} 시간표 기록에 없음")
+            if t.get("pattern") and t["pattern"] not in body:
+                out.append(f"{where}: 출발 시각 '{t['pattern']}'가 {gid} 본문에 없음")
+            alt = t.get("alt") or {}
+            for v in (alt.get("value"), t.get("every") if alt else None):
+                if v and v not in body:
+                    out.append(f"{where}: '{v}'가 {gid} 본문에 없음")
+    return out
+
+
+def course_move_problems(S, c: dict, page: "PageScan") -> list[str]:
+    """A Korean course page's '차 없이 다니기' block (present.course_move) against the data: its bus rows are exactly
+    nearby.json's stops of each place, in order (name, metres, every route number); every 대중교통 길찾기 link joins
+    the two stops' stored coordinates (never a place ID) for a leg the course measures; the block says once what no
+    source gives ('확인 필요: 구간별 이동 시간'); no walking time or minutes of our own."""
+    out = []
+    cv = S.course_vms[c["slug"]]
+    if "move" not in page.blocks:
+        return ["코스 페이지에 '차 없이 다니기' 블록 없음"]
+    text = squash_ws(page.blocks["move"])
+    rows = [r for r in page.access_rows if r["kind"] == "bus"]
+    want = []
+    for s in cv["stops"]:
+        t = s["t"]
+        if t and t.get("_geo") and t["id"] not in [w[0] for w in want]:
+            for b in (S.nearby.get(t["id"]) or {}).get("bus") or []:
+                want.append((t["id"], squash_ws(b["stop_name"]), b))
+    got = [(r.get("for"), r["id"]) for r in rows]
+    by_place = lambda xs: {k: [n for p, n in xs if p == k] for k, _ in xs}   # each place's stops, in order
+    if by_place(got) != by_place([(p, n) for p, n, _ in want]):
+        out.append(f"차 없이 다니기 정류장 줄이 nearby.json과 다름: {got}")
+    stored = {(p, n): b for p, n, b in want}
+    for r in rows:
+        b = stored.get((r.get("for"), r["id"]))
+        miss = [x for x in [f"{b['meters']}m"] + list(b.get("routes") or []) if x not in r["text"]] if b else []
+        if miss:
+            out.append(f"차 없이 다니기 정류장 {r['id']}: {miss} 없음")
+    legs = {(a["n"], b["n"]): (a, b) for a, b in cv.get("pairs") or [] if a.get("next_m") is not None and a["next_m"] >= 10}
+    for r in (r for r in page.access_rows if r["kind"] == "leg"):
+        try:
+            key = tuple(int(x) for x in r["id"].split("-"))
+        except ValueError:
+            key = ()
+        if key not in legs:
+            out.append(f"차 없이 다니기 구간 {r['id']}: 코스가 재는 구간이 아님")
+            continue
+        a, b = legs[key]
+        hrefs = [h for h in r["hrefs"] if "map.kakao.com/link/by/traffic/" in h]
+        ok = [h for h in hrefs if re.search(rf",{re.escape(str(a['geo']['lat']))},{re.escape(str(a['geo']['lng']))}/", h)
+              and h.endswith(f",{b['geo']['lat']},{b['geo']['lng']}")]
+        if len(hrefs) != 1 or not ok:
+            out.append(f"차 없이 다니기 구간 {r['id']}: 대중교통 길찾기 링크가 두 경유지 좌표와 다름 {hrefs}")
+    if len([r for r in page.access_rows if r["kind"] == "leg"]) != len(legs):
+        out.append(f"차 없이 다니기 구간 수가 코스의 잰 구간 수({len(legs)})와 다름")
+    if "확인 필요: 구간별 이동 시간" not in text:
+        out.append("차 없이 다니기에 '확인 필요: 구간별 이동 시간' 없음")
+    if re.search(r"\d+\s*분\s*(?:걸|소요)|도보\s*\d|걸어서\s*\d", text):
+        out.append("차 없이 다니기에 우리가 쓴 이동 시간이 있음")
+    return out
+
+
 NEARBY_EARTH_R = 6371008.8  # nearby.json _meta.parking.method (haversine, whole metres)
 
 
@@ -690,6 +949,137 @@ def nearby_stale_problems(S) -> list[str]:
                 out.append(f"nearby.json {e['id']} {e['name']}: {x['lot_id']} 거리 {x['meters']}m가 지금 좌표로는 {m}m "
                            "— nearby.json을 다시 만들어야 함")
     return out
+
+
+def relation_page_problems(S, e: dict, page: PageScan, node: dict | None, ref) -> list[str]:
+    """pipeline/relations.py on one built place page (Korean or a version; module docstring). ref(x) -> (path, url) of
+    place x's page in this version, or None when it has none there. node: the page's own JSON-LD place node."""
+    out = []
+    links = lambda blk: set(page.block_hrefs.get(blk, []))  # noqa: E731
+    parent = e.get("_parent") if e.get("_rel") == "inside" else None
+    if parent is not None:
+        pr = ref(parent)
+        if "rel-inside" not in page.blocks:
+            out.append(f"속한 곳 줄이 없음({parent['name']})")
+        elif pr and pr[0] not in links("rel-inside"):
+            out.append(f"속한 곳 줄에 {parent['name']} 링크가 없음")
+    elif "rel-inside" in page.blocks:
+        out.append("속한 곳 관계가 없는데 속한 곳 줄이 있음")
+    same = e.get("_same") or []
+    if same and "rel-same_building" not in page.blocks:
+        out.append("같은 건물 줄이 없음(" + ", ".join(x["name"] for x in same) + ")")
+    for x in same:
+        r = ref(x)
+        if r and "rel-same_building" in page.blocks and r[0] not in links("rel-same_building"):
+            out.append(f"같은 건물 줄에 {x['name']} 링크가 없음")
+    if not same and "rel-same_building" in page.blocks:
+        out.append("같은 건물 관계가 없는데 같은 건물 줄이 있음")
+    parts = [(c, ref(c)) for c in e.get("_parts") or []]
+    want = {r[0] for _, r in parts if r}
+    got = links("parts")
+    for c, r in parts:
+        if r and r[0] not in got:
+            out.append(f"안에 있는 곳 목록에 {c['name']} 링크가 없음")
+    if got - want:
+        out.append(f"안에 있는 곳 목록에 이 장소의 부분이 아닌 링크: {sorted(got - want)[:3]}")
+    by_id = {x["id"]: x for x in S.entities}
+    fam = {r[0] for r in (ref(by_id[i]) for i in relations.family(e) if i in by_id) if r}
+    own = ref(e)
+    if own:
+        fam.add(own[0])
+    aliases = [(r, ref(x["_alias_of"])) for x in S.entities if x.get("_alias_of") is not None and (r := ref(x))]
+    for blk, label in (("near-rows", "주변 장소"), ("similar", "이름이 비슷한 곳")):
+        hs = links(blk)
+        if hs & fam:
+            out.append(f"{label} 줄에 이 장소의 가족(속한 곳·안에 있는 곳·같은 건물)이 있음: {sorted(hs & fam)[:3]}")
+        for a, pa in aliases:
+            if pa and a[0] in hs and pa[0] in hs:
+                out.append(f"{label} 줄에 같은 건물의 두 페이지가 함께 있음: {a[0]} · {pa[0]}")
+    if node is not None:
+        as_list = lambda v: v if isinstance(v, list) else ([v] if v else [])  # noqa: E731
+        ids = lambda v: {str(x.get("@id", "")) for x in as_list(v) if isinstance(x, dict)}  # noqa: E731
+        pr = ref(parent) if parent is not None else None
+        inside = {i for i in ids(node.get("containedInPlace")) if i.endswith("#place")}
+        if inside != ({pr[1] + "#place"} if pr else set()):
+            out.append(f"구조화 데이터 containedInPlace가 관계 데이터와 다름: {sorted(inside)}")
+        contains = ids(node.get("containsPlace"))
+        if contains != {r[1] + "#place" for _, r in parts if r}:
+            out.append(f"구조화 데이터 containsPlace가 관계 데이터와 다름: {sorted(contains)[:3]}")
+    return out
+def geo_problems(S) -> tuple[list[str], list[str]]:
+    """(errors, warnings) for the published places' points (geo). Errors: lat/lng not numbers, outside the region's
+    box (site.json city.geo_bounds, when the city has one), an official map's default point (city.geo_default_points —
+    what its pages show for a record without coordinates), no source, and a source other
+    than TourAPI without the page it was read from (url) or the day (checked_at). Warning: three or more places at one
+    point with different addresses (textutil.address_key) — a list page's point copied to several places."""
+    errors, warns = [], []
+    box = city.current().geo_bounds
+    at: dict[tuple, list] = {}
+    for e in S.entities:
+        geo = e.get("geo") or {}
+        if e.get("status") != "published" or (geo.get("lat") is None and geo.get("lng") is None):
+            continue
+        where = f"{e['id']} {e['name']}"
+        try:
+            lat, lng = float(geo["lat"]), float(geo["lng"])
+        except (KeyError, TypeError, ValueError):
+            errors.append(f"{where}: 좌표가 숫자가 아님 (lat {geo.get('lat')!r}, lng {geo.get('lng')!r})")
+            continue
+        if box and not (box[0] <= lat <= box[1] and box[2] <= lng <= box[3]):
+            errors.append(f"{where}: 좌표 ({lat}, {lng})가 {S.site.get('region')} 범위 {box} 밖")
+        if is_default_point(lat, lng):
+            errors.append(f"{where}: 좌표 ({lat}, {lng})가 공식 지도의 기본점(city.geo_default_points) — 장소 위치가 아님")
+        src = squash_ws(geo.get("source"))
+        if not src:
+            errors.append(f"{where}: 좌표 출처(geo.source) 없음")
+        elif src != "TourAPI":
+            if not re.match(r"https?://\S+$", str(geo.get("url") or "")):
+                errors.append(f"{where}: {src} 좌표에 읽은 페이지 주소(geo.url) 없음")
+            if not ISO_DATE.match(str(geo.get("checked_at") or "")):
+                errors.append(f"{where}: {src} 좌표에 확인일(geo.checked_at, YYYY-MM-DD) 없음")
+        at.setdefault((round(lat, 6), round(lng, 6)), []).append(
+            (e, address_key((e.get("facts") or {}).get("address"))))
+    for (lat, lng), xs in at.items():
+        if len(xs) >= 3 and len({k for _, k in xs}) > 1:
+            warns.append(f"좌표 ({lat}, {lng})에 주소가 다른 장소 {len(xs)}곳: "
+                         + ", ".join(f"{e['name']}" for e, _ in xs) + " — 목록 지점을 여러 곳에 붙였는지 확인")
+    return errors, warns
+
+
+def nearby_provenance_problems(S) -> tuple[list[str], list[str]]:
+    """Whose coordinates a nearby list was measured between (CLAUDE.md 3.2): nearby_source.providers, written by
+    tools/tourapi_bulk.compute_nearby, is exactly the providers of the place's point and every listed place's
+    (schema.nearby_geo_providers) and its provider line names them (errors). A list written before providers were
+    recorded (no 'providers') is checked by its line only, as one warning listing the places — recomputing the lists
+    (tools/official_coords.py --apply or tools/tourapi_bulk.py) writes both."""
+    errors, stale = [], []
+    by_slug = S.ent_all_by_slug
+    for e in S.entities:
+        src = e.get("nearby_source") or {}
+        if e.get("status") != "published" or not src or not e.get("_geo"):
+            continue
+        want = nearby_geo_providers(e, by_slug)
+        if "providers" in src:
+            if list(src.get("providers") or []) != want:
+                errors.append(f"{e['id']} {e['name']}: nearby_source.providers {src.get('providers')} ≠ 좌표 출처 {want} "
+                              "— 주변 목록을 다시 계산해야 함")
+            elif squash_ws(src.get("provider")) != nearby_provider(want):
+                errors.append(f"{e['id']} {e['name']}: nearby_source.provider '{src.get('provider')}'가 좌표 출처 "
+                              f"'{nearby_provider(want)}'와 다름")
+        elif any(p not in squash_ws(src.get("provider")) for p in want):
+            stale.append(e["name"])
+    warns = [f"nearby_source에 좌표 출처 목록(providers)이 없고 출처 줄이 좌표 출처를 다 적지 않은 장소 {len(stale)}곳: "
+             f"{', '.join(stale)} — tools/official_coords.py --apply(또는 tools/tourapi_bulk.py)로 주변 목록을 다시 "
+             "계산해야 함"] if stale else []
+    return errors, warns
+
+
+def place_geo_page_problems(e: dict, page: PageScan) -> list[str]:
+    """The Korean place page names whose point it maps: the map caption '위치: <provider>' (CLAUDE.md 3.2)."""
+    want = geo_provider(e.get("_geo")) if e.get("_geo") else ""
+    if want and f"위치: {want}" not in squash_ws(page.visible):
+        return [f"지도 캡션에 좌표 출처 '위치: {want}'가 없음"]
+    return []
 
 
 def access_problems(S, e: dict, page: PageScan) -> list[str]:
@@ -861,6 +1251,11 @@ LANG_KO = {"en": "영어", "ja": "일본어", "zh-hans": "중국어 간체", "zh
            "es": "스페인어", "ru": "러시아어"}
 
 
+# a foreign version's call link: '+82' then a number without its trunk 0 (hyphens allowed: '+82-2-1330'), or a number
+# that has no international form (textutil.phone_e164: nationwide 1577-4050 -> tel:15774050; 119, 112, 1330; 080, 060)
+TEL_ABROAD = re.compile(r"tel:(?:\+82-?[1-9][\d-]{3,14}|1\d{2,7}|0[68]0\d{7,8})")
+
+
 def validate_intl(S, site, data_dir: Path, out: Path, strict: bool, E, W, sitemap: set, llms: dict, stats: dict,
                   pages: dict) -> None:
     """One version besides Korean (/en/, /ja/ …, pipeline/en_site.py). Added checks — the generic ones (JSON-LD
@@ -882,6 +1277,11 @@ def validate_intl(S, site, data_dir: Path, out: Path, strict: bool, E, W, sitema
     - production: a place page is indexable exactly when its Korean page is; noindex ones are absent from sitemap.xml
       and llms.txt; every URL of the version in sitemap.xml is a page without noindex
     - <home>events/: every value two sources give differently, and the note, are on the page
+    - the closed day of the key facts (hero tiles, list cells, cards): wherever the Korean slot shows one, this
+      version's slot shows it with as many sources, from its own value, whole where the Korean is whole
+      (key_fact_problems); the places / food / stays lists row by row against the Korean lists (list_closed_problems)
+    - every tel: link dials from abroad: +82 and the number without its leading 0 (QA 2026-10-15 SRC-05a), except a
+      number with no international form — nationwide 15xx/16xx/18xx, the short emergency / 1330 numbers, 080, 060
     - the other versions (not English): the script and language of the rendered text (pipeline/locales.
       script_problems — Chinese script both ways, kana in Japanese prose, Cyrillic in Russian prose, the language of
       German / French / Spanish prose, no Han or kana in a Latin or Cyrillic version), and a warning for every label
@@ -904,6 +1304,9 @@ def validate_intl(S, site, data_dir: Path, out: Path, strict: bool, E, W, sitema
             E(rel, f'{name} 페이지인데 <html lang="{p.html_lang}">')
         if p.hangul:
             E(rel, f'lang="ko" 밖에 한글 {len(p.hangul)}곳 (예: {p.hangul[0]})')
+        for h in p.hrefs:
+            if h.startswith("tel:") and not TEL_ABROAD.fullmatch(h):
+                E(rel, f"국제 형식이 아닌 전화 링크(외국어 페이지): {h}")
         for r in p.records:
             kind, _, key = r.partition(":")
             store = stores.get(kind)
@@ -961,6 +1364,17 @@ def validate_intl(S, site, data_dir: Path, out: Path, strict: bool, E, W, sitema
             for a in fv.get("also") or []:
                 if not shown(a.get("value")):
                     E(where, f"facts.{k}: 추가 값이 보이지 않음({squash_ws(a.get('value'))[:20]})")
+        # the closed day of the first screen and the list cells (present.slot_value): wherever the Korean shows one,
+        # this version shows it too, from its own value at the place the Korean parse finds (en_site.closed_span), with
+        # every source the Korean shows, and the hours tile does not carry it
+        for problem in key_fact_problems(site, p):
+            E(where, problem)
+        # places that belong together (pipeline/relations.py): the relation line, parts, nearby rows and JSON-LD here
+        nodes, _ = _graph_nodes(page.jsonld_raw)
+        node = next((n for n in nodes if str(n.get("@id", "")) == f"{p['url']}#place"), None)
+        ref = lambda x: (lambda xp: (xp["path"], xp["url"]) if xp else None)(site.own(x))  # noqa: E731
+        for problem in relation_page_problems(S, e, page, node, ref):
+            E(where, problem)
         # official designations: the Korean page's, each in this language as a chip and in the 'Designations' row
         l_ds = site.designations(e)
         if len(l_ds) != len(designations(e)):
@@ -1019,8 +1433,80 @@ def validate_intl(S, site, data_dir: Path, out: Path, strict: bool, E, W, sitema
                 for h in x["rec"].get("highlights") or []:
                     if squash_ws(h)[:40] not in ev.body:
                         E(f"{site.home}events/", f"{x['rec'].get('series_name')}: 주요 프로그램이 화면에 없음({squash_ws(h)[:20]})")
+    for kind, lp in en_site.LIST_PAGES.items():
+        ko_list, l_list = _file_for(out, lp["ko"]), _file_for(out, f"{site.home}{lp['seg']}")
+        if ko_list.exists() and l_list.exists():
+            for problem in list_closed_problems(ko_list.read_text("utf-8"), l_list.read_text("utf-8")):
+                E(f"{site.home}{lp['seg']}", problem)
     if code != "en" and site.misses:
         W(site.home, f"strings.json에 없는 이름표 {len(site.misses)}개(화면에 키가 대신 나옴): {sorted(site.misses)[:5]}")
+
+
+def key_fact_problems(site, p: dict) -> list[str]:
+    """The closed-day slot of one place in a version besides Korean against the Korean slot (present.slot_value):
+    present when the Korean has one (never 'not listed', never left out), the same number of sources when the
+    Korean shows two, each value a part of this version's own value (no rewording), and a closed-day field the
+    Korean tile shows whole shown whole here too (never 'the first' of 'the first and third Sundays')."""
+    e, out = p["e"], []
+    ko = present.slot_value(e, "closed") if e.get("kind") != "stay" else None
+    if not ko:
+        return out
+    mine = site.slot(p, "closed")
+    if not mine or mine.get("skip") or not (mine.get("main") or mine.get("vals")):
+        return [f"쉬는 날: 한국어 첫 화면·목록에 있는데({ko['main']}) 이 판에서 찾지 못함 — "
+                f"{(mine or {}).get('why') or '값 없음'}"]
+    if ko.get("conflict") and len(mine.get("vals") or []) != len(ko["vals"]):
+        out.append(f"쉬는 날: 한국어는 출처 {len(ko['vals'])}곳의 값을 함께 보이는데 이 판은 {len(mine.get('vals') or [1])}곳")
+    f = (p["rec"].get("facts") or {}).get(ko["src_key"]) or {}
+    whole = " ".join(squash_ws(x) for x in [f.get("value")] + [a.get("value") for a in f.get("alternatives") or []])
+    for x in [mine] + list(mine.get("vals") or []):
+        t = squash_ws(x.get("main"))
+        if t and t.lower() not in whole.lower():
+            out.append(f"쉬는 날 '{t[:20]}'이 이 판의 값에 그대로 없음")
+    if ko["src_key"] == "restdate":
+        def norm(x) -> str:
+            return squash_ws(x).lower().rstrip(".。")
+        ko_raw = (e.get("facts") or {}).get("restdate")
+        ko_alts = [a["value"] for a in en_site.conflict_alternatives(e, "restdate")]
+        tr_alts = [a.get("value") for a in f.get("alternatives") or []]
+        ko_shown = [squash_ws(x.get("main")) for x in (ko.get("vals") or [])[1:]]
+        mine_alts = [norm(x.get("main")) for x in (mine.get("vals") or [])[1:]]
+        pairs = [(ko_raw, f.get("value"), [norm(mine.get("main"))])]
+        if len(ko_alts) == len(tr_alts):   # another source's value, where the Korean tile shows it
+            for k, t in zip(ko_alts, tr_alts):
+                kb = present.brief_closed(" ".join(present.clean_lines(k)))
+                if kb and kb["main"] in ko_shown:
+                    pairs.append((k, t, mine_alts))
+        for k, t, shown in pairs:
+            want = en_site.closed_whole(t, k) if en_site.ko_closed_whole(k) else ""
+            if want and want.lower() not in shown:
+                out.append(f"쉬는 날이 잘림: '{(shown or [''])[0][:24]}' (값: '{want[:40]}')")
+    return out
+
+
+LIST_ROW = re.compile(r'<li class="rec"[^>]*>(.*?)</li>', re.S)
+
+
+def list_closed_problems(ko_html: str, l_html: str) -> list[str]:
+    """A version's list page against the Korean one, row by row (data-place): a closed-day cell 'not listed'
+    (kf-na) only where the Korean cell is, and two sources (is-conflict) where the Korean shows two."""
+    def rows(h: str) -> dict[str, tuple[bool, bool]]:
+        out = {}
+        for m in LIST_ROW.finditer(h):
+            pid = re.search(r'data-place="([^"]+)"', m.group(1))
+            cell = re.search(r'<div class="c-closed( is-conflict)?">(.*?)</div>', m.group(1), re.S)
+            if pid and cell:
+                out[pid.group(1)] = (bool(cell.group(1)), 'class="kf-na"' in cell.group(2))
+        return out
+    ko, mine, out = rows(ko_html), rows(l_html), []
+    for pid, (conflict, na) in mine.items():
+        if pid not in ko:
+            continue
+        if na and not ko[pid][1]:
+            out.append(f"{pid}: 쉬는 날이 한국어 목록에는 있는데 '기재 없음'으로 나옴")
+        if ko[pid][0] and not conflict:
+            out.append(f"{pid}: 한국어 목록은 쉬는 날을 출처별로 함께 보이는데 이 판은 한 값만")
+    return out
 
 
 def validate_en(S, data_dir: Path, out: Path, strict: bool, E, W, sitemap: set, llms: dict, stats: dict,
@@ -1048,8 +1534,31 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
 
     for problem in nearby_data_problems(S):
         E("nearby.json", problem)
+    for where, problem in relations.problems(S.entities_all, S.entities):   # part_of (pipeline/relations.py)
+        E(where, problem)
+    for where, problem in relations.fact_differences(S.entities):
+        W(where, problem)
     for problem in nearby_stale_problems(S):
         W("nearby.json", problem)
+    for problems, report in zip(geo_problems(S), (E, W)):   # every published point: box, source, url/date
+        for problem in problems:
+            report("geo", problem)
+    for problems, report in zip(nearby_provenance_problems(S), (E, W)):
+        for problem in problems:
+            report("nearby_source", problem)
+    for problem in transit_problems(S):
+        E("transit.json", problem)
+    for c in S.courses:   # the '차 없이 다니기' block of each course page (QA 2026-10-15 F09)
+        f = _file_for(out, c["_path"])
+        if f.exists():
+            scan = scan_file(f)
+            for problem in course_move_problems(S, c, scan):
+                E(c["_path"], problem)
+            # the sources name whose coordinates the measured legs join (present.course_vm geo_src)
+            cv = S.course_vms[c["slug"]]
+            want = f"{cv['measured']}구간을 {cv['geo_src']} 좌표 사이 직선으로 잼"
+            if cv["legs_possible"] and cv["geo_src"] and want not in squash_ws(scan.visible):
+                E(c["_path"], f"거리 계산 출처에 좌표 출처가 없음: '{want}'")
     for problem in art.data_problems(data_dir):
         E("art.json", problem)
     for problem in highlight_problems(data_dir):
@@ -1079,6 +1588,11 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
     # the homes' starter questions (pipeline/ask.py): each names one guide this build publishes, or a list page
     for problem in ask.data_problems(data_dir, {g["id"] for g in S.guides}):
         E("ask.json", problem)
+    for where, problem in notice_problems(S, out):
+        E(where, problem)
+    # combined tickets (pipeline/tickets.py): published places, and every price and rule written in its source's table
+    for problem in tickets.problems(S.tickets, {p["id"]: p for p in S.entities_all}, {e["id"] for e in S.entities}):
+        E("tickets.json", problem)
     style = out / "assets" / "style.css"
     if style.exists() and art.URL_PREFIX in style.read_text("utf-8"):
         E("style.css", "CSS 배경으로 AI 그림을 씀 — templates/_art.html.j2 figure()의 <img>로만(표기·alt 규칙)")
@@ -1122,7 +1636,13 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
                 E(where, problem)
         for problem in designation_page_problems(e, p):
             E(where, problem)
+        for problem in seat_only_parking_problems(e, p):
+            E(where, problem)
         for problem in access_problems(S, e, p):
+            E(where, problem)
+        for problem in relation_page_problems(S, e, p, main[0] if main else None, lambda x: (x["_path"], x["_url"])):
+            E(where, problem)
+        for problem in place_geo_page_problems(e, p):
             E(where, problem)
         if squash_ws(p.h1) != squash_ws(e["name"]):
             E(where, f"h1이 장소명과 다름: {p.h1!r}")
@@ -1240,6 +1760,10 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
             if squash_ws(h)[:20] not in body:
                 E(sr["name"], f"주요 프로그램이 화면에 없음: {squash_ws(h)[:20]}")
 
+    # 예약하기 (pipeline/booking.py): booking.json itself, then every page's buttons in the loop below
+    for problem in booking.data_problems(S):
+        E("booking.json", problem)
+    book_expect, book_allowed = booking_expectations(S, out), booking.allowed_urls(S)
     # Every HTML file: internal links, placeholders, noindex consistency
     html_files = sorted(out.rglob("*.html"))
     lang_pages: dict[str, tuple[str, list]] = {}   # rel -> (canonical, hreflang links), for the hreflang checks
@@ -1262,6 +1786,15 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
                               p.meta.get("og:title", "")])
         for hit in dict.fromkeys(visible_check_dates(seen_text)):
             E(rel, f"확인·갱신 날짜가 화면에 보임(운영자 결정 2026-10-09: 데이터·구조화 데이터에만): {hit}")
+        for problem in dead_link_problems(" ".join([seen_text, *p.jsonld_raw]), p.hrefs, S.dead_links):
+            E(rel, problem)
+        for problem in booking_problems(S, p, book_expect.get(rel), LC.code_of_path(rel), book_allowed):
+            E(rel, problem)
+        # Korean pages (owner 2026-10-14, Naver Search Advisor): the description and its og / twitter copies ≤ DESC_MAX
+        if p.html_lang.startswith("ko"):
+            for key in ("description", "og:description", "twitter:description"):
+                if len(p.meta.get(key, "")) > DESC_MAX:
+                    W(rel, f"{key} {len(p.meta[key])}자 — 한국어 설명문은 {DESC_MAX}자 이내(네이버 서치어드바이저 권장)")
         for href in p.hrefs:
             parts = urlsplit(href)
             if parts.scheme or href.startswith("//") or not parts.path.startswith("/"):
@@ -1325,6 +1858,14 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
     for name, text in llms.items():
         for hit in dict.fromkeys(visible_check_dates(text)):
             E(name, f"확인·갱신 날짜가 보임(운영자 결정 2026-10-09: 데이터·구조화 데이터에만): {hit}")
+    # the AI-facing files: llms.txt, llms-full.txt and the assistant's knowledge (chat/catalog.txt, docs.json …)
+    ai_files = dict(llms)
+    if (out / "chat").is_dir():
+        ai_files.update({"/" + f.relative_to(out).as_posix(): f.read_text("utf-8")
+                         for f in sorted((out / "chat").iterdir()) if f.is_file() and f.suffix in (".txt", ".json")})
+    for name, text in ai_files.items():
+        for problem in dead_link_problems(text, [], S.dead_links):
+            E(name, problem)
 
     if strict:
         su = S.site_url

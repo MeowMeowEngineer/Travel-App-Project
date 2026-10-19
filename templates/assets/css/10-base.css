@@ -45,6 +45,10 @@ a:hover .arr, a:focus-visible .arr { transform: translateX(3px); }
 .flag { display: inline-block; font: 700 14px/1.4 var(--font); color: var(--red); }
 .dash { color: var(--ink-3); }
 .tel, .nw { white-space: nowrap; }
+/* a range with its season or days and its last entry ('11~2월 09:00–17:00(입장마감 16:30)', the nwt filter): one unit
+   a line breaks before, not inside — unless it is wider than the line itself: then it wraps inside, before the
+   bracket (.kfl, whole) rather than in it (never overflows) */
+.nwu, .kfl { display: inline-block; }
 .fn { font: 700 10.5px/0 var(--font); color: var(--ink-3); margin-left: 2px; vertical-align: .55em; }
 .chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 980px; background: var(--blue); color: #fff; font: 700 12px/1 var(--font); letter-spacing: 0; white-space: nowrap; flex: none; }
 .chip-inv { background: var(--blue); color: #fff; }
@@ -74,6 +78,8 @@ html:not(.js) .v-off { display: none !important; }
 .lede .fn { font-size: 11px; }
 .dek { font-size: 17px; line-height: 1.6; color: var(--ink-2); margin-top: 10px; max-width: 40em; }
 .dek .tel, .gd-sec .tel, .gi-reason .tel, .details .tel { color: var(--link); text-decoration: none; }
+/* an official site the text names (present.OFFICIAL_WEB): underlined so it reads as a link in running text */
+a.xl { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; overflow-wrap: anywhere; }
 .city { font-size: 14px; line-height: 1.5; color: var(--ink-3); margin-top: 10px; }
 .alt-n { color: var(--ink-3); }
 .prose p { font-size: 17px; line-height: 1.7; max-width: 38em; }

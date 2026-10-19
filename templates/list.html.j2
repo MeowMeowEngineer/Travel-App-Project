@@ -5,11 +5,18 @@
     (KF_LIST_COLS — the same slots as the place page's spec tiles, '확인 필요' in place, both values of a conflict).
     The header band: the list's AI art (list.head.<list>) or, on a theme page, the theme's (theme.head.<slug>).
     A short band: the title with its count (the query words of LISTS[kind].h1 when the pipeline sets them) and, on
-    desktop, the count per 권역 as links. The filter bar is laid out from the first paint with JS (css 70-p1) and
-    absent without it (the `hidden` attribute; site.js removes it); without JS the grouped list is the answer.
+    desktop, the count per 권역 as links to the groups (site.js keeps each to its group's shown rows: faint and no link
+    at 0). The filter bar is laid out from the first paint with JS (css 70-p1) and
+    absent without it (the `hidden` attribute; site.js removes it); without JS the grouped list is the answer. The bar
+    is _filters.html.j2's, shared with the other versions (L.filters = present.filter_vm), and so is the zero-result
+    panel under it (fb.zero: the sentence and the buttons that bring rows back — outside the ledger, so the phone's
+    지도 view shows it too).
     Map: beside the list on desktop (folded when fewer than 30% of the records have coordinates, CLAUDE.md 7),
-    behind the 목록 | 지도 switch on phones. -#}
+    behind the 목록 | 지도 switch below 1024px; it shows the places the filter keeps, and its counts ('지도 n', the
+    caption's [data-geo-cap] and the places not on it, [data-geo-off] '지도에 없는 n곳은 목록에서') follow the filter
+    (site.js, map.js). -#}
 {% import "_p1.html.j2" as p1 %}
+{% import "_filters.html.j2" as fb %}
 {% set track = {'stay': 'stay_click', 'food': 'food_click'}.get(L.kind, 'nearby_click') %}
 {% set words = L.title if L.theme else (cfg.h1 if cfg is defined and cfg.h1 else L.title) %}
 {% set label = (site.region ~ ' ' ~ L.title) if not L.theme else L.title %}
@@ -34,36 +41,8 @@
 {% if L.count %}
 <div class="wrap list-grid{% if not L.map_open %} map-folded{% endif %}">
   <div class="list-main">
-    <div class="filters" data-filters hidden>
-      <div class="f-top">
-        {% if L.types|length > 1 %}
-        <div class="f-row f-types" role="group" aria-label="유형">
-          <button type="button" data-f="type" data-v="" aria-pressed="true">전체 <span class="tn">{{ L.count }}</span></button>
-          {% for t, n in L.types %}<button type="button" data-f="type" data-v="{{ t }}" aria-pressed="false">{{ t }} <span class="tn">{{ n }}</span></button>{% endfor %}
-        </div>
-        {% endif %}
-        <div class="f-tools">
-          <p class="f-result" aria-live="polite"><span data-result>{{ L.title }} {{ L.count }}곳</span></p>
-          <button type="button" class="f-more" aria-expanded="false" aria-controls="f-panel" data-f-more>필터<span class="f-badge tn" data-f-badge hidden></span></button>
-          {% if L.n_geo %}<div class="seg" role="group" aria-label="보기"><button type="button" data-view="list" aria-pressed="true">목록</button><button type="button" data-view="map" aria-pressed="false">지도 <span class="tn">{{ L.n_geo }}</span></button></div>{% endif %}
-        </div>
-      </div>
-      <div class="f-panel" id="f-panel" data-f-panel hidden>
-        {% if L.regions|length > 1 %}
-        <div class="f-row" role="group" aria-label="권역">
-          <button type="button" data-f="region" data-v="" aria-pressed="true">모든 권역</button>
-          {% for r, n in L.regions %}<button type="button" data-f="region" data-v="{{ r }}" aria-pressed="false">{{ r }} <span class="tn">{{ n }}</span></button>{% endfor %}
-        </div>
-        {% endif %}
-        {% if L.themes %}
-        <div class="f-row" role="group" aria-label="테마">
-          <button type="button" data-f="theme" data-v="" aria-pressed="true">모든 테마</button>
-          {% for s, name, n in L.themes %}<button type="button" data-f="theme" data-v="{{ s }}" aria-pressed="false">{{ name }} <span class="tn">{{ n }}</span></button>{% endfor %}
-        </div>
-        {% endif %}
-        <label class="f-check"><input type="checkbox" data-f="check" value="{{ L.check[0] }}"> {{ L.check[1] }} <span class="tn">{{ L.check[2] }}</span></label>
-      </div>
-    </div>
+    {{ fb.bar(L.filters) }}
+    {{ fb.zero(L.filters) }}
 
     <div class="ledger" data-ledger>
       <div class="lg-head" aria-hidden="true"><span>{{ L.title }}</span>{% for k, lab in L.slot_cols %}<span>{{ lab }}</span>{% endfor %}</div>
@@ -73,7 +52,6 @@
         <ol class="recs">{% for it in g.recs %}{{ p1.rec(it, L.kind) }}{% endfor %}</ol>
       </section>
       {% endfor %}
-      <p class="empty" data-empty hidden>조건에 맞는 곳이 없습니다. 필터를 바꿔 보세요.</p>
     </div>
     {% if L.n_photo %}{% set lics = [] %}{% for g in L.groups %}{% for it in g.recs %}{% if it.photo and it.photo.type not in lics %}{% set _ = lics.append(it.photo.type) %}{% endif %}{% endfor %}{% endfor %}
     <p class="note list-foot">사진 출처: 한국관광공사 · 공공누리 제{{ lics|sort|join('·') }}유형</p>{% endif %}
@@ -81,11 +59,12 @@
   </div>
   {% if L.n_geo %}
   <aside class="list-map" id="list-map" aria-label="{{ L.title }} 지도">
+    {% set off = fb.off_map(L.filters.n_off, L.filters.w) %}
     {% if L.map_open %}
-    {{ p1.placemap({'list': L.points}, label ~ ' 지도', 'list-mapfig', '좌표가 있는 ' ~ L.n_geo ~ '곳만 표시') }}
+    {{ p1.placemap({'list': L.points}, label ~ ' 지도', 'list-mapfig', '좌표가 있는 ' ~ L.n_geo ~ '곳만 표시', off) }}
     {% else %}
-    <details class="map-fold"><summary>지도 보기 <span class="muted">좌표가 있는 {{ L.n_geo }}곳만 표시</span></summary>
-    {{ p1.placemap({'list': L.points}, label ~ ' 지도', 'list-mapfig', '좌표가 있는 ' ~ L.n_geo ~ '곳만 표시') }}
+    <details class="map-fold"><summary>지도 보기 <span class="muted"><span data-geo-cap>좌표가 있는 {{ L.n_geo }}곳만 표시</span>{{ off }}</span></summary>
+    {{ p1.placemap({'list': L.points}, label ~ ' 지도', 'list-mapfig', '좌표가 있는 ' ~ L.n_geo ~ '곳만 표시', off) }}
     </details>
     {% endif %}
   </aside>

@@ -52,7 +52,7 @@
 {% if hints %}<p class="abar-q"><span class="vh">예: </span>{% for w in hints %}<a href="/search/?q={{ w|urlencode }}">{{ w }}</a>{% endfor %}</p>{% endif %}</div>{% endif %}
 {% if ev %}<a class="abar-ev" href="{{ ev.path or ev.source_url }}"{% if not ev.path %} rel="noopener" data-track="official_click"{% endif %}>
 <span class="chip">{{ ev.chip }}</span>
-{% if ev.dp and ev.dp.a %}<span class="abar-ev-d tn">{{ ev.dp.a.md }}<span class="wdp">({{ ev.dp.a.wd }})</span>{% if ev.dp.b %}–{{ ev.dp.b.md }}<span class="wdp">({{ ev.dp.b.wd }})</span>{% endif %}</span>{% endif %}
+{% if ev.dp and ev.dp.a %}<span class="abar-ev-d tn">{{ ev.dp.a.md }}<span class="wdp">({{ ev.dp.a.wd }})</span>{% if ev.dp.b %}–{{ ev.dp.b.md }}<span class="wdp">({{ ev.dp.b.wd }})</span>{% elif ev.dp.end_month %}–{{ ev.dp.end_month|int }}월{% endif %}</span>{% endif %}
 <span class="abar-ev-t">{{ ev.title }}</span>
 {% if ev.fee %}<span class="abar-ev-m">{{ ev.fee }}</span>{% endif %}
 <span class="arr" aria-hidden="true">›</span>

@@ -5,9 +5,13 @@
     its attribution); the places it mentions as links when places_on. With a.image, the outlet's own link-preview picture (og:image) sits
     beside the text, loaded lazily from the outlet's address with no referrer; it repeats the headline link, so it is
     hidden from screen readers and skipped by Tab.
-    post(a, places_on): a card with the service · account · date and our note; the service's official embed loads into
-    [data-embed-slot] when the card nears the screen or '게시물 불러오기' is pressed (assets/site.js [data-embed]); the
-    link always works. -#}
+    post(a, places_on): a card (one tile of the /abroad/ SNS wall, owner 2026-10-14 '바둑판식'; a row on the place
+    page) with the service's mark · account · date, our note, the embed slot and a row of small links — the original
+    on the service, then the places it shows. The slot (JS only) holds a placeholder of the embed's usual size (the
+    service's mark, '… 게시물 불러오는 중', or with Save-Data the '게시물 불러오기' button); the service's official embed
+    loads into it when the card nears the screen and replaces the placeholder once it has its height
+    (assets/site.js [data-embed]). Without JS, or when the service is blocked, the card is the note and the links:
+    the post's address is never shown as text. -#}
 {% macro when(d) -%}
 {% if d and d|length == 7 %}{{ d[:4] }}년 {{ d[5:]|int }}월{% elif d %}{{ d|ko_date }}{% endif %}
 {%- endmacro %}
@@ -26,12 +30,21 @@
 </li>
 {%- endmacro %}
 
+{#- svc(platform, cls): the service's mark, drawn here (nothing loads from the service for it): X's logo, Instagram's
+    glyph, Threads' '@', Facebook's 'f'. Decorative — the service's name is always written beside it. -#}
+{% macro svc(platform, cls='ab-svc') -%}
+<span class="{{ cls }} svc-{{ platform }}" aria-hidden="true">
+{%- if platform == 'x' %}<svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg>
+{%- elif platform == 'instagram' %}<svg viewBox="0 0 24 24" focusable="false" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4.1"/><circle cx="17.3" cy="6.7" r="1.15" fill="currentColor" stroke="none"/></svg>
+{%- elif platform == 'threads' %}<b>@</b>{% else %}<b>f</b>{% endif -%}
+</span>
+{%- endmacro %}
+
 {% macro post(a, places_on=true) -%}
-<li class="ab-item ab-post" data-embed="{{ a.platform }}" data-url="{{ a.url }}">
-  <p class="ab-meta"><span class="ab-src">{{ a.platform_label }}</span>{% if a.author %} · <span>{{ a.author }}</span>{% endif %}{% if a.date %} · <time datetime="{{ a.date }}" class="tn">{{ when(a.date) }}</time>{% endif %}</p>
+<li class="ab-item ab-post" id="{{ a.id }}" data-embed="{{ a.platform }}" data-url="{{ a.url }}">
+  <p class="ab-meta ab-head">{{ svc(a.platform) }}<span class="ab-who"><span class="ab-src">{{ a.platform_label }}</span>{% if a.author %}<span class="ab-sep" aria-hidden="true"> · </span><span class="ab-author">{{ a.author }}</span>{% endif %}{% if a.date %}<span class="ab-sep" aria-hidden="true"> · </span><time datetime="{{ a.date }}" class="tn">{{ when(a.date) }}</time>{% endif %}</span></p>
   <p class="ab-note">{{ a.note }}</p>
-  <div class="ab-embed" data-embed-slot></div>
-  <p class="ab-act"><button type="button" class="ab-load" data-embed-load data-title="{{ a.platform_label }} 게시물">게시물 불러오기</button><a href="{{ a.url }}" rel="noopener" data-track="abroad_click">{{ a.platform_label }}에서 보기<span class="arr" aria-hidden="true">↗</span></a></p>
-  {% if places_on and a._places %}<p class="ab-places">관련 {% for x in a._places %}<a href="{{ x._path }}">{{ x.name }}</a>{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}</p>{% endif %}
+  <div class="ab-embed" data-embed-slot data-js-only><div class="ab-ph" data-embed-ph>{{ svc(a.platform, 'ab-ph-mark') }}<span class="ab-ph-msg">{{ a.platform_label }} 게시물 불러오는 중</span><button type="button" class="ab-load" data-embed-load data-title="{{ a.platform_label }} 게시물">게시물 불러오기</button></div></div>
+  <p class="ab-chips"><a class="ab-go" href="{{ a.url }}" rel="noopener" data-track="abroad_click">{{ a.platform_label }}에서 보기<span class="arr" aria-hidden="true">↗</span></a>{% if places_on and a._places %}<span class="ab-rel">관련</span>{% for x in a._places %}<a class="ab-chip" href="{{ x._path }}">{{ x.name }}</a>{% endfor %}{% endif %}</p>
 </li>
 {%- endmacro %}

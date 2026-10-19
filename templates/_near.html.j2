@@ -1,0 +1,123 @@
+{#- _near.html.j2 — the place page's '주변·함께 가기' chapter (owner 2026-10-14: 시각화·모션), shared by the Korean and every
+    other version ({% import "_near.html.j2" as nb %}). Words come in as w (locales.NEAR_WORDS[code]); headings are the
+    caller's. Every value is from the view model (present.place_vm / en_site.Site.place_vm): distances are straight
+    lines between stored coordinates and say so (w.leg), never walking times.
+
+    segs(segs, place, w, title, nm)   the official courses through the place as segments (present.route_segs):
+        previous stop ── this place ── next stop, with the straight-line legs, and under it one chip per course that
+        shares exactly these neighbours (name, n/N, its position in the course drawn as a dot on a short track — order
+        only). Segments after the third fold into <details>. The line draws itself out of this place's dot once
+        below the fold (motion.js [data-draw], --p 0 → 1; without JS or with reduced motion --p is unset = drawn).
+        Where the course starts or ends at this place, the other slot says so (코스 시작 / 코스 끝) on a dashed stub.
+    rows(items, place, w)            nearby / twin / related places: the place's own small TourAPI photo (KOGL-1 may
+        fill its square; KOGL-3 sits whole in a padded frame, never cropped or enlarged) or its kind icon (the site's
+        decorative kind picture, alt="", as ui.type_icon on every list), the name (its link covers the row), type ·
+        closed day (red, its square kept with the first word) or check-in ('<label> 출처마다 다름' when two sources
+        differ), the straight-line distance and a bar on the page's one scale (f, present.near_scale; the end value is
+        printed under the rows; no bar under 10 m, '같은 좌표').
+    cards(cards, place, w, track, more)   guide and event cards (name, full title or the date range — with its year
+        when not this year — and 진행·예정 / 지난 회차); after the fourth, <details>. The heading carries the picture.
+    Markup rules: ol.seg-line holds only li; dots, wires, bars, visible tags and n/N are aria-hidden, screen readers
+    hear 이전/다음 경유지, 이곳 before this place's name, 이곳까지 / 다음 경유지까지 + the leg, the n/N position and 직선 on
+    every distance; this place's stop is also aria-current="location". No data-art here (pipeline/art.py). -#}
+{% import "_ui.html.j2" as ui %}
+
+{#- a leg's label: '직선 910m' (w.leg) or, under 10 m, the 'same coordinates' words alone; '' unmeasured (the line still
+    draws, unlabelled). to: what a screen reader hears first (이곳까지 / 다음 경유지까지). -#}
+{% macro legd(x, w, to) -%}
+{%- if x.d %}<span class="seg-d tn"><span class="vh">{{ to }} </span>{{ x.d if x.same else w.leg.format(d=x.d) }}</span>{% endif -%}
+{%- endmacro %}
+
+{#- the previous or next stop of a segment: x = {name, path, d, same} | none (none: the course starts / ends at this
+    place — end_word on a dashed stub). The previous stop carries the leg to this place and its wire. -#}
+{% macro stop(x, cls, w, tag, end_word) -%}
+<li class="seg-n {{ cls }}{% if not x %} end{% endif %}"><i class="seg-dot" aria-hidden="true"></i>
+{%- if x %}<span class="vh">{{ tag }} </span>{% if x.path %}<a class="seg-nm" href="{{ x.path }}">{{ x.name }}</a>{% else %}<span class="seg-nm">{{ x.name }}</span>{% endif %} <span class="seg-tag" aria-hidden="true">{{ tag }}</span>
+{%- else %}<span class="seg-nm seg-end">{{ end_word }}</span>{% endif %}
+{%- if cls == 'prev' %}{% if x %}{{ legd(x, w, w.to_here) }}<i class="seg-wire" aria-hidden="true"></i>{% else %}<i class="seg-wire is-open" aria-hidden="true"></i>{% endif %}{% endif %}</li>
+{%- endmacro %}
+
+{% macro seg(g, place, w, nm) -%}
+<li class="nb-seg">
+<ol class="seg-line" aria-label="{{ w.order }}" data-draw>
+{{- stop(g.prev, 'prev', w, w.prev, w.branch if g.prev_branch else w.first) -}}
+<li class="seg-n here" aria-current="location"><i class="seg-dot" aria-hidden="true"></i><span class="vh">{{ w.here }} </span><span class="seg-nm">{{ nm }}</span> <span class="seg-tag" aria-hidden="true">{{ w.here }}</span>
+{%- if g.next %}{{ legd(g.next, w, w.to_next) }}<i class="seg-wire" aria-hidden="true"></i>{% else %}<i class="seg-wire is-open" aria-hidden="true"></i>{% endif %}</li>
+{{- stop(g.next, 'next', w, w.next, w.branch if g.next_branch else w.last) -}}
+</ol>
+<ul class="seg-courses">{% for c in g.courses %}<li><a class="crs" href="{{ c.path }}#s{{ c.n }}" data-track="course_click" data-place="{{ place }}"><span class="crs-nm">{{ c.display }}</span><span class="vh"> {{ w.pos.format(n=c.n, N=c.N) }}</span><span class="crs-at" aria-hidden="true"><span class="crs-n tn">{{ c.n }}/{{ c.N }}</span><i class="crs-pos" style="--p:{{ c.p }}"></i></span></a></li>{% endfor %}</ul>
+</li>
+{%- endmacro %}
+
+{% macro segs(segs, place, w, title, nm) -%}
+<h3 class="h-sub nb-h">{{ ui.kpic('icon-course', '', 40) }}<span>{{ title }}</span></h3>
+<ol class="nb-segs">{% for g in segs[:3] %}{{ seg(g, place, w, nm) }}{% endfor %}</ol>
+{% if segs|length > 3 %}<details class="nb-more"><summary>{{ w.more_segs.format(n=segs|length - 3) }}</summary><ol class="nb-segs">{% for g in segs[3:] %}{{ seg(g, place, w, nm) }}{% endfor %}</ol></details>{% endif %}
+<p class="note nb-key">{{ w.key }}</p>
+{%- endmacro %}
+
+{#- one slot of a row's meta line: the value, or '<label> 출처마다 다름' (present.one_value) -#}
+{% macro val(v, w, closed=false) -%}
+{%- if v.varies %}{{ w.varies.format(label=v.label) }}
+{%- elif closed and v.closed %}<span class="closed nr-cl">{{ v.main|clhead }}</span>
+{%- elif closed %}{{ v.main }}
+{%- else %}{{ v.label }} <span class="tn">{{ v.main }}</span>{% endif -%}
+{%- endmacro %}
+
+{#- the meta line of a row: type (· 지도 검색 for a place without a page) · closed day (red with its square) · check-in -#}
+{% macro meta(n, w) -%}
+{%- if n.type or n.closed or n.fact or not n.internal %}<p class="nr-meta">{{ n.type }}{% if not n.internal %}{% if n.type %} · {% endif %}{{ w.ext }}{% endif %}
+{%- if n.closed %}{% if n.type or not n.internal %} · {% endif %}{{ val(n.closed, w, true) }}{% endif %}
+{%- if n.fact %}{% if n.type or n.closed or not n.internal %} · {% endif %}{{ val(n.fact, w) }}{% endif %}</p>{% endif -%}
+{%- endmacro %}
+
+{% macro rows(items, place, w) -%}
+{%- set lp = w.leg.split('{d}') -%}
+<ol class="nr-list">{% for n in items %}<li class="nr">
+{%- if n.photo %}<span class="nr-th t{{ n.photo.type }}"><img src="{{ n.photo.url }}" width="{{ n.photo.w }}" height="{{ n.photo.h }}" alt="" loading="lazy" decoding="async" data-kogl="{{ n.photo.type }}"></span>
+{%- else %}<span class="nr-th nr-ico">{{ ui.kpic(ui.KIND_PIC.get(n.icon, 'kind-attraction'), n.icon, 40) }}</span>{% endif -%}
+<a class="nr-nm" href="{{ n.href }}"{% if not n.internal %} rel="noopener"{% endif %}{% if n.track %} data-track="{{ n.track }}" data-place="{{ place }}"{% endif %}>{{ n.name }}</a>
+{{- meta(n, w) }}
+{%- if n.d %}{% set same = n.m is not none and n.m < 10 %}<span class="nr-d tn{% if same %} is-same{% endif %}">{% if lp[0] and not same %}<span class="vh">{{ lp[0] }}</span>{% endif %}{{ n.d }}{% if lp|length > 1 and lp[1] and not same %}<span class="vh">{{ lp[1] }}</span>{% endif %}</span>
+{%- if n.f %}<span class="nr-bar" aria-hidden="true" data-draw><i style="--f:{{ n.f }}"></i></span>{% endif %}{% endif -%}
+</li>{% endfor %}</ol>
+{%- endmacro %}
+
+{#- groups(groups, place, w, map): the nearby groups, one under the other (each full width; from 768px its rows run
+    in two columns, so a short group never leaves a hole beside a long one) — [(title, items, picture id)]; map: the
+    place has its map above (#h-map), so each heading links there -#}
+{% macro groups(gs, place, w, map=false) -%}
+<div class="nb-cols">{% for title, xs, pic in gs if xs %}
+<div class="nb-grp"><div class="nb-gh"><h3 class="h-sub nb-h">{{ ui.kpic(pic, '', 40) }}<span>{{ title }}</span></h3>{% if map %}<a class="nb-map" href="#h-map">{{ w.see_map }}</a>{% endif %}</div>
+{{ rows(xs, place, w) }}</div>
+{% endfor %}</div>
+{%- endmacro %}
+
+{% macro card(c, place, w, track) -%}
+<li class="xc"><a class="xc-nm" href="{{ c.path }}"{% if track %} data-track="{{ track }}" data-place="{{ place }}"{% endif %}>{{ c.label or c.name or c.title }}</a>
+{%- if c.label and c.title %}<p class="xc-sub">{{ c.title|glue_dots }}</p>
+{%- elif c.past is defined %}<p class="xc-sub">{% if c.range %}<span class="tn">{{ c.range }}</span> {% endif %}<span class="xc-tag{% if c.past %} is-past{% endif %}">{{ w.ev_past if c.past else w.ev_on }}</span></p>{% endif %}</li>
+{%- endmacro %}
+
+{% macro cards(cs, place, w, track='', more='') -%}
+<ul class="xc-list">{% for c in cs[:4] %}{{ card(c, place, w, track) }}{% endfor %}</ul>
+{%- if cs|length > 4 %}
+<details class="nb-more"><summary>{{ more.format(n=cs|length - 4) }}</summary><ul class="xc-list">{% for c in cs[4:] %}{{ card(c, place, w, track) }}{% endfor %}</ul></details>{% endif %}
+{%- endmacro %}
+
+{#- relation(lines, sep): the line(s) under a place's name that name the place it is inside or the other page for the
+    same building (pipeline/relations.py; present.relation_vm / en_site.Site.relation_vm): the version's words
+    (NEAR_WORDS part_of / same_building, '{name}' replaced by the place) with each place's name as a link where it has
+    a page in this version, else its Korean name as plain text (lang="ko"). data-block rel-<rel>: pipeline.validate
+    reads the links. -#}
+{% macro relation(lines, sep) -%}
+{%- for r in lines %}{% set lp = r.word.split('{name}') %}<p class="alt-n pl-alt pl-rel" data-block="rel-{{ r.rel }}">{{ lp[0] }}
+{%- for x in r.places %}{% if not loop.first %}{{ sep }}{% endif %}{% if x.path %}<a href="{{ x.path }}">{{ x.name }}</a>{% elif x.ko %}<span lang="ko">{{ x.name }}</span>{% else %}{{ x.name }}{% endif %}{% endfor %}
+{{- lp[1:]|join('{name}') }}</p>{% endfor -%}
+{%- endmacro %}
+
+{#- parts(items, title, place, w): the places inside this one (relations 'inside') as nearby rows, with the straight
+    line between the two coordinates; data-block="parts" (pipeline.validate: every built part is linked here) -#}
+{% macro parts(items, title, place, w) -%}
+<div class="nb-part" data-block="parts"><h3 class="h-sub">{{ title }}</h3>{{ rows(items, place, w) }}</div>
+{%- endmacro %}

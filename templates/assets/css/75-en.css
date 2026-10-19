@@ -43,6 +43,8 @@ html[lang="en"] .kf-alt .kf-sub { display: block; margin: 2px 0 0; }
 .en-ev-notes, .en-ev-hl { margin-top: 10px; padding-left: 1.15em; list-style: disc; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
 .en-ev-hl li + li, .en-ev-notes li + li { margin-top: 4px; }
 .en-ev-usual, .en-ev-eds, .en-ev-pl { margin-top: 12px; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.en-season { display: flex; flex-wrap: wrap; gap: 0 22px; margin: 0; padding: 0; list-style: none; }
+.en-season a { display: inline-flex; align-items: center; min-height: 44px; font-size: 16px; }
 .en-ev-usual b, .en-ev-eds b, .en-ev-pl b { color: var(--ink); }
 .en-ev-src { margin-top: 14px; font-size: 13.5px; line-height: 1.55; }
 .en-ev-more summary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 8px; font-size: 15px; font-weight: 700; color: var(--link); cursor: pointer; list-style: none; }

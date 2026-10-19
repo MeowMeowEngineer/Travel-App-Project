@@ -2,8 +2,10 @@
    block; owner 2026-10-13). Rows of text, not cards: outlet · date (small, grey), the article's own headline as the link,
    our one-line note, the places it mentions; with the outlet's own preview picture (og:image) beside it when there is
    one. A social post's embed loads into .ab-embed when the card nears the screen or '게시물 불러오기' is pressed
-   (site.js [data-embed]); the link to the post is always there. */
-.ab-wrap { padding-block: 8px clamp(48px, 6vw, 88px); }
+   (site.js [data-embed]); the link to the post is always there. /abroad/ shows the articles as a grid of cards and
+   the social posts as a wall of tiles (the end of this file). */
+.ab-wrap { padding-block: 8px 0; }
+.ab-wrap-end { padding-block: 0 clamp(48px, 6vw, 88px); }
 .ab-sec + .ab-sec { margin-top: clamp(40px, 5vw, 64px); }
 .ab-h { margin: 0 0 16px; font: 700 clamp(22px, 2.4vw, 28px)/1.25 var(--font); letter-spacing: -.02em; }
 .ab-h .tn { color: var(--ink-3); font-weight: 400; margin-left: 4px; }
@@ -31,11 +33,9 @@
 .ab-q p { margin: 0; font-size: 15px; font-weight: 400; line-height: 1.6; color: var(--ink-2); overflow-wrap: break-word; }
 .ab-places { margin: 8px 0 0; font-size: 14px; color: var(--ink-3); }
 .ab-places a { display: inline-flex; align-items: center; min-height: 32px; }
-.ab-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 10px 0 0; font-size: 14px; }
-.ab-act a { display: inline-flex; align-items: center; min-height: 44px; }
-.ab-load { min-height: 44px; padding: 0 16px; border: 1px solid var(--hair); border-radius: 999px; background: transparent;
-  color: inherit; font: 700 14px/1 var(--font); cursor: pointer; }
-.ab-load:hover { border-color: currentColor; }
+.ab-load { min-height: 44px; padding: 0 18px; border: 1px solid var(--hair); border-radius: 999px; background: var(--bg);
+  color: var(--ink); font: 700 14px/1 var(--font); cursor: pointer; }
+.ab-load:hover { border-color: var(--sea); color: var(--sea-deep); }
 .ab-embed:empty { display: none; }
 .ab-embed { margin-top: 12px; max-width: 540px; }
 .ab-embed iframe { max-width: 100%; border: 0; }
@@ -59,3 +59,138 @@
 .ab-grid .ab-credit { margin-top: auto; padding-top: 10px; }
 .ab-grid .ab-item:not(.has-thumb) .ab-title { font-size: 19px; line-height: 1.35; }
 .ab-sub { margin-top: 8px; }
+
+/* ---------------------------------------------------------------- a social post (shared: the /abroad/ wall's tile, the
+   place page's row). Head: the service's mark (drawn by _abroad.html.j2 svc(), never loaded from the service), the
+   service · account · date; our note; the embed slot; a row of small links — the original on the service first (sea),
+   then the places it shows. The slot is JS only (data-js-only): without JS, or when the service never answers
+   (site.js marks the slot .is-failed after 15s and it folds away), the card is the note and the links. */
+.ab-head { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; color: var(--ink-3); }
+.ab-who { min-width: 0; overflow-wrap: anywhere; }
+.ab-who .ab-src { color: var(--ink); }
+.ab-svc, .ab-ph-mark { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  color: #fff; background: var(--ink); font: 800 15px/1 var(--font); }
+.ab-svc svg { width: 15px; height: 15px; }
+.svc-x { background: #0f1419; }
+.svc-instagram { background: radial-gradient(circle at 30% 107%, #fdb34d 0, #f7663a 30%, #d6247b 62%, #8a3ab9 100%); }
+.svc-threads { background: #101010; }
+.svc-facebook { background: #1877f2; }
+.ab-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 14px; line-height: 1.25; }
+.ab-chips a { position: relative; display: inline-flex; align-items: center; min-height: 34px; padding: 4px 13px;
+  border-radius: 999px; text-decoration: none; overflow-wrap: anywhere; }
+.ab-chips a::after { content: ""; position: absolute; inset: -5px 0; }   /* a 44px touch target around the 34px pill */
+.ab-chips .ab-go { background: var(--tint); color: var(--sea-deep); font-weight: 700; }
+.ab-chips .ab-go:hover { background: var(--tint2); }
+.ab-chips .ab-go .arr { margin-left: 4px; }
+.ab-rel { margin: 0 0 0 6px; color: var(--ink-3); font-size: 13px; }
+.ab-chip { background: var(--bg-2); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--hair); }
+.ab-chip:hover { background: var(--g1); color: var(--ink); }
+.ab-chips a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* the slot before the embed: a placeholder of the embed's usual size (cqw = the slot's own width; measured 2026-10-14:
+   Instagram ≈ 1.26 × width + 204px, X ≈ 0.9 × width + 200–290px by width; single posts differ by ±100px), so the embed
+   arriving moves little. While the service's script builds the embed it waits under the placeholder (.is-loading:
+   out of flow, transparent); once its height holds, site.js removes the placeholder. Auto-loading shows
+   '… 불러오는 중'; with Save-Data (html.embed-manual) the placeholder offers the button instead. */
+.ab-embed { container-type: inline-size; position: relative; }
+.ab-ph { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; height: 520px;
+  height: calc(126cqw + 204px); border-radius: 14px; background: var(--g0); box-shadow: inset 0 0 0 1px var(--g1);
+  color: var(--ink-2); font-size: 14px; text-align: center; }
+[data-embed="x"] .ab-ph { height: 500px; height: calc(90cqw + 200px); }
+@container (max-width: 339px) { [data-embed="x"] .ab-ph { height: calc(90cqw + 232px); } }
+@container (min-width: 358px) { [data-embed="x"] .ab-ph { height: calc(90cqw + 288px); } }   /* X sets larger type */
+[data-embed="threads"] .ab-ph, [data-embed="facebook"] .ab-ph { height: 560px; height: calc(110cqw + 170px); }
+.ab-ph-mark { width: 52px; height: 52px; font-size: 24px; box-shadow: 0 0 0 8px rgba(255, 255, 255, .8); }
+.ab-ph-mark svg { width: 24px; height: 24px; }
+.ab-ph .ab-load { display: none; }
+html.embed-manual .ab-ph .ab-load { display: inline-flex; align-items: center; }
+html.embed-manual .ab-ph-msg { display: none; }
+.ab-embed.is-loading .ab-ph-msg { display: block; }
+.ab-embed.is-loading .ab-ph .ab-load { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .ab-embed.is-loading .ab-ph-mark { animation: ab-breathe 1.4s var(--ease-io) infinite alternate; }
+  @keyframes ab-breathe { to { box-shadow: 0 0 0 14px rgba(255, 255, 255, .3); } }
+}
+.ab-embed.is-loading { overflow: hidden; }
+.ab-embed.is-loading > :not(.ab-ph) { position: absolute; top: 0; left: 0; width: 100%; opacity: 0; pointer-events: none; }
+.ab-embed.is-failed { display: none; }
+.ab-embed:focus { outline: none; }
+/* the services' own boxes, centred, without the outer margins their scripts set inline */
+.ab-embed > .twitter-tweet, .ab-embed > iframe.instagram-media { margin: 0 auto !important; }
+.ab-embed.is-ready > blockquote { display: none; }   /* a quote the service left behind: never the bare address */
+
+/* ---------------------------------------------------------------- /abroad/ SNS wall (owner 2026-10-14 '화면 꽉 차게
+   바둑판식 배열로'). A tinted band across the page; inside, the tiles in 1 column on phones, 2 from 740px, 3 from 1200px
+   and 4 from 1760px, where the band's column widens to 1640px (every column ≥ 326px, the narrowest an Instagram embed
+   draws; X needs 250). Packing: with JS (site.js [data-wall] → .is-masonry) each tile keeps a column by its place in
+   the list (:nth-child) and spans as many 4px rows as it is tall plus the gap, so the columns run without holes, a tile
+   whose embed arrives only pushes the tiles under it in its own column, and the reading and Tab order stay the list's
+   order (left to right, then down). CSS multi-column would order the tiles down each column and re-balance every
+   column whenever an embed changes height. Without JS the tiles stand in plain rows of equal height. */
+.ab-sns { margin-top: clamp(40px, 5vw, 64px); padding-block: clamp(36px, 4.4vw, 64px) clamp(44px, 5vw, 80px);
+  background: linear-gradient(180deg, var(--g0), #f7fafe 70%, var(--bg)); }
+.ab-sns .ab-h { margin-bottom: 6px; }
+.ab-sns-lede { margin: 0 0 clamp(18px, 2vw, 28px); max-width: 48em; color: var(--ink-2); font-size: 15px; line-height: 1.6; }
+.ab-sns-lede .tn { color: var(--sea-deep); font-weight: 700; }
+.ab-wall { --wall-gap: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--wall-gap); margin: 0;
+  padding: 0; list-style: none; }
+.ab-wall > .ab-post, .ab-wall > .ab-post:last-child { container: tile / inline-size; display: flex; flex-direction: column;
+  min-width: 0; margin: 0; padding: 16px 16px 14px; border: 0; border-radius: var(--r); background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--hair), var(--shadow-1); }
+.ab-wall .ab-note { font-size: 15px; line-height: 1.6; }
+.ab-wall .ab-embed { max-width: none; margin-top: 14px; }
+.ab-wall .ab-chips { margin-top: auto; padding-top: 12px; }
+/* a tile too narrow for an Instagram (Threads, Facebook) embed inside the card's padding: that embed runs to the card's
+   edges; X's (250px and up) keeps the padding */
+@container tile (max-width: 325px) {
+  .ab-wall > :not([data-embed="x"]) .ab-embed { margin-inline: -16px; }
+  .ab-wall > :not([data-embed="x"]) .ab-ph { border-radius: 0; box-shadow: none; }
+}
+@media (min-width: 740px) { .ab-wall { --wall-gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1200px) { .ab-wall { --wall-gap: 20px; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1760px) {
+  .ab-sns > .wrap { max-width: calc(1640px + 240px); padding-inline: 120px; }
+  .ab-wall { --wall-gap: 22px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.ab-wall.is-masonry > .ab-post { align-self: start; }
+@media (min-width: 740px) {
+  .ab-wall.is-masonry { grid-auto-rows: 4px; row-gap: 0; grid-auto-flow: row dense; }
+  .ab-wall.is-masonry > .ab-post { grid-row-end: span var(--span, 1); }
+}
+@media (min-width: 740px) and (max-width: 1199px) {
+  .ab-wall.is-masonry > :nth-child(2n+1) { grid-column: 1; }
+  .ab-wall.is-masonry > :nth-child(2n) { grid-column: 2; }
+}
+@media (min-width: 1200px) and (max-width: 1759px) {
+  .ab-wall.is-masonry > :nth-child(3n+1) { grid-column: 1; }
+  .ab-wall.is-masonry > :nth-child(3n+2) { grid-column: 2; }
+  .ab-wall.is-masonry > :nth-child(3n) { grid-column: 3; }
+}
+@media (min-width: 1760px) {
+  .ab-wall.is-masonry > :nth-child(4n+1) { grid-column: 1; }
+  .ab-wall.is-masonry > :nth-child(4n+2) { grid-column: 2; }
+  .ab-wall.is-masonry > :nth-child(4n+3) { grid-column: 3; }
+  .ab-wall.is-masonry > :nth-child(4n) { grid-column: 4; }
+}
+
+/* ---------------------------------------------------------------- the home's SNS row (owner 2026-10-14: 'SNS 게시물이
+   좀 더 잘 보이면'): our own cards, nothing from the services — the mark (.ab-svc), service · account, our note, the
+   date; each a link to its card on /abroad/. Phones: a sideways row (78% wide cards); 2 columns from 700px, 4 from
+   1024px. /abroad/: the wall now sits right under the page's head. */
+.hsns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 78%); gap: 14px; margin: 0; padding: 4px 2px 14px;
+  overflow-x: auto; scroll-snap-type: x mandatory; list-style: none; }
+.hsns > li { scroll-snap-align: start; min-width: 0; }
+@media (min-width: 700px) { .hsns { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; } }
+@media (min-width: 1024px) { .hsns { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; } }
+.hsns-c { display: flex; flex-direction: column; gap: 10px; height: 100%; padding: 18px 18px 16px; border-radius: var(--r);
+  background: #fff; box-shadow: inset 0 0 0 1px var(--hair), var(--shadow-1); color: var(--ink); text-decoration: none;
+  transition: box-shadow .2s var(--fb); }
+.hsns-c:hover { box-shadow: inset 0 0 0 1px var(--hair), var(--shadow-2); text-decoration: none; }
+.hsns-c:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.hsns-h { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; color: var(--ink-3); }
+.hsns-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hsns-who b { color: var(--ink); font-weight: 700; }
+.hsns-n { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden; font-size: 15.5px; line-height: 1.6; }
+.hsns-d { margin-top: auto; font-size: 13px; color: var(--ink-3); }
+.ab-sns-top { margin-top: 0; }
+

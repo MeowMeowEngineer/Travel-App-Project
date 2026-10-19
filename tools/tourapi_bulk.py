@@ -12,9 +12,11 @@
    firstimage + cpyrhtDivCd.
 3. Local matching against places.json (duplicates skipped): same normalised name, or a near-identical name
    at the same road address. Anything less certain stays unmatched (listed in the report).
-4. Fills tourapi.contentid, geo (TourAPI), images (cpyrhtDivCd Type1/Type3 only, https, credit 한국관광공사),
-   with --gallery also detailImage2 photos named after the place, then straight-line nearby places
-   (attraction/stay/food, within 2 km) computed from those coordinates.
+4. Fills tourapi.contentid, geo (TourAPI; a point from another source — the city's official tourism site, a
+   facility's homepage — stays, the report lists how far TourAPI's is), images (cpyrhtDivCd Type1/Type3 only, https,
+   credit 한국관광공사), with --gallery also detailImage2 photos named after the place, then straight-line nearby
+   places (attraction/stay/food, within 2 km) computed from those coordinates; nearby_source names every provider of
+   the points used ('한국관광공사 TourAPI·<another provider> 좌표').
 5. --events (searchFestival2, all pages) asks for the festivals from today (--events-from YYYYMMDD for an earlier
    day) and runs before --details/--add-new, so the time-sensitive festival list is refreshed first when the
    per-run call cap is reached. A 광역시 asks once for the whole 시도.
@@ -24,6 +26,17 @@ Fields named in an entity's "locks" are not touched. Values are copied as given;
 checked_at is the date the TourAPI response was fetched (a cached response keeps its own date), so a
 cache-first re-run does not bump 확인일 or sitemap lastmod (aeo_geo_spec P0-4). --refresh ignores the cache
 (used by tools/refresh.py --fresh) and the values it re-fetches get today's date.
+
+    python tools/tourapi_bulk.py --data data/incheon --barrier-free --max-calls 600
+    python tools/tourapi_bulk.py --data data/incheon --nearby-only     # nearby again from stored coordinates, no calls
+
+--barrier-free runs alone: 한국관광공사 무장애 여행 정보 (KorWithService2, its own data.go.kr 활용신청) for every
+published place with a TourAPI contentid — detailWithTour2, and for an answer with values detailCommon2 of the same
+service to check the title is our place's TourAPI title. Wheelchair, accessible parking/toilet/route and stroller
+rental merge with provider '한국관광공사 무장애 여행 정보(TourAPI)' (tools/tourapi_details.merge_facts): a new value is
+added with its source, the same value confirms, a different one is kept beside ours (both shown + 방문 전 전화 확인).
+Its own client, cache folder (data/cache/tourapi/barrier_free) and --max-calls; report in
+reports/tourapi_barrier_free.md for a person to read before the guides that cite these values are rewritten.
 """
 from __future__ import annotations
 
@@ -40,7 +53,8 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pipeline.enrich import haversine_m, load_dotenv
-from pipeline.schema import TOURAPI_LICENSE_MAP, license_allowed
+from pipeline.relations import raw_family
+from pipeline.schema import TOURAPI_LICENSE_MAP, geo_providers, license_allowed, nearby_provider
 from pipeline.textutil import normalize_name
 from pipeline.tourapi import KIND_BY_TYPE, TourAPIError, TourAPIStopError, from_site_config
 
@@ -234,9 +248,13 @@ def fill(place: dict, cand: dict, basis: str, allowed: list | None) -> dict:
         lat, lng = float(cand.get("mapy")), float(cand.get("mapx"))
     except (TypeError, ValueError):
         lat = lng = None
+    have = place.get("geo") or {}
     if "geo" not in locks and lat and lng:
-        place["geo"] = {"lat": lat, "lng": lng, "source": "TourAPI"}
-        changed["geo"] = True
+        if have.get("lat") is None or have.get("source") in (None, "", "TourAPI"):
+            place["geo"] = {"lat": lat, "lng": lng, "source": "TourAPI"}
+            changed["geo"] = True
+        else:  # a point from another source (the city's tourism site, a homepage) stays; how far TourAPI's is goes in the stats
+            changed["geo_kept"] = int(round(haversine_m(float(have["lat"]), float(have["lng"]), lat, lng)))
     code = TOURAPI_LICENSE_MAP.get(str(cand.get("cpyrhtDivCd") or ""), "UNKNOWN")
     if "images" not in locks and cand.get("firstimage"):
         others = [i for i in (place.get("images") or []) if i.get("source") != "TourAPI"]
@@ -281,16 +299,25 @@ NEARBY_SHOP_LCLS = ("SH05", "SH06", "SH07")
 
 
 def compute_nearby(places: list[dict], today: str) -> int:
+    """Up to NEARBY_PER_KIND places of each kind within NEARBY_RADIUS_M (straight line between the two places' coordinates).
+    A place's own family (pipeline/relations.py: its parent, parts and same-building partners — they have their own
+    lines on the page) is never its nearby place, and a same-building alias is skipped while its parent is listable
+    (one building, one row); the next places fill the slots. Network-free: also run alone with --nearby-only."""
     live = [p for p in places if not p.get("duplicate_of") and (p.get("geo") or {}).get("lat") is not None]
     listable = lambda q: not q.get("exclude") and (q.get("category") != "쇼핑" or
                                                      (q.get("tourapi") or {}).get("lcls", "").startswith(NEARBY_SHOP_LCLS))
+    family, alias = raw_family(places)
+    shown = {q["id"] for q in live if listable(q)}
     n = 0
     for p in live:
         if "nearby" in set(p.get("locks") or []):
             continue
+        fam = family.get(p["id"]) or set()
         dists = sorted(((haversine_m(p["geo"]["lat"], p["geo"]["lng"], q["geo"]["lat"], q["geo"]["lng"]), q)
-                        for q in live if q is not p and listable(q)), key=lambda x: x[0])
+                        for q in live if q is not p and listable(q) and q["id"] not in fam
+                        and alias.get(q["id"]) not in shown), key=lambda x: x[0])
         groups = {"attraction": [], "stay": [], "food": []}
+        geos = [p["geo"]]
         for d, q in dists:
             if d > NEARBY_RADIUS_M:
                 break
@@ -299,13 +326,30 @@ def compute_nearby(places: list[dict], today: str) -> int:
                 g.append({"name": q["name"], "kind": q["kind"], "type_label": q.get("category") or "",
                           "distance_m": int(round(d)), "internal_slug": q["slug"],
                           "contentid": (q.get("tourapi") or {}).get("contentid", "")})
+                geos.append(q["geo"])
         nearby = groups["attraction"] + groups["stay"] + groups["food"]
         kept = (p.get("nearby_source") or {}).get("checked_at") if nearby == p.get("nearby") else ""
         p["nearby"] = nearby
-        p["nearby_source"] = {"provider": "한국관광공사 TourAPI 좌표", "radius_m": NEARBY_RADIUS_M,
-                              "distance_basis": "직선거리", "checked_at": kept or today}
+        # whose coordinates the distances come from: this place's point and every listed place's, TourAPI first
+        # ('한국관광공사 TourAPI 좌표' when all are TourAPI's, '한국관광공사 TourAPI·<another provider> 좌표' when mixed)
+        providers = geo_providers(geos)
+        p["nearby_source"] = {"provider": nearby_provider(providers), "providers": providers,
+                              "radius_m": NEARBY_RADIUS_M, "distance_basis": "직선거리", "checked_at": kept or today}
         n += bool(p["nearby"])
     return n
+
+
+def run_nearby_only(data_dir: Path, today: str | None = None) -> dict:
+    """--nearby-only: recompute every place's nearby list from the coordinates already in places.json (compute_nearby)
+    and write it back. No TourAPI client is created and nothing is fetched; locks are kept."""
+    import datetime as dt
+    path = data_dir / "places.json"
+    places = json.loads(path.read_text("utf-8"))
+    before = {p["id"]: p.get("nearby") for p in places}
+    n = compute_nearby(places, today or dt.date.today().isoformat())
+    path.write_text(json.dumps(places, ensure_ascii=False, indent=2) + "\n", "utf-8")
+    changed = sum(1 for p in places if p.get("nearby") != before.get(p["id"]))
+    return {"nearby_pages": n, "changed": changed}
 
 
 def _priority(p: dict) -> tuple:
@@ -389,6 +433,9 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
         stats["matched"][p["kind"]] = stats["matched"].get(p["kind"], 0) + 1
         ch = fill(p, cand, basis, allowed)
         stats["geo"] += ch["geo"]
+        if "geo_kept" in ch:
+            stats.setdefault("geo_kept", []).append(f"{p['name']}: {p['geo'].get('source')} 좌표 유지 "
+                                                    f"(TourAPI 좌표와 {ch['geo_kept']}m)")
         if ch["image"]:
             stats["images"][ch["image"]] += 1
         elif cand.get("firstimage"):
@@ -537,6 +584,7 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
              f" · 사진은 있으나 허용 외 유형 {stats['image_other_type']}",
              f"- 직선거리 주변이 생긴 장소 {stats['nearby_pages']}",
              f"- 남은 호출(캐시에 없는 응답, 캐시 우선 기준): {stats['remaining_calls']}"]
+    lines += [f"- 다른 출처 좌표 유지: {x}" for x in stats.get("geo_kept") or []]
     if stats.get("stopped"):
         lines.append(f"- 중단: {stats['stopped']}")
     if details:
@@ -561,8 +609,9 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
     lines += ["", "## 미매칭"] + [f"- {x}" for x in stats["unmatched"]]
     (report / "tourapi_bulk.md").write_text("\n".join(lines) + "\n", "utf-8")
     (report / "tourapi_bulk.json").write_text(json.dumps(stats, ensure_ascii=False, indent=1) + "\n", "utf-8")
-    out = {k: v for k, v in stats.items() if k not in ("unmatched", "details", "new_places", "events")}
+    out = {k: v for k, v in stats.items() if k not in ("unmatched", "details", "new_places", "events", "geo_kept")}
     out["unmatched"] = len(stats["unmatched"])
+    out["geo_kept"] = len(stats.get("geo_kept") or [])
     if details:
         out["details"] = {k: (len(v) if isinstance(v, list) else v) for k, v in stats["details"].items()}
     if add_new:
@@ -576,6 +625,80 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
 
 def squash(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip()[:80]
+
+
+def run_barrier_free(data_dir: Path, max_calls: int, offline: bool = False, refresh: bool = False,
+                     report_dir: Path = Path("reports")) -> dict:
+    """--barrier-free: KorWithService2 detailWithTour2 for the published places with a contentid (see the module
+    docstring). Writes places.json and reports/tourapi_barrier_free.{md,json}."""
+    import datetime as dt
+    from pipeline.tourapi import barrier_free_client
+    from tools.tourapi_details import BARRIER_FREE, display_name, merge_facts, with_facts
+    load_dotenv(Path(".env"))
+    site = json.loads((data_dir / "site.json").read_text("utf-8"))
+    places_path = data_dir / "places.json"
+    places = json.loads(places_path.read_text("utf-8"))
+    api = barrier_free_client(site, os.environ.get("TOURAPI_KEY", ""), data_dir.parent / "cache" / "tourapi",
+                              offline=offline, refresh=refresh, max_calls=max_calls)
+    today = dt.date.today().isoformat()
+    targets = sorted((p for p in places if p.get("status") == "published" and not p.get("duplicate_of")
+                      and (p.get("tourapi") or {}).get("contentid")), key=_priority)
+    s = {"service": api.base_url, "targets": len(targets), "done": 0, "with_data": 0, "no_data": [],
+         "title_mismatch": [], "added": {}, "confirmed": {}, "also": {}, "conflicts": [], "errors": []}
+    log: list[str] = []
+    try:
+        for p in targets:
+            cid = str(p["tourapi"]["contentid"])
+            start = len(api.fetched_dates)
+            try:
+                facts = with_facts(retry(api.detail_with_tour, cid))
+                if not facts:
+                    s["done"] += 1
+                    s["no_data"].append(p["name"])
+                    continue
+                title = (retry(api.detail_common, cid) or {}).get("title")
+            except TourAPIStopError:
+                raise
+            except TourAPIError as err:
+                s["errors"].append(f"{p['name']}: {err}")
+                continue
+            s["done"] += 1
+            ours = (p.get("tourapi") or {}).get("title") or p["name"]
+            if normalize_name(display_name(title)) != normalize_name(display_name(ours)):
+                s["title_mismatch"].append(f"{p['name']} ({cid}): 무장애 '{title or '없음'}' ≠ TourAPI '{ours}'")
+                continue
+            s["with_data"] += 1
+            before = {k: (p.get("facts") or {}).get(k, "") for k in facts}
+            res = merge_facts(p, facts, fetched_on(api, start, today), cid, provider=BARRIER_FREE)
+            for part in ("added", "confirmed", "also"):
+                for k in res[part]:
+                    s[part][k] = s[part].get(k, 0) + 1
+            for part, word in (("added", "추가"), ("confirmed", "일치"), ("also", "함께 표시"), ("conflicts", "값이 다름")):
+                for k in res[part]:
+                    old = f"기존 '{squash(before[k])}' / " if before[k] else ""
+                    log.append(f"- {p['name']} · {k} · {word}: {old}무장애 '{squash(facts[k])}'")
+            s["conflicts"] += [f"{p['name']}·{k}" for k in res["conflicts"]]
+    except TourAPIStopError as err:
+        s["stopped"] = str(err)
+    s["live_calls"], s["cache_hits"] = api.live_calls, api.cache_hits
+    places_path.write_text(json.dumps(places, ensure_ascii=False, indent=2) + "\n", "utf-8")
+    report_dir.mkdir(parents=True, exist_ok=True)
+    lines = [f"# TourAPI 무장애 여행 정보 ({today})", "",
+             f"- 서비스 {s['service']} · 실호출 {s['live_calls']} · 캐시 {s['cache_hits']}",
+             f"- 대상(공개·contentid) {s['targets']} · 처리 {s['done']} · 값 있음 {s['with_data']} · 값 없음 {len(s['no_data'])}"
+             f" · 제목 불일치 {len(s['title_mismatch'])} · 오류 {len(s['errors'])}",
+             f"- 추가 {s['added']} · 일치 {s['confirmed']} · 함께 표시 {s['also']} · 값이 달라 둘 다 표시 {len(s['conflicts'])}"]
+    if s.get("stopped"):
+        lines.append(f"- 중단: {s['stopped']} (다시 실행하면 캐시로 이어 갑니다)")
+    lines += ["", "## 장소별", ""] + (log or ["- 없음"])
+    lines += ["", "## 제목 불일치(병합하지 않음)", ""] + [f"- {x}" for x in s["title_mismatch"]]
+    lines += ["", "## 오류", ""] + [f"- {x}" for x in s["errors"]]
+    lines += ["", "다음: 값이 달라진 장소의 요약·FAQ·가이드 문장(예: guide-29·guide-02의 휠체어 대수)을 두 출처로 고쳐 쓰고,"
+              " 바뀐 장소·가이드를 8개 언어로 다시 번역한다(tools/en_content.py)."]
+    (report_dir / "tourapi_barrier_free.md").write_text("\n".join(lines) + "\n", "utf-8")
+    (report_dir / "tourapi_barrier_free.json").write_text(json.dumps(s, ensure_ascii=False, indent=1) + "\n", "utf-8")
+    print(json.dumps({k: (len(v) if isinstance(v, list) else v) for k, v in s.items()}, ensure_ascii=False))
+    return s
 
 
 def main(argv=None) -> int:
@@ -594,11 +717,25 @@ def main(argv=None) -> int:
     ap.add_argument("--events", action="store_true", help="searchFestival2(오늘부터, 모든 쪽)로 행사 갱신")
     ap.add_argument("--events-from", default="", help="행사를 이 날짜(YYYYMMDD)부터 받는다(기본: 오늘)")
     ap.add_argument("--districts", default="", help="광역시에서 이 구·군만(쉼표로, 예: 연수구,강화군) — 호출 한도 안에서 나눠 받을 때")
+    ap.add_argument("--barrier-free", action="store_true",
+                    help="무장애 여행 정보(KorWithService2 detailWithTour2)를 공개 장소에 병합 — 이 옵션만 따로 실행")
+    ap.add_argument("--nearby-only", action="store_true",
+                    help="places.json의 좌표로 주변 장소(nearby)만 다시 계산 — TourAPI 호출 없음, 이 옵션만 따로 실행")
     a = ap.parse_args(argv)
+    if a.nearby_only:
+        if a.gallery or a.details or a.add_new or a.events or a.barrier_free or a.refresh:
+            ap.error("--nearby-only는 다른 옵션 없이 따로 실행합니다")
+        print(json.dumps(run_nearby_only(a.data), ensure_ascii=False))
+        return 0
     only = [x.strip() for x in a.districts.split(",") if x.strip()] or None
     if a.events_from and not re.fullmatch(r"\d{8}", a.events_from):
         ap.error("--events-from은 YYYYMMDD")
     try:
+        if a.barrier_free:
+            if a.gallery or a.details or a.add_new or a.events:
+                ap.error("--barrier-free는 다른 보강 옵션 없이 따로 실행합니다")
+            run_barrier_free(a.data, a.max_calls, a.offline, a.refresh)
+            return 0
         run(a.data, a.max_calls, a.offline, a.gallery, a.details, a.add_new, a.events, a.refresh, only,
             a.events_from or None)
     except RegionError as err:

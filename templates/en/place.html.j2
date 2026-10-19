@@ -4,16 +4,18 @@
     same paragraph: JSON-LD's description is the whole summary) → official designations as chips when the Korean page
     shows them (each links to its list; the facts card's 'Designations' row names the list) → key facts as
     tiles + 'Sources: …' (no checked date — operator decision 2026-10-09) → the route
-    row (Google Maps · Naver Map · Kakao Map, 'Other maps'). The lead photo by licence (KOGL-1: a rounded crop,
+    row (Google Maps · Naver Map · Kakao Map, 'Other maps') → 'Book' when the data has an official booking page
+    (ui.book, pipeline/booking.py). The lead photo by licence (KOGL-1: a rounded crop,
     preloaded; KOGL-3: whole, desktop only — phones get the provider's small renditions). Then the facts card (every
     English value whole, per-field sources as footnotes, both values + the note where sources differ), photos, more
     facts, map; chapters: nearby, details, FAQ, sources. v = pipeline/en_site.Site.place_vm. -#}
 {% import "en/_en.html.j2" as E with context %}
 {% import "_media.html.j2" as md %}
+{% import "_near.html.j2" as nb %}
 {% set fn = v.notes|length > 1 %}
 {% set nm = v.name %}
 {% set lead = v.hero_k1 or v.hero_k3 %}
-{% set has_near = v.near_sights or v.near_biz or v.courses or v.guides or v.events %}
+{% set has_near = v.parts or v.near_sights or v.near_biz or v.segs or v.guide_cards or v.event_cards %}
 {% block main_class %}{% endblock %}
 {% block bodyclass %}pg-place kind-{{ v.kind }}{% if lead %} has-photo{% else %} no-photo{% endif %}{% endblock %}
 {% block head %}{% if v.hero_k1 %}{{ md.preload(v.hero_k1, '(min-width: 1024px) min(940px, 66vw), 100vw') }}{% endif %}{% endblock %}
@@ -25,38 +27,46 @@
 {% if v.details %}{% set _ = links.append((t.s('sec_details'), '#h-details')) %}{% endif %}
 {% if v.faqs %}{% set _ = links.append((t.s('sec_faq'), '#h-faq')) %}{% endif %}
 {% set _ = links.append((t.s('sec_sources'), '#h-src')) %}
-{{ ui.lnav(nm, links, v.route.cta, t.s('jump_place', name=nm)) }}
+{{ ui.lnav(nm, links, v.route.cta, t.s('jump_place', name=nm), {'id': v.e.id, 'lang': loc.code}) }}
 {% endblock %}
 {% block content %}
 <article class="place" data-entity-id="{{ v.e.id }}" data-tier="{{ v.e.tier or 'basic' }}">
   <header class="pl-hero{% if v.hero_k1 %} hk1{% elif v.hero_k3 %} hk3{% else %} hnone{% endif %}">
-    <div class="wrap pl-hero-in">
+    {#- the light opening (ui4, as the Korean place page; owner 2026-10-14: the other versions take the same design):
+        name → one-line answer → key facts (each tile with its small picture, E.kf) → routes on the left; the lead
+        photo big and rounded on the right from 1024px and under the routes on phones. Text never sits on the photo.
+        KOGL-1 may fill its rounded frame; KOGL-3 sits whole in a padded tinted frame, never cropped or enlarged
+        (CLAUDE.md 3.4), from 1024px only — phones get its small renditions as a thumbnail row. A place without a
+        photo gets a small kind picture above the name (no large empty cover). -#}
+    <div class="wrap pl-hero-in pl-x{% if lead %} has-lead{% endif %}">
       <div class="pl-head">
+        {% if not lead %}<p class="pl-kpic">{{ ui.kpic(ui.KIND_PIC.get((v.e._visual or ('', 'pin'))[1], 'kind-attraction'), (v.e._visual or ('', 'pin'))[1], 72) }}</p>{% endif %}
         <p class="kicker">{% for lab, href in v.kicker %}{% if href %}<a href="{{ href }}">{{ lab }}</a>{% else %}<span>{{ lab }}</span>{% endif %}{% endfor %}<span>{{ region }}{% if v.area %}{{ loc.list_sep }}{{ v.area }}{% endif %}</span></p>
         <h1 class="d1 vt-title">{{ nm }}</h1>
         <p class="alt-n pl-alt ko-name">{{ t.f('in_korean', name=E.ko(v.name_ko)) }}</p>
+        {{ nb.relation(v.relation, loc.list_sep) }}
         <div class="summary" data-block="summary">
           <p class="lede">{{ v.lede }}</p>
         </div>
         {{ E.dzchips(v.designations, v.e.id) }}
         {{ E.kf(v.kf, 'kf-hero', v.e.id) }}
-        <div class="kf-notes">{{ E.kfnote(v.kf, v.e.id) }}</div>
+        <div class="kf-notes">{{ E.notices(v.notices, v.e.id) }}{{ E.kfnote(v.kf, v.e.id) }}</div>
         {{ E.route(v.route, v.e.id, nm) }}
+        {{ ui.book(v.booking, v.bw, v.e.id) }}
         {% if v.story %}<p class="lede-more">{{ v.story|join(loc.sjoin) }}</p>{% endif %}
       </div>
-      {% if v.hero_k1 %}
-      <figure class="pl-ph t1">
-        <div class="pl-ph-frame">{{ ui.img(v.hero_k1, '(min-width: 1024px) min(940px, 66vw), 100vw', true, 'settle vt-photo', false, true) }}</div>
-        <figcaption><span class="cap-n">{{ nm }}{% if v.photos|length > 1 %} <span class="tn">1/{{ v.photos|length }}</span>{% endif %}</span><span class="cap-c">{{ E.credit(v.hero_k1) }}</span></figcaption>
+      {% if lead %}
+      <figure class="pv pv{{ lead.type }}">
+        {% if v.hero_k1 %}<div class="pv-ph">{{ ui.img(v.hero_k1, '(min-width: 1024px) 560px, 100vw', true, 'pv-img vt-photo', false, true) }}</div>
+        {% else %}<div class="pv-k3"{% if lead.w and lead.h %} style="--nw:{{ lead.w }}px;--ar:{{ lead.w }}/{{ lead.h }}"{% endif %}><img class="t3 vt-photo" src="{{ lead.url }}"{% if lead.w and lead.h %} width="{{ lead.w }}" height="{{ lead.h }}"{% endif %} alt="{{ lead.alt }}" loading="lazy" decoding="async" data-kogl="3"></div>{% endif %}
+        <figcaption class="pv-cap"><span class="pv-cr">{{ E.credit(lead) }}{% if v.photos|length > 1 or v.hero_k3 %} · {% endif %}</span>{% if v.photos|length > 1 or v.hero_k3 %}<a href="#h-photos">{{ t.n('photos_n', v.photos|length) }}</a>{% endif %}</figcaption>
       </figure>
-      {% elif v.hero_k3 %}
-      {{ E.hero_k3(v.hero_k3, nm, v.photos|length) }}
-      {% if v.thumbs %}
+      {% endif %}
+      {% if v.hero_k3 and v.thumbs %}
       <div class="pl-thumbs only-narrow">
         <ul>{% for t in v.thumbs %}<li><a href="#h-photos"><img class="t{{ t.type }}" src="{{ t.url }}" width="{{ t.w }}" height="{{ t.h }}" style="height:{{ [t.h, 100]|min }}px" alt="{{ t.alt }}" loading="lazy" decoding="async" data-kogl="{{ t.type }}"></a></li>{% endfor %}</ul>
         <p class="pl-thumbs-c"><a href="#h-photos">{{ t.n('photos_n', v.photos|length) }} ↓</a> · {{ t.f('source_is', name=t.kto) }} · {{ v.lics|join(loc.list_sep) }}</p>
       </div>
-      {% endif %}
       {% endif %}
     </div>
   </header>
@@ -101,7 +111,7 @@
       {% if v.points %}
       <section class="block" aria-labelledby="h-map">
         <h2 id="h-map" class="h-sec">{{ t.f('h_map', name=E.nm(nm)) }}</h2>
-        {{ E.mapfig(v.points, t.s('map_of', name=nm), 'place-map', t.s('map_straight')) }}
+        {{ E.mapfig(v.points, t.s('map_of', name=nm), 'place-map', t.s('map_straight') ~ (' · ' ~ t.s('map_loc', provider=v.loc_src) if v.loc_src else '')) }}
       </section>
       {% endif %}
     </div>
@@ -109,31 +119,27 @@
   </div>
 
   {% if has_near %}
+  {#- nearby and related (templates/_near.html.j2, the Korean chapter's markup and words in this language,
+      locales.NEAR_WORDS): course segments with straight-line legs, nearby rows on one straight-line scale, guide and
+      event cards -#}
+  {% set w = v.nw %}
   <section class="wrap chapter ch-rail" aria-labelledby="h-near" data-block="nearby">
     <h2 id="h-near" class="rail-label">{{ t.f('h_near', name=E.nm(nm)) }}</h2>
-    <div class="rail-body">
+    <div class="rail-body nb">
+      {% if v.parts %}{{ nb.parts(v.parts, w.parts.format(name=nm), v.e.id, w) }}{% endif %}
+      {% if v.segs %}<div class="nb-part">{{ nb.segs(v.segs, v.e.id, w, t.s('courses_here'), nm) }}</div>{% endif %}
       {% if v.near_sights or v.near_biz %}
-      <div class="near-cols2">
-        {% for title, xs in [(t.s('near_sights'), v.near_sights), (t.s('near_biz'), v.near_biz)] if xs %}
-        <div class="tile"><h3 class="h-sub">{{ title }}</h3>
-          <ol class="near">{% for n in xs %}<li><a href="{{ n.href }}" data-track="{{ n.track }}" data-place="{{ v.e.id }}">{{ n.name }}</a><span class="near-t">{{ n.type }}</span><span class="near-d tn">{{ n.d }}</span></li>{% endfor %}</ol>
-        </div>
-        {% endfor %}
-      </div>
-      {% if v.nearby_source.provider %}<p class="note">{{ t.f('near_note', m=(v.nearby_source.radius_m or 0)|int, provider=en.provider(v.nearby_source.provider)) }}</p>{% endif %}
-      {% endif %}
-      {% for title, xs, track in [(t.s('courses_here'), v.courses, 'course_click'), (t.s('guides_here'), v.guides, 'guide_click')] if xs %}
-      <div class="xl-g">
-        <h3 class="h-sub">{{ title }}</h3>
-        <ul class="xlinks">{% for x in xs %}<li><a href="{{ x.path }}" data-track="{{ track }}" data-place="{{ v.e.id }}">{{ x.rec.name or x.rec.title }}</a></li>{% endfor %}</ul>
-      </div>
-      {% endfor %}
-      {% if v.events %}
-      <div class="xl-g">
-        <h3 class="h-sub">{{ t.events_here }}</h3>
-        <ul class="xlinks">{% for x in v.events %}<li><a href="{{ loc.home }}events/#{{ x.anchor }}">{{ x.rec.series_name }}</a></li>{% endfor %}</ul>
+      <div class="nb-part" data-block="near-rows">
+        {{ nb.groups([(t.s('near_sights'), v.near_sights, 'icon-sights'), (t.s('near_biz'), v.near_biz, 'icon-stay')], v.e.id, w, v.points) }}
+        <p class="note nb-note">{{ w.scale.format(d=loc.dist(v.near_scale)) }}{% if v.nearby_source.provider %} · {{ t.f('near_note', m=loc.num((v.nearby_source.radius_m or 0)|int), provider=v.near_src) }}{% endif %}</p>
+        {% if v.photo_lics %}<p class="note nb-credit">{{ w.credit.format(lic=v.photo_lics|join(loc.list_sep)) }}</p>{% endif %}
       </div>
       {% endif %}
+      {% if v.guide_cards %}<div class="nb-part"><h3 class="h-sub nb-h">{{ ui.kpic('guide', '', 40) }}<span>{{ t.s('guides_here') }}</span></h3>
+        {{ nb.cards(v.guide_cards, v.e.id, w, 'guide_click', w.more_guides) }}</div>{% endif %}
+      {% if v.event_cards %}<div class="nb-part"><h3 class="h-sub nb-h">{{ ui.kpic('icon-events', '', 40) }}<span>{{ t.events_here }}</span></h3>
+        {{ nb.cards(v.event_cards, v.e.id, w, '', w.more_events) }}</div>{% endif %}
+      {% if v.photo_lics and not (v.near_sights or v.near_biz) %}<p class="note nb-credit">{{ w.credit.format(lic=v.photo_lics|join(loc.list_sep)) }}</p>{% endif %}
     </div>
   </section>
   {% endif %}
@@ -142,7 +148,7 @@
   <section class="wrap chapter ch-rail" aria-labelledby="h-details" data-block="details">
     <h2 id="h-details" class="rail-label">{{ t.f('h_details', name=E.nm(nm)) }}</h2>
     <div class="rail-body prose details">
-      {% for d in v.details %}<h3>{{ d.heading }}</h3><p>{{ d.text|tel(v.e.id) }}{% if v.detail_notes|length > 1 %}{{ E.csup(d.n) }}{% endif %}</p>{% endfor %}
+      {% for d in v.details %}<h3>{{ d.heading }}</h3><p>{{ d.text|telx(v.e.id) }}{% if v.detail_notes|length > 1 %}{{ E.csup(d.n) }}{% endif %}</p>{% endfor %}
       {{ E.chnotes(v.detail_notes, v.e.id) }}
     </div>
   </section>

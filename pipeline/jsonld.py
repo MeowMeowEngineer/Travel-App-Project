@@ -51,8 +51,10 @@ def org_ref(site_url: str) -> dict:
     return {"@id": f"{site_url}/#publisher"}
 
 
-def organization(site: dict, site_url: str) -> dict:
-    """Publisher node. url / sameAs only from site.operator values the owner fills — never invented."""
+def organization(site: dict, site_url: str, record: bool = True, lang: str = "ko") -> dict:
+    """Publisher node. url / sameAs only from site.operator values the owner fills — never invented. record: the
+    company's official record as the page's footer shows it (validate checks every value against the page): the Korean
+    head office on Korean pages, the English one the other versions print (lang != 'ko')."""
     op = site.get("operator") or {}
     node = {"@type": "Organization", "@id": f"{site_url}/#publisher", "name": op.get("name", "")}
     if op.get("name_en"):
@@ -64,6 +66,24 @@ def organization(site: dict, site_url: str) -> dict:
     same = [u for u in (op.get("sameAs") or op.get("same_as") or []) if u]
     if same:
         node["sameAs"] = same
+    # the company's official record (operator 2026-10-17: the CEO's mail asked for it on the site): the registered
+    # name, the business registration number, the head office, the main line and the mailbox — the values the footer
+    # prints (the founding date is printed as words, so it stays off the node), each
+    # only when the owner filled it (site.json operator.sources names the documents)
+    if not record:
+        return node
+    if op.get("legal_name"):
+        node["legalName"] = op["legal_name"]
+    if op.get("business_no"):
+        node["taxID"] = op["business_no"]
+    office = op.get("head_office") if lang == "ko" else op.get("head_office_en")
+    if office:
+        node["address"] = {"@type": "PostalAddress", "streetAddress": office, "addressCountry": "KR",
+                           **({"postalCode": op["head_office_postal"]} if op.get("head_office_postal") else {})}
+    if op.get("tel"):
+        node["telephone"] = "+82-" + op["tel"].lstrip("0")
+    if op.get("email"):
+        node["email"] = op["email"]
     return node
 
 
@@ -246,7 +266,10 @@ def image_objects(images: list[dict]) -> list[dict]:
 
 
 def entity_node(e: dict, site: dict, site_url: str, page_url: str, images: list[dict], same_as: list[str],
-                has_map: str = "") -> dict:
+                has_map: str = "", parent: dict | None = None, parts=()) -> dict:
+    """The place node. parent: the place this one is inside (pipeline/relations.py 'inside'; containedInPlace is then
+    [the parent, the city]); parts: the places inside this one (containsPlace). Two pages for one building
+    ('same_building') get neither: no part/whole between them."""
     kind = e.get("kind", "attraction")
     facts = e.get("facts") or {}
     node = {"@type": schema_type(e), "@id": f"{page_url}#place", "name": e["name"], "url": page_url}
@@ -310,15 +333,21 @@ def entity_node(e: dict, site: dict, site_url: str, page_url: str, images: list[
         node["sameAs"] = same_as
     if site.get("locality"):
         node["containedInPlace"] = city_ref(site, site_url)
+    if parent is not None:
+        node["containedInPlace"] = [place_ref(parent["_url"], parent)] + (
+            [city_ref(site, site_url)] if site.get("locality") else [])
+    if parts:
+        node["containsPlace"] = [place_ref(c["_url"], c) for c in parts]
     return node
 
 
 def place_graph(e, site, site_url, page_url, title, crumbs, images, same_as, based_on, faqs,
-                date_modified: str = "", last_reviewed: str = "", has_map: str = "") -> dict:
+                date_modified: str = "", last_reviewed: str = "", has_map: str = "", parent: dict | None = None,
+                parts=()) -> dict:
     graph = [
         webpage(page_url, title, site_url, f"{page_url}#place", date_modified or None, based_on,
                 last_reviewed or None),
-        entity_node(e, site, site_url, page_url, images, same_as, has_map),
+        entity_node(e, site, site_url, page_url, images, same_as, has_map, parent, parts),
         breadcrumb(crumbs),
     ]
     if faqs:

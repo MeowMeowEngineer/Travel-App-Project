@@ -45,6 +45,9 @@ POSES = {
     "mascot-hello": "small", "mascot-point": "small", "mascot-think": "small", "mascot-sorry": "small",
     "mascot-search": "small",
     "mascot-404": "medium", "mascot-empty": "medium",
+    # the AI course planner (/plan/, 2026-10-17): at work and with the plan done (the page's first picture), and the
+    # rain-edit spot beside the edit box
+    "mascot-plan": "medium", "mascot-plan-done": "medium", "mascot-plan-rain": "small",
 }
 ALPHA_FLOOR, ALPHA_FULL, MARGIN = 8, 248, 0.04
 AVIF_QUALITY, AVIF_SPEED, WEBP_QUALITY, WEBP_ALPHA_QUALITY = 68, 4, 82, 90

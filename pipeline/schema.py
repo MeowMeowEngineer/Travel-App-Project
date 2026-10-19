@@ -80,6 +80,53 @@ FACT_LABELS = {
 }
 # A missing key fact counts as present when one of these source fields holds it.
 FACT_ALIASES = {"parking": ("parking_seats",), "usetime": ("usetime_restdate",), "restdate": ("usetime_restdate",)}
+# A city source's '주차 및 좌석수' (facts.parking_seats) holds both halves ('20대/80석') or only one of them ('30석'). A seat
+# count alone is not a parking value: parking stays missing ('확인 필요: 주차') and the row reads 좌석.
+SEAT_COUNT = re.compile(r"^(?:좌석\s*수?\s*)?\d[\d,]*\s*석$")
+PARKING_WORDS = re.compile(r"주차|\d\s*대$|^불가|^가능|없음")
+
+
+def parking_seats_part(raw) -> str:
+    """Which half a parking_seats value holds: 'seats' ('40석', '좌석 100석'), 'parking' ('20대', '공영주차장', '불가')
+    or '' (both halves '20대/80석', or a note for the whole field '전화문의' — read as the combined field)."""
+    parts = [p.strip() for p in re.split(r"[/／]", re.sub(r"\s+", " ", str(raw or "")).strip()) if p.strip()]
+    if not parts:
+        return ""
+    seats = [bool(SEAT_COUNT.match(p)) for p in parts]
+    if all(seats):
+        return "seats"
+    if not any(seats) and all(PARKING_WORDS.search(p) for p in parts):
+        return "parking"
+    return ""
+
+
+def parking_seats_half(e: dict) -> str:
+    """The half (parking_seats_part) that the stored value and every other source's value share; '' when they
+    disagree or the place has none."""
+    values = [(e.get("facts") or {}).get("parking_seats")]
+    values += [a.get("value") for a in (e.get("fact_alternatives") or {}).get("parking_seats") or []]
+    halves = {parking_seats_part(v) for v in values if str(v or "").strip()}
+    return halves.pop() if len(halves) == 1 else ""
+
+
+def alias_holds(e: dict, key: str, alias: str) -> bool:
+    """facts[alias] (or another source's value for it) answers the key fact `key` (FACT_ALIASES) — except a
+    seats-only parking_seats value, which does not answer 주차."""
+    if not ((e.get("facts") or {}).get(alias) or (e.get("fact_alternatives") or {}).get(alias)):
+        return False
+    return not (key == "parking" and alias == "parking_seats" and parking_seats_half(e) == "seats")
+
+
+def fact_label(e: dict, key: str) -> str:
+    """FACT_LABELS[key]; a parking_seats value with one half only is labelled by that half (좌석 / 주차)."""
+    if key == "parking_seats":
+        half = parking_seats_half(e)
+        if half == "seats":
+            return FACT_LABELS["seat"]
+        if half == "parking":
+            return FACT_LABELS["parking"]
+    return FACT_LABELS[key]
+
 # Facts a visitor needs before going. Missing ones are shown as "확인 필요".
 KEY_FACTS = {
     "attraction": ("usetime", "restdate", "usefee", "parking"),
@@ -250,6 +297,58 @@ TRACK_EVENTS = (
     "stay_click", "food_click", "course_click", "guide_click", "video_click", "news_click", "parking_click",
     "chat_open", "chat_send", "chat_link_click",
 )
+
+
+# Coordinates (geo {lat, lng, source, url?, checked_at?, note?}): where each place's point comes from. 'source' is the
+# provider name as data stores it; GEO_PROVIDER gives the name pages print ('TourAPI' -> '한국관광공사 TourAPI'), any
+# other source (the city's official tourism site, a facility's homepage) is printed as it is. A source other than
+# TourAPI also carries the page it was read from (url) and the day it was read (checked_at) —
+# pipeline/validate.geo_problems. The region's box every published point lies in and the points an official map falls
+# back to for a record without coordinates are the city's (site.json city.geo_bounds, city.geo_default_points).
+GEO_PROVIDER = {"TourAPI": "한국관광공사 TourAPI"}
+
+
+def geo_provider(geo: dict | None) -> str:
+    """The printed name of a point's provider: '한국관광공사 TourAPI', the city's tourism site, … ('' without a source)."""
+    src = re.sub(r"\s+", " ", str((geo or {}).get("source") or "")).strip()
+    return GEO_PROVIDER.get(src, src)
+
+
+def geo_providers(geos) -> list[str]:
+    """The distinct printed providers of some points (no source and no point skipped), TourAPI first, then in the
+    order met."""
+    out: list[str] = []
+    for g in geos:
+        if not g or g.get("lat") is None:
+            continue
+        p = geo_provider(g)
+        if p and p not in out:
+            out.append(p)
+    first = GEO_PROVIDER["TourAPI"]
+    return ([first] if first in out else []) + [p for p in out if p != first]
+
+
+def nearby_geo_providers(e: dict, by_slug: dict) -> list[str]:
+    """The providers of the points a place's nearby list was measured between: its own and every listed place's
+    (by_slug: every record by slug, published or not) — what tools/tourapi_bulk.compute_nearby stores."""
+    return geo_providers([e.get("geo")] + [(by_slug.get(n.get("internal_slug") or "") or {}).get("geo")
+                                           for n in e.get("nearby") or []])
+
+
+def nearby_provider(providers: list[str]) -> str:
+    """The Korean line naming whose coordinates straight-line distances use: '한국관광공사 TourAPI 좌표',
+    '한국관광공사 TourAPI·<another provider> 좌표' (nearby_source.provider, the place page's 주변 note)."""
+    return " ".join(x for x in ("·".join(providers), "좌표") if x)
+
+
+def is_default_point(lat, lng) -> bool:
+    """A point an official map shows for a record without coordinates (site.json city.geo_default_points)."""
+    from . import city
+    try:
+        return any(abs(float(lat) - a) < 1e-5 and abs(float(lng) - b) < 1e-5
+                   for a, b in city.current().geo_default_points)
+    except (TypeError, ValueError):
+        return False
 
 
 def license_allowed(code: str | None, allowed: tuple[str, ...] | list[str] | None = None) -> bool:

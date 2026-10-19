@@ -3,7 +3,7 @@
    1439px the page keeps a right gutter free for it (main, footer), so it never covers content. */
 .qm { display: none; }
 @media (min-width: 1024px) {
-  .qm { position: fixed; z-index: 89; right: 32px; bottom: 112px; display: block; padding: 6px; border: 1px solid var(--hair); border-radius: 999px; background: rgba(255, 255, 255, .96); box-shadow: var(--shadow-2); }
+  .qm { position: fixed; z-index: 89; right: 32px; bottom: 132px; display: block; padding: 6px; border: 1px solid var(--hair); border-radius: 999px; background: rgba(255, 255, 255, .96); box-shadow: var(--shadow-2); }
   .qm ul { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
   .qm-i { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--ink-2); text-decoration: none; transition: background-color .2s var(--fb), color .2s var(--fb); }
   .qm-i .icon { width: 20px; height: 20px; }
@@ -25,9 +25,11 @@
 }
 /* below 1024px the launcher (64px, bottom right) sits over the end of sideways rows: they keep room for it */
 @media (max-width: 1023px) {
-  html[lang="ko"] .hk-pills { margin-right: 72px; padding-right: 16px; scroll-padding-right: 16px; }
+  /* the homes' tags and icon menu: the launcher steps aside while the question box is on screen (css/49-chat.css,
+     operator 2026-10-15), so they keep its column free only where it stays (no IntersectionObserver: html.no-askio) */
+  html.no-askio .hk-pills { margin-right: 72px; padding-right: 16px; scroll-padding-right: 16px; }
   .hx-bar-in { padding-right: max(var(--m), 80px); }
-  html[lang="ko"] .hq-row { padding-right: 54px; }   /* the icon menu's last column clear of the launcher */
+  html.no-askio .hq-row { padding-right: 72px; }   /* the icon menu's last column clear of the launcher */
   /* the route row: 카카오맵 길찾기 across, 네이버 지도 · 카카오맵 under it, all clear of the launcher's column */
   .route-row { grid-template-columns: 1fr 1fr; padding-right: 72px; }
   .route-row .btn-go { grid-column: 1 / -1; }
@@ -35,11 +37,3 @@
   .route-co .route-row .btn-go { grid-column: auto; }
 }
 @media print { .qm { display: none; } }
-/* the launcher from 1024px (UI4, the reference's manner): the round 72px mascot face only, so it never covers the
-   question card or the content column; its label '물어보기' shows as a dark tooltip at its left on hover and focus
-   (it stays the button's accessible name). Higher specificity than 49-chat.css, which comes later. */
-@media (min-width: 1024px) {
-  html .chat-fab, html.chat-mini .chat-fab { max-width: 72px; overflow: visible; }
-  html .chat-fab-l { position: absolute; right: calc(100% + 12px); top: 50%; padding: 8px 12px; border-radius: 8px; background: var(--ink); color: #fff; font-size: 14px; opacity: 0; visibility: hidden; transform: translateY(-50%); pointer-events: none; }
-  html .chat-fab:hover .chat-fab-l, html .chat-fab:focus-visible .chat-fab-l { opacity: 1; visibility: visible; }
-}

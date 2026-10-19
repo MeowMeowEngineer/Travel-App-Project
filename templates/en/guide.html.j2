@@ -14,10 +14,11 @@
 {% block main_class %}{% endblock %}
 {% block lnav %}
 {% set links = [] %}
+{% if G.booking %}{% set _ = links.append((G.bw.nav, '#h-book')) %}{% endif %}
 {% if G.places %}{% set _ = links.append((t.s('sec_places'), '#h-items')) %}{% endif %}
 {% if G.faqs %}{% set _ = links.append((t.s('sec_faq'), '#h-faq')) %}{% endif %}
 {% set _ = links.append((t.s('sec_sources'), '#h-src')) %}
-{{ ui.lnav(G.label or G.title, links, {'url': '#h-items', 'label': t.s('sec_places')} if G.places else none, t.s('jump_guide')) }}
+{{ ui.lnav(G.label or G.title, links, {'url': '#h-items', 'label': t.s('sec_places')} if G.places else none, t.s('jump_guide'), {'id': G.g.id, 'lang': loc.code}) }}
 {% endblock %}
 {% block content %}
 {% macro credit_en(cards) -%}
@@ -26,8 +27,13 @@
 {% set types = G.places|selectattr('photo')|map(attribute='photo.lic')|unique|list %}
 <article class="guide" data-record="guide:{{ G.g.id }}">
 {% if G.picks %}{{ ui.sprite(G.icons) }}{% endif %}
-  {% set camp = (art_slots or {}).get('en.guide.banner.' ~ G.g.id) if loc.code == 'en' else none %}
+  {#- the head banner: the English one with its English words on /en/, else the banner without words (intl.guide.banner,
+      the operator's edits of the Korean ones, 2026-10-14 night) -#}
+  {% set camp = ((art_slots or {}).get('en.guide.banner.' ~ G.g.id) if loc.code == 'en' else none) or (art_slots or {}).get('intl.guide.banner.' ~ G.g.id) %}
   <header class="pg-hero gd-head{% if camp %} has-camp{% endif %}"><div class="wrap">{{ artm.banner(camp, loc.code) }}
+    {#- the head picture, as on the Korean guide: the mascot on the transport and the food hub guides, the info desk on
+        guide-30 -#}
+    {% set gp = {'guide-12': ('mascot-bus', 'bus', 88), 'guide-13': ('mascot-eat', 'bowl', 88), 'guide-30': ('info-center', 'info', 56)}.get(G.g.id) %}{% if gp %}<p class="hd-pic">{{ ui.kpic(gp[0], gp[1], gp[2]) }}</p>{% endif %}
     <p class="kicker"><a href="{{ loc.home }}guides/">{{ t.guides }}</a>{% if G.label %}<span>{{ G.label }}</span>{% endif %}</p>
     {#- a title with ': ' reads as the question and, in grey on its own line, its list (the Korean two-tone head);
         the H1's text stays the whole title #}
@@ -51,6 +57,8 @@
       </div>
       {% endif %}
     </div>
+    {#- 'Book': the booking services the guide cites (pipeline/booking.py guide_targets), after the answer card -#}
+    {{ ui.book(G.booking, G.bw, '', true) }}
   </div>
   </header>
 
@@ -85,7 +93,7 @@
         <span class="gi-n tn">{{ it.n }}</span>
         <div class="gi-main">
           <p class="gi-name">{% if it.path %}<a href="{{ it.path }}" data-track="nearby_click" data-place="{{ it.p.e.id }}">{{ it.name }}</a>{% else %}<b>{{ it.name }}</b>{% if it.name_ko %} {{ E.ko(it.name_ko) }}{% endif %}{% endif %}{% set meta = [it.type, it.area]|select|list %}{% if meta %}<span class="gi-meta">{{ meta|join(' · ') }}</span>{% endif %}</p>
-          {% if it.reason %}<p class="gi-reason">{{ it.reason|tel }}</p>{% endif %}
+          {% if it.reason %}<p class="gi-reason">{{ it.reason|telx }}</p>{% endif %}
           {% if it.kf %}{{ E.kfrows(it.kf, it.p.e.id) }}{% endif %}
         </div>
         {% if it.photo %}<img class="gi-th t{{ it.photo.type }}" src="{{ it.photo.url }}"{% if it.photo.w and it.photo.h %} width="{{ it.photo.w }}" height="{{ it.photo.h }}"{% endif %} alt="{{ it.photo.alt }}" loading="lazy" decoding="async" data-kogl="{{ it.photo.type }}">{% endif %}
@@ -99,14 +107,14 @@
   {% if G.faqs %}
   <section class="wrap chapter ch-rail cv" aria-labelledby="h-faq">
     <h2 id="h-faq" class="rail-label">{{ t.sec_faq }}</h2>
-    <div class="rail-body"><div class="faq faq-acc">{% for f in G.faqs %}<details class="qa"{% if loop.first %} open{% endif %}><summary><h3>{{ f.q }}</h3><span class="qa-i" aria-hidden="true"></span></summary><p>{{ f.a }}{% if G.faq_notes|length > 1 %}{{ E.csup(f.n) }}{% endif %}</p></details>{% endfor %}</div>{{ E.chnotes(G.faq_notes) }}</div>
+    <div class="rail-body"><div class="faq faq-acc">{% for f in G.faqs %}<details class="qa"{% if loop.first %} open{% endif %}><summary><h3>{{ f.q }}</h3><span class="qa-i" aria-hidden="true"></span></summary><p>{{ f.a|telx_faq }}{% if G.faq_notes|length > 1 %}{{ E.csup(f.n) }}{% endif %}</p></details>{% endfor %}</div>{{ E.chnotes(G.faq_notes) }}</div>
   </section>
   {% endif %}
 
   <section class="wrap chapter ch-rail ch-src cv" aria-labelledby="h-src">
     <h2 id="h-src" class="rail-label">{{ t.sec_sources }}</h2>
     <div class="rail-body">
-      {% if G.sources %}<ul class="src-list src-compact">{% for s in G.sources %}<li><a href="{{ s.url }}" rel="noopener" data-track="official_click">{{ s.name }}</a></li>{% endfor %}</ul>{% endif %}
+      {% if G.sources %}<ul class="src-list src-compact">{% for s in G.sources %}<li>{% if s.entry %}<span class="src-w"><a href="{{ s.url }}" rel="noopener" data-track="official_click">{{ s.name }}</a> · <a class="src-entry" href="{{ s.entry }}" hreflang="{{ s.entry_lang }}" lang="{{ s.entry_lang }}" rel="noopener" data-track="official_click">{{ s.entry_label }}</a></span>{% else %}<a href="{{ s.url }}" rel="noopener" data-track="official_click">{{ s.name }}</a>{% endif %}</li>{% endfor %}</ul>{% endif %}
       <p class="note"><a href="{{ loc.home }}about/#corrections">{{ t.report_error }}</a></p>
     </div>
   </section>

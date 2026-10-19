@@ -24,8 +24,11 @@ its record stays). A record without a current English page gets the slug English
 Index rule: a place page is indexable only when its Korean page is (schema.index_status, production) and its record
 is current; otherwise noindex and out of sitemap.xml / llms.txt (still listed). hreflang: ko, every version the page
 has (en, ja, zh-Hans, zh-Hant, de, fr, es, ru) and x-default (= Korean), the same list on every page of the set
-(Intl.alternates). The language menu (templates/_lang.html.j2, Intl.menu) links each version's counterpart page,
-else that version's home; it lists only the versions this build has.
+(Intl.alternates). The language menu (templates/_lang.html.j2, Intl.menu) links each version's counterpart page
+(the search pages pair too, without hreflang: Site.menu_twins), else that version's list of the same kind (guides,
+courses, events, the place's list; else its home) with a visible 'not translated' note in that version's words
+(Site.menu_link, Locale.untranslated); it lists only the versions this build has. A published Korean record a version
+has no translation of is counted (render stats 'untranslated', a build warning, build_public's intl_untranslated).
 """
 from __future__ import annotations
 
@@ -34,16 +37,22 @@ import re
 import unicodedata
 from collections import Counter
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from markupsafe import Markup, escape
 
-from . import art, ask, city, intl_text, jsonld, media, present
+from . import art, ask, booking, city, intl_text, jsonld, media, notices, present, relations, tickets
 from . import locales as LC
-from .en_source import CONFLICT_NOTE, EVENT_CONFLICT_NOTE, HANGUL, _admin, current_hashes, event_series, romanize
-from .maplinks import DEFAULT_TMAP_SCHEME, build_links
-from .schema import FACT_ALIASES, KEY_FACTS, KEY_FACTS_BY_CATEGORY, designations, node_types, schema_type
-from .textutil import display_address, extract_phones, link_url, phone_intl, url_domain, web_text, web_url
+# a cited booking site's own page in a reader's language (QA 2026-10-15 SRC-05b): moved to booking.py with the booking
+# buttons (2026-10-16), so present and en_site share it
+from .booking import OFFICIAL_ENTRY, official_entry  # noqa: F401
+from .en_source import (CONFLICT_NOTE, EVENT_CONFLICT_NOTE, HANGUL, _admin, conflict_alternatives, current_hashes,
+                        event_series, romanize)
+from .maplinks import DEFAULT_TMAP_SCHEME, build_links, google_transit_url
+from .schema import (FACT_ALIASES, GEO_PROVIDER, KEY_FACTS, KEY_FACTS_BY_CATEGORY, alias_holds, designations,
+                     geo_provider, node_types, parking_seats_half, schema_type)
+from .textutil import (display_address, extract_phones, link_url, phone_intl, phone_intl_shown, url_domain, web_text,
+                       web_url)
 
 EN = LC.get("en")   # its site name and city name are the city's (site.json city.intl.en; LC.for_city)
 EN_HOME = "/en/"
@@ -77,7 +86,7 @@ NAV_KEYS = (("nav_attraction", "places/"), ("nav_food", "food/"), ("nav_stay", "
             ("courses", "courses/"), ("events", "events/"))
 CURRENT = {"place-attraction": "places/", "places": "places/", "place-food": "food/", "list-food": "food/",
            "place-stay": "stays/", "list-stay": "stays/", "guide": "guides/", "guides": "guides/",
-           "course": "courses/", "courses": "courses/", "events": "events/"}
+           "course": "courses/", "courses": "courses/", "events": "events/", "search": "search/"}
 # key-fact slots: the label key in strings.json (the Korean slot names: present.SLOT_LABEL)
 SLOT_STRING = {"hours": "TITLE_LABELS.usetime", "closed": "FACT_LABELS.restdate", "fee": "STATUS_PREFIX.usefee",
                "parking": "FACT_LABELS.parking", "tel": "INDEX_GROUP_LABELS.phone", "menu": "FACT_LABELS.menu",
@@ -86,17 +95,15 @@ ABBR = EN.abbr
 SENT_SPLIT = re.compile(r"(?<=[.?!])\s+(?=[A-Z0-9\"'(\[])")
 TIME_RANGE = re.compile(r"\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2}")
 WEEKDAY = re.compile(r"\b(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)days?\b")
-CLOSED_WORDS = re.compile(r"(closed|open all year|open every day|no regular clos|open 24 hours|closing day)", re.I)
-# the same two tests in the other languages (key-fact tiles: the closed-day part of an hours value, a weekday clause)
-CLOSED_BY = {
-    "ja": re.compile(r"(休み|休業|定休|休館|休園|年中無休|無休|24時間営業)"),
-    "zh-hans": re.compile(r"(休息|闭馆|休馆|停业|全年无休|全年开放|24小时营业|无休)"),
-    "zh-hant": re.compile(r"(休息|閉館|休館|停業|全年無休|全年開放|24小時營業|無休)"),
-    "de": re.compile(r"(geschlossen|Ruhetag|ganzjährig geöffnet|täglich geöffnet|rund um die Uhr)", re.I),
-    "fr": re.compile(r"(fermé|fermeture|ouvert toute l'année|ouvert tous les jours|ouvert 24 h)", re.I),
-    "es": re.compile(r"(cerrado|cierra|abierto todo el año|abierto todos los días|abierto las 24 horas)", re.I),
-    "ru": re.compile(r"(выходн|закрыт|без выходных|круглосуточно|круглый год)", re.I),
-}
+HOURS_KEYS = ("usetime", "usetime_restdate")
+TIME_TOKEN = re.compile(r"\d{1,2}:\d{2}")
+KO_TIME_TOKEN = re.compile(r"\d{1,2}:\d{2}|\d{1,2}\s*시(?!간)(?:\s*\d{1,2}\s*분)?")
+SPAN_EDGE = " \t/／,，、;；:：-–.。"
+# the '휴무일:' label in front of a closed part as the translations write it (present._closed_part drops the Korean one)
+CLOSED_LABEL = {
+    "en": r"(?:closing|closed)\s+days?", "ja": r"(?:休業日|定休日|公休日|休館日)", "zh-hans": r"(?:公休日|休息日|休业日)",
+    "zh-hant": r"(?:公休日|休息日|休業日)", "de": r"Ruhetage?", "fr": r"jours?\s+de\s+fermeture",
+    "es": r"d[ií]as?\s+de\s+cierre", "ru": r"выходн(?:ой|ые)(?:\s+дни|\s+день)?"}
 DURATION_ORDER = {"당일": 0, "1박 2일": 1, "2박 3일": 2}   # course groups: day trip, one night, two nights, the rest
 BRIEF_MAX = 40
 CELL_MAX = 48
@@ -177,16 +184,56 @@ def lines_html(text: str | None) -> Markup:
     return Markup("<br>").join(escape(x) for x in str(text or "").split("\n"))
 
 
-def _segments(value: str, timeish: bool) -> list[tuple[str, str]]:
-    """A stored value cut into (header, text) parts at line breaks and ' / '. A '[Header]' line labels the part
-    after it: hours read 'Summer (March–October) 09:00–18:00'; other values keep the header apart (fees: 'Adults
-    500 won' under 'Individuals')."""
-    parts = [p.strip() for p in re.split(r"\s*\n\s*|\s+/\s+", value or "") if p.strip()]
+HEADER_LINE = re.compile(r"\[(.+)\]|【(.+)】|［(.+)］")   # a group's header line: '[개별권]', Japanese/Chinese '【個別券】'
+# hours are cut further, as the Korean tile reads its ranges one by one (present.brief_hours; review 2026-10-18): before
+# a '[Season]' header inside a line ('[Sommer (März–Oktober)] 09:00–18:00 [Winter …] …') and a '※' note; in Japanese
+# and Chinese also at '／', at a '/' with no space before it ('…（17:30停止入场）/ 11–2月 …') and after a range that
+# another part follows ('冬季 09:00–17:00 夏季 09:00–18:00', '冬季09:00–17:00，夏季09:00–18:00')
+HOURS_CUT = r"|\s+(?=[\[【［][^\]】］]+[\]】］])|\s*(?=※)"
+CJK_HOURS_CUT = r"|\s*／\s*|/\s+|(?<=\d:\d\d)\s*[，、；;]\s*|(?<=\d:\d\d)\s+(?=[^\d\s(（\[【［\-–~～、，,;；/])"
+# the other versions: after a range only where another part with a range of its own follows, before any bracket
+# ('Montag 09:00–18:00 Dienstag–Sonntag 09:00–21:30'; never '09:00–18:00 daily (break 15:00–17:00)')
+RANGE_HOURS_CUT = r"|(?<=\d:\d\d)\s+(?=[^\d\s(\[\-–~,;/][^/(\[]*?\d{1,2}:\d{2}\s*[–-]\s*\d{1,2}:\d{2})"
+INLINE_HEADER = re.compile(r"(?:\[([^\]]+)\]|【([^】]+)】|［([^］]+)］)\s*(\S.*)")
+
+
+def _cut(value: str, pattern: str) -> list[str]:
+    """An hours value cut where pattern matches outside brackets ('…（準備時間 15:00–17:00／ラストオーダー 21:30）' stays
+    one part)."""
+    out, pos = [], 0
+    for m in re.finditer(pattern, value):
+        head = value[:m.start()]
+        if m.start() >= pos and head.count("(") + head.count("（") == head.count(")") + head.count("）"):
+            out.append(value[pos:m.start()])
+            pos = m.end()
+    return out + [value[pos:]]
+
+
+def _segments(value: str, timeish: bool, cjk: bool = False) -> list[tuple[str, str]]:
+    """A stored value cut into (header, text) parts at line breaks and ' / ' (hours further: HOURS_CUT, CJK_HOURS_CUT
+    with cjk). A '[Header]' line ('【…】' in Japanese and Chinese) labels the part after it: hours read 'Summer
+    (March–October) 09:00–18:00', and a header inside a line labels the rest of it; other values keep the header
+    apart (fees: 'Adults 500 won' under 'Individuals'). An hours value's '※' note is left out with the rest of its
+    source line, as the Korean tile leaves out the whole line (present.clean_lines; a last entry rule in one:
+    rule_part)."""
+    cut = r"\s+/\s+" + (HOURS_CUT + (CJK_HOURS_CUT if cjk else RANGE_HOURS_CUT) if timeish else "")
+    parts = []
+    for line in re.split(r"\s*\n\s*", value or ""):
+        for p in (_cut(line, cut) if timeish else re.split(cut, line)):
+            if timeish and p.strip().startswith("※"):
+                break
+            if p.strip():
+                parts.append(p.strip())
     out, head = [], ""
     for p in parts:
-        m = re.fullmatch(r"\[(.+)\]", p)
+        m = HEADER_LINE.fullmatch(p)
         if m:
-            head = m.group(1).strip()
+            head = next(g for g in m.groups() if g).strip()
+            continue
+        m = INLINE_HEADER.fullmatch(p) if timeish else None
+        if m:
+            head, p = next(g for g in m.groups()[:3] if g).strip(), m.group(4)
+        if timeish and p.startswith("※"):
             continue
         p = re.sub(r"^[-•※]\s*", "", p)
         out.append((("", f"{head} {p}") if timeish and head else (head, p)))
@@ -214,16 +261,36 @@ def _weekday(text: str, loc: LC.Locale) -> bool:
         any(w in text for w in loc.weekdays) or bool(re.search(r"[月火水木金土日]曜", text))
 
 
-def _reduce(text: str, prefer_day: bool = False, loc: LC.Locale = EN) -> str:
+# a trailing '(…)' that holds a time: the last entry the Korean hours tile folds into its range (present.brief_hours)
+TIME_PAREN = re.compile(r"[(（][^()（）]*\d{1,2}:\d{2}[^()（）]*[)）]$")
+# a '(…)' without a time: a season's months ('夏季（3月–10月）'), which a short tile leaves out before the season's word
+NO_TIME_PAREN = re.compile(r"\s*[(（][^()（）:]*[)）]")
+
+
+def _reduce(text: str, prefer_day: bool = False, loc: LC.Locale = EN, keep_last: bool = False,
+            timeish: bool = False) -> str:
     """A short main part of one segment: the whole when short; else without a trailing '(…)', else the first
     clause (the one naming a weekday for closed days), else the time range it states; else the whole segment
-    (never cut inside a word or number)."""
+    (never cut inside a word or number). keep_last: a segment that ends in a time in brackets — its last entry,
+    which the Korean tile shows — stays whole. timeish (hours): a season's months in brackets go first, its word
+    stays, and so do the words in front of the range."""
     t = squash_ws(text)
     limit = BRIEF_MAX // 2 if loc.cjk else BRIEF_MAX
     if len(t) <= limit:
         return t
+    if timeish and (loc.cjk or keep_last):
+        # the months in brackets go before a season's word or a last entry does (review 2026-10-18: '夏季（3月–10月）
+        # 09:00–18:00' → '夏季 09:00–18:00', never the bare range)
+        bare = squash_ws(NO_TIME_PAREN.sub("", t))
+        if len(bare) <= limit or (keep_last and TIME_PAREN.search(bare)):
+            return bare
+        t = bare if loc.cjk else t
+    elif keep_last and TIME_PAREN.search(t):
+        return t
     s = t
     while re.search(r"\s*[(（][^()（）]*[)）]$", s) and len(s) > limit:
+        if timeish and TIME_PAREN.search(s) and not TIME_TOKEN.search(s[:TIME_PAREN.search(s).start()]):
+            break   # hours: never the bracket that holds the only time ('案内所（10:00–17:00）')
         s = re.sub(r"\s*[(（][^()（）]*[)）]$", "", s).strip()
     if len(s) <= limit and len(s) >= (3 if loc.cjk else 5):
         return s
@@ -232,16 +299,21 @@ def _reduce(text: str, prefer_day: bool = False, loc: LC.Locale = EN) -> str:
         day = next((c for c in clauses if _weekday(c, loc) and len(c) <= limit), "")
         if day:
             return day[0].upper() + day[1:]
-    if clauses and (3 if loc.cjk else 5) <= len(clauses[0]) <= limit:
+    if clauses and (3 if loc.cjk else 5) <= len(clauses[0]) <= limit and \
+            not (timeish and TIME_RANGE.search(t) and not TIME_TOKEN.search(clauses[0])):   # hours: a clause with a time
         return clauses[0]
     m = TIME_RANGE.search(t)
-    if m:
-        return m.group(0)
+    if m:   # hours: the range with the words in front of it (a season, a weekday) when they fit
+        lead = t[:m.end()]
+        if lead.count("(") + lead.count("（") > lead.count(")") + lead.count("）"):
+            lead = squash_ws(re.sub(r"[(（](?=[^(（]*$)", " ", lead))   # '案内所（10:00–17:00' → '案内所 10:00–17:00'
+        return lead if timeish and len(lead) <= limit else m.group(0)
     return t
 
 
-def brief_en(key: str, value: str | None, loc: LC.Locale = EN) -> dict:
-    """{main, sub, more} for a key-fact tile or a list cell (the facts card prints the whole value)."""
+def brief_en(key: str, value: str | None, loc: LC.Locale = EN, keep_last: bool = False) -> dict:
+    """{main, sub, more} for a key-fact tile or a list cell (the facts card prints the whole value). keep_last: the
+    Korean hours tile shows a last entry, so a part ending in one stays whole (_reduce)."""
     v = squash_ws(value) if "\n" not in str(value or "") else str(value).strip()
     if not v:
         return {"main": "", "sub": "", "more": False}
@@ -258,19 +330,19 @@ def brief_en(key: str, value: str | None, loc: LC.Locale = EN) -> dict:
             main += sep + items[k]
             k += 1
         return {"main": cap(main), "sub": "", "more": k < len(items)}
-    segs = _segments(v, timeish)
+    segs = _segments(v, timeish, loc.cjk)
     if not segs:
         return {"main": squash_ws(v), "sub": "", "more": False}
     limit = BRIEF_MAX // 2 if loc.cjk else BRIEF_MAX
     if len(segs) == 1 and len(segs[0][1]) <= limit and not segs[0][0]:
-        return {"main": segs[0][1], "sub": "", "more": False}
+        return {"main": cap(segs[0][1]) if timeish else segs[0][1], "sub": "", "more": False}
     head, first = segs[0]
-    main = _reduce(first, key == "restdate", loc)
+    main = _reduce(first, key == "restdate", loc, keep_last, timeish)
     sub = head
     used = 1
     if not sub and len(segs) > 1 and timeish:
-        nxt = _reduce(segs[1][1], False, loc)
-        if len(nxt) <= limit:
+        nxt = _reduce(segs[1][1], False, loc, keep_last, timeish)
+        if len(nxt) <= limit or (keep_last and TIME_PAREN.search(nxt)):
             sub, used = nxt, 2
     whole = squash_ws(" ".join(f"{h} {t}".strip() for h, t in segs))
     shown = squash_ws(f"{sub} {main}") if head else squash_ws(f"{main} {sub}")
@@ -278,30 +350,244 @@ def brief_en(key: str, value: str | None, loc: LC.Locale = EN) -> dict:
             "more": used < len(segs) or main != squash_ws(first) or len(shown) < len(whole) - 2}
 
 
+def own_fee_row(ko_raw, value) -> str:
+    """The row of a translated fee table that is the Korean visitor's own price row (present.own_fee_row): the first
+    price row of the group at the same place among the table's '[…]' groups (of a table without groups when the Korean
+    has none), only when it states the same amount; '' otherwise (the groups do not line up)."""
+    own = present.own_fee_row(ko_raw)
+    if not own:
+        return ""
+    ko_heads = [g["label"] for g in present.fee_groups(ko_raw) if g["label"]]
+    heads, rows = [], {}
+    for h, t in _segments(str(value or "").strip(), False):
+        if h and h not in heads:
+            heads.append(h)
+        if re.search(r"\d", t):
+            rows.setdefault(h, t)
+    if own["index"] is None:
+        row = rows.get("", "") if not heads else ""
+    else:
+        row = rows.get(heads[own["index"]], "") if len(heads) == len(ko_heads) else ""
+    return row if row and re.sub(r"\D", "", row) == re.sub(r"\D", "", own["price"]) else ""
+
+
+def fee_pair(ko_raw, value, price: int, names: tuple[str, str], loc: LC.Locale = EN) -> dict | None:
+    """The fee tile of a place a combined ticket also opens, in this language (present.fee_with_ticket: the visitor's
+    own price beside the ticket's, never the ticket's alone; review 2026-10-18): the place's own price row from this
+    version's own table as main ('Adults 2,000 won'), the ticket's price for the same visitor from tickets.json in this
+    language's money after the ticket's name as sub ('Museum combined ticket: Adults 3,000 won'; the short name of a
+    combined ticket when that is longer than a tile's part, names = (name, short name)). None when the translated table
+    has no row that is the Korean's (own_fee_row) or no name is translated."""
+    row = own_fee_row(ko_raw, value)
+    m = re.match(r"(.*?)\s*[:：]?\s*\d", row)
+    who = (m.group(1) if m else "").strip(" -•:：")
+    if not who:
+        return None
+    limit = BRIEF_MAX // 2 if loc.cjk else BRIEF_MAX
+    part = lambda name: f"{name}{loc.colon}{who}{'' if loc.cjk else ' '}{loc.money(price)}"   # noqa: E731
+    sub = next((part(n) for n in names if n and len(part(n)) <= limit), part(names[1]) if names[1] else "")
+    return {"main": cap(squash_ws(row)), "sub": sub, "more": True} if sub else None
+
+
+# a translated fee table's rows, as present.restore_lines reads the Korean ones: at line breaks and ';', at a '- ' item
+# mark before a word, before and after a '[…]' header and before a '※' note (never inside brackets: _cut)
+FEE_ROW_CUT = r"\s*\n\s*|\s*[；;]\s*|\s+-\s+(?=\D)|\s+(?=[\[【［])|(?<=[\]】］])\s+|\s*(?=※)"
+FEE_LEAD = re.compile(r"(.+?)(?:\s*[:：]\s*|\s+—\s+)(.*)")
+AMOUNT = re.compile(r"\d+(?:[.,\u202f ]\d{3})*")
+
+
+def _amounts(text: str) -> list[str]:
+    """The amounts a text states, digits only ('1\u202f000 (500)' → ['1000', '500'])."""
+    return [re.sub(r"\D", "", a) for a in AMOUNT.findall(text or "")]
+
+
+def fee_brief(ko_raw, value, loc: LC.Locale = EN) -> dict:
+    """A value of a fee tile where sources differ, against the Korean value it translates (present.brief_fee, as the
+    hours tile reads each value against its Korean one): the first row of the translated table that states the
+    Korean tile's first amount as main — never a bare group header — whole (it holds its own and the residents'
+    price), the row's group as sub: its '[…]' header, or the words in front of the row ('Einzelpersonen / Gruppen
+    (ab 20 Personen): Erwachsene … 1.000 (500)'); '※' notes left out. The table's first row with an amount when no
+    row states the Korean one; brief_en when the value has no amount at all."""
+    kb = present.brief_fee(ko_raw) or {}
+    amount = (_amounts(kb.get("main", "")) or [""])[0]
+    head, rows = "", []
+    for part in _cut(str(value or ""), FEE_ROW_CUT):
+        part = part.strip().lstrip("-•").strip()
+        if not part or part.startswith("※"):
+            continue
+        m = HEADER_LINE.fullmatch(part)
+        if m:
+            head = next(g for g in m.groups() if g).strip()
+        elif _amounts(part):
+            rows.append((head, part))
+    hit = next((r for r in rows if amount and amount in _amounts(r[1])), rows[0] if rows else None)
+    if not hit:
+        return brief_en("usefee", value, loc)
+    head, row = hit
+    m = FEE_LEAD.fullmatch(row)
+    lead = m.group(1) if m and m.group(1).count("(") + m.group(1).count("（") == \
+        m.group(1).count(")") + m.group(1).count("）") else ""
+    if lead and re.search(r"[^\W\d_]", re.split(r"\d", m.group(2), maxsplit=1)[0]):   # the words of a row follow it
+        head, row = lead, m.group(2)
+    return {"main": cap(squash_ws(row)), "sub": squash_ws(head), "more": True}
+
+
+# a last entry stated as a rule, by its number of minutes ('entry until 30 minutes before closing', '閉館30分前まで入場'):
+# the part of a translated hours value the Korean tile shows as '폐관 30분 전까지 입장' (present.brief_hours)
+MINUTES_RULE = re.compile(r"\d+\s*(?:min|分|Minute|minuto|минут)", re.I)
+KO_RULE = re.compile(r"\d+\s*분\s*전")
+
+
+def rule_part(value) -> str:
+    """The part of a translated hours value that states a last entry as a rule (MINUTES_RULE, no time in it); ''."""
+    for p in re.split(r"\s*\n\s*|\s*※\s*|[,，、;；]\s*|\s+/\s+|\s*／\s*", str(value or "")):
+        p = p.strip(" .。-")
+        if MINUTES_RULE.search(p) and not TIME_TOKEN.search(p):
+            return p
+    return ""
+
+
+def last_entry_tr(value, loc: LC.Locale = EN) -> str:
+    """The last entry of a translated hours value, for the sub line of another value's tile (present.last_entry_part):
+    each part that ends in a time in brackets after a range, as its season and that bracket with the months left out
+    ('Summer (last entry 17:30), Winter (last entry 16:30)', '夏季（入場締切17:30）'), a lone one without its brackets;
+    else its rule (rule_part); '' when it gives none."""
+    out = []
+    for _, seg in _segments(str(value or ""), True, loc.cjk):
+        m = TIME_PAREN.search(seg)
+        r = TIME_RANGE.search(seg[:m.start()]) if m else None
+        if r:
+            season = squash_ws(NO_TIME_PAREN.sub("", seg[:r.start()]))
+            out.append(f"{season}{'' if loc.cjk else ' '}{m.group(0)}" if season else m.group(0)[1:-1].strip())
+    return loc.list_sep.join(out) if out else rule_part(value)
+
+
+def carry_last(ko: dict, b: dict, value, loc: LC.Locale = EN) -> None:
+    """A tile whose Korean shows a last entry as a rule ('폐관 30분 전까지 입장', present.brief_hours) shows its
+    translation on the sub line too, from the value it translates (rule_part)."""
+    if not KO_RULE.search(f"{ko.get('main', '')} {ko.get('sub', '')}") or \
+            MINUTES_RULE.search(f"{b.get('main', '')} {b.get('sub', '')}"):
+        return
+    part = rule_part(value)
+    if part:
+        b["sub"] = f"{b['sub']} · {part}" if b.get("sub") else cap(part)
+
+
 def cap(text: str) -> str:
     """A tile's main part starts with a capital ('closed on the second Monday' -> 'Closed on …')."""
     return text[:1].upper() + text[1:] if text[:1].islower() else text
 
 
-def closed_part_en(value: str | None, loc: LC.Locale = EN) -> str:
-    """The closed-days part of an hours value ('11:00–20:00 / Closed every Monday' -> 'Closed every Monday')."""
-    words = CLOSED_WORDS if loc.code == "en" else CLOSED_BY[loc.code]
-    v = squash_ws(value)
-    for p in re.split(r"\s+/\s+|\n", str(value or "")):
-        if words.search(p) and not TIME_RANGE.search(p):
-            return squash_ws(p).rstrip(".。")
-    m = re.search(r"[(（]([^()（）]*)[)）]", v)
-    if m and words.search(m.group(1)) and not TIME_RANGE.search(m.group(1)):
-        return squash_ws(m.group(1))
-    if loc.code == "en":
-        m = re.search(r"[,.;]\s*((?:closed|open all year|open every day)[^.;]*)", v, re.I)
-        if m:
-            return squash_ws(m.group(1))
+def _unwrap(text: str) -> str:
+    """present._closed_part for a translated part: separators at both ends off, a bracket pair around the whole
+    goes, a bracket left unpaired by the cut goes."""
+    t = text.strip(SPAN_EDGE)
+    for o, c in (("(", ")"), ("（", "）")):
+        if t.startswith(o) and t.endswith(c) and t.count(o) == t.count(c) == 1:
+            t = t[1:-1].strip(SPAN_EDGE)
+        while t.endswith(c) and t.count(c) > t.count(o):
+            t = t[:-1].rstrip(SPAN_EDGE)
+        while t.startswith(o) and t.count(o) > t.count(c):
+            t = t[1:].lstrip(SPAN_EDGE)
+    return t
+
+
+def closed_span(ko_value, value, loc: LC.Locale = EN) -> dict | None:
+    """The closed-day part of a translated hours value, found from the Korean parse instead of from words of the
+    language (the hours value is translated whole, closed day included): present.brief_hours finds the Korean
+    closed part, which follows the value's last time; the translation keeps the times (tools/en_content.py parity
+    compares their sets; the count is checked here), so its closed part is what follows its own last time (after the
+    bracket that time sits in) — in a value without times, its last '/'-part, as in the Korean. The '휴무일:' label of
+    the language goes, as the Korean one does. None when the Korean value has no closed part; {start, text}; {start: -1, why} when the two cannot be aligned
+    (pipeline.validate reports it as an error)."""
+    ko, tr = str(ko_value or ""), str(value or "")
+    _, ko_closed = present.brief_hours(ko)
+    if not ko_closed:
+        return None
+    ko_t, tr_t = list(KO_TIME_TOKEN.finditer(ko)), list(TIME_TOKEN.finditer(tr))
+    if ko_t and ko.rfind(re.split(r"[\s,(]", ko_closed.strip())[0]) < ko_t[-1].end():
+        return {"start": -1, "text": "", "why": "the Korean closed day is not after the last time"}
+    if ko_t:
+        if len(tr_t) != len(ko_t):
+            return {"start": -1, "text": "", "why": f"{len(ko_t)} times in the Korean, {len(tr_t)} in the translation"}
+        start, ko_start = _after_time(tr, tr_t[-1].end()), _after_time(ko, ko_t[-1].end())
     else:
-        for c in re.split(r"[,.;、，；。]\s*", v):
-            if words.search(c) and not TIME_RANGE.search(c):
-                return squash_ws(c)
-    return ""
+        cut = r"\s*[/／]\s*|\n"
+        ko_s, tr_s = [x for x in re.split(cut, ko) if x.strip()], [x for x in re.split(cut, tr) if x.strip()]
+        if len(ko_s) < 2 or len(ko_s) != len(tr_s):
+            return {"start": -1, "text": "", "why": "the '/' parts of the Korean and the translation differ"}
+        start, ko_start = tr.rfind(tr_s[-1]), ko.rfind(ko_s[-1])
+    # the Korean side decides what the translated tail is: the closed part brief_hours found must be the whole Korean
+    # tail, or the bracket that ends it ('외부·정원만 관람 가능 (매주 월요일 휴관)') — anything else is not aligned
+    ko_tail = _tail(ko[ko_start:], r"(?:휴무일|휴관일|휴일|정기\s*휴무|쉬는\s*날)")
+    tr_tail = re.split(r"\s*※", tr[start:])[0]
+    if _key(ko_tail) != _key(ko_closed):
+        kb, tb = BRACKET_END.search(ko_tail), BRACKET_END.search(tr_tail)
+        if not (kb and _key(kb.group(1)) == _key(ko_closed)):
+            return {"start": -1, "text": "", "why": "the Korean closed day is not the whole tail"}
+        if not tb:
+            return {"start": -1, "text": "", "why": "the Korean closed day is in brackets, the translation's is not"}
+        start, tr_tail = start + tb.start(), tb.group(1)
+    text = _tail(tr_tail, CLOSED_LABEL[loc.code])
+    if not text:
+        return {"start": -1, "text": "", "why": "nothing after the last time"}
+    return {"start": start, "text": text}
+
+
+BRACKET_END = re.compile(r"[(（]([^()（）]*)[)）]\s*$")
+
+
+def _after_time(text: str, end: int) -> int:
+    """Where a value's tail starts after its last time: past the bracket that time sits in."""
+    head = text[:end]
+    if head.count("(") + head.count("（") > head.count(")") + head.count("）"):
+        m = re.compile(r"[)）]").search(text, end)
+        return m.end() if m else end
+    return end
+
+
+def _tail(text: str, label: str) -> str:
+    """A value's tail as a closed-day tile shows it: '※' notes off, separators and a whole bracket off, a leading
+    'closed:' label of the language off."""
+    t = _unwrap(re.split(r"\s*※", text)[0])
+    return _unwrap(re.sub(rf"^{label}\s*[:：]\s*", "", t, flags=re.I))
+
+
+def _key(text: str) -> str:
+    """Two Korean closed-day texts compared without spaces, separators and brackets."""
+    return re.sub(r"[\s,/·()（）:：~\-]|및", "", str(text or ""))
+
+
+def hours_part(ko_value, value, loc: LC.Locale = EN) -> str:
+    """A translated hours value without its closed-day part (the Korean hours tile never shows it either)."""
+    sp = closed_span(ko_value, value, loc)
+    return str(value or "")[:sp["start"]].rstrip(SPAN_EDGE) if sp and sp["start"] > 0 else str(value or "")
+
+
+def ko_closed_whole(ko_text) -> bool:
+    """present.brief_closed shows this Korean closed-day text ('restdate') whole: no sub, nothing left for 'more'."""
+    t = " ".join(present.clean_lines(ko_text))
+    kb = present.brief_closed(t)
+    # brief_closed writes '첫째/셋째' as '첫째, 셋째' and '및' as a comma: compare with the separators made alike
+    norm = lambda x: re.sub(r"\s*[,/]\s*|\s+및\s+", ", ", squash_ws(x).strip(" ,/"))
+    return bool(kb) and not kb["sub"] and not kb["more"] and norm(kb["main"]) == norm(t)
+
+
+def closed_whole(value, ko_raw=None) -> str:
+    """A translated closed-day value whole, as present.clean_lines reads the Korean: '※' notes off, and the closing
+    bracket of the '(전화 문의)' aside the Korean leaves out ('… (call for details)')."""
+    t = squash_ws(re.split(r"\s*※", str(value or ""))[0]).strip(" ,/").rstrip(".。")
+    if ko_raw and present.ASK_PAREN.search(str(ko_raw)):
+        t = re.sub(r"\s*[(（][^()（）]*[)）]$", "", t).strip(" ,/").rstrip(".。")
+    return t
+
+
+def closed_brief(ko_raw, value, loc: LC.Locale = EN) -> dict:
+    """The closed-day tile of a 'restdate' value: whole where the Korean tile is whole (never cut inside a list of
+    days: 'first and third Sundays'), else brief_en, as the Korean is shortened too."""
+    if ko_closed_whole(ko_raw):
+        return {"main": cap(closed_whole(value, ko_raw)), "sub": "", "more": False}
+    return brief_en("restdate", value, loc)
 
 
 def _load(path: Path, default):
@@ -318,6 +604,15 @@ def add_filters(env) -> None:
     # footnote superscripts: the visible number plus a hidden ' — source n' (fact rows) / ' source n' (chapters)
     env.filters["esup"] = lambda n: Markup(f'<sup class="fn"><span class="vh"> — source </span>{n}</sup>') if n else ""
     env.filters["ecsup"] = lambda n: Markup(f'<sup class="fn"><span class="vh"> source </span>{n}</sup>') if n else ""
+    # the Korean `tel` filter for the other versions: call links in the +82 form a caller abroad dials (present.tel_href;
+    # nationwide 15xx/16xx numbers keep their digits), official hosts linked to their foreign entry page where there is one
+    env.filters["telx"] = lambda t, place="": present.tel_markup(t, place, intl=True)
+    # an FAQ answer: the same, but no link starts in its first characters (FAQPage repeats the answer and
+    # pipeline.validate compares that head with the page as one run — present.PLAIN_HEAD, as in the guide's answer)
+    env.filters["telx_faq"] = lambda t, place="": present.tel_markup(t, place, intl=True, skip=present.PLAIN_HEAD)
+    # the visible '+82 …' forms of a line's numbers that answer from abroad (textutil.phone_intl_shown: area codes,
+    # mobiles, 070 — not 0507, 15xx/16xx, 080, 060), printed after the whole line on a place page's contact rows
+    env.filters["intl_forms"] = lambda line: [x for x in (phone_intl_shown(n) for n in extract_phones(line)) if x]
 
 
 def title_list(tail: str, loc: LC.Locale = EN) -> list[str]:
@@ -392,14 +687,23 @@ class UIText:
         kw.setdefault("n", count)
         return self._m(self._raw(key, count)).format(**kw)
 
+    def forms(self, key: str) -> dict[str, str]:
+        """A plural key's forms by CLDR category, for a script that picks one (Intl.PluralRules): {'one': …, 'other': …}."""
+        return {f: self._w[f"{key}.{f}"] for f in self.loc.plural if self._w.get(f"{key}.{f}")}
+
     def printf(self, key: str) -> str:
         """A '{n}' text as a printf pattern for the shared macros ('+ {n} more' -> '+ %d more')."""
         return self._raw(key).replace("%", "%%").replace("{n}", "%d")
 
+    def search_words(self) -> dict:
+        """The site search's words in this version (locales.SEARCH_WORDS; English for a version without its own)."""
+        return LC.SEARCH_WORDS.get(self.loc.code) or LC.SEARCH_WORDS["en"]
+
     def map_words(self) -> str:
         """The words map.js writes, for a version other than English and Korean (data-words on the map box)."""
         return json.dumps({"in": self.s("map_zoom_in"), "out": self.s("map_zoom_out"), "all": self.s("map_whole_course"),
-                           "fail": self.s("map_fail"), "off": self.s("map_off")}, ensure_ascii=False)
+                           "load": self.s("map_loading"), "fail": self.s("map_fail"), "off": self.s("map_off"),
+                           "keys": LC.MAP_KEYS.get(self.loc.code, "")}, ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------------------------- the site
@@ -418,13 +722,18 @@ class Site:
         hashes = current_hashes(Path(data_dir))
         self.region = loc.city or romanize(S.site.get("region", ""))
         self.stale: dict[str, list[str]] = {k: [] for k in recs}
+        # published Korean records with no translation at all in this version (the build warns: prepare --lang <code>)
+        self.untranslated: dict[str, list[str]] = {k: [] for k in recs}
         self.hashes, self.recs = hashes, recs
         self.home = loc.home
         self.misses: set[str] = set()
+        self._cv: dict[str, dict] = {}     # course view models, each computed once (Site.cv)
 
         def current(kind: str, key: str) -> dict | None:
             rec, h = recs[kind].get(key), hashes[kind].get(key)
             if not rec or h is None:   # untranslated, or not published (no hash): no page in this language
+                if h is not None:
+                    self.untranslated[kind].append(key)
                 return None
             if rec.get("ko_hash") != h:
                 self.stale[kind].append(key)
@@ -521,6 +830,10 @@ class Site:
                 pairs["/events/"] = f"{self.home}events/"
         self.ko2en = pairs
         self.en2ko = {v: k for k, v in pairs.items()}
+        # pages the language menu pairs although they are no hreflang twins (noindex, kept out of ko2en): the site
+        # search (Korean /search/ is built with S.entities, <home>search/ with this version's places: Pages.search)
+        self.menu_twins = {"/search/": f"{self.home}search/"} if self.places and S.entities else {}
+        self._ko_kind = {e["_path"]: e.get("kind") for e in S.entities}
         # a Korean event page has no twin: its link opens that series on <home>events/
         self.event_links = {}
         by_slug = {x["slug"]: x for x in self.series}
@@ -603,6 +916,19 @@ class Site:
         self.region_en[C.far_label] = T("FAR_LABEL")
         self.region_en[C.none_label] = T("NONE_LABEL")
 
+    def tag_label(self, tag: str) -> str:
+        """A list tag (present.list_vm: the type, or the 특화거리 of a food place) in this language; '' when it has none
+        (the chip is left out — never Korean script on these pages). A street takes its category's translation
+        without the bracketed cuisine ('짬뽕 특화거리 ( 중식)' -> 'Jjamppong Specialty Street')."""
+        v = self.type_en.get(tag)
+        if v:
+            return v
+        for cat, lab in self.type_en.items():
+            if present.street_of({"kind": "food", "category": cat}) == tag:
+                return re.sub(r"\s*[(（][^()（）]*[)）]\s*$", "", lab)
+        self.misses.add(f"tag:{tag}")
+        return ""
+
     def kind_label(self, kind: str) -> str:
         return self.T(f"KIND_LABELS.{kind}", kind, track=True)
 
@@ -611,6 +937,25 @@ class Site:
 
     def fact_label(self, key: str) -> str:
         return self.T(f"FACT_LABELS.{key}", track=True) or key
+
+    def row_label(self, e: dict, key: str) -> str:
+        """A facts row's label as the Korean row's (schema.fact_label): a parking_seats value with one half only is
+        labelled by that half (seating / parking)."""
+        half = parking_seats_half(e) if key == "parking_seats" else ""
+        if half:
+            return self.fact_label("seat" if half == "seats" else "parking")
+        return self.fact_label(key)
+
+    def seats_note(self, p: dict) -> str:
+        """The Korean list cell's '좌석 30석' (present.seats_note) in this language: 'Seating: 30 seats' — the label is
+        left off when the value already starts with it ('座席100席')."""
+        if not present.seats_note(p["e"]):
+            return ""
+        value = squash_ws(((p["rec"].get("facts") or {}).get("parking_seats") or {}).get("value"))
+        if not value:
+            return ""
+        lab = self.fact_label("seat")
+        return value if value.startswith(lab) else f"{lab}{self.loc.colon}{value}"
 
     def provider(self, ko: str | None) -> str:
         """A source's name in this language (strings provider:*), else its short name; never Korean script."""
@@ -647,9 +992,23 @@ class Site:
         return out
 
     # ---- pairs (this version's own; Intl.alternates / Intl.menu combine every version's)
-    def en_link(self, ko_path: str) -> str:
-        """This version's page for a Korean page: its twin, the series on <home>events/, else <home>."""
-        return self.ko2en.get(ko_path) or self.event_links.get(ko_path) or self.home
+    def menu_link(self, ko_path: str) -> tuple[str, str]:
+        """(href, note) of this version's item in the language menu of a Korean page: its twin (a series on
+        <home>events/, the search page) with no note; else this version's list of the same kind (guides, courses,
+        events, the place's own list), or <home> when there is none, with the note '<that page's name> · not
+        translated' in this version's words."""
+        twin = self.ko2en.get(ko_path) or self.event_links.get(ko_path) or self.menu_twins.get(ko_path)
+        if twin:
+            return twin, ""
+        seg = ko_path.strip("/").split("/", 1)[0]
+        key, section = "home", ""
+        if seg in ("guides", "courses", "events"):
+            key, section = seg, f"/{seg}/"
+        elif self._ko_kind.get(ko_path) in LIST_PAGES:
+            kind = self._ko_kind[ko_path]
+            key, section = f"nav_{kind}", LIST_PAGES[kind]["ko"]
+        href = self.ko2en.get(section) if section else ""
+        return href or self.home, f"{self.t.s(key if href else 'home')} · {self.loc.untranslated}"
 
     def ko_link(self, en_path: str) -> str:
         return self.en2ko.get(en_path) or "/"
@@ -677,6 +1036,8 @@ class Site:
     # ---- key facts (the first-screen tiles and card rows)
     def slot_label(self, e: dict, name: str, v: dict | None = None) -> str:
         if name == "parking" and v and v.get("src_key") == "parking_seats":
+            if parking_seats_half(e) == "parking":
+                return self.fact_label("parking")
             return self.T("CONTEST_LABEL.parking_seats", self.t.s("parking_seats"))
         if name == "parking" and v and v.get("src_key") == "parkingfee":
             return self.fact_label("parkingfee")
@@ -698,7 +1059,7 @@ class Site:
         if name == "tel":
             if v.get("tel"):
                 main = extract_phones(v["main"])[0] if extract_phones(v["main"]) else ""
-                return {**base, "main": main, "tel": v["tel"]} if main else None
+                return {**base, "main": main, "tel": present.tel_href(main, True)} if main else None
             own = (extract_phones(f.get("value")) or [""])[0]
             vals = [{"provider": base["provider"], "main": own, "sub": "", "closed": False}] if own else []
             for a in f.get("alternatives") or []:
@@ -707,16 +1068,72 @@ class Site:
                     vals.append({"provider": self.short_provider(a.get("provider")), "main": ph, "sub": "", "closed": False})
             if len(vals) > 1:
                 return {**base, "main": own, "conflict": True, "vals": vals}
-            return {**base, "main": own, "tel": re.sub(r"\D", "", own)} if own else None
+            return {**base, "main": own, "tel": present.tel_href(own, True)} if own else None
         if not f.get("value") and not f.get("alternatives"):
             return None
+        tr_raw = [f.get("value")] + [a.get("value") for a in f.get("alternatives") or []]
+        ko_raw = ([(e.get("facts") or {}).get(v["src_key"])] + [a["value"] for a in conflict_alternatives(e, v["src_key"])]
+                  if v["src_key"] in (*HOURS_KEYS, "usefee") else [])
+        carried: list[str] = []   # the parts of other sources this tile shows as the Korean does (present.SLOT_EXTRA)
         if name == "closed" and v["src_key"] != "restdate":
-            part = closed_part_en(f.get("value"), loc)
-            if not part:
-                return {"skip": True}
-            b = {"main": cap(part), "sub": "", "more": True}
-            alt_b = [{"main": cap(closed_part_en(a.get("value"), loc)), "sub": "", "more": True}
-                     for a in f.get("alternatives") or []]
+            # the closed day inside an hours value: the part the Korean parse finds, at the same place in each value;
+            # another source's closed day is shown where the Korean slot shows it (present.slot_value)
+            if len(ko_raw) != len(tr_raw):
+                return {"skip": True, "why": f"{len(ko_raw) - 1} other source values in the Korean, "
+                                             f"{len(tr_raw) - 1} in the translation"}
+            spans = [closed_span(k, t, loc) for k, t in zip(ko_raw, tr_raw)]
+            if not spans[0] or spans[0]["start"] < 0:
+                return {"skip": True, "why": (spans[0] or {}).get("why") or "no closed day in the Korean"}
+            cb = present.brief_closed(present.brief_hours(ko_raw[0])[1])
+            b = {"main": cap(spans[0]["text"]), "sub": "", "more": bool(v.get("more"))}
+            alt_b = []
+            for k, sp in zip(ko_raw[1:], spans[1:]):
+                ac = present.brief_hours(k)[1]
+                acb = present.brief_closed(ac) if ac else None
+                shown = bool(acb and cb and acb["main"] != cb["main"] and (acb["closed"] or cb["closed"]))
+                alt_b.append({"main": cap(sp["text"]) if shown and sp and sp["start"] >= 0 else "", "sub": "", "more": True,
+                              "lost": shown and not (sp and sp["start"] >= 0)})
+            if any([x.pop("lost") for x in alt_b]):
+                return {"skip": True, "why": "another source's closed day cannot be aligned"}
+        elif name == "hours" and len(ko_raw) == len(tr_raw):
+            # the last entry the Korean tile shows (present.brief_hours) stays on this tile too
+            keep = any(present.LAST_ENTRY.search(f"{x.get('main')} {x.get('sub')}") for x in [v] + (v.get("vals") or []))
+            b = brief_en(v["src_key"], hours_part(ko_raw[0], tr_raw[0], loc), loc, keep)
+            alt_b = [brief_en(v["src_key"], hours_part(k, t, loc), loc, keep) for k, t in zip(ko_raw[1:], tr_raw[1:])]
+            also = (f.get("also") or [])[v["also"]["index"]] if v.get("also") and \
+                v["also"]["index"] < len(f.get("also") or []) else None
+            extra = last_entry_tr(also.get("value"), loc) if also else ""
+            if extra:   # the last entry of a source that adds to the hours, as the Korean tile shows it (slot_value)
+                b["sub"] = f"{b['sub']} · {extra}" if b["sub"] else cap(extra)
+                carried.append("also")
+            # a last entry rule the Korean tile shows, on the sub line of the value that states it (carry_last); the
+            # j-th value this tile shows is the Korean tile's j-th
+            ko_shown, j = (v.get("vals") or []) if v.get("conflict") else [v], 0
+            for x, raw in zip([b] + alt_b, tr_raw):
+                if x.get("main"):
+                    if j < len(ko_shown):
+                        carry_last(ko_shown[j], x, raw, loc)
+                    j += 1
+        elif name == "fee" and v.get("ticket") and (pair := fee_pair(
+                (e.get("facts") or {}).get("usefee"), f.get("value"), v["ticket"]["price"],
+                (self.T(f"ticket:{v['ticket']['name']}", track=True), self.T(f"ticket:{present.COMBINED}", track=True)),
+                loc)):
+            # the place's own price beside the combined ticket's (fee_pair): its row from this version's own table,
+            # the ticket's price from tickets.json under the ticket's name in this language (strings ticket:<name>)
+            b, alt_b = pair, []
+            carried.append("ticket")
+        elif name == "fee" and v.get("conflict") and len(ko_raw) == len(tr_raw):
+            # sources that differ: each value against the Korean value it translates (fee_brief), as the hours tile
+            b = fee_brief(ko_raw[0], tr_raw[0], loc)
+            alt_b = [fee_brief(k, t, loc) for k, t in zip(ko_raw[1:], tr_raw[1:])]
+        elif name == "closed":
+            # its own field ('restdate'): whole where the Korean tile is whole (QA 2026-10-15: never 'the first' of
+            # 'the first and third Sundays'), each other source against the Korean value it translates
+            ko_alts = [a["value"] for a in conflict_alternatives(e, "restdate")]
+            tr_alts = f.get("alternatives") or []
+            b = closed_brief((e.get("facts") or {}).get("restdate"), f.get("value"), loc)
+            alt_b = ([closed_brief(k, a.get("value"), loc) for k, a in zip(ko_alts, tr_alts)] if len(ko_alts) == len(tr_alts)
+                     else [brief_en("restdate", a.get("value"), loc) for a in tr_alts])
         elif name == "rooms":
             r = squash_ws(f.get("value"))
             b = {"main": self.t.sn("rooms_n", int(r), n=r) if r.isdigit() else r, "sub": "", "more": False}
@@ -725,12 +1142,16 @@ class Site:
             b = brief_en(v["src_key"], f.get("value"), loc)
             alt_b = [brief_en(v["src_key"], a.get("value"), loc) for a in f.get("alternatives") or []]
         out = {**base, **b, "closed": v.get("closed", False)}
+        for x in carried:   # a part another source gives (present.SLOT_EXTRA): its provider joins those under the tiles
+            out[x] = v[x]
         if v.get("conflict") and f.get("alternatives"):
             ko_vals = v.get("vals") or []
             vals = [{"provider": base["provider"], **b, "closed": v.get("closed", False)}] if b.get("main") else []
-            for i, (a, ab) in enumerate(zip(f.get("alternatives") or [], alt_b)):
+            j = 1   # the Korean slot's values are the ones it shows: its j-th is this version's j-th shown one
+            for a, ab in zip(f.get("alternatives") or [], alt_b):
                 if ab.get("main"):
-                    closed = (ko_vals[i + 1].get("closed", False) if i + 1 < len(ko_vals) else False)
+                    closed = ko_vals[j].get("closed", False) if j < len(ko_vals) else False
+                    j += 1
                     vals.append({"provider": self.short_provider(a.get("provider")), **ab, "closed": closed})
             if len(vals) > 1:
                 out.update(conflict=True, vals=vals)
@@ -754,15 +1175,21 @@ class Site:
             else:
                 missing.append(self.slot_label(e, n))
                 if mode != "hero":
-                    slots.append({"key": n, "label": self.slot_label(e, n), "main": "", "sub": "", "more": False,
+                    slots.append({"key": n, "label": self.slot_label(e, n), "main": "",
+                                  "sub": self.seats_note(p) if n == "parking" else "", "more": False,
                                   "closed": False, "conflict": False, "vals": [], "missing": True, "tel": ""})
-        dates = [s["date"] for s in slots if s.get("date")]
+        dates = [d for s in slots for d in (s.get("date"), *((s.get(x) or {}).get("date") for x in present.SLOT_EXTRA)) if d]
         provs: list[str] = []
-        for s in slots:
-            for pr in [s.get("provider")] + [v["provider"] for v in s.get("vals") or []]:
+        for s in slots:   # with the source of a part another source gives (present.key_facts: a ticket, a last entry)
+            extra = [self.short_provider((s.get(x) or {}).get("provider_full")) for x in present.SLOT_EXTRA if s.get(x)]
+            for pr in [s.get("provider")] + [v["provider"] for v in s.get("vals") or []] + extra:
                 if pr and pr not in provs:
                     provs.append(pr)
         tel = next((s for s in slots if s["key"] == "tel" and s.get("tel")), None)
+        if tel and mode == "hero" and not tel.get("conflict"):
+            # the place page's call tile: the number as the source writes it, the +82 form a caller abroad dials under
+            # it (area codes, mobiles, 070 only — textutil.phone_intl_shown). Never on list cells or mini cards.
+            tel["sub"] = phone_intl_shown(tel["main"])
         return {"slots": slots, "missing": missing, "date": min(dates) if dates else "", "providers": provs,
                 "conflict": any(s.get("conflict") for s in slots), "tel": (tel["main"], tel["tel"]) if tel else ("", "")}
 
@@ -774,7 +1201,7 @@ class Site:
         ko = e.get("facts") or {}
         out, called = [], False
         for k in keys:
-            label = self.fact_label(k)
+            label = self.row_label(e, k)
             if k in ("homepage", "reservationurl"):
                 url = link_url(ko.get(k))
                 if not url:
@@ -823,6 +1250,43 @@ class Site:
             out.append(row)
         return out
 
+    def ticket_rows(self, p: dict, notes: "present.Notes") -> list[dict]:
+        """The facts card's rows for the combined tickets that open the place, as the Korean card's (present.ticket_rows):
+        the ticket's name in this language (strings ticket:<name>), its places by their page names in this version, each
+        linked but this one, and its table in this language's words and money (strings ticket:<word>), with the table's
+        page as its note. A ticket with a word this version lacks has no row (never Korean on the page)."""
+        e, loc = p["e"], self.loc
+        by_id = {x["id"]: x for x in self.S.entities}
+        sp, (o, c) = ("" if loc.cjk else " "), (("（", "）") if loc.cjk else (" (", ")"))
+        words = {w: self.T(f"ticket:{w}", track=True) for w in tickets.table_words()} if e.get("_tickets") else {}
+        out = []
+        for t in e.get("_tickets") or []:
+            label = self.T(f"ticket:{t['name']}", track=True)
+            places = [(pid, self.own(by_id.get(pid))) for pid in t.get("places") or []]
+            if not label or not all(words.values()) or not all(q for _, q in places):
+                continue
+            lines = []
+            for mode in tickets.MODES:
+                table = (t.get("prices") or {}).get(mode)
+                if not table:
+                    continue
+                head = words[tickets.mode_label(t, mode)]
+                cats = [f"{words[cat]}{sp}{loc.money(table[cat][0])}{o}{words[tickets.resident()]}{sp}"
+                        f"{loc.money(table[cat][1])}{c}" for cat in tickets.CATEGORIES if cat in table]
+                lines.append(f"{head}{loc.colon}" + ("；" if loc.cjk else "; ").join(cats))
+            text = "\n".join([" · ".join(q["name"] for _, q in places), *lines])
+            html = Markup(" · ").join(escape(q["name"]) if pid == e["id"] else
+                                      Markup('<a href="{}">{}</a>').format(q["path"], q["name"]) for pid, q in places)
+            src = t.get("src") or {}
+            provider = self.provider(src.get("provider"))
+            out.append({"key": "tickets", "label": label, "text": text, "html": html + Markup("<br>") +
+                        lines_html("\n".join(lines)), "url": "", "conflict": False, "blocks": [], "alts": [],
+                        "note": "", "tel": None, "wide": True, "provider": provider,
+                        "checked_at": squash_ws(src.get("checked_at")),
+                        "n": notes.ref({"provider": provider, "checked_at": squash_ws(src.get("checked_at")),
+                                        "url": src.get("url") or "", "confirmed_by": ""}, label)})
+        return out
+
     def missing_facts(self, p: dict) -> list[str]:
         """Labels of the kind's key facts no source gives (one 'Not listed: …' line under the facts)."""
         e, facts = p["e"], p["rec"].get("facts") or {}
@@ -830,7 +1294,7 @@ class Site:
         keys = KEY_FACTS_BY_CATEGORY.get(e.get("category"), KEY_FACTS.get(kind, ()))
         out = []
         for k in keys:
-            if any(facts.get(x) for x in (k, *FACT_ALIASES.get(k, ()))):
+            if facts.get(k) or any(facts.get(x) and alias_holds(e, k, x) for x in FACT_ALIASES.get(k, ())):
                 continue
             if k == "parking" and facts.get("parkingfee"):
                 continue
@@ -902,14 +1366,19 @@ class Site:
         S, e, rec, loc = self.S, p["e"], p["rec"], self.loc
         kind = e.get("kind", "attraction")
         tel_text, tel = present.settled_phone(e)
-        tel = (tel_text, tel) if tel_text and not HANGUL.search(tel_text) else ("", "")
+        tel = (tel_text, present.tel_href(tel_text, True)) if tel_text and not HANGUL.search(tel_text) else ("", "")
         notes = present.Notes()
         facts = rec.get("facts") or {}
         practical_keys = list(present.PRACTICAL[kind])
         shown = set(practical_keys)
         known = set(present.MORE) | set(present.FIT) | shown
         more_keys = [k for k in present.MORE if k not in shown] + [k for k in facts if k not in known]
-        practical = self.fact_rows(p, practical_keys, notes, tel)
+        # the combined tickets that open the place right after its own fee (ticket_rows), their notes numbered in that
+        # order, as the Korean card; the call number stays on the first conflict row of the card
+        cut = practical_keys.index("usefee") + 1 if "usefee" in practical_keys else len(practical_keys)
+        practical = self.fact_rows(p, practical_keys[:cut], notes, tel)
+        practical += self.ticket_rows(p, notes)
+        practical += self.fact_rows(p, practical_keys[cut:], notes, ("", "") if any(r["tel"] for r in practical) else tel)
         more = self.fact_rows(p, more_keys, notes, tel)
         fit = self.fact_rows(p, present.FIT, notes, tel)
         summary = squash_ws(rec.get("summary"))
@@ -921,17 +1390,23 @@ class Site:
                    for d in rec.get("details") or [] if squash_ws(d.get("text"))]
         faqs = [{"q": squash_ws(f.get("q")), "a": squash_ws(f.get("a")), "n": faq_n.ref(f.get("source"))}
                 for f in rec.get("faq") or [] if squash_ws(f.get("q")) and squash_ws(f.get("a"))]
-        # nearby places that have pages in this version (TourAPI nearby list, straight-line distance)
+        # nearby places that have pages in this version (TourAPI nearby list, straight-line distance), as the Korean
+        # rows (present.near_row): the place's own small photo or its kind icon, closed day / check-in, one bar scale;
+        # never the page's own family, never an alias beside its parent (pipeline/relations.py, as the Korean page)
         near = []
-        for n in e.get("nearby") or []:
-            t = S.ent_by_slug.get(n.get("internal_slug") or "") or S.ent_by_cid.get(str(n.get("contentid")))
+        target = lambda n: S.ent_by_slug.get(n.get("internal_slug") or "") or S.ent_by_cid.get(str(n.get("contentid")))  # noqa: E731
+        for n in relations.keep_rows(e, e.get("nearby") or [], target):
+            t = target(n)
             tp = self.own(t)
             if not tp:
                 continue
-            near.append({"name": tp["name"], "href": tp["path"], "kind": t.get("kind"), "type": self.type_label(t),
-                         "m": n.get("distance_m") or 0, "d": loc.dist(n.get("distance_m")), "geo": t["_geo"],
-                         "track": {"stay": "stay_click", "food": "food_click"}.get(t.get("kind"), "nearby_click")})
+            near.append(self.near_row(t, tp, n.get("distance_m")))
         near.sort(key=lambda x: x["m"])
+        near_sights = [n for n in near if n["kind"] == "attraction"][:8]
+        near_biz = [n for n in near if n["kind"] in ("stay", "food")][:8]
+        scale = present.near_scale([n["m"] for n in near_sights + near_biz], (e.get("nearby_source") or {}).get("radius_m"))
+        for n in near_sights + near_biz:
+            n["f"] = present.near_fill(n["m"], scale)
         points = None
         if e["_geo"]:
             points = {"self": {"lat": e["_geo"]["lat"], "lng": e["_geo"]["lng"], "name": p["name"]},
@@ -939,8 +1414,32 @@ class Site:
                                 "url": n["href"], "kind": n["kind"]} for n in near if n["geo"]][:12],
                       "anchors": []}
         courses = [self.courses[c["id"]] for c in e["_courses"] if c["id"] in self.courses]
+        boards = []
+        for x in courses:
+            cv = self.cv(x)
+            at = [k for k, s in enumerate(cv["stops"]) if s["t"] is e]   # every visit (present.route_segs)
+            if at:
+                boards.append({"display": cv["name"], "path": x["path"], "stops": cv["stops"], "at": at})
+        segs = present.route_segs(boards, loc.dist, lambda s: (s.get("p") or {}).get("name") or s["name"])
         guides = [self.guides[g["id"]] for g in e["_guides"] if g["id"] in self.guides]
+        guide_cards = []
+        for x in guides:
+            label, title = squash_ws(x["rec"].get("label")), squash_ws(x["rec"].get("title"))
+            guide_cards.append({"label": label if label != title else "", "title": title, "path": x["path"]})
         events = [x for x in self.series if e["slug"] in self._series_places(x)]
+        from . import build as B
+        nw = LC.NEAR_WORDS[loc.code]
+        ko_ev = {ev["id"]: ev for ev in getattr(S, "events_all", []) or []}
+        event_cards = []
+        for x in events:
+            rec, ko = x["rec"], x["sr"]["newest"]
+            ev = ko_ev.get((rec.get("newest") or {}).get("id")) or ko
+            varies = ((rec.get("alternatives") or {}).get("period") or {}).get("values")
+            event_cards.append({"name": squash_ws(rec.get("series_name")), "path": f"{loc.home}events/#{x['anchor']}",
+                                "range": nw["ev_varies"] if varies else squash_ws((rec.get("newest") or {}).get("period_text")),
+                                "past": (B.event_last_day(ev) if ev.get("start_date") else "") < S.today})
+        relation, parts = self.relation_vm(e)
+        photo_lics = present.photo_credits(near_sights + near_biz + parts)
         official = e.get("official") or {}
         orig = e.get("original") or {}
         list_cfg = self.lists()[kind]
@@ -954,7 +1453,7 @@ class Site:
         return {
             "p": p, "e": e, "rec": rec, "kind": kind, "name": p["name"], "name_ko": e["name"], "kicker": kicker,
             "area": self.area(e.get("_area")), "lede": ss[0] if ss else "", "story": ss[1:], "summary": summary,
-            "kf": k, "route": self.route(p), "photos": photos,
+            "kf": k, "route": self.route(p), "photos": photos, "notices": self.notices(e),
             # official designations (Site.designations): chips under the answer, the 'Designations' row of the facts card
             "designations": self.designations(e),
             "hero_k1": lead if lead and lead["type"] == 1 else None,
@@ -964,17 +1463,86 @@ class Site:
             "practical": practical, "more": more, "fit": fit, "notes": notes.items, "missing": self.missing_facts(p),
             "address_ko": display_address((e.get("facts") or {}).get("address")),
             "details": details, "detail_notes": details_n.items, "faqs": faqs, "faq_notes": faq_n.items,
-            "near_sights": [n for n in near if n["kind"] == "attraction"][:8],
-            "near_biz": [n for n in near if n["kind"] in ("stay", "food")][:8],
+            "near_sights": near_sights, "near_biz": near_biz, "near_scale": scale, "photo_lics": photo_lics,
             "nearby_source": e.get("nearby_source") or {}, "points": points,
-            "courses": courses, "guides": guides, "events": events,
+            # whose coordinates: the map caption's 'Location: …' (present.place_vm geo_src) and the nearby note's
+            # providers (nearby_source.providers, each name in this language; a list stored before providers were
+            # recorded keeps its one provider line)
+            "loc_src": self.provider(geo_provider(e["_geo"])) if e["_geo"] else "",
+            "near_src": loc.list_sep.join(self.provider(x) for x in (e.get("nearby_source") or {}).get("providers") or [])
+                        or self.provider((e.get("nearby_source") or {}).get("provider")),
+            "courses": courses, "guides": guides, "events": events, "segs": segs,
+            "guide_cards": guide_cards, "event_cards": event_cards, "nw": nw, "relation": relation, "parts": parts,
             "orig_url": orig.get("source_url") or official.get("source_url") or "",
             "orig_name": self.provider(orig.get("source_name") or (S.site.get("source") or {}).get("name")),
             "visitkorea": official.get("visitkorea_url", ""), "homepage": own_home if own_home and not HANGUL.search(own_home) else "",
             "facts_checked": facts_checked, "reviewed_at": e.get("reviewed_at") or "",
             "translated_at": rec.get("translated_at") or "", "ko_path": e["_path"],
             "lics": list(dict.fromkeys(ph["lic"] for ph in photos)),
+            **self.book_vm(booking.place_targets(S, e)),
         }
+
+    def book_vm(self, targets: list[dict]) -> dict:
+        """예약하기 (pipeline/booking.py) in this version: the buttons (booking.view: the service's page in this
+        language, else the Simplified Chinese / English one labelled, else the Korean one '(in Korean)') and the words."""
+        code = self.loc.code
+        return {"booking": booking.view(targets, code, lambda n: self.t.s("in_korean_paren", name=n)),
+                "bw": LC.BOOK_WORDS[code]}
+
+    def near_row(self, t: dict, tp: dict, m) -> dict:
+        """One row of the nearby chapter for the Korean place t and its page tp here (present.near_row's fields): its
+        name and path here, its kind and type, the straight line m (None: unmeasured), its closed day or check-in,
+        its own small photo or its kind icon."""
+        nk = t.get("kind")
+        cl = self.slot(tp, "closed") if nk != "stay" else None
+        fact = self.slot(tp, "checkin") if nk == "stay" else None
+        phs = self.photos(tp)
+        return {"name": tp["name"], "href": tp["path"], "internal": True, "kind": nk,
+                "type": self.type_label(t), "m": m or 0, "d": self.loc.dist(m) if m is not None else "",
+                "geo": t["_geo"], "track": present.NEAR_TRACK.get(nk, "nearby_click"),
+                "closed": present.one_value(cl), "fact": present.one_value(fact),
+                "photo": present.small_thumb(phs[0]) if phs else None,
+                "icon": (t.get("_visual") or ("", "pin"))[1]}
+
+    def relation_vm(self, e: dict) -> tuple[list[dict], list[dict]]:
+        """present.relation_vm in this version: the line under the name (NEAR_WORDS part_of / same_building) naming
+        the parent or the same building's other page — its name here with a link, or its Korean name without one
+        when it has no page here — and the parts (the places inside this one that have a page here) as rows."""
+        w = LC.NEAR_WORDS[self.loc.code]
+
+        def ref(x: dict) -> dict:
+            xp = self.own(x)
+            return {"name": xp["name"], "path": xp["path"]} if xp else {"name": x["name"], "path": "", "ko": True}
+        lines = []
+        parent = e.get("_parent")
+        if parent is not None and e.get("_rel") == "inside":
+            lines.append({"rel": "inside", "word": w["part_of"], "places": [ref(parent)]})
+        if e.get("_same"):
+            lines.append({"rel": "same_building", "word": w["same_building"], "places": [ref(x) for x in e["_same"]]})
+        parts = []
+        for c in e.get("_parts") or []:
+            cp = self.own(c)
+            if cp:
+                parts.append(self.near_row(c, cp, present.hav(e.get("_geo"), c.get("_geo"))))
+        return lines, parts
+
+    def notices(self, e: dict) -> list[dict]:
+        """The place's dated notices (build.State e['_notices'], pipeline/notices.py) in this version's fixed words:
+        the dates as this language writes them, times as they are, the provider's name and the post's link."""
+        loc, out = self.loc, []
+        for row in e.get("_notices") or []:
+            n = row["n"]
+            start, end = notices.span(n)
+            dates = loc.date(start) if start == end else f"{loc.date(start)}{'–' if loc.cjk else ' – '}{loc.date(end)}"
+            if n["kind"] == "hours":
+                text = self.t.s("notice_hours", dates=dates, start=n["from"], end=n["to"])
+                if n.get("last_entry"):
+                    last = self.t.s("notice_last_entry", time=n["last_entry"])
+                    text += f"（{last}）" if loc.cjk else f" ({last})"
+            else:
+                text = self.t.s(f"notice_{n['kind']}", dates=dates)
+            out.append({"id": n["id"], "text": text, "provider": self.provider(n["provider"]), "url": n["url"]})
+        return out
 
     def _series_places(self, x: dict) -> list[str]:
         out: list[str] = []
@@ -1015,7 +1583,8 @@ class Site:
                     if s and s.get("skip"):
                         s = None
                     cells.append(s or {"key": key, "label": label, "main": "", "missing": True, "conflict": False,
-                                       "vals": [], "sub": "", "more": False, "closed": False, "tel": ""})
+                                       "vals": [], "sub": self.seats_note(p) if key == "parking" else "", "more": False,
+                                       "closed": False, "tel": ""})
                     if s:
                         cells[-1]["label"] = label
                 th = present.thumb(p["e"]["_photos"][0]) if p["e"].get("_photos") else None
@@ -1025,7 +1594,10 @@ class Site:
                 rid = f"r{it['i']}"
                 recs.append({"p": p, "e": p["e"], "id": rid, "name": p["name"], "path": p["path"],
                              "type": self.type_label(p["e"]), "area": self.area(p["e"].get("_area")), "photo": th,
-                             "cells": cells})
+                             "cells": cells,
+                             # the Korean list's filter keys (Korean values: one URL vocabulary in every version)
+                             "tags": it["tags"], "region": it["region"], "themes": it["themes"], "flags": it["flags"],
+                             "geo": p["e"]["_geo"]})
                 if p["e"]["_geo"]:
                     points.append({"lat": p["e"]["_geo"]["lat"], "lng": p["e"]["_geo"]["lng"], "name": p["name"],
                                    "url": p["path"], "id": rid, "kind": kind, "r": it["region"]})
@@ -1035,7 +1607,22 @@ class Site:
                                                            en_slug(romanize(g["name"]))), "recs": recs})
         count = sum(len(g["recs"]) for g in groups)
         cols = [(key, self.slot_label({"kind": kind}, key)) for key, _ in present.KF_LIST_COLS[kind]]
+        flat = [r for g in groups for r in g["recs"]]
+        tagc = Counter(t for r in flat for t in r["tags"])
+        regc = Counter(r["region"] for r in flat)
+        themec = Counter(t for r in flat for t in r["themes"])
+        ck = present.LIST_CFG[kind]["check"][0]
+        forms = self.t.forms(f"count_{kind}")
+        filters = present.filter_vm(
+            count, [(t, lab, n) for t, n in tagc.most_common() if n >= 2 and (lab := self.tag_label(t))],
+            [(r, self.region_en.get(r) or "", regc[r]) for r in S.region_names if regc[r] and self.region_en.get(r)],
+            [(s, self.T(f"theme.{s}.name", track=True), n) for s, n in themec.most_common()
+             if kind == "attraction" and self.T(f"theme.{s}.name")],
+            (ck, self.T(f"LIST_CFG.{kind}.check", track=True), sum(1 for r in flat if r["flags"].get(ck))),
+            len(points), LC.LIST_WORDS[self.loc.code], forms)
+        filters["result"] = self.t.sn(f"count_{kind}", count)
         return {"kind": kind, "groups": groups, "count": count, "cols": cols, "points": points, "n_geo": len(points),
+                "filters": filters,
                 "map_open": len(points) >= 0.3 * max(1, count), "n_photo": n_photo,
                 "lics": [self.lic("KOGL-1") if t == 1 else self.lic("KOGL-3") for t in sorted(lics)]}
 
@@ -1076,42 +1663,94 @@ class Site:
         cn = self.chapter_notes({})
         faqs = [{"q": squash_ws(f.get("q")), "a": squash_ws(f.get("a")), "n": cn.ref(f.get("source"))}
                 for f in rec.get("faq") or [] if squash_ws(f.get("q")) and squash_ws(f.get("a"))]
-        sources = [{"name": no_hangul(squash_ws(s.get("name"))) or url_domain(s.get("url")), "url": s.get("url") or ""}
-                   for s in rec.get("sources") or [] if s.get("url")]
+        sources, entry_hosts = [], set()
+        for s in rec.get("sources") or []:
+            if not s.get("url"):
+                continue
+            src = {"name": no_hangul(squash_ws(s.get("name"))) or url_domain(s.get("url")), "url": s["url"]}
+            ent = official_entry(s["url"], loc.code)
+            host = urlsplit(s["url"]).hostname
+            if ent and host not in entry_hosts:   # once per site: at its first cited page
+                entry_hosts.add(host)
+                src.update(entry=ent[1], entry_lang=LC.get(ent[0]).html, entry_label=LC.get(ent[0]).label)
+            sources.append(src)
         return {**reading, "x": x, "g": g, "rec": rec, "label": squash_ws(rec.get("label")), "title": squash_ws(rec.get("title")),
                 "summary": squash_ws(rec.get("summary")), "lede": ss[0] if ss else "", "dek": loc.sjoin.join(ss[1:]),
                 "body": [{"heading": squash_ws(b.get("heading")), "text": str(b.get("text") or "")} for b in rec.get("body") or []],
                 "places": items, "points": pts, "faqs": faqs, "faq_notes": cn.items, "sources": sources,
                 "checked": g.get("_page_date") or "", "reviewed_at": g.get("reviewed_at") or "",
-                "translated_at": rec.get("translated_at") or ""}
+                "translated_at": rec.get("translated_at") or "", **self.book_vm(booking.guide_targets(S, g))}
 
     # ---- courses
+    def cv(self, x: dict) -> dict:
+        """course_vm(x), computed once per course (every place page on the course reads it)."""
+        cid = x["c"]["id"]
+        if cid not in self._cv:
+            self._cv[cid] = self.course_vm(x)
+        return self._cv[cid]
+
+    def cw(self, key: str, n: int | None = None, **kw) -> str:
+        """The course pages' words in this language (locales.COURSE_WORDS)."""
+        return LC.course_word(self.loc.code, key, n, **kw)
+
+    def course_source(self, key: str) -> str:
+        """A course block's source name in this language (site.json city.intl.<code>.course_sources); '' without."""
+        return str((city.current().intl(self.loc.code).get("course_sources") or {}).get(key) or "")
+
+    def day_label(self, day: str) -> str:
+        """The source's '2일차(1안)' in this language ('Day 2, option 1'); '' when it is not that form."""
+        m = re.fullmatch(r"(\d+)일차(?:\((\d+)안\))?", squash_ws(day))
+        if not m:
+            return ""
+        return self.cw("day_opt", n=int(m.group(1)), k=m.group(2)) if m.group(2) else self.cw("day", n=int(m.group(1)))
+
+    def stop_guide(self, g: dict | None) -> dict | None:
+        """A Korean stop / course guide reference (present._stop_guide) as this version's guide page, or None."""
+        x = self.guides.get((g or {}).get("id") or "")
+        if not x:
+            return None
+        title = squash_ws(x["rec"].get("label")) or squash_ws(x["rec"].get("title"))
+        return {"name": title, "path": x["path"] + (f"#{g['frag']}" if g.get("frag") else "")}
+
     def course_vm(self, x: dict) -> dict:
         S, c, rec = self.S, x["c"], x["rec"]
         cv = S.course_vms.get(c["slug"]) or {}
         stops_en = rec.get("stops") or []
         rows, stops = [], []
+        day_now = ""
         for i, s in enumerate(c.get("stops") or []):
             se = stops_en[i] if i < len(stops_en) else {}
             t = S.ent_by_slug.get(s.get("place_slug") or "")
             kind = present.stop_kind(squash_ws(s.get("name")), t)
             name = squash_ws(se.get("name")) or (self.fallback_name(s.get("name")) if s.get("name") else "")
             note = squash_ws(se.get("note"))
+            day = squash_ws(s.get("day"))
+            if day and day != day_now and self.day_label(day):   # the source's day / option heading (F09-b)
+                rows.append({"sep": True, "kind": "day", "kind_label": self.day_label(day), "name": "", "note": ""})
+                day_now = day
             if kind != "place":
-                rows.append({"sep": True, "kind_label": self.T(f"STOP_KIND_LABELS.{kind}", kind.title()), "name": name,
-                             "note": note})
+                rows.append({"sep": True, "kind": kind, "kind_label": self.T(f"STOP_KIND_LABELS.{kind}", kind.title()),
+                             "name": name, "note": note})
                 continue
             p = self.own(t)
             st = {"sep": False, "n": len(stops) + 1, "name": name, "note": note, "p": p, "t": t,
                   "path": p["path"] if p else "", "geo": t["_geo"] if t else None,
                   "kf": self.key_facts(p, "card") if p else None, "photo": self.photos(p)[0] if p and t.get("_photos") else None,
                   "type": self.type_label(t) if t else "", "area": self.area((t or {}).get("_area")),
-                  "place_name": p["name"] if p else ""}
+                  "place_name": p["name"] if p else "",
+                  # an unlinked stop: a map search for its Korean name, as the Korean page's Naver search (F09-c)
+                  "search": "" if t else "https://www.google.com/maps/search/?" + urlencode(
+                      {"api": "1", "query": f"{squash_ws(s.get('name'))} {S.site.get('region', '')}".strip()}),
+                  "see": [{"name": o["name"], "path": o["path"], "id": o["e"]["id"]}
+                          for o in (self.own(S.ent_by_slug.get(k)) for k in s.get("see") or []) if o]}
             stops.append(st)
             rows.append(st)
         ko_stops = cv.get("stops") or []
         for st, ks in zip(stops, ko_stops):   # straight-line legs from the Korean course model (same stops, same order)
             st["next_m"], st["prev_m"] = ks.get("next_m"), ks.get("prev_m")
+            # the breaks between two options of a day and the optional stop (present.course_vm): no leg across them
+            st["brk"], st["optional"], st["day"] = ks.get("brk", False), ks.get("optional", False), ks.get("day", "")
+            st["guide"] = self.stop_guide(ks.get("guide"))
         s0 = next((s for s in stops if s["geo"]), None)
         first_route = {"n": s0["n"], "name": s0["name"],
                        "url": "https://www.google.com/maps/dir/?" + urlencode({"api": "1", "destination": f"{s0['geo']['lat']},{s0['geo']['lng']}"}),
@@ -1125,16 +1764,95 @@ class Site:
         summary = squash_ws(rec.get("summary"))
         if c.get("summary_auto") or not summary:
             summary = self.course_lede(stops, cv) or summary
+        tk = cv.get("taketime")
         return {"x": x, "c": c, "rec": rec, "name": squash_ws(rec.get("name")), "group": squash_ws(rec.get("group")),
                 "duration": squash_ws(rec.get("duration")), "summary": summary, "rows": rows,
                 "stops": stops, "n_places": len(stops), "total": cv.get("total") or 0, "measured": cv.get("measured") or 0,
                 "legs_possible": cv.get("legs_possible") or 0, "complete": bool(cv.get("complete")),
+                # whose coordinates the measured legs join: the TourAPI-only wording stays legs_measured, any other
+                # provider names them all (legs_measured_src)
+                "geo_src": self.loc.list_sep.join(self.provider(x) for x in cv.get("geo_providers") or []),
+                "geo_mixed": (cv.get("geo_providers") or []) not in ([], [GEO_PROVIDER["TourAPI"]]),
                 "first": stops[0]["name"] if stops else "", "last": stops[-1]["name"] if stops else "",
                 "first_route": first_route, "map": cmap,
                 "orig_url": orig.get("source_url") or "",
                 "orig_name": self.provider(orig.get("source_name") or (S.site.get("source") or {}).get("name")),
                 "collected": orig.get("collected_at") or "", "reviewed_at": c.get("reviewed_at") or "",
-                "translated_at": rec.get("translated_at") or ""}
+                "translated_at": rec.get("translated_at") or "",
+                # F09-b: the one duration the source gives ('소요시간 : 12시간')
+                "taketime": {"text": self.cw("hours_n", tk["hours"]), "url": tk.get("source_url") or "",
+                             "name": self.provider(tk.get("source_name")), "date": tk.get("checked_at") or ""}
+                if tk and tk.get("hours") else None,
+                **self.course_week(stops, cv), "move": self.course_move(stops, cv), "cw": LC.COURSE_WORDS[self.loc.code],
+                **self.book_vm(booking.course_targets(S, c))}
+
+    def course_week(self, stops: list[dict], cv: dict) -> dict:
+        """F09-a (QA 2026-10-15): the Korean course page's closed days by weekday in this language — present.week_grid
+        over the same linked stops (the cells come from the Korean parse), each row named and linked as this version's
+        page with this version's closed-day value (or the sources-differ note); the busiest day as the datarow note
+        (present.course_vm's rule: most stops, the earlier weekday on a tie)."""
+        linked = [s for s in stops if s["t"]]
+        W = present.week_grid([s["t"] for s in linked])
+        week = None
+        if W:
+            rows = []
+            for r, s in zip(W["rows"], linked):
+                p = s["p"]
+                v = present.one_value(self.slot(p, "closed")) if p and r["stated"] and not r["contested"] else None
+                rows.append({"name": p["name"] if p else s["name"], "path": p["path"] if p else "", "cells": r["cells"],
+                             "contested": r["contested"], "stated": r["stated"],
+                             "text": v["main"] if v and not v.get("varies") else ""})
+            week = {**W, "rows": rows,
+                    "per_day": [(i, n) for i, n in enumerate(W["per_day"].values())]}
+        by_day = cv.get("closed_by_day") or {}
+        note = ""
+        if by_day:
+            day, cnt = max(by_day.items(), key=lambda kv: (kv[1], -present.WEEK.index(kv[0])))
+            note = self.cw("closed_n", cnt, day=LC.COURSE_WORDS[self.loc.code]["closed_day"][present.WEEK.index(day)])
+        return {"week": week, "closed_note": note}
+
+    def course_move(self, stops: list[dict], cv: dict) -> dict | None:
+        """F09 (QA 2026-10-15): the Korean page's '차 없이 다니기' (present.course_move) in this language — the nearest bus
+        stops of the stops (names stay Korean: lang="ko" with their romanization), every measured leg with a Google Maps
+        public-transport link between the two stored coordinates (the map computes route and time), the city bus
+        timetable's first and last buses, this version's guides, the one 'Not listed' line, the sources."""
+        S = self.S
+        mv = present.course_move(S, cv)
+        if mv is None:
+            return None
+        by_n = {s["n"]: s for s in stops}
+        romanized = lambda ko: {"ko": ko, "rr": self.fallback_name(re.sub(r"[()]", " ", ko)).strip()}
+        bus = lambda rows: [{"n": r["n"], "name": by_n[r["n"]]["place_name"] or by_n[r["n"]]["name"],
+                             "path": by_n[r["n"]]["path"], "id": r["id"],
+                             "bus": [{**b, "stop": romanized(b["name"])} for b in r["bus"]]} for r in rows]
+        legs = [{"a": by_n[l["a"]["n"]], "b": by_n[l["b"]["n"]], "d": l["d"], "long": l["long"],
+                 "guide": self.stop_guide(l["guide"]),
+                 "url": google_transit_url(l["a"]["geo"]["lat"], l["a"]["geo"]["lng"], l["b"]["geo"]["lat"], l["b"]["geo"]["lng"])}
+                for l in mv["legs"]]
+        row = lambda t: {**t, "stop": romanized(t["stop"]), "wd": t["weekday"].replace("~", "–"),
+                         "we": t["weekend"].replace("~", "–"), "wd_n": self.cw("runs", t["weekday_n"]),
+                         "we_n": self.cw("runs", t["weekend_n"])}
+        routes = [{**R, "out": [row(t) for t in R["out"]], "back": [row(t) for t in R["back"]],
+                   "alts": [{**t, "stop": romanized(t["stop"]), "every_l": self.past_hour(t.get("every")),
+                             "alt_l": self.past_hour((t.get("alt") or {}).get("value")),
+                             "provider": self.provider((t.get("alt") or {}).get("provider"))} for t in R["alts"]]}
+                  for R in mv["routes"]]
+        guides = [g for g in (self.stop_guide(g) for g in mv["guides"]) if g]
+        missing = list(LC.COURSE_WORDS[self.loc.code]["missing_items"])[:len(mv["missing"])]
+        tt = mv["tt"]
+        return {"lead": bus(mv["lead"]), "rest": bus(mv["rest"]), "legs": legs, "routes": routes, "guides": guides,
+                "missing": missing, "bus_radius": mv["bus_radius"], "tel": mv["tel"],
+                "leg_word": LC.NEAR_WORDS[self.loc.code]["leg"],
+                # the stop list's and the timetable's source names in this language: the city's
+                # (site.json city.intl.<code>.course_sources {stops, timetable}); none: the line names no source
+                "src_stops": self.course_source("stops") if "stops" in mv["source_keys"] else "",
+                "src_tt": self.course_source("timetable"), "tt_url": tt.get("url") or "",
+                "tt_provider": self.provider(tt.get("provider"))}
+
+    def past_hour(self, ko: str | None) -> str:
+        """'매시 35분' in this language (COURSE_WORDS past_hour); '' for another form."""
+        m = re.fullmatch(r"매시\s*(\d{1,2})분", squash_ws(ko))
+        return self.cw("past_hour", m=m.group(1)) if m else ""
 
     def course_lede(self, stops: list[dict], cv: dict) -> str:
         """present.course_lede in this language: how many first stops lie within 1 km of the start, and the longest
@@ -1147,12 +1865,13 @@ class Site:
             while cluster < len(stops) and stops[cluster]["geo"] and \
                     present.hav(stops[0]["geo"], stops[cluster]["geo"]) <= 1000:
                 cluster += 1
-        legs = cv.get("legs") or []
+        legs, pairs = cv.get("legs") or [], cv.get("pairs") or []
         longest = ""
-        if cv.get("complete") and cv.get("measured") and len(legs) == len(stops) - 1:
+        if cv.get("complete") and cv.get("measured") and len(pairs) == len(legs) and stops:
             i = max(range(len(legs)), key=lambda j: legs[j] or 0)
-            if legs[i]:
-                longest = t.s("lede_longest", a=stops[i]["name"], b=stops[i + 1]["name"], d=loc.dist(legs[i]))
+            if legs[i]:   # the Korean pair's stops, by number (no leg across a break or into an optional stop)
+                a, b = (stops[k["n"] - 1] for k in pairs[i])
+                longest = t.s("lede_longest", a=a["name"], b=b["name"], d=loc.dist(legs[i]))
         near = t.sn("lede_near", cluster) if cluster > 2 else ""
         if near and longest:
             return t.s("lede_both", near=near, longest=longest)
@@ -1212,6 +1931,9 @@ class Site:
             item = {"x": x, "anchor": x["anchor"], "series_name": squash_ws(rec.get("series_name")),
                     "name": squash_ws(new.get("name")) or squash_ws(rec.get("series_name")), "rows": rows,
                     "start": ev.get("start_date") or "", "end": ev.get("end_date") or "", "last": last,
+                    # the end the source gives only as a month ('2026-10'): shown as the month; last (its final day)
+                    # only sorts and splits upcoming / past (build.event_last_day)
+                    "end_month": B.event_end_month(ev),
                     "highlights": [squash_ws(h) for h in rec.get("highlights") or [] if squash_ws(h)],
                     "program_notes": [squash_ws(h) for h in rec.get("program_notes") or [] if squash_ws(h)],
                     "notes": [squash_ws(n) for n in new.get("notes") or [] if squash_ws(n)],
@@ -1223,7 +1945,9 @@ class Site:
             (out_up if last and last >= S.today else out_past).append(item)
         out_up.sort(key=lambda r: (r["start"], r["name"]))
         out_past.sort(key=lambda r: (r["start"], r["name"]), reverse=True)
-        return {"upcoming": out_up, "past": out_past, "n": len(out_up) + len(out_past),
+        # held around this time one or two years ago, nothing newer dated (present.season_rows): links to their cards
+        season = sorted((a, r["name"], r) for r in out_past if r["start"] and (a := present.season_ahead(r["start"], S.today)) is not None)
+        return {"upcoming": out_up, "past": out_past, "season": [r for _, _, r in season], "n": len(out_up) + len(out_past),
                 "checked": max((r["checked"] or "" for r in out_up + out_past), default="")}
 
 
@@ -1239,7 +1963,10 @@ class SlugBook:
     """The English slug of every record — the path segment all versions share (/de/places/<english-slug>/). For a
     record with a current English page, that page's slug; otherwise the slug English would give it: from the English
     record (even a stale one) or en/names.json, else from the romanized Korean name (guides and courses: their id),
-    never one an English page already uses."""
+    never one an English page already uses. A guide or course with no English record at all therefore has its id as
+    slug in the other versions, and that slug changes when English arrives (2026-10-15: guide-16…34, 40, 41 moved to
+    English slugs, with vercel.json redirects from /<code>/guides/guide-NN/); the test that every version translates
+    every published record (untranslated == 0, tests/test_en_site.py) keeps that from shipping again."""
 
     def __init__(self, S, data_dir: Path, en: Site | None):
         d = Path(data_dir) / "en"
@@ -1299,7 +2026,7 @@ class Intl:
         site = self.site_of(path)
         if site is None:
             return path
-        return site.en2ko.get(path)
+        return site.en2ko.get(path) or next((k for k, v in site.menu_twins.items() if v == path), None)
 
     def alternates(self, path: str) -> list[dict]:
         """hreflang links for a page that has at least one twin: ko, every version with a twin, x-default (= ko)."""
@@ -1314,17 +2041,22 @@ class Intl:
                 + [{"hreflang": "x-default", "href": S.abs(ko)}])
 
     def menu(self, path: str) -> list[dict]:
-        """The language menu of a page: Korean and every version, each its counterpart of this page (else that
-        version's home), the page's own version marked current. Empty when the build has no other version."""
+        """The language menu of a page: Korean and every version, each its counterpart of this page; a version
+        without one links its list of the same kind (else its home) with a note 'Guides · not translated' in its own
+        words (Site.menu_link; none on the 404 page). The page's own version is marked current. Empty when the build
+        has no other version."""
         if not self.sites:
             return []
         own = self.site_of(path)
         ko = self.ko_path(path) if own else path
         items = [{"code": "ko", "hreflang": "ko", "label": LC.KO["label"], "current": own is None,
-                  "href": path if own is None else (ko or "/")}]
+                  "href": path if own is None else (ko or "/"), "note": ""}]
         for code, s in self.sites.items():
-            href = path if s is own else (s.en_link(ko) if ko else s.home)
-            items.append({"code": code, "hreflang": s.loc.html, "label": s.loc.label, "current": s is own, "href": href})
+            href, note = (path, "") if s is own else (s.menu_link(ko) if ko else (s.home, ""))
+            if path == "/404.html":
+                note = ""
+            items.append({"code": code, "hreflang": s.loc.html, "label": s.loc.label, "current": s is own,
+                          "href": href, "note": note})
         return items
 
 
@@ -1458,6 +2190,12 @@ def place_graph(site: Site, vm: dict, title: str, crumbs: list, images: list[dic
     if same:
         node["sameAs"] = same
     node["containedInPlace"] = _city(site)
+    parent = site.own(e.get("_parent")) if e.get("_rel") == "inside" else None
+    if parent:   # pipeline/relations.py 'inside': the parent's page here, then the city (same_building: neither)
+        node["containedInPlace"] = [place_ref(parent), _city(site)]
+    parts = [cp for cp in (site.own(c) for c in e.get("_parts") or []) if cp]
+    if parts:
+        node["containsPlace"] = [place_ref(cp) for cp in parts]
     graph = [_webpage(site, url, title, f"{url}#place", vm["facts_checked"], [(e.get("original") or {}).get("source_url")],
                       vm["reviewed_at"]), node, jsonld.breadcrumb(crumbs)]
     if vm["faqs"]:
@@ -1587,6 +2325,8 @@ class Pages:
         crumbs = self.crumbs((cfg["nav"], self.abs(cfg["path"])), (p["name"], p["url"]))
         labels: list[str] = []
         for r in vm["practical"]:
+            if r["key"] == "parking_seats" and parking_seats_half(e) == "seats":
+                continue   # a seat count alone answers no parking question (the Korean title: build.entity_ctx)
             lab = site.T(f"TITLE_LABELS.{r['key']}")
             if lab and lab not in labels:
                 labels.append(lab)
@@ -1762,6 +2502,182 @@ class Pages:
                     n_places=len(site.places), n_index=sum(1 for p in site.places.values() if not p["noindex"]),
                     n_guides=len(site.guides), n_courses=len(site.courses), n_series=len(site.series), lics=lics)
 
+    def search(self) -> None:
+        """<home>search/ (owner 2026-10-14: '이 언어들도 다 검색이 되는 거지?'): the Korean site search in this version —
+        a static index (<home>search/index.json) that assets/search.js reads on the first focus (or at once with ?q=):
+        every place of this version (its name here, its Korean name too, its type, area and 권역 group in this
+        language, the signature dishes of a restaurant), the official courses (their stops), the guides and the event
+        series, each with its path here. o: the names in the other versions — the Korean ones (QA 2026-10-15 U10:
+        a Korean name on /en/search/ finds what its English name finds) and, in a version other than English, the English one
+        (the romanised name on signs and maps); v: a course's stops in those versions (present.other_names). Without
+        JS the page lists every place by kind, alphabetically. A utility page: noindex, not in the sitemap."""
+        site, t, loc = self.site, self.t, self.loc
+        if not site.places:
+            return
+        home = site.home
+        en = getattr(self.S, "en", None) if loc.code != "en" else None
+        en_series = {x["slug"]: x for x in (en.series if en else [])}
+        rows, kinds = [], []
+        for kind in KINDS:
+            if not site.by_kind[kind]:
+                continue
+            L = site.list_vm(kind)
+            recs = []
+            for g in L["groups"]:
+                for it in g["recs"]:
+                    row = {"n": it["name"], "a": it["e"]["name"], "k": kind, "t": it["type"] or "", "d": it["area"] or "",
+                           "r": g["name"], "p": it["path"]}
+                    present.other_names(row, *jsonld.alternate_names(it["e"]),
+                                        en and (it["e"].get("_en") or {}).get("name"))
+                    menu = next((c.get("main") for c in it["cells"] if c.get("key") == "menu" and not c.get("missing")), "")
+                    if menu:
+                        row["m"] = re.sub(r"<[^>]+>", "", str(menu))
+                    alias = site.own(it["e"].get("_alias_of"))   # pipeline/relations.py same_building, as /search/
+                    if alias:
+                        row["s"] = LC.NEAR_WORDS[loc.code]["same_building"].format(name=alias["name"])
+                    rows.append(row)
+                    recs.append(it)
+            kinds.append({"kind": kind, "label": t.s(f"cat_{kind}"), "id": f"k-{kind}",
+                          "recs": sorted(recs, key=lambda it: it["name"].casefold())})
+        for x in site.courses.values():
+            C = site.course_vm(x)
+            row = {"n": C["name"], "a": " · ".join(s["name"] for s in C["stops"] if s.get("name")), "k": "course",
+                   "t": t.s("courses"), "d": "", "r": "", "p": x["path"]}
+            cv = self.S.course_vms.get(x["c"]["slug"]) or {}
+            xe = en.courses.get(x["c"]["id"]) if en else None
+            present.other_names(row, cv.get("display"), xe and xe["rec"].get("name"))
+            present.other_names(row, *(s.get("name") for s in cv.get("stops") or []),
+                                *(s.get("name") for s in (en.cv(xe)["stops"] if xe else [])), key="v")
+            rows.append(row)
+        for x in site.guides.values():
+            row = {"n": squash_ws(x["rec"].get("title")), "a": squash_ws(x["rec"].get("label")), "k": "guide",
+                   "t": t.s("guides"), "d": "", "r": "", "p": x["path"]}
+            xe = en.guides.get(x["g"]["id"]) if en else None
+            present.other_names(row, x["g"].get("title"), x["g"].get("label"), xe and xe["rec"].get("title"))
+            rows.append(row)
+        if site.series and self.S.events:
+            EV = site.events_vm()
+            for r in EV["upcoming"] + EV["past"]:
+                row = {"n": r["name"], "a": r["series_name"], "k": "event", "t": t.s("events"), "d": "", "r": "",
+                       "p": f"{home}events/#{r['anchor']}"}
+                sr, xe = r["x"]["sr"], en_series.get(r["x"]["slug"])
+                present.other_names(row, sr.get("name"), (sr.get("newest") or {}).get("name"),
+                                    xe and xe["rec"].get("series_name"))
+                rows.append(row)
+        path = f"{home}search/"
+        (self.out / path.strip("/")).mkdir(parents=True, exist_ok=True)
+        (self.out / path.strip("/") / "index.json").write_text(
+            json.dumps(rows, ensure_ascii=False, separators=(",", ":")), "utf-8")
+        w = t.search_words()
+        crumbs = self.crumbs((w["open"], self.abs(path)))
+        page = {**self._simple(path, w["title"].format(r=site.region), w["desc"].format(r=site.region), crumbs),
+                "robots": "noindex, follow"}
+        words = {"kinds": {"attraction": t.s("cat_attraction"), "food": t.s("cat_food"), "stay": t.s("cat_stay"),
+                           "course": t.s("courses"), "guide": t.s("guides"), "event": t.s("events")},
+                 **{k: w[k] for k in ("none", "menu", "other", "via", "des", "of", "sug", "diet", "related", "syn")}}
+        # the query words (Korean: this version's rows carry the Korean names) and the city in both versions; no
+        # planner here (/plan/ is Korean only)
+        city = " ".join(dict.fromkeys(x for x in (self.S.site.get("region"), site.region) if x))
+        data = present.search_form_data(city)
+        self.render("en/search.html.j2", path, page, "search", None, in_sitemap=False, kinds=kinds, n_index=len(rows),
+                    words=json.dumps(words, ensure_ascii=False), sw=w, search_data=data)
+
+    def home_news(self, EV: dict) -> list[dict]:
+        """The opening's news cards in this version (owner 2026-10-14: the other versions take the Korean home's
+        design): the Korean home's cards (present.home_news — the same order, the same photos) that have a page here.
+        An event: this version's name, dates and venue, linked to its row on this version's events list; a guide: this
+        version's title (the part before ': '), linked to its page here. Outside items (articles, videos) have no
+        page in this version and stay out; when fewer than present.NEWS_MIN remain, the hub guides follow. A photo
+        shows only with its place's page here (its name and link in this language); without one, the card's art in
+        this language (art.for_lang: alt and langs) or the 3D icon. The first slide is the LCP: a KOGL-1 photo with
+        a local AVIF derivative or the art, as on the Korean home. Card: {kind, chip_key, title, href, start, end,
+        end_month (an end the source gives only as a month: shown as the month, never as its last day), sub, photo,
+        art, track}."""
+        site, S, loc = self.site, self.S, self.loc
+        home = site.home
+        ent_by_path = {e["_path"]: e for e in S.entities}
+        ev_by_ko = {r["ko_path"]: r for r in EV["upcoming"]}
+        slots = art.for_lang(S.art, loc.code)
+
+        def guide_card(gid: str) -> dict | None:
+            x = site.guides.get(gid)
+            if not x:
+                return None
+            title = squash_ws(x["rec"].get("title"))
+            parts = re.split(r"\s*(?:: |：| — )\s*", title, maxsplit=1)
+            slugs = [*(x["g"].get("route_slugs") or []),
+                     *(it.get("place_slug") for it in x["g"].get("items") or [] if isinstance(it, dict))]
+            return {"kind": "guide", "chip_key": "guide", "title": parts[0], "sub": parts[1] if len(parts) > 1 else "",
+                    "href": x["path"], "track": "guide_click", "key": "g:" + gid,
+                    "places": [S.ent_by_slug[s] for s in slugs if s and s in S.ent_by_slug]}
+
+        cards: list[dict] = []
+        for c in present.home_news(S):
+            if c["kind"] in ("festival", "event"):
+                r = ev_by_ko.get(c["href"])
+                if not r:
+                    continue
+                venue = next((row["value"] for row in r["rows"] if row["field"] == "place_name" and row["value"]
+                              and not row["blocks"]), "")
+                ko_ph = c.get("photo")
+                cards.append({"kind": c["kind"], "chip_key": c["kind"], "title": r["name"], "sub": venue,
+                              "href": f"{home}events/#{r['anchor']}", "start": r["start"], "end": r["end"],
+                              "end_month": r["end_month"], "track": "", "key": c["key"], "ev_kind": c.get("ev_kind") or "",
+                              "places": [ent_by_path[ko_ph["path"]]] if ko_ph and ko_ph.get("path") in ent_by_path else []})
+            elif c["kind"] == "guide":
+                g = guide_card(c["key"][2:])
+                if g:
+                    cards.append(g)
+        for gid in (*hubs(), *site.guides):
+            if len(cards) >= present.NEWS_MIN:
+                break
+            if not any(x["key"] == "g:" + gid for x in cards):
+                g = guide_card(gid)
+                if g:
+                    cards.append(g)
+        used: set[str] = set()
+        for i, c in enumerate(cards[:present.NEWS_MAX]):
+            own = [e for e in c.pop("places") if site.own(e)]
+            ph = present.news_photo(own, used)
+            if ph and i == 0 and not (ph["type"] == 1 and ph.get("avif")):
+                ph = None    # the first slide is the LCP: never a heavy original there
+            if ph:
+                used.add(ph["url"])
+                tp = site.own(ent_by_path.get(ph["path"]))
+                ph = {**ph, "place": tp["name"], "path": tp["path"], "alt": tp["name"], "credit": self.t.s("kto"),
+                      "lic": site.lic(f"KOGL-{ph['type']}")} if tp else None
+            c["photo"] = ph
+            c["art"] = None if ph else ((slots.get("events.kind." + c["ev_kind"]) if c.get("ev_kind") else None)
+                                        or slots.get("home.card." + ("event" if c["kind"] == "festival" else c["kind"])))
+        return cards[:present.NEWS_MAX]
+
+    def home_services(self, counts: dict, lists: dict, n_events: int) -> list[dict]:
+        """The 3D icon menu of the white card (as present.home_services on the Korean home), with the pages this version
+        has. The core four first (operator 2026-10-15; core=True: one row of four larger tiles on phones): its
+        attractions, restaurants and stays lists and the 'getting there' guide; then the official courses, the events
+        list and the guides."""
+        site, t = self.site, self.t
+        home = site.home
+        way = present.home_answer_default()   # the city's 'how to get here' guide (city.home.answer_default)
+        x = site.guides.get(way[1]) if way else None
+        # (label, href, picture, glyph, count, track, core, short): short is the HC key (templates/en/home.html.j2) of
+        # a phone's shorter label — the guide's own label ('Getting to <city> and around') does not fit a quarter of a
+        # phone's width
+        rows = [*((t.s(f"cat_{k}"), lists[k]["path"], pic, glyph, counts[k], "", True, "")
+                  for k, pic, glyph in (("attraction", "icon-sights", "pin"), ("food", "icon-food", "bowl"),
+                                        ("stay", "icon-stay", "bed")) if counts[k]),
+                (squash_ws(x["rec"].get("label")) or squash_ws(x["rec"].get("title")), x["path"],
+                 "icon-getting-here", "bus", 0, "guide_click", True, "go") if x else None,
+                (t.s("courses"), f"{home}courses/", "icon-course", "route", len(site.courses), "course_click", False, "")
+                if site.courses else None,
+                (t.s("events"), f"{home}events/", "icon-events", "calendar", n_events, "", False, "")
+                if site.series and self.S.events else None,
+                (t.s("guides"), f"{home}guides/", "guide", "book", len(site.guides), "guide_click", False, "")
+                if site.guides else None]
+        return [{"label": lab, "href": href, "pic": pic, "icon": glyph, "n": n, "track": track, "core": core,
+                 "short": short}
+                for lab, href, pic, glyph, n, track, core, short in filter(None, rows)]
+
     def home(self) -> None:
         site, S, t, loc = self.site, self.S, self.t, self.loc
         counts = {k: len(site.by_kind[k]) for k in KINDS}
@@ -1835,7 +2751,7 @@ class Pages:
         website = {"@type": "WebSite", "@id": f"{S.site_url}{home}#website", "url": self.abs(home), "name": loc.site_name,
                    "inLanguage": loc.html, "publisher": jsonld.org_ref(S.site_url)}
         page["jsonld"] = [jsonld.dumps({"@context": "https://schema.org",
-                                        "@graph": [website, jsonld.organization(S.site, S.site_url), dest]})]
+                                        "@graph": [website, jsonld.organization(S.site, S.site_url, lang=loc.code), dest]})]
         # the opening photo fills the first screen: the template preloads it (md.preload) with high priority
         lastmod = latest_of([c["e"].get("_page_date") for c in featured]
                             + [x["g"].get("_page_date") for x in site.guides.values()])
@@ -1849,7 +2765,8 @@ class Pages:
         self.render("en/home.html.j2", home, page, "home", lastmod, counts=counts, tiles=tiles, hero=hero, cover=cover,
                     hero_ev=hero_ev, today=S.today, featured=featured, events=EV["upcoming"][:4], lines=lines,
                     hubs=[site.guides[g] for g in hubs() if g in site.guides], lists=lists,
-                    n_courses=len(site.courses), n_guides=len(site.guides), ask_starters=ask_starters)
+                    n_courses=len(site.courses), n_guides=len(site.guides), ask_starters=ask_starters,
+                    news=self.home_news(EV), services=self.home_services(counts, lists, len(EV["upcoming"])))
 
 
 def render(site: Site, env, out: Path, intl: Intl | None = None) -> dict:
@@ -1862,11 +2779,13 @@ def render(site: Site, env, out: Path, intl: Intl | None = None) -> dict:
     pg.courses()
     pg.events()
     pg.about()
+    pg.search()
     pg.home()
     out_ = {"pages": pg.count, "indexable": pg.indexable, "places": len(site.places),
             "places_indexable": sum(1 for p in site.places.values() if not p["noindex"]),
             "guides": len(site.guides), "courses": len(site.courses), "event_series": len(site.series),
-            "stale_skipped": {k: len(v) for k, v in site.stale.items()}}
+            "stale_skipped": {k: len(v) for k, v in site.stale.items()},
+            "untranslated": {k: len(v) for k, v in site.untranslated.items()}}
     if site.loc.code != "en":
         out_["missing_strings"] = sorted(site.misses)
     return out_

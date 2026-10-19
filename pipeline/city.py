@@ -37,6 +37,16 @@ site.json keys read here
     intl               {code: {site_name, city, source, provider, admin, address: {prefix: [...], tail}}} the
                        other language versions; a version is built only when its names are here
     chat               {names: {lang: city name}, chips: {lang: [questions]}} the site assistant's words
+    geo_bounds         [south, north, west, east]: the box every published point lies in (validate); none: no check
+    geo_default_points [[lat, lng, note]]: points an official map shows for a record without coordinates — never a
+                       place's location (validate)
+    official_web       {host: [Korean page, other versions' page or null, checked date]}: official hosts the data
+                       writes as bare text, linked where the text names them (added to the national ones in present)
+    course_move        {guides: [guide ids before a course's own transit guides], guides_after: [… after them],
+                       island_guide, island_route}: the course page's '차 없이 다니기' block (present.course_move)
+    plan               {hubs: [{key, name}], island_regions: [권역 names]}: the AI course planner's start and end
+                       points (names only) and the 권역 a '섬·바다' liking reads as islands; none: no hub choice
+    resident_label     the residents' price group of the fee tables ('○○시민'); default: region + '시민'
 """
 from __future__ import annotations
 
@@ -294,6 +304,36 @@ class City:
 
     def intl(self, code: str) -> dict:
         return (self.cfg.get("intl") or {}).get(code) or {}
+
+    # ------------------------------------------------------------------ coordinates, fees, the planner
+    @property
+    def geo_bounds(self) -> tuple | None:
+        """(south, north, west, east) every published point lies in, or None (no box configured: no check)."""
+        b = self.cfg.get("geo_bounds")
+        return tuple(float(x) for x in b) if isinstance(b, (list, tuple)) and len(b) == 4 else None
+
+    @property
+    def geo_default_points(self) -> list[tuple[float, float]]:
+        """Points an official map falls back to for a record without coordinates (never a place's location)."""
+        return [(float(x[0]), float(x[1])) for x in self.cfg.get("geo_default_points") or [] if len(x) >= 2]
+
+    @property
+    def resident_label(self) -> str:
+        """The residents' price group as the fee tables head it ('○○시민')."""
+        return str(self.cfg.get("resident_label") or (f"{self.region}시민" if self.region else "시민"))
+
+    @property
+    def plan(self) -> dict:
+        """The AI course planner's city values: {hubs: [{key, name}], island_regions: [권역 names]}."""
+        p = self.cfg.get("plan") or {}
+        hubs = [{"key": str(h.get("key") or ""), "name": str(h.get("name") or "")} for h in p.get("hubs") or []
+                if isinstance(h, dict) and h.get("key") and h.get("name")]
+        return {"hubs": hubs, "island_regions": [str(x) for x in p.get("island_regions") or [] if str(x).strip()]}
+
+    def island_region(self, name: str | None) -> bool:
+        """Whether a 권역 is an island one for a '섬·바다' liking: listed in plan.island_regions, else its name says 섬."""
+        n = str(name or "")
+        return bool(n) and (n in self.plan["island_regions"] or "섬" in n)
 
 
 _ACTIVE = City()

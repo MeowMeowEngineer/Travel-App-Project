@@ -45,6 +45,11 @@
 .band-data li a { min-height: 64px; border-radius: 18px; background: #fff; box-shadow: inset 0 0 0 1px var(--hair); color: var(--ink-3); }
 .band-data b { color: var(--sea); }
 .band-data a:hover { background: var(--tint); box-shadow: inset 0 0 0 1px var(--tint2); color: var(--ink-2); }
+/* a 권역 the filters leave empty (site.js: its number 0, no href while its group is hidden): faint like a 0 chip — a
+   dashed ring drawn inside (an outline: the entry keeps its size), the grey number, no hover; the white fill keeps
+   the grey text at 5.62:1 */
+.band-data a.is-zero, .band-data a.is-zero:hover { background: #fff; box-shadow: none; outline: 1px dashed var(--ink-3); outline-offset: -1px; color: var(--ink-3); cursor: default; }
+.band-data a.is-zero b { color: var(--ink-3); }
 
 /* ---------------------------------------------------------------- buttons: filled sea, 14px corners; outline = hairline */
 .btn { border-radius: 14px; font-weight: 700; background: var(--sea); }
@@ -122,36 +127,7 @@ body .faq-acc summary:hover h3 { color: var(--sea-deep); }
 .p2-nf-links .btn-ol { min-height: 44px; border-radius: 999px; }
 
 
-/* ---------------------------------------------------------------- the English home's opening, light (ui4): text left,
-   the official photo big in a rounded frame on the right (never darkened, never under text) */
-.pg-en-home .hx { position: relative; color: var(--ink); background: linear-gradient(160deg, var(--g0) 0, var(--g0) 45%, var(--g1) 100%); min-height: 0; height: auto; display: block; }
-.pg-en-home .hx-in { position: relative; display: grid; gap: 24px; padding-top: clamp(28px, 4vw, 64px); padding-bottom: clamp(24px, 3vw, 40px); }
-.pg-en-home .hx-ph { position: relative; inset: auto; z-index: 0; overflow: hidden; border-radius: var(--r-xl); aspect-ratio: 3 / 2; background: var(--tint); }
-.pg-en-home .hx-ph::before, .pg-en-home .hx-ph::after, .pg-en-home .hx::before, .pg-en-home .hx::after { content: none; }
-.pg-en-home .hx-ph picture, .pg-en-home .hx-ph img { display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; filter: none; transform: none; }
-.pg-en-home .hx-k { color: var(--sea-deep); font: 700 14px/1.3 var(--font); letter-spacing: .01em; text-shadow: none; }
-.pg-en-home .hx-h1 { color: var(--ink); font: 700 clamp(36px, 4.4vw, 60px)/1.1 var(--font); letter-spacing: -.04em; text-shadow: none; margin: 8px 0 0; }
-.pg-en-home .hx-sub { color: var(--ink-2); font-size: clamp(17px, 1.4vw, 19px); line-height: 1.55; max-width: 32em; text-shadow: none; }
-.pg-en-home .hx-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 26px; border-radius: 14px; background: var(--sea); color: #fff; font: 700 16px/1 var(--font); box-shadow: var(--sh-2); text-decoration: none; }
-.pg-en-home .hx-btn:hover { background: var(--sea-hi); color: #fff; }
-.pg-en-home .hx-cats a { color: var(--ink); text-shadow: none; }
-.pg-en-home .hx-cats a .tn { color: var(--sea-deep); }
-.pg-en-home .hx-bar { position: relative; inset: auto; background: #fff; border-top: 1px solid var(--hair); color: var(--ink-2); backdrop-filter: none; -webkit-backdrop-filter: none; }
-.pg-en-home .hx-bar a, .pg-en-home .hx-ev, .pg-en-home .hx-ev-t { color: var(--ink); }
-.pg-en-home .hx-cap, .pg-en-home .hx-cap a { color: var(--ink-3); }
-.pg-en-home .hx-dot { background: var(--sea); box-shadow: 0 0 0 3px var(--tint2); }
-.pg-en-home .hx { margin-top: 0; overflow: visible; }
-.pg-en-home .hx a:focus-visible, .pg-en-home .hx .hx-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
-html:not(.is-scrolled) .pg-en-home .mast { background: rgba(242, 247, 253, .92); color: var(--ink); }
-html:not(.is-scrolled) .pg-en-home .mast::before { background: none; }
-html:not(.is-scrolled) .pg-en-home .mast :is(.wordmark, .wordmark:hover, .wm-a, .wm-b, .mast-nav a, .mast-nav a:hover, .mast-nav a[aria-current], .mast-search, .mast-v, .mast-ctx, .mast-lang, .menu summary) { color: var(--ink); }
-@media (min-width: 1024px) {
-  .pg-en-home .hx-in { grid-template-columns: minmax(0, 1fr) minmax(0, 54%); align-items: center; gap: 48px; min-height: 0; }
-  .pg-en-home .hx-ph { aspect-ratio: 4 / 3; max-height: 560px; }
-}
-
 @media (prefers-reduced-motion: reduce) { .pc { transition: none; } }
-html:not(.is-scrolled) .pg-home.pg-en-home .mast .lang-btn { color: var(--ink); }
 
 /* data rows under course / guide / event titles: white cards with hairlines, the figure in ink (red stays red) */
 .datarow > div { background: #fff; box-shadow: inset 0 0 0 1px var(--hair); border-radius: 18px; }

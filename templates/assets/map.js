@@ -11,7 +11,8 @@
    MARKUP
      <div class="map" data-map='JSON' data-kakao-sdk="https://dapi.kakao.com/v2/maps/sdk.js?appkey=…&autoload=false"
           role="region" aria-label="…">                   (data-points='JSON' is accepted too)
-       optional <p class="map-off">…</p> inside: replaced by the map; shows the failure line if the SDK fails
+       optional <p class="map-off">…</p> inside: its own text says the page lists the same places (what a reader
+       without the map gets); 'loading' once drawing starts, replaced by the map, the failure line if the SDK fails
      JSON shapes (pipeline/present.py and build.map_points make them):
        [{lat, lng, name, url, kind?, n?}, …]      a list of places; with data-numbered="1" a numbered route
        {self: {lat, lng, name}, near: [{lat, lng, name, url, d, kind}], anchors: [{lat, lng, label}],
@@ -24,7 +25,10 @@
                                                   MAPS below); the blue progress line is drawn for course.js
                                                   (reg.progressTo)
        {guide: [...], route: bool}                numbered places (id: the place, gs:focus), joined only when route is true
-       {list: [{lat, lng, name, url, id, kind, r}]}   a list page's places (id = the row's id: row ↔ marker)
+       {list: [{lat, lng, name, url, id, kind, r}]}   a list page's places (id = the row's id: row ↔ marker); only the
+                                                  places the list's filter keeps (window.GSFilter / gs:filter), framed
+                                                  on them; each marker a link named by the place (quiet beside the
+                                                  shown list, in the tab order where the list is hidden: phones' 지도)
        {all: [...same...], anchor_pts: [{name, n, geo}]}   the map page: 권역 labels, '먼 섬' edge control
        {anchors: [{lat, lng, name, n, url, place}]}  the home: the 권역 anchors labelled with their counts, each a
                                                   link to its region on /map/ (present.home_vm region_map)
@@ -40,7 +44,8 @@
    map has stopped moving and returns a function that cancels it; progressTo(from, n) draws the blue line through stop
    n (the part after stop `from` grows along the straight lines unless motion is reduced). Numbered markers are links
    (Enter or Space opens them). Every built map dispatches gs:mapready {detail: registry entry} (bubbles to document).
-   Listens to gs:hl, gs:filter, gs:focus, gs:region, gs:showmap (see site.js). */
+   Listens to gs:hl, gs:filter, gs:focus, gs:region, gs:showmap (see site.js). window.GSMapStart(el) builds a box
+   a script added after load (plan.js). */
 (function () {
   "use strict";
   var doc = document, win = window, maps = win.GSMaps = win.GSMaps || [], loading = null, K = null;
@@ -90,10 +95,12 @@
     var a = doc.createElement(url ? "a" : "span");
     a.className = "mk-a";
     if (url) a.href = url;
-    if (label && !quiet) { a.title = label; if (url) a.setAttribute("aria-label", label); }
-    // a list map's dots (quiet): out of the tab order and hidden from screen readers — the rows beside them are the
-    // same links (and light them); their names show in the map's tooltip on hover
-    if (quiet) { a.tabIndex = -1; a.setAttribute("aria-hidden", "true"); }
+    if (label && !quiet) a.title = label;
+    if (label && url) a.setAttribute("aria-label", label);
+    // a list map's dots (quiet) are named links too (the place's name; the map's tooltip shows it on hover and focus).
+    // Beside the shown list they start out of the tab order and hidden from screen readers — the rows are the same
+    // links — and listQuiet() lets them in while the list is not shown (phones' 지도 view)
+    if (quiet) { a.tabIndex = -1; a.setAttribute("aria-hidden", "true"); a.className += " mk-li"; }
     else if (!url) a.setAttribute("aria-hidden", "true");
     if (url) a.addEventListener("keydown", function (e) { if (e.key === " ") { e.preventDefault(); location.href = url; } });
     a.appendChild(div(cls, html));
@@ -121,6 +128,36 @@
     return g.fitView(b, [pad, pad, pad + hb, pad], minLv || 2);
   }
   function fitVisible(g, b, pad, minLv) { var v = visibleView(g, b, pad, minLv); g.view(v.c, v.lv, false); }
+  function visible(el) { return el.offsetParent !== null && el.getBoundingClientRect().height > 0; }
+  // a list map's filter (site.js keeps the list's shown row ids in window.GSFilter and sends gs:filter): the kept
+  // points ({keep: {id: 1}, lls}), or null when every point is kept (the map then shows its whole frame)
+  function picked(list, ids) {
+    if (!ids) return null;
+    var keep = {}, lls = [];
+    ids.forEach(function (id) { keep[id] = 1; });
+    list.forEach(function (p) { if (keep[idOf(p)]) lls.push([p.lat, p.lng]); });
+    return lls.length === list.length ? null : { keep: keep, lls: lls };
+  }
+  // the view of a list map: the filtered places with coordinates (all of them, nothing trimmed), else the whole frame
+  function listView(r) {
+    var s = r.picked;
+    return s && s.lls.length ? visibleView(r.g, s.lls, 36, 5) : visibleView(r.g, r.frame, 28);
+  }
+  // beside a shown list a list map's markers are quiet (out of the tab order, hidden from screen readers: the rows
+  // are the same links); where the list is not shown (phones' 지도 view) they are named links in the tab order. The
+  // list of /map/ (data.all) is its 권역 sections: quiet while one of them is shown
+  function listQuiet(r) {
+    if (!r.data.list && !r.data.all) return;
+    var rows = r.data.list ? doc.querySelectorAll("[data-ledger]") : doc.querySelectorAll("[data-region-sec]");
+    var quiet = Array.prototype.some.call(rows, visible);
+    if (r.quiet === quiet) return;
+    r.quiet = quiet;
+    Object.keys(r.markers).forEach(function (id) {
+      var a = r.markers[id]._a;
+      a.tabIndex = quiet ? -1 : 0;
+      if (quiet) a.setAttribute("aria-hidden", "true"); else a.removeAttribute("aria-hidden");
+    });
+  }
 
   // ------------------------------------------------------------ the adapter: one Kakao map in a box
   // Positions are worked out on Kakao's own plane (WCONGNAMUL: LatLng.toCoords(), 0.4 m a unit, y to the north), which
@@ -524,13 +561,15 @@
   // straight lines in 1.1s (ease in-out) unless motion is reduced
   function progress(reg, g) {
     var line = reg.progress, anim = 0;
-    var upto = function (n) { var out = []; reg.data.course.forEach(function (p) { if (!p.extra && p.n <= n) out.push([p.lat, p.lng]); }); return out; };
+    // the points up to stop n on n's own seg (a line never joins two options of a day: present.course_map)
+    var segOf = function (n) { var k = 0; reg.data.course.forEach(function (p) { if (!p.extra && p.n <= n) k = p.seg || 0; }); return k; };
+    var upto = function (n, k) { var out = []; if (k == null) k = segOf(n); reg.data.course.forEach(function (p) { if (!p.extra && p.n <= n && (p.seg || 0) === k) out.push([p.lat, p.lng]); }); return out; };
     return function (from, n) {
       if (anim) { win.cancelAnimationFrame(anim); anim = 0; }
       var done = upto(n);
       if (n <= 0 || done.length < 2) { line.setMap(null); return; }
       line.setMap(g.k);
-      var start = upto(from);
+      var start = upto(from, segOf(n));
       if (reduce || n <= from) { line.setPath(done.map(LL)); return; }
       if (!start.length) start = done.slice(0, 1); // from the first stop
       var rest = done.slice(start.length - 1), lens = [], tot = 0;
@@ -565,7 +604,7 @@
     try { d = normalise(JSON.parse(el.getAttribute("data-points") || el.getAttribute("data-map")), el); } catch (e) { return null; }
     var pts0 = d.self ? [d.self] : (d.course || d.guide || d.list || d.all || d.anchors || []);
     if (!pts0.length) return null; // nothing to draw: the box keeps its text
-    var reg = { el: el, map: null, g: null, markers: {}, items: [], data: d }, g = base(el);
+    var g = base(el), reg = { el: el, map: null, g: g, markers: {}, items: [], data: d };
     if (d.self) { // a place or an event: itself, its neighbours, labelled straight-line anchors, or a radius
       var c = [d.self.lat, d.self.lng], bounds = [c];
       (d.near || []).forEach(function (n, i) { if (i < 8) bounds.push([n.lat, n.lng]); });
@@ -628,7 +667,11 @@
         });
       };
       if (route && lls.length > 1) {
-        reg.line = d.course ? g.line(lls, { w: 2, o: 0.55 }) : g.line(lls, { w: 2, o: 0.5, dash: "dash" });
+        if (d.course) { // one line per seg: no line between two options of a day (present.course_map, QA 2026-10-15)
+          var segs = {};
+          pts.forEach(function (p) { if (!p.extra) (segs[p.seg || 0] = segs[p.seg || 0] || []).push([p.lat, p.lng]); });
+          Object.keys(segs).forEach(function (k) { if (segs[k].length > 1) g.line(segs[k], { w: 2, o: 0.55 }); });
+        } else g.line(lls, { w: 2, o: 0.5, dash: "dash" });
         reg.progress = g.line([], { w: 4.5, c: BLUE, o: 1, z: 2 });
         reg.progress.setMap(null);
       }
@@ -639,16 +682,22 @@
       var main = list.filter(function (p) { return p.r !== "먼 섬" && p.r !== "권역 미정"; }).map(function (p) { return [p.lat, p.lng]; });
       if (!main.length) main = list.map(function (p) { return [p.lat, p.lng]; });
       reg.frame = robust(main, d.all ? 0.03 : 0.08);
-      g.open(visibleView(g, reg.frame, 28));
+      // a list page's filter set before this map was built (phones build it at the first 지도): only those places,
+      // framed from the first view
+      reg.picked = d.list ? picked(list, win.GSFilter && win.GSFilter.ids) : null;
+      g.open(d.list ? listView(reg) : visibleView(g, reg.frame, 28));
       var tt = tip(g);
       list.forEach(function (p) {
         var ll = [p.lat, p.lng], id = idOf(p), node = kindPin(p.kind, p.url, p.name, true);
-        var mk = g.add(ll, node, { z: 10, click: true });
-        node.addEventListener("mouseenter", function () { tt.show(ll, p.name); doc.dispatchEvent(new CustomEvent("gs:hlrow", { detail: { id: id, on: true } })); });
-        node.addEventListener("mouseleave", function () { tt.hide(); doc.dispatchEvent(new CustomEvent("gs:hlrow", { detail: { id: id, on: false } })); });
-        mk._gs = p; mk._el = node.firstChild;
+        var mk = g.add(ll, node, { z: 10, click: true, off: !!reg.picked && !reg.picked.keep[id] });
+        var on = function () { tt.show(ll, p.name); doc.dispatchEvent(new CustomEvent("gs:hlrow", { detail: { id: id, on: true } })); };
+        var off = function () { tt.hide(); doc.dispatchEvent(new CustomEvent("gs:hlrow", { detail: { id: id, on: false } })); };
+        node.addEventListener("mouseenter", on); node.addEventListener("mouseleave", off);
+        node.addEventListener("focus", on); node.addEventListener("blur", off);
+        mk._gs = p; mk._el = node.firstChild; mk._a = node;
         reg.markers[id] = mk;
       });
+      listQuiet(reg);
       if (d.anchor_pts) regions(reg, g, list, main, d.anchor_pts);
     } else if (d.anchors) { // the home: the 권역 anchors labelled with their counts; each links to its region on /map/
       var alls = d.anchors.map(function (a) { return [a.lat, a.lng]; }), labs = [];
@@ -751,15 +800,19 @@
       mk.setZIndex(e.detail.on ? 1000 : 10);
     });
   });
+  // the list's filter (site.js; also sent when only the 목록 | 지도 view changes): the kept markers shown, the others
+  // taken off, and the map framed on the kept ones when the set has changed and the map is on screen (a hidden map
+  // is framed when it is shown: gs:showmap)
   doc.addEventListener("gs:filter", function (e) {
-    var keep = {};
-    e.detail.ids.forEach(function (id) { keep[id] = 1; });
     maps.forEach(function (r) {
       if (!r.data.list) return;
+      var was = r.picked ? r.picked.lls.join(";") : "", s = r.picked = picked(r.data.list, e.detail.ids);
       Object.keys(r.markers).forEach(function (id) {
         var mk = r.markers[id];
-        if (keep[id]) { if (!r.g.shown(mk)) mk.setMap(r.map); } else if (r.g.shown(mk)) mk.setMap(null);
+        if (!s || s.keep[id]) { if (!r.g.shown(mk)) mk.setMap(r.map); } else if (r.g.shown(mk)) mk.setMap(null);
       });
+      listQuiet(r);
+      if ((s ? s.lls.join(";") : "") !== was && visible(r.el)) { var v = listView(r); r.g.view(v.c, v.lv, true); }
     });
   });
   var lastRegion = null;
@@ -795,7 +848,10 @@
   }
   doc.addEventListener("gs:focus", function (e) { lastFocus = (e.detail && e.detail.ids) || []; maps.forEach(function (r) { applyFocus(r, lastFocus); }); });
   doc.addEventListener("gs:mapready", function (e) { if (lastFocus && lastFocus.length) applyFocus(e.detail, lastFocus); });
+  win.addEventListener("resize", function () { maps.forEach(listQuiet); }); // the list shows or hides beside the map at 1024px
   win.GSMapsReady = function (fn) { maps.forEach(fn); doc.addEventListener("gs:mapready", function (e) { fn(e.detail); }); };
+  // a map box a script adds later (the course planner's day map, plan.js): built at once, the SDK after 'load'
+  win.GSMapStart = function (el) { el.setAttribute("data-lenis-prevent", ""); start(el); };
 
   var els = Array.prototype.slice.call(doc.querySelectorAll(".map[data-points], .map[data-map]"));
   if (!els.length) return;
@@ -808,11 +864,13 @@
   function start(el) {
     if (el._gs) return;
     el._gs = 1;
+    // the box's own text says the page lists the same places (for a reader without the map); drawing starts now
+    var o = el.querySelector(".map-off");
+    if (o) o.textContent = W.load || (EN ? "Loading the map." : "지도를 불러오는 중입니다.");
     afterLoad(function () {
       load(el).then(function () { if (!build(el)) el._gs = 0; }).catch(function () { fail(el); });
     });
   }
-  function visible(el) { return el.offsetParent !== null && el.getBoundingClientRect().height > 0; }
   if ("IntersectionObserver" in win) {
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (en) { if (en.isIntersecting && visible(en.target)) { io.unobserve(en.target); start(en.target); } });
@@ -822,7 +880,15 @@
   doc.addEventListener("gs:showmap", function () {
     setTimeout(function () {
       els.forEach(function (el) { if (visible(el)) start(el); });
-      maps.forEach(function (r) { if (!visible(r.el)) return; r.g.relayout(); if (r.showHome) r.showHome(false); else if (r.frame) fitVisible(r.g, r.frame, 28); });
+      maps.forEach(function (r) {
+        listQuiet(r);
+        if (!visible(r.el)) return;
+        r.g.relayout();
+        if (r.showHome) r.showHome(false);
+        else if (r.data.list) { var v = listView(r); r.g.view(v.c, v.lv, false); }
+        else if (r.data.all && lastRegion && lastRegion.region) applyRegion(r, lastRegion); // /map/: the chosen 권역 stays framed
+        else if (r.frame) fitVisible(r.g, r.frame, 28);
+      });
     }, 30);
   });
 })();

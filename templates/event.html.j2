@@ -17,7 +17,7 @@
 {% if V.point %}{% set _ = links.append(('지도', '#h-map')) %}{% endif %}
 {% if V.past %}{% set _ = links.append(('지난 회차', '#h-past')) %}{% endif %}
 {% if V.videos %}{% set _ = links.append(('영상', '#h-media')) %}{% endif %}
-{{ ui.lnav(V.sr.name, links, {'url': V.route, 'label': '길찾기', 'ext': true, 'track': 'route_click', 'provider': 'kakao_route'} if V.route else {'url': '#h-facts', 'label': '일정·장소'}) }}
+{{ ui.lnav(V.sr.name, links, {'url': V.route, 'label': '길찾기', 'ext': true, 'track': 'route_click', 'provider': 'kakao_route'} if V.route else {'url': '#h-facts', 'label': '일정·장소'}, share={'id': V.sr.key, 'lang': 'ko'}) }}
 {% endblock %}
 {% block content %}
 <article class="place event">

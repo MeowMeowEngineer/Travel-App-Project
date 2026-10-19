@@ -7,8 +7,8 @@
      10-base        reset, links, focus, utilities, type scale, pill buttons, icons
      20-chrome      skip link, sample banner, frosted global bar (+ menu), local bar (.lnav), crumbs, footer
      30-info        the information components: status line, spec tiles (.kf), facts / timetables / fees / conflicts,
-                    notes, route block, near lists, boards, FAQ, chapter heads, answers, cards, carousels, event
-                    rows, tickets, ledger records, filters, week table, photos, videos, maps, search
+                    notes, route block, near lists (an event's places), boards, FAQ, chapter heads, answers, cards,
+                    carousels, event rows, tickets, ledger records, filters, week table, photos, videos, maps, search
      40-showcase    the page openings and the home sections: home opening + answer bar + product-shot photo,
                     story stage, island gallery, drawn route, regions, home videos; place / course / event openings
      50-layouts     page grids: chapters, lists, course, guide, guides index, events, map page, search, about, videos
@@ -21,6 +21,8 @@
      65-states      states of the behaviour layer (site.js, motion.js), keyed on data-* attributes
      70-p1-pages    page-only rules of the place, list / theme, map, search and videos pages
      70-p2-pages    page-only rules of the home, course(s), guide(s), event(s), about and 404 pages
+     71-nearby      the place page's 주변·함께 가기 chapter (_near.html.j2): course segments (prev ── here ── next with
+                    straight-line legs, course chips), nearby rows on one straight-line scale, guide and event cards
      72-guide       the guide reading layer (owner 2026-10-09): answer card, mini cards, table of contents, sentence
                     bullets, bold figures (.gk), FAQ accordion, compact sources
 

@@ -1,42 +1,47 @@
 /* 49-chat — the site assistant's launcher only (templates/_chat.html.j2). The chat itself is assets/chat.css, loaded
    with assets/chat.js on the first press, never in the first paint. Owner 2026-10-13 night ('처음에 아래로 스크롤을
    안 하면 챗봇이 안 보이는데? … 챗봇 버튼을 조금 더 크게'): on every page from the first paint (no waiting below the
-   first screen), fixed at the bottom right above the safe area — a 64px white round button with the mascot's face
-   (a 52px picture, its room set by width/height: nothing moves when it arrives) and, from 700px, the label beside it
-   in a pill. Soft and calm: white, a soft shadow, the ink label (#1d1d1f on #fff 16.8:1); the focus ring sits outside.
-   While the reader scrolls down it folds to the round face (html.chat-mini, the label stays its accessible name), so
-   it covers less of what is being read; scrolling up unfolds it. Hidden without JS, while the chat is open and in
-   print; a blue dot marks a conversation this tab keeps (html.chat-has). The page's last lines never sit under it:
-   the footer keeps the button's height free at its foot. No sliding under reduced motion. */
-.chat-fab { position: fixed; z-index: 90; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, calc(env(safe-area-inset-bottom) + 8px));
-  display: inline-flex; align-items: center; height: 64px; max-width: 64px; padding: 0; border: 0; border-radius: 999px; overflow: hidden;
-  background: #fff; color: var(--ink); font: 700 16px/1 var(--font); letter-spacing: -.01em; white-space: nowrap; cursor: pointer;
-  box-shadow: 0 10px 28px rgba(18, 32, 56, .18), 0 2px 6px rgba(18, 32, 56, .12), inset 0 0 0 1px rgba(0, 0, 0, .05);
-  transition: opacity .25s var(--fb), visibility .25s, background-color .2s var(--fb), max-width .3s var(--fb), box-shadow .2s var(--fb); }
-.chat-fab-face { flex: none; display: grid; place-items: center; width: 64px; height: 64px; }
-.chat-fab-face img { display: block; width: 52px; height: 52px; }
-.chat-fab-l { padding: 0 24px 0 2px; opacity: 0; transition: opacity .2s var(--fb); }
-.chat-fab:hover { background: #fbfbfd; box-shadow: 0 12px 32px rgba(18, 32, 56, .22), 0 2px 6px rgba(18, 32, 56, .14), inset 0 0 0 1px rgba(0, 0, 0, .06); }
+   first screen), fixed at the bottom right above the safe area — a white round button with the mascot's face (its
+   room set by width/height: nothing moves when it arrives), 68px and 84px from 1024px, with its label 'AI 챗봇' (each
+   language's) always shown on a sea-blue tag across the circle's bottom (owner 2026-10-14: '우측 하단에 지금 뭔지 잘
+   모르겠는데, AI 챗봇인 거 더 크게 잘 보이면 좋겠네'). Soft and calm: white, a soft shadow; the focus ring sits
+   outside. Hidden without JS, while the chat is open and in print. The page's last lines never sit under it: the
+   footer keeps the button's height free at its foot. */
+.chat-fab { position: fixed; z-index: 90; right: max(16px, env(safe-area-inset-right)); bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px));
+  display: grid; place-items: center; width: 68px; height: 68px; padding: 0; border: 0; border-radius: 50%; overflow: visible;
+  background: #fff; color: var(--ink); cursor: pointer;
+  box-shadow: 0 10px 28px rgba(18, 32, 56, .2), 0 2px 6px rgba(18, 32, 56, .12), inset 0 0 0 1px rgba(0, 0, 0, .05);
+  transition: opacity .25s var(--fb), visibility .25s, background-color .2s var(--fb), box-shadow .2s var(--fb); }
+.chat-fab-face { display: grid; place-items: center; width: 68px; height: 68px; }
+.chat-fab-face img { display: block; width: 56px; height: 56px; }
+/* the label tag across the circle's bottom (owner 2026-10-14 'AI 챗봇인 거 더 크게 잘 보이면'): white on sea 4.96:1 */
+.chat-fab-l { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); padding: 4px 9px; border-radius: 999px;
+  background: var(--sea); color: #fff; font: 700 12.5px/1.15 var(--font); letter-spacing: -.01em; white-space: nowrap;
+  box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(18, 32, 56, .2); }
+.chat-fab:hover { background: #fbfbfd; box-shadow: 0 12px 32px rgba(18, 32, 56, .24), 0 2px 6px rgba(18, 32, 56, .14), inset 0 0 0 1px rgba(0, 0, 0, .06); }
+.chat-fab:hover .chat-fab-l { background: var(--sea-hi); }
 .chat-fab:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
-html.chat-has .chat-fab::after { content: ""; position: absolute; top: 9px; left: 44px; width: 10px; height: 10px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 2px #fff; }
-/* from 700px the label beside the face; it folds while the reader scrolls down */
-@media (min-width: 700px) {
-  .chat-fab { max-width: 240px; }
-  .chat-fab-l { opacity: 1; }
-  html.chat-mini .chat-fab { max-width: 64px; }
-  html.chat-mini .chat-fab-l { opacity: 0; }
+@media (min-width: 1024px) {
+  .chat-fab { right: 20px; bottom: 28px; width: 84px; height: 84px; }
+  .chat-fab-face { width: 84px; height: 84px; }
+  .chat-fab-face img { width: 68px; height: 68px; }
+  .chat-fab-l { bottom: -10px; padding: 5px 11px; font-size: 14px; }
 }
-@media (min-width: 1024px) { .chat-fab { right: 24px; bottom: 24px; height: 72px; } .chat-fab-face { width: 72px; height: 72px; } .chat-fab-face img { width: 58px; height: 58px; } html.chat-mini .chat-fab { max-width: 72px; } }
-/* UI4 (owner 2026-10-14: '첫 화면부터 우측 하단에 챗봇 잘 보이게'): never hidden at load, on any page (the old
-   html.ask-in rule is gone); above every other fixed thing (z-index 90); the mascot floats gently (4 s) unless the
-   reader prefers reduced motion. */
+/* UI4 (owner 2026-10-14: '첫 화면부터 우측 하단에 챗봇 잘 보이게'): never hidden at load (the homes' phones aside,
+   below); above every other fixed thing (z-index 90); the mascot floats gently (4 s) unless the reader prefers
+   reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .chat-fab-face img { animation: fab-float 4s var(--ease-io) infinite; }
   @keyframes fab-float { 50% { transform: translateY(-3px); } }
 }
 
 html:not(.js) .chat-fab, html.chat-open .chat-fab { display: none; }
+/* homes below 1024px (operator 2026-10-15): aside while their question box is on screen (site.js html.ask-out;
+   no IntersectionObserver: html.no-askio); so from the first paint, out of the tab order */
+@media (max-width: 1023px) {
+  html.js:not(.ask-out):not(.no-askio) .has-ask .chat-fab { opacity: 0; visibility: hidden; pointer-events: none; }
+}
 /* the page's last lines (the footer's operator line sits at the bottom right) stay clear of the button */
-html.js .foot { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
-@media (prefers-reduced-motion: reduce) { .chat-fab, .chat-fab-l { transition: none; } }
+html.js .foot { padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px)); }
+@media (prefers-reduced-motion: reduce) { .chat-fab { transition: none; } }
 @media print { .chat-fab { display: none; } }

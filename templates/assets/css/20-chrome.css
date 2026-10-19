@@ -18,6 +18,11 @@ html.is-scrolled .mast::before { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
 .wordmark { display: inline-flex; align-items: baseline; gap: 8px; min-height: 44px; align-self: center; color: var(--ink); text-decoration: none; margin-right: auto; padding-top: 12px; }
 .wordmark:hover { text-decoration: none; color: var(--ink); }
 .wm-a { font: 700 19px/1 var(--font); letter-spacing: -.03em; white-space: nowrap; }
+.wm-em { color: var(--sea); }   /* 각 / gak (present.wordmark, operator 2026-10-17): 4.75:1 on the bar, 4.61:1 on the footer */
+.wm-sym { display: inline-flex; align-self: center; margin: -12px 0 0; }   /* the symbol beside the name: centred on the bar (the wordmark sits 12px low for the name's baseline) */
+.wm-sym svg { display: block; width: auto; height: 28px; }
+.foot-mark .wm-sym { margin: 0; }
+.foot-mark .wm-sym svg { height: 24px; }
 .wm-b { font: 700 11px/1 var(--font); letter-spacing: .02em; color: var(--ink-2); white-space: nowrap; }
 .mast-nav ul { display: flex; }
 .mast-nav a { display: flex; align-items: center; min-height: 44px; padding: 0 11px; color: #333336; text-decoration: none; font-size: 14px; letter-spacing: -.01em; white-space: nowrap; transition: color .2s var(--fb); }
@@ -62,7 +67,7 @@ html.is-scrolled .mast::before { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
 
 /* ---------------------------------------------------------------- local bar (ui.lnav: place, course, event, guide)
    The page title, its section links (desktop) and one blue pill — the page's contextual action (place: 길찾기 to
-   the exact route, course: 경유지 목록, event: 길찾기, guide: 걷는 순서 / 코스 보기). The only bar that stays. */
+   the exact route, course: 경유지 목록, event: 길찾기, guide: 걷는 순서 / 추천 코스). The only bar that stays. */
 .lnav { position: sticky; top: 0; z-index: 45; height: 52px; background: rgba(255, 255, 255, .72); }
 .lnav::before { content: ""; position: absolute; inset: 0; z-index: -1; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 1px 0 rgba(0, 0, 0, .12); }
 .lnav-in { display: flex; align-items: center; height: 100%; gap: 4px; }
@@ -72,11 +77,21 @@ html.is-scrolled .mast::before { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
 .lnav-links a:hover { color: var(--link); text-decoration: none; }
 .lnav-cta { flex: none; display: inline-flex; align-items: center; min-height: 44px; margin-left: 10px; padding: 0 15px; border: 7px solid transparent; border-left: 0; border-right: 0; background: var(--blue) padding-box; border-radius: 980px; color: #fff; font: 400 14px/1 var(--font); text-decoration: none; white-space: nowrap; transition: background-color .2s var(--fb); }
 .lnav-cta:hover { background-color: var(--blue-hi); color: #fff; text-decoration: none; }
+/* 공유 (ui.lnav share, site.js [data-share]): before the pill — its word beside the icon on desktop, the icon alone
+   (44px, the word kept for screen readers) on phones; the note after a copied link (.share-note) */
+.lnav-share { position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 44px; margin-left: 6px; padding: 0 12px; border: 0; border-radius: 980px; background: transparent; color: var(--ink); font: 400 14px/1 var(--font); white-space: nowrap; cursor: pointer; }
+.lnav-share:hover { background: var(--tint); }
+.lnav-share-i { flex: none; width: 20px; height: 20px; }
+.share-note { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 70; max-width: calc(100vw - 32px); padding: 11px 18px; border-radius: 980px; background: #172033; color: #fff; font: 400 14px/1.4 var(--font); text-align: center; transform: translate(-50%, 8px); opacity: 0; pointer-events: none; transition: opacity .2s var(--fb), transform .2s var(--fb); }
+.share-note.is-on { opacity: 1; transform: translate(-50%, 0); }
 @media (max-width: 1023px) {
   .lnav-links { display: none; }
   .lnav-t { font-size: 17px; }
   .lnav-cta { margin-left: 8px; }
+  .lnav-share { margin-left: 2px; padding: 0; }
+  .lnav-share-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+@media (prefers-reduced-motion: reduce) { .share-note { transition: none; transform: translate(-50%, 0); } }
 
 /* ---------------------------------------------------------------- breadcrumbs (ui.crumbs): base.html.j2 prints them at the
    foot of the page, above the footer, the way apple.com does (the JSON-LD BreadcrumbList names must be visible) */
@@ -104,6 +119,16 @@ html.is-scrolled .mast::before { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
 .foot-mark .wm-a { font-size: 17px; }
 .foot-mark .wm-b { display: inline; }
 .foot-op { color: var(--ink-2); }
+/* the company's official record under the operator line (operator 2026-10-17, the CEO's mail): one line of facts —
+   CEO, business registration number, head office, main line, a link to /about/#company — then the copyright */
+.foot-biz, .foot-copy { flex-basis: 100%; margin: 0; color: var(--ink-3); }
+.foot-biz { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.foot-biz span { overflow-wrap: anywhere; }
+.foot-addr { flex-direction: column; gap: 2px; }   /* the head office and the R&D center, one address a line */
+.foot-biz a { color: var(--ink-2); }
+.foot-copy { font-size: 12px; }
+@media (max-width: 1023px) { .foot-biz a { display: inline-flex; align-items: center; min-height: 44px; } }
+.co-note { margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink-3); word-break: keep-all; }
 @media (max-width: 1023px) {
   .foot-in { grid-template-columns: 1fr 1fr; row-gap: 20px; }
   .foot-col a { min-height: 44px; }

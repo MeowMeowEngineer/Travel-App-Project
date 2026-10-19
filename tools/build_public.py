@@ -50,6 +50,9 @@ def main(argv=None) -> int:
                       # the other versions (/ja/ …) when data/<region>/<code> exists: pages each, and those not built
                       **({"intl_pages": {c: st.get("pages", 0) for c, st in stats["intl"].items()}} if stats.get("intl") else {}),
                       **({"intl_skipped": stats["intl_skipped"]} if stats.get("intl_skipped") else {}),
+                      # published Korean records a version has no translation of (each should be 0: prepare --lang)
+                      "intl_untranslated": {c: sum((st.get("untranslated") or {}).values())
+                                            for c, st in (({"en": en} if en else {}) | (stats.get("intl") or {})).items()},
                       "qa_errors": len(errors), "warnings": len(warnings), "out": str(a.out)}, ensure_ascii=False))
     return 1 if errors else 0
 

@@ -9,17 +9,33 @@ Rules (CLAUDE.md 3절 1·2):
     different     -> keep both: the TourAPI value goes to `fact_alternatives[key]`; the page shows both values
                      with their providers and "방문 전 전화 확인". Neither side is picked.
 - `overview` is never copied into page text (kept under tourapi.overview for fact checking only).
+- Two hours values with the same opening–closing times (one adds last entry or the season names) are not a
+  contradiction: the TourAPI value is kept as relation 'also' (QA 2026-10-15 J16), both still shown with sources.
+- 무장애 여행 정보 (KorWithService2 detailWithTour2, tools/tourapi_bulk.py --barrier-free) merges with
+  provider=BARRIER_FREE through with_facts(): the same rules, its own provider name on every value it writes.
 """
 from __future__ import annotations
 
 import re
 from difflib import SequenceMatcher
 
+from pipeline.present import TIME_KEYS, time_set
 from pipeline.schema import TOURAPI_LICENSE_MAP, license_allowed
 from pipeline.textutil import extract_url, normalize_name, slugify, squash_ws, strip_html
 from pipeline.tourapi import CONTENT_TYPES, INTRO_FIELDS, KIND_BY_TYPE
 
 PROVIDER = "한국관광공사 TourAPI"
+# KorWithService2: a name that does not contain PROVIDER, so the two never read as each other's confirmation
+BARRIER_FREE = "한국관광공사 무장애 여행 정보(TourAPI)"
+# detailWithTour2 field -> our fact key (field names: 한국관광공사 개방데이터 활용매뉴얼(무장애여행) v4.3, data.go.kr
+# 15101897, 2026-02-26). elevator, exit, lactationroom … have no fact key of ours (a new key needs FACT_LABELS in
+# 9 languages), so they are left out; stroller counts only when it speaks of renting (대여).
+WITH_FIELDS = {"wheelchair": "wheelchair", "parking": "accessible_parking", "restroom": "accessible_toilet",
+               "route": "accessible_route", "stroller": "babycarriage"}
+WITH_SUFFIX = re.compile(r"\s*_\s*무장애\s*편의\s*시설\s*$")
+# describes a different thing at each source (an elevator at one, a ramp at the other): only the same words agree;
+# two different descriptions are both shown ('also') unless one says yes and the other no
+DESCRIPTIVE = {"accessible_route"}
 NEW_PLACE_TYPES = ("12", "14", "28", "32", "38", "39")
 # detailIntro2 fields beyond pipeline.tourapi.INTRO_FIELDS (our fact key -> field per content type)
 EXTRA_INTRO = {
@@ -79,6 +95,11 @@ def _yesno(value: str) -> bool | None:
     if re.search(r"가능|있음|^o$|^유$|^y$|운영", n):
         return True
     return None
+
+
+def _yes_no_differ(a: str, b: str) -> bool:
+    ya, yb = _yesno(a), _yesno(b)
+    return ya is not None and yb is not None and ya != yb
 
 
 ALWAYS = re.compile(r"^(연중(무휴|개방)?|상시(개방)?|24시간(개방)?|항시개방|연중상시개방)$")
@@ -166,7 +187,23 @@ def tourapi_facts(common: dict, intro: dict, info: list[dict], ctype: str) -> di
     return facts
 
 
+def with_facts(item: dict) -> dict:
+    """Our fact keys from one detailWithTour2 item (KorWithService2): values cleaned like the other TourAPI fields,
+    the provider's trailing '_무장애 편의시설' tag removed, empty ones dropped; stroller only when it is about renting."""
+    facts: dict[str, str] = {}
+    for field, key in WITH_FIELDS.items():
+        value = clean(WITH_SUFFIX.sub("", clean((item or {}).get(field))))
+        if key == "babycarriage" and "대여" not in value:
+            continue
+        if value:
+            facts[key] = value
+    return facts
+
+
 def _same(key: str, a: str, b: str) -> bool:
+    if key in DESCRIPTIVE:
+        na, nb = _norm(a), _norm(b)
+        return not na or not nb or na in nb or nb in na
     if key in ("infocenter", "reservation"):
         return same_phone(a, b)
     if key in ("homepage", "reservationurl"):
@@ -191,8 +228,16 @@ def _prefer_new(key: str, old: str, new: str) -> bool:
     return more_detailed(old, new)
 
 
-def merge_facts(place: dict, new: dict, today: str, contentid: str) -> dict:
-    """Merge TourAPI facts into place in-place. Returns {'added': [...], 'confirmed': [...], 'conflicts': [...]}."""
+def confirmed_by_has(note: str | None, provider: str) -> bool:
+    """`provider` is one of the ' · '-separated entries of a confirmed_by note ('<provider>' or '<provider> <date>').
+    Whole entries only: '한국관광공사 TourAPI' is not confirmed by an entry that merely contains those words."""
+    entry = re.compile(re.escape(provider) + r"(?: \d{4}-\d{2}-\d{2})?")
+    return any(entry.fullmatch(e.strip()) for e in str(note or "").split(" · "))
+
+
+def merge_facts(place: dict, new: dict, today: str, contentid: str, provider: str = PROVIDER) -> dict:
+    """Merge one TourAPI service's facts (provider: PROVIDER for KorService2, BARRIER_FREE for KorWithService2) into
+    place in-place. Returns {'added': [...], 'confirmed': [...], 'conflicts': [...], 'also': [...]}."""
     locks = set(place.get("locks") or [])
     out = {"added": [], "confirmed": [], "conflicts": [], "also": []}
     if "facts" in locks:
@@ -201,23 +246,23 @@ def merge_facts(place: dict, new: dict, today: str, contentid: str) -> dict:
     sources = place.setdefault("fact_sources", {})
     alts = place.setdefault("fact_alternatives", {})
     base = place.get("facts_source") or {}
-    src = {"provider": PROVIDER, "checked_at": today, "contentid": contentid}
+    src = {"provider": provider, "checked_at": today, "contentid": contentid}
 
     def own_source(key: str) -> dict:
         return sources.get(key) or {k: v for k, v in base.items() if k in ("provider", "checked_at", "url", "contentid")}
 
-    def record_alt(key: str, value: str) -> None:
-        cur = [a for a in alts.get(key, []) if a.get("provider") != PROVIDER]
-        also = key in COMPLEMENTARY
+    def record_alt(key: str, value: str, also: bool = False) -> None:
+        cur = [a for a in alts.get(key, []) if a.get("provider") != provider]
+        also = also or key in COMPLEMENTARY
         alts[key] = cur + [{"value": value, **src, **({"relation": "also"} if also else {})}]
         out["also" if also else "conflicts"].append(key)
 
     def confirm(key: str) -> None:
         s = dict(own_source(key))
-        if s.get("provider") != PROVIDER:
+        if s.get("provider") != provider:
             prev = s.get("confirmed_by") or ""
-            if PROVIDER not in prev:  # a re-run keeps the richer note written earlier (e.g. '… · <city tourism site> 본문')
-                s["confirmed_by"] = " · ".join(x for x in (prev, f"{PROVIDER} {today}") if x)
+            if not confirmed_by_has(prev, provider):  # a re-run keeps the richer note written earlier (e.g. '… · <city tourism site> 본문')
+                s["confirmed_by"] = " · ".join(x for x in (prev, f"{provider} {today}") if x)
             sources[key] = s
             out["confirmed"].append(key)
 
@@ -245,7 +290,7 @@ def merge_facts(place: dict, new: dict, today: str, contentid: str) -> dict:
             sources[key] = dict(src)
             out["added"].append(key)
             continue
-        if own_source(key).get("provider") == PROVIDER:  # our own earlier copy: refresh
+        if own_source(key).get("provider") == provider:  # our own earlier copy: refresh
             prev = own_source(key)
             # unchanged value: keep what an earlier run recorded about the other source
             keep = {k: prev[k] for k in ("confirmed_by", "note", "raw") if k in prev and facts[key] == value}
@@ -253,7 +298,8 @@ def merge_facts(place: dict, new: dict, today: str, contentid: str) -> dict:
             sources[key] = {**src, **keep}
             continue
         if _same(key, facts[key], value):
-            if _prefer_new(key, facts[key], value):
+            # the more exact of two agreeing values is shown — but one TourAPI service never replaces the other's value
+            if _prefer_new(key, facts[key], value) and own_source(key).get("provider") not in (PROVIDER, BARRIER_FREE):
                 prev = own_source(key)
                 sources[key] = {**src, "confirmed_by": f"{prev.get('provider', '')} {prev.get('checked_at', '')}".strip(),
                                 "note": f"{prev.get('provider', '다른 출처')} 표기: {squash_ws(facts[key])}"}
@@ -261,6 +307,10 @@ def merge_facts(place: dict, new: dict, today: str, contentid: str) -> dict:
                 out["confirmed"].append(key)
             else:
                 confirm(key)
+        elif key in TIME_KEYS and time_set(facts[key]) and time_set(facts[key]) == time_set(value):
+            record_alt(key, value, also=True)   # the same opening–closing times, worded differently (J16)
+        elif key in DESCRIPTIVE and not _yes_no_differ(facts[key], value):
+            record_alt(key, value, also=True)   # e.g. an elevator at one source, a ramp at the other
         else:
             record_alt(key, value)
     for key in [k for k, v in alts.items() if not v]:

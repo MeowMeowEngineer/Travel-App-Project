@@ -21,7 +21,7 @@
     <h2 id="a-site" class="rail-label">이 사이트는</h2>
     <div class="rail-body">
       <dl class="src-dl">
-        <div><dt>운영 주체</dt><dd>{{ site.operator.name }}{% if site.operator.name_en %}({{ site.operator.name_en }}){% endif %}{% if site.operator.url %} (<a href="{{ site.operator.url }}" rel="noopener">{{ site.operator.url }}</a>){% endif %}</dd></div>
+        <div><dt>운영 주체</dt><dd>{{ site.operator.legal_name or site.operator.name }}{% if site.operator.name_en %}({{ site.operator.name_en }}){% endif %}{% if site.operator.url %} (<a href="{{ site.operator.url }}" rel="noopener">{{ site.operator.url }}</a>){% endif %}{% if site.operator.business_no %} — 아래 <a href="#company">회사 정보</a>{% endif %}</dd></div>
         {% if site.editor and site.editor.name %}<div><dt>{{ site.editor.role or '편집 책임' }}</dt><dd>{{ site.editor.name }} ({{ site.operator.name }}{% if site.operator.name_en %}·{{ site.operator.name_en }}{% endif %}){% if site.operator.contact %} · 정정 요청 <a href="mailto:{{ site.operator.contact }}">{{ site.operator.contact }}</a>{% endif %}</dd></div>{% endif %}
         <div><dt>공식 제휴</dt><dd>{{ site.affiliation or '없음 — 지자체·기관의 공식 사이트가 아니며, 공식 승인을 받은 사이트가 아닙니다.' }}</dd></div>
         {% if source_used %}<div><dt>원문 출처</dt><dd><a href="{{ site.source.url }}" rel="noopener" data-track="official_click">{{ site.source.name }}</a></dd></div>{% elif tourapi_used %}<div><dt>정보 출처</dt><dd>한국관광공사 TourAPI</dd></div>{% endif %}
@@ -40,6 +40,7 @@
         <li><strong>요약과 자주 묻는 질문:</strong> 위에서 모은 사실만으로 AI의 도움을 받아 초안을 쓰고, 숫자·출처 대조와 원문 베끼기 검사를 통과한 문장만 싣습니다. 사람이 검토했거나 운영자가 공개를 승인한 페이지만 공개합니다.</li>
         <li><strong>원문과 사진:</strong> 공공누리 표시가 없는 {{ site.source.name }}의 글과 사진은 옮겨 싣지 않{% if source_used %}고 원문 링크로 안내합니다. 원문에서 확인한 사실은 이 사이트의 문장으로 새로 씁니다{% else %}습니다{% endif %}.{% if tourapi_used %} 사진은 한국관광공사 TourAPI의 공공누리 제1·3유형 사진만 출처와 함께 씁니다.{% endif %}</li>
         <li><strong>거리:</strong> 코스·가이드·주변 목록의 거리는 모두 두 장소 좌표 사이의 직선거리입니다.</li>
+        <li id="booking"><strong>예약:</strong> {{ book_words.ko.about }}</li>
       </ul>
     </div>
   </section>
@@ -81,15 +82,54 @@
     </div>
   </section>
 
+  {% if site.emergency %}{% set em = site.emergency %}
+  <section class="wrap chapter chapter-mid ch-rail" id="emergency" aria-labelledby="a-sos">
+    <h2 id="a-sos" class="rail-label">긴급 연락처</h2>
+    <div class="rail-body prose">
+      <p>여행 중 누가 쓰러지거나 다쳤을 때, 불이 났거나 범죄를 당했을 때는 바로 전화하세요.</p>
+      <ul class="sos">
+        {% for x in em.lines %}<li><a class="sos-tel tn" href="tel:{{ x.tel }}" data-track="tel_click">{{ x.tel }}</a><span class="sos-what">{{ x.ko }}{% if x.abroad %} · 해외에서 <a href="tel:{{ x.abroad }}" data-track="tel_click">{{ x.abroad }}</a>{% endif %}</span></li>{% endfor %}
+      </ul>
+      {% for s in em.steps %}<p>{{ s.ko }}</p>{% endfor %}
+      <p class="sos-src">출처: {{ (em.sources.values()|map(attribute='provider')|unique|join(', ')) }} — {% for s in em.sources.values() %}<a href="{{ s.url }}" rel="noopener" hreflang="en" data-track="official_click">{{ s.label }}</a>{% if not loop.last %}, {% endif %}{% endfor %}(영어 페이지). 이 사이트는 응급처치나 의료 안내를 하지 않습니다.</p>
+    </div>
+  </section>
+  {% endif %}
+
   <section class="wrap chapter chapter-mid ch-rail" id="chatbot" aria-labelledby="a-chat">
     <h2 id="a-chat" class="rail-label">사이트 안내 챗봇</h2>
     <div class="rail-body prose">
       <p>화면 오른쪽 아래 ‘물어보기’를 누르면 이 사이트에 실린 정보로만 답하는 안내 챗봇이 열립니다. 장소·가이드·코스·행사 페이지의 값과 출처를 근거로 답하고, 답마다 해당 페이지를 링크합니다. 출처끼리 값이 다르면 둘 다 알려 주고, 사이트에 없는 값은 없다고 말한 뒤 데이터에 있는 전화번호·공식 누리집을 안내합니다.</p>
-      <p>답은 Anthropic의 AI 모델 Claude Haiku 5.5가 만듭니다. AI의 답은 틀릴 수 있으니 방문 전에 링크된 페이지와 공식 안내로 확인하세요. 예약·결제·회원가입은 하지 않습니다.</p>
-      <p>이 사이트는 대화를 저장하지 않습니다. 대화는 지금 보고 있는 브라우저 탭에만 남고, ‘새 대화’를 누르거나 탭을 닫으면 지워집니다. 질문할 때마다 새 질문과 그 앞의 대화(최근 12개 메시지), 보고 있는 페이지 주소가 이 사이트의 서버 함수를 거쳐 Anthropic API로 보내지고, 거기서 답이 만들어집니다. 서버 기록에는 처리 결과와 사용량 숫자만 남고 질문과 답의 글은 남지 않습니다. Anthropic 쪽의 처리·보관은 Anthropic의 정책을 따르며, 이 사이트는 이미 보낸 내용을 지울 수 없습니다.</p>
+      <p>답은 Anthropic의 AI 모델 Claude Haiku 5.5가 만듭니다. AI의 답은 틀릴 수 있으니 방문 전에 링크된 페이지와 공식 안내로 확인하세요. 예약·결제·회원가입은 하지 않고, 공식 예약 페이지 링크만 안내합니다.</p>
+      <p>이 사이트는 대화를 서버에 저장하지 않습니다. 대화는 지금 보고 있는 브라우저 탭에만 임시로 남고, ‘새 대화’를 누르거나 탭을 닫으면 지워집니다. 질문할 때마다 새 질문과 그 앞의 대화(최근 12개 메시지), 보고 있는 페이지 주소가 이 사이트의 서버 함수를 거쳐 Anthropic API로 보내지고, 거기서 답이 만들어집니다. 서버 기록에는 처리 결과와 사용량 숫자만 남고 질문과 답의 글은 남지 않습니다. Anthropic 쪽의 처리·보관은 Anthropic의 정책을 따르며, 이 사이트는 이미 보낸 내용을 지울 수 없습니다.</p>
       <p>이름·전화번호 같은 개인정보는 입력하지 마세요. 자동으로 가려 주는 기능은 없습니다. 잘못 입력했다면 ‘새 대화’를 누르세요. 그대로 두면 다음 질문 때 앞의 대화와 함께 다시 보내집니다.</p>
+      {% if has_plan %}<p id="plan"><a href="/plan/">AI 코스 만들기</a>(시험판)도 같은 방식입니다. 고른 조건(날짜·시간·출발·도착 장소·이동 수단·동행 인원과 나이·취향·필요한 것·입장료 예산)과 ‘하고 싶은 말’, 고쳐 달라고 쓴 글이 같은 서버 함수를 거쳐 Anthropic API로 보내지고, 만든 일정은 이 탭에만 임시로 남습니다. AI는 장소와 순서·시각만 고르고, 그 일정을 이 사이트의 코드가 다시 검사합니다: 그날 휴무(요일·날짜 규칙, 공휴일은 확인 필요로)·운영시간·입장마감, 입장료(장소 요금표와 통합권 요금표로 사람마다 계산하고, 요금표에 없는 사람·장소는 ‘확인 필요’로 남기며 그때는 예산 안이라고 하지 않습니다), 고른 조건(유모차·휠체어·주차·실내·무료)에 대한 각 장소의 자료, AI가 쓴 문장의 숫자가 장소 페이지에 있는지. 장소 사이의 이동 시간은 사이트에 없어 일정의 틈은 ‘계획상 여유’일 뿐이고, 실제 이동은 지도 앱에서 확인해야 합니다.</p>{% endif %}
     </div>
   </section>
+
+  {%- set op = site.operator %}
+  {%- if op.business_no %}
+  {#- the company that runs the site, as its official papers and its own site give it (operator 2026-10-17, the CEO's
+      mail; site.json operator.sources) — no personal number or home address -#}
+  <section class="wrap chapter chapter-mid ch-rail" id="company" aria-labelledby="a-co">
+    <h2 id="a-co" class="rail-label">운영 회사 정보</h2>
+    <div class="rail-body">
+      <dl class="src-dl co-dl">
+        <div><dt>상호</dt><dd>{{ op.legal_name or op.name }}{% if op.name_en %} ({{ op.name_en }}){% endif %}{% if op.about %} — {{ op.about }}{% endif %}</dd></div>
+        {% if op.ceo %}<div><dt>대표이사</dt><dd>{{ op.ceo }}</dd></div>{% endif %}
+        <div><dt>사업자등록번호</dt><dd>{{ op.business_no }}</dd></div>
+        {% if op.corporate_no %}<div><dt>법인등록번호</dt><dd>{{ op.corporate_no }}</dd></div>{% endif %}
+        {% if op.founded %}{% set fd = op.founded.split('-') %}<div><dt>설립</dt><dd>{{ fd[0] }}년 {{ fd[1]|int }}월 {{ fd[2]|int }}일</dd></div>{% endif %}
+        {% if op.head_office %}<div><dt>본사</dt><dd>{% if op.head_office_postal %}({{ op.head_office_postal }}) {% endif %}{{ op.head_office }}</dd></div>{% endif %}
+        {% if op.lab %}<div><dt>연구소</dt><dd>{% if op.lab_postal %}({{ op.lab_postal }}) {% endif %}{{ op.lab }}</dd></div>{% endif %}
+        {% if op.tel or op.email %}<div><dt>연락처</dt><dd>{% if op.tel %}대표전화 <a href="tel:{{ op.tel|replace('-', '') }}">{{ op.tel }}</a>{% endif %}{% if op.tel and op.email %} · {% endif %}{% if op.email %}<a href="mailto:{{ op.email }}">{{ op.email }}</a>{% endif %}</dd></div>{% endif %}
+        {% if site.editor and site.editor.name %}<div><dt>{{ site.editor.role or '편집 책임' }}</dt><dd>{{ site.editor.name }}{% if op.contact %} · 정보 정정 요청 <a href="mailto:{{ op.contact }}">{{ op.contact }}</a>{% endif %}</dd></div>{% endif %}
+        {% if op.url %}<div><dt>회사 누리집</dt><dd><a href="{{ op.url }}" rel="noopener">{{ op.url }}</a></dd></div>{% endif %}
+      </dl>
+      <p class="co-note">이 사이트는 {{ (site.locality or '지자체')|josa('이나/나') }} 공공기관이 운영하는 사이트가 아니라 위 회사가 직접 운영합니다. 장소·행사 문의는 각 장소 페이지의 전화번호와 공식 안내로 해 주세요.</p>
+    </div>
+  </section>
+  {%- endif %}
 
   <section class="wrap chapter chapter-mid ch-rail" aria-labelledby="a-stat">
     <h2 id="a-stat" class="rail-label">방문 통계</h2>

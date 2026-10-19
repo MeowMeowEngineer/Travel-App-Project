@@ -1,47 +1,116 @@
 {% extends "base.html.j2" %}
-{#- <home> of every version but Korean: the opening (owner 2026-10-10, as the Korean home: the official KOGL-1 photo full-bleed, H1 · lead · a button
-    to the official courses · list counts, bottom bar with the next event and the photo credit), the centre question card (_ask.html.j2, owner 2026-10-13: its
-    top straddles the dark end of the photo, below the credit line — never over it), tiles to the three hub
-    guides then the lists, courses and events; places on the most official courses; upcoming events; official courses.
-    Same Apple look as the Korean home (pipeline/en_site.Pages.home) with the accent points (owner, 2026-10-09;
-    css/45-accent.css): the colour bento tiles, the big-numerals band, and the official courses as the black band. -#}
+{#- <home> of every version but Korean. UI4 for every version (owner 2026-10-14, '외국어 사이트들은 UI UX가 아직 업데이트가
+    안 됐네'): the Korean home's opening and white card (templates/home.html.j2, css/46-home-open.css) with this version's
+    words and pages — the official KOGL-1 photo full-bleed under its scrim (media.HOME_COVER, credited at the bottom
+    right), at the left the kicker pill, the H1, the lede, the course button and the slide controls, at the right one
+    card per news item (Pages.home_news: the Korean home's events and guides that have a page here, in this version's
+    words; its photo with the place's page here, else its art in this language, else the 3D icon), one at a time
+    (site.js [data-hcar], a native scroll-snap row without JS). Then the white card: the assistant (_ask.html.j2
+    box_intl — no search page in these versions, so the form shows with JS only), the starter questions as '#' tags
+    and the 3D icon menu (Pages.home_services); the conversation opens under it (panel_intl). Below: places on the
+    most official courses, the hub guides, upcoming events and the official courses. Nothing on the first screen
+    starts hidden. Phones (operator 2026-10-15): as the Korean home — the course button under the lede, compact news
+    cards that do not turn by themselves, the launcher aside while the question box is on screen, and the menu led by
+    the core four (Pages.home_services core) in one row of tiles; the 'getting there' tile shows HC.go there (the
+    guide's own label, shown from 768px, is too long for a quarter of a phone). -#}
 {% import "en/_en.html.j2" as E with context %}
 {% import "_media.html.j2" as md %}
 {% import "_ask.html.j2" as askm %}
-{% block bodyclass %}pg-home pg-en-home{% endblock %}
+{% import "_art.html.j2" as artm %}
+{% import "_pic.html.j2" as pk %}
+{#- the news card's picture: big from 768px, the compact card's 88px thumbnail below (as the Korean home) -#}
+{% set SLIDE_SIZES = '(min-width: 1024px) 640px, (min-width: 768px) calc(100vw - 32px), 88px' %}
+{% set SLIDE_MEDIA = '(min-width: 768px)' %}
+{% set HC_ALL = {
+  'en': {'news': 'News', 'all': 'All news',  'pause': 'Pause the news', 'play': 'Play the news', 'prev': 'Previous news', 'next': 'Next news',
+         'event': 'Event', 'festival': 'Festival', 'guide': 'Guide', 'go': 'Getting here'},
+  'ja': {'news': 'お知らせ', 'all': 'お知らせ一覧',  'pause': 'お知らせの自動切り替えを停止', 'play': 'お知らせの自動切り替えを開始', 'prev': '前のお知らせ',
+         'next': '次のお知らせ', 'event': 'イベント', 'festival': '祭り', 'guide': 'ガイド', 'go': 'アクセス'},
+  'zh-Hans': {'news': '最新消息', 'all': '全部消息',  'pause': '暂停自动播放', 'play': '开始自动播放', 'prev': '上一条', 'next': '下一条',
+              'event': '活动', 'festival': '节庆', 'guide': '指南', 'go': '交通'},
+  'zh-Hant': {'news': '最新消息', 'all': '全部消息',  'pause': '暫停自動播放', 'play': '開始自動播放', 'prev': '上一則', 'next': '下一則',
+              'event': '活動', 'festival': '節慶', 'guide': '指南', 'go': '交通'},
+  'de': {'news': 'Aktuelles', 'all': 'Alle Meldungen',  'pause': 'Automatischen Wechsel anhalten', 'play': 'Automatischen Wechsel starten',
+         'prev': 'Vorherige Meldung', 'next': 'Nächste Meldung', 'event': 'Veranstaltung', 'festival': 'Festival', 'guide': 'Ratgeber',
+         'go': 'Anreise'},
+  'fr': {'news': 'Actualités', 'all': 'Toute l’actualité',  'pause': 'Mettre le défilement en pause', 'play': 'Reprendre le défilement',
+         'prev': 'Actualité précédente', 'next': 'Actualité suivante', 'event': 'Événement', 'festival': 'Festival', 'guide': 'Guide',
+         'go': 'Accès'},
+  'es': {'news': 'Novedades', 'all': 'Todas las novedades',  'pause': 'Pausar el carrusel', 'play': 'Reanudar el carrusel', 'prev': 'Novedad anterior',
+         'next': 'Novedad siguiente', 'event': 'Evento', 'festival': 'Festival', 'guide': 'Guía', 'go': 'Cómo llegar'},
+  'ru': {'news': 'Новости', 'all': 'Все новости',  'pause': 'Остановить прокрутку новостей', 'play': 'Включить прокрутку новостей',
+         'prev': 'Предыдущая новость', 'next': 'Следующая новость', 'event': 'Мероприятие', 'festival': 'Фестиваль',
+         'guide': 'Путеводитель', 'go': 'Как добраться'},
+} %}
+{% set HC = HC_ALL.get(loc.html) or HC_ALL['en'] %}
+{% block bodyclass %}pg-home pg-intl-home pg-h4{% if ask_starters is defined and ask_starters is not none %} has-ask{% endif %}{% endblock %}
 {% block main_class %}{% endblock %}
-{% block head %}{% if cover %}{{ md.preload(cover, '(min-width: 1024px) 680px, 100vw') }}{% endif %}{% endblock %}
+{% block head %}{% if cover and cover.avif %}{{ md.preload(cover, '(min-width: 1024px) 100vw, 360px') }}{% endif %}{% set c0 = news[0] if news else none %}{% if c0 and c0.photo %}{% if c0.photo.type == 1 and c0.photo.avif %}{{ md.preload(c0.photo, SLIDE_SIZES, SLIDE_MEDIA) }}{% endif %}{% elif c0 and c0.art %}<link rel="preload" as="image" type="image/avif" imagesrcset="{{ c0.art.avif }}" imagesizes="{{ SLIDE_SIZES }}" media="{{ SLIDE_MEDIA }}" fetchpriority="high">{% endif %}{% endblock %}
 {% block content %}
-{#- the opening (ui4 2026-10-14, the owner's light reference layout): on a pale sea-blue ground the kicker · H1 · lead
-    · the course button · list counts on the left, the official KOGL-1 photo big in a rounded frame on the right
-    (under the text on phones), never darkened; a light bar with the next event and the photo credit
-    (css/47-site-soft.css). No search in English: the links lead to the courses and the food list. -#}
-<section class="hx{% if cover %} has-ph{% endif %}" aria-labelledby="h-home">
-  <div class="wrap hx-in">
-    <div class="hx-txt">
-    <p class="hx-k">{{ t.f('home_kicker', r=region) }}</p>
-    <h1 id="h-home" class="op-h1 hx-h1">{{ site.site_name }}</h1>
-    <p class="hx-sub">{{ t.f('home_sub', r=region) }}</p>
-    <p class="hx-cta">{% if n_courses %}<a class="hx-btn" href="{{ loc.home }}courses/" data-track="course_click">{{ t.home_cta }}<span class="arr" aria-hidden="true">→</span></a>{% endif %}</p>
-    <p class="hx-cats">{% for kind, label, path in [('attraction', t.s('cat_attraction'), lists.attraction.path), ('food', t.s('cat_food'), lists.food.path), ('stay', t.s('cat_stay'), lists.stay.path)] if counts[kind] %}<a href="{{ path }}">{{ label }} <span class="tn">{{ counts[kind] }}</span><span class="arr" aria-hidden="true">›</span></a>{% endfor %}</p>
+{% set N = news|length %}
+{% set ASK = ask_starters is defined and ask_starters is not none %}
+<div class="hk"{% if ASK %} data-chat-dock{% endif %}>
+<section class="ho{% if cover %} ho-ph{% endif %}" aria-labelledby="h-home">
+  {% if cover %}<div class="ho-bg" aria-hidden="true">{{ md.picture(cover, '(min-width: 1024px) 100vw, 360px', true, 'ho-bg-img', false, true) }}</div>{% endif %}
+  <div class="wrap ho-in"{% if N %} data-hcar aria-roledescription="carousel" aria-label="{{ HC.news }}"{% endif %}>
+    <div class="ho-text">
+      <p class="ho-k"><span class="ho-dot" aria-hidden="true"></span>{{ t.f('home_kicker', r=region) }}</p>
+      <h1 id="h-home" class="op-h1 hk-h1">{{ loc.home_h1 or site.site_name }}</h1>
+      <p class="ho-lede">{{ t.f('home_sub', r=region) }}</p>
+      <p class="ho-cta">{% if n_courses %}<a class="btn-sea" href="{{ loc.home }}courses/" data-track="course_click">{{ t.home_cta }}<span class="arr" aria-hidden="true">→</span></a>{% else %}<a class="btn-sea" href="{{ lists.attraction.path }}">{{ t.s('cat_attraction') }}<span class="arr" aria-hidden="true">→</span></a>{% endif %}</p>
+      {% if N > 1 %}<div class="ho-ctl">
+        <div class="hv-ctl">
+          <button type="button" class="hv-c hv-pause" data-hcar-pause aria-label="{{ HC.pause }}" data-label-play="{{ HC.play }}" data-label-pause="{{ HC.pause }}">{{ ui.icon('pause', 'icon i-pause') }}{{ ui.icon('resume', 'icon i-play') }}</button>
+          <button type="button" class="hv-c" data-hcar-dir="-1" aria-controls="hv-track" aria-label="{{ HC.prev }}">{{ ui.icon('prev') }}</button>
+          <p class="hv-count tn" data-hcar-count aria-live="off"><span class="vh">{{ HC.news }} </span><span data-hcar-cur>1</span> / {{ N }}</p>
+          <button type="button" class="hv-c" data-hcar-dir="1" aria-controls="hv-track" aria-label="{{ HC.next }}">{{ ui.icon('next') }}</button>
+          <span class="hv-prog" aria-hidden="true"><i data-hcar-prog></i></span>
+        </div>
+        {% if events %}<a class="ho-all" href="{{ loc.home }}events/">{{ HC.all }}<span class="arr" aria-hidden="true">→</span></a>{% endif %}
+      </div>{% endif %}
     </div>
-    {% if cover %}<div class="hx-ph">{{ md.picture(cover, '(min-width: 1024px) 680px, 100vw', true, 'hx-img', false, true) }}</div>{% endif %}
+    {% if N %}
+    <div class="ho-news">
+      <h2 class="vh">{{ HC.news }}</h2>
+      <div class="hv-view" data-hcar-view>
+        <div class="hv-track" id="hv-track">
+          {% for c in news %}
+          <article class="nc nc-{{ c.kind }}" role="group" aria-roledescription="slide" aria-label="{{ loop.index }} / {{ N }}" data-hcar-item>
+            <div class="nc-frame{% if c.photo %} t{{ c.photo.type }}{% elif c.art %} nc-artf{% else %} nc-icof{% endif %}">
+              {%- if c.photo %}{{ ui.img(c.photo, SLIDE_SIZES, loop.first, 'nc-img', false, loop.first) }}
+              {%- elif c.art %}{{ artm.figure(c.art, loc.code, SLIDE_SIZES, loop.first, 'nc-art', false, loop.first) }}
+              {%- else %}{{ pk.pic('guide' if c.kind == 'guide' else 'icon-events', 'book' if c.kind == 'guide' else 'calendar', 120) }}{% endif %}</div>
+            <div class="nc-body">
+              <p class="nc-chips"><span class="nc-chip">{{ HC[c.chip_key] }}</span>{% if c.start and today and c.start <= today %}<span class="nc-st"><span>{{ t.now_on }}{% if not c.end_month %}{% set until %}<span class="tn">{{ loc.md(c.end or c.start) }}</span>{% endset %} · {{ t.f('until', d=until) }}{% endif %}</span></span>{% endif %}</p>
+              <h3 class="nc-t"><a href="{{ c.href }}"{% if c.track %} data-track="{{ c.track }}"{% endif %}>{{ c.title }}</a></h3>
+              {% if c.start or c.sub %}<p class="nc-meta">{% if c.start %}<time datetime="{{ c.start }}" class="tn">{{ loc.md(c.start) }}{% if c.end and c.end != c.start %}–{{ loc.md(c.end) }}{% elif c.end_month %}–{{ loc.mon(c.end_month) }}{% endif %}</time>{% endif %}{% if c.start and c.sub %}<span aria-hidden="true"> · </span>{% endif %}{% if c.sub %}<span>{{ c.sub }}</span>{% endif %}</p>{% endif %}
+              {% if c.photo %}{% set ph_link %}<a href="{{ c.photo.path }}">{{ c.photo.place }}</a>{% endset %}<p class="nc-cr">{{ t.f('photo_is', name=ph_link) }} · {{ E.credit(c.photo, false) }}{% if c.photo.lic %}<span class="cr-lic"> · {{ c.photo.lic }}</span>{% endif %}</p>{% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
-  {% set ev = hero_ev %}
-  {% if ev or cover %}<div class="hx-bar"><div class="wrap hx-bar-in">
-    {% if ev %}<a class="hx-ev" href="{{ loc.home }}events/#{{ ev.anchor }}"><span class="hx-dot" aria-hidden="true"></span>{% if ev.start and today and ev.start <= today %}{% set until %}<span class="tn">{{ loc.md(ev.last or ev.end) }}</span>{% endset %}<span class="hx-ev-c">{{ t.now_on }}{% if ev.last or ev.end %} · {{ t.f('until', d=until) }}{% endif %}</span> {% elif ev.start %}<span class="hx-ev-c tn">{{ loc.md(ev.start) }}{% if ev.end and ev.end != ev.start %}–{{ loc.md(ev.end) }}{% endif %}</span> {% endif %}<span class="hx-ev-t">{{ ev.name }}</span><span class="arr" aria-hidden="true">›</span></a>{% endif %}
-    {% if cover %}{% set cover_link %}<a href="{{ cover.path }}">{{ cover.place }}</a>{% endset %}<p class="hx-cap">{{ t.f('photo_is', name=cover_link) }} · {{ E.credit(cover) }}</p>{% endif %}
-  </div></div>{% endif %}
+  {% if cover %}{% set cover_link %}<a href="{{ cover.path }}">{{ cover.place }}</a>{% endset %}<p class="ho-cap">{{ t.f('photo_is', name=cover_link) }} · {{ E.credit(cover, false) }}{% if cover.lic %}<span class="cr-lic"> · {{ cover.lic }}</span>{% endif %}</p>{% endif %}
 </section>
-{% if ask_starters is defined and ask_starters is not none %}{{ askm.card(loc.html, region, ask_starters) }}{% endif %}
-
-{% if tiles %}
-<section class="abar" aria-label="{{ t.start_here }}">
-<div class="wrap"><div class="abar-in">
-<ol class="abar-p bento n{{ tiles|length }} en-tiles">{% for a in tiles %}{% call ui.bento(a) %}{% if a.pills %}{{ a.tiny }}{% else %}<span class="only-wide">{{ a.short }}</span><span class="only-narrow">{{ a.tiny or a.short }}</span>{% endif %}{% endcall %}{% endfor %}</ol>
-</div></div>
+{% if ASK or services %}
+<section class="hq"{% if ASK %} aria-labelledby="h-ask"{% endif %}>
+  <div class="wrap"><div class="hq-card{{ ' hq-menu-only' if not ASK }}">
+    {% if ASK %}{{ askm.box_intl(loc.html, ask_starters, region) }}{% endif %}
+    {% if services %}
+    <nav class="hq-menu" aria-label="{{ t.explore }}">
+      <ul class="hq-row" style="--core:{{ services|selectattr('core')|list|length or 4 }}">
+        {% for s in services %}<li class="{{ 'hq-core' if s.core else 'hq-more' }}"><a class="hq-i" href="{{ s.href }}"{% if s.track %} data-track="{{ s.track }}"{% endif %}>{{ pk.pic(s.pic, s.icon, 56) }}<span class="hq-l">{% if s.short and HC[s.short] %}<span class="hq-lw">{{ s.label }}</span><span class="hq-ls">{{ HC[s.short] }}</span>{% else %}{{ s.label }}{% endif %}</span>{% if s.n %}<span class="hq-n tn">{{ s.n }}</span>{% endif %}</a></li>{% endfor %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div></div>
 </section>
 {% endif %}
+{% if ASK %}{{ askm.panel_intl(loc.html) }}{% endif %}
+</div>
 
 {% set T = namespace(i=0) %}
 {% if featured %}
@@ -71,7 +140,7 @@
     <div class="sh"><p class="eyebrow">{{ t.festivals }}</p><h2 id="h-ev" class="h2">{{ t.coming_up }}</h2><a class="ch-link" href="{{ loc.home }}events/">{{ t.all_events }}<span class="arr" aria-hidden="true">›</span></a></div>
     <ol class="evrows">{% for r in events %}
       <li class="evr"><a href="{{ loc.home }}events/#{{ r.anchor }}">
-        {% if r.start %}<span class="evr-date"><span class="num tn">{{ loc.md(r.start) }}</span>{% if r.end and r.end != r.start %}<span class="num dash">–</span><span class="num tn">{{ loc.md(r.end) }}</span>{% endif %}</span>{% endif %}
+        {% if r.start %}<span class="evr-date"><span class="num tn">{{ loc.md(r.start) }}</span>{% if r.end and r.end != r.start %}<span class="num dash">–</span><span class="num tn">{{ loc.md(r.end) }}</span>{% elif r.end_month %}<span class="num dash">–</span><span class="num tn">{{ loc.mon(r.end_month) }}</span>{% endif %}</span>{% endif %}
         <span class="evr-name">{{ r.name }}</span>
         <span class="evr-meta">{% for row in r.rows if row.field in ('place_name', 'fee') and row.value and not row.blocks %}<span>{{ row.value }}</span>{% endfor %}</span>
         <span class="arr" aria-hidden="true">›</span>

@@ -3,7 +3,11 @@
 {#- /search/: name, other names, 대표 메뉴, 동·권역, course/guide/event names. search.js (attached by site.js for
     [data-search]) fetches /search/index.json on first focus (or at once with ?q=) and prints the results into
     [data-results], hiding the directory while they show. Without JS the form reloads this page and the 가나다
-    directory below answers (directory = present.search_directory: [{initial, id, places}]). -#}
+    directory below answers (directory = present.search_directory: [{initial, id, places}]). Nothing found (QA
+    2026-10-15 F08): search.js shows [data-none-help] — the list pages (nav), the AI chat asked that query, and the whole
+    directory only when the reader asks for it (#h-dir takes the focus); hidden without JS. Under the box one line says
+    what the search covers and that travel questions go to the AI chat (evaluation 2026-10-18); search_data =
+    present.search_form_data (the query words, the city, the planner's path). -#}
 {% set n_places = directory|sum(attribute='places', start=[])|length %}
 {% block main_class %}{% endblock %}
 {% block bodyclass %}pg-search{% endblock %}
@@ -11,13 +15,18 @@
 <section class="pg-hero band-s list-head" aria-labelledby="h-list">
   <div class="wrap">
     <h1 id="h-list" class="h-list">{{ site.region }}에서 찾기</h1>
-    {{ ui.search_form('q', '', '장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', search_hint or '장소 이름·메뉴·동 이름', true) }}
+    {{ ui.search_form('q', '', '장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', search_hint or '장소 이름·메뉴·동 이름', true,
+                      '장소 이름·메뉴·동네·가이드를 찾고, 여행 질문은 AI 챗봇에게 물어보세요.', search_data) }}
     <div class="results" data-results aria-live="polite"></div>
+    <div class="res-help" data-none-help hidden>
+      <nav class="res-lists" aria-label="목록에서 찾기"><p class="res-help-l">목록에서 찾기</p><ul>{% for label, href in nav if href in ('/places/', '/food/', '/stays/', '/courses/', '/guides/', '/events/') %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}</ul></nav>
+      <div class="res-acts"><button type="button" class="btn" data-chat-open data-chat-q="">AI 챗봇에게 묻기</button><button type="button" class="btn btn-ol" data-show-all aria-controls="dir">가나다순 전체 장소 보기 ({{ n_places }}곳)</button></div>
+    </div>
     <div class="empty-mascot" data-empty-art hidden>{{ mm.pic('mascot-search', 'small', 120) }}</div>
   </div>
 </section>
-<section class="wrap chapter chapter-tight" aria-labelledby="h-dir" data-directory>
-  <div class="ch-head"><h2 id="h-dir">가나다순 장소 <span class="count tn">{{ n_places }}곳</span></h2></div>
+<section class="wrap chapter chapter-tight" id="dir" aria-labelledby="h-dir" data-directory>
+  <div class="ch-head"><h2 id="h-dir" tabindex="-1">가나다순 장소 <span class="count tn">{{ n_places }}곳</span></h2></div>
   <nav class="jump" aria-label="첫 글자로 이동">{% for g in directory %}<a href="#{{ g.id }}">{{ g.initial }}</a>{% endfor %}</nav>
   {% for g in directory %}
   <section class="dir-g{% if not loop.first %} cv{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h">

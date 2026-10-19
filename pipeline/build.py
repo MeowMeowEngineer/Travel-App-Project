@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import re
 import shutil
 import sys
@@ -44,15 +45,17 @@ from urllib.parse import quote
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
-from . import art, ask, chat_index, city, en_site, icons, jsonld
+from . import art, ask, chat_index, city, en_site, icons, jsonld, notices, relations, tickets
 from .enrich import haversine_m
 from .maplinks import DEFAULT_TMAP_SCHEME, build_links, precision_summary, search_link
 from .schema import (DEFAULT_ALLOWED_LICENSES, FACT_ALIASES, FACT_LABELS, FACT_ORDER, FIT_ORDER, INDEX_GROUP_LABELS,
-                     INDEX_REASONS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS, LICENSE_LABELS, designations, index_groups,
-                     index_status, license_allowed, summary_sentences)
+                     INDEX_REASONS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS, LICENSE_LABELS, alias_holds,
+                     designations, fact_label, index_groups, index_status, license_allowed, parking_seats_half,
+                     summary_sentences)
 from . import present
-from .textutil import (area_from_address, display_address, display_value, first_sentence, josa, link_url,
-                       normalize_name, road_from_address, slugify, squash_ws, web_url)
+from . import locales as LC
+from .textutil import (area_from_address, display_address, display_value, drop_dead_links, first_sentence, josa,
+                       link_url, normalize_name, road_from_address, slugify, squash_ws, url_key, web_url)
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / "templates"
@@ -167,6 +170,8 @@ def make_env() -> Environment:
     env.filters["web_url"] = web_url
     env.filters["ko_date"] = ko_date
     env.filters["address"] = display_address
+    env.filters["addr_nw"] = present.nowrap_address   # an address's house numbers on one line; long unspaced ones wrap
+    env.filters["wordmark"] = present.wordmark        # the site name with its emphasised end (○○각 → 각, ○○gak → gak)
     # {{ raw|dv(key) }}: a stored value as the page shows it (textutil.display_value; JSON-LD and validate use it too)
     env.filters["dv"] = lambda raw, key: display_value(key, raw)
     env.filters["link_url"] = link_url  # a homepage/booking value's link target (validate checks the same URL)
@@ -181,22 +186,49 @@ def make_env() -> Environment:
     # Apple skin: time ranges and prices never break inside ('09:00–18:00', '3,000원(1,500원)'); a short date
     # ('10. 9.(금)') never breaks inside itself (a range breaks only after its dash); '2026. 10. 8.'; fragment ids
     # without spaces; tap-to-call numbers; closed-day phrases marked; owner item 7's caution filter (opt-in)
-    env.filters["nwt"] = lambda t: Markup(re.sub(r"(\d{1,2}:\d{2}–\d{1,2}:\d{2}|[\d,]+원(?:\([\d,]+원\))?)",
-                                                 lambda m: f'<span class="nw">{m.group(1)}</span>', str(escape(t or ""))))
+    # a time in brackets — the last entry a key-fact tile folds in ('09:00–18:00(입장마감 17:30)', present.brief_hours)
+    # — is .kfl (kept whole, its own weight; a size down on the hero's tiles: css/30-info.css), its time unbroken. A
+    # range with the word right before it — its season or days ('11~2월', '동절기(11~2월)', '토,일') — and its bracket,
+    # or a word with its bracket ('하절기(입장마감 17:30)'), is one unit (.nwu), so a line breaks between ranges, never
+    # inside one (review 2026-10-18, fourth round: '11~2월 | 09:00–17:00'); the words do not change. A unit never
+    # begins with a list mark ('、，,;·'): left outside it, the mark stays at the end of the line before, so a Japanese or
+    # Chinese line never starts with '、' ('夏季（入場締切17:30）、冬季（…）', en_site.last_entry_tr; UI review 2026-10-19)
+    last = r"[(（][^()（）]*?\d{1,2}:\d{2}[^()（）]*[)）]"
+    lead = "、，,;；·・"
+
+    def nwt(t):
+        def kfl(s):
+            return '<span class="kfl">' + re.sub(r"(\d{1,2}:\d{2}(?:–\d{1,2}:\d{2})?)", r'<span class="nw">\1</span>', s) + "</span>"
+
+        def one(m):
+            if m.group("last"):
+                return f'<span class="nwu">{m.group("word")}{kfl(m.group("last"))}</span>' if m.group("word") else kfl(m.group("last"))
+            if m.group("range"):
+                unit = (m.group("label") or "") + f'<span class="nw">{m.group("range")}</span>' + (kfl(m.group("tail")) if m.group("tail") else "")
+                return f'<span class="nwu">{unit}</span>' if m.group("label") or m.group("tail") else unit
+            return f'<span class="nw">{m.group("price")}</span>'
+        return Markup(re.sub(rf"(?P<word>(?:[^\s<>:()（）{lead}][^\s<>:()（）]*)?)(?P<last>{last})"
+                             rf"|(?P<label>[^\s<>:{lead}][^\s<>:]*\s)?(?P<range>\d{{1,2}}:\d{{2}}–\d{{1,2}}:\d{{2}})(?P<tail>{last})?"
+                             r"|(?P<price>[\d,]+원(?:\([\d,]+원\))?)", one, str(escape(t or ""))))
+    env.filters["nwt"] = nwt
     env.filters["dbr"] = lambda t: Markup(re.sub(r"(\d{1,2}\. \d{1,2}\.(?:\([월화수목금토일]\))?)",
                                                  lambda m: f'<span class="nw">{m.group(1)}</span>', str(escape(t or ""))))
     env.filters["short_iso"] = lambda iso: f"{iso[:4]}. {int(iso[5:7])}. {int(iso[8:10])}." if iso and len(iso) >= 10 else (iso or "")
     env.filters["frag"] = present.frag
     env.filters["tel"] = present.tel_markup
     env.filters["closedmark"] = present.mark_closed
+    env.filters["clhead"] = present.closed_head     # a row's closed day: the square kept with its first word
+    env.filters["glue_dots"] = present.glue_dots   # '해설·스탬프투어': a middle dot never starts a line
     env.filters["decaution"] = present.decaution
     env.globals["card_vm"] = present.card_vm
+    env.globals["SHARE_WORDS"] = LC.SHARE_WORDS   # ui.lnav's share button, in the page's language
     env.globals["key_facts"] = present.key_facts
     # the 3D picture registry (pipeline/icons.py; templates/_pic.html.j2 asks it, never naming files)
     env.globals["icon_pic"] = icons.lookup
     env.globals["icon_glyph"] = icons.glyph
     env.globals["mascot_pic"] = icons.mascot   # optional mascot (templates/_mascot.html.j2 falls back without files)
     env.globals["search_words"], env.globals["search_hint"] = [], ""   # build() sets the city's (search_examples)
+    env.globals["book_words"] = LC.BOOK_WORDS   # 예약하기 words of every version (the about pages' sentence)
     en_site.add_filters(env)  # the English templates (templates/en/)
     return env
 
@@ -267,8 +299,9 @@ def category_group(e: dict) -> str:
     return "테마 여행지"
 
 
-def has_fact(facts: dict, key: str) -> bool:
-    return bool(facts.get(key)) or any(facts.get(a) for a in FACT_ALIASES.get(key, ()))
+def has_fact(e: dict, key: str) -> bool:
+    """facts[key], or an alias field that answers it (schema.alias_holds: a seat count alone is no parking value)."""
+    return bool((e.get("facts") or {}).get(key)) or any(alias_holds(e, key, a) for a in FACT_ALIASES.get(key, ()))
 
 
 # ---------------------------------------------------------------- field-level provenance
@@ -313,7 +346,7 @@ def fact_row(e: dict, key: str) -> dict | None:
     alternatives = fact_alternatives(e, key, value)
     if not value and not alternatives:
         return None
-    return {"key": key, "label": FACT_LABELS[key], "value": value,
+    return {"key": key, "label": fact_label(e, key), "value": value,
             "source": fact_source(e, key) if value else {}, "alternatives": alternatives}
 
 
@@ -339,8 +372,8 @@ def facts_checked_date(e: dict, rows: list[dict] | None = None) -> str:
 
 
 def _url_key(url: str) -> str:
-    """Comparison key for a URL: no scheme, no trailing '/' or '?', lower case."""
-    return re.sub(r"^https?://", "", (url or "").strip().lower()).rstrip("/?")
+    """Comparison key for a URL: no scheme, no trailing '/' or '?', lower case (textutil.url_key)."""
+    return url_key(url)
 
 
 def latest(*dates) -> str | None:
@@ -447,6 +480,12 @@ class State:
         self.courses_all = _load(data_dir / "courses.json", [])
         self.guides_all = _load(data_dir / "guides.json", [])
         self.events_all = _load(data_dir / "events.json", [])
+        # dead homepage/booking addresses (data/<region>/dead_links.json, QA 2026-10-15 SRC-02) leave every record
+        # before anything reads it: index_status, pages in every language, cards, JSON-LD, llms-full, chat docs
+        self.dead_links = _load(data_dir / "dead_links.json", {})
+        self.dead_dropped = drop_dead_links(self.entities_all + self.events_all, self.dead_links)
+        # 예약하기 (step 1): the official booking pages pages link as buttons (pipeline/booking.py); none without the file
+        self.booking = _load(data_dir / "booking.json", {})
         _unique_slugs(self.courses_all, "name")
         _unique_slugs(self.guides_all, "title")
         self.entities = keep(self.entities_all)
@@ -479,10 +518,15 @@ class State:
             e["_visual"] = VISUALS.get(first) or VISUALS.get(e["_group"]) or ("sight", "pin")
             e["_chips"] = self.chips(e)
             geo = e.get("geo") or {}
-            e["_geo"] = geo if geo.get("lat") is not None and geo.get("lng") is not None else None
+            # a usable point has two numbers; anything else is no point for the pages (pipeline/validate.geo_problems
+            # reports it from the stored geo)
+            e["_geo"] = geo if _number(geo.get("lat")) and _number(geo.get("lng")) else None
             e["_index_ok"], e["_index_reasons"] = index_status(e)
             e["_facts_checked"] = facts_checked_date(e)
-            e["_page_date"] = latest(e.get("reviewed_at"), e["_facts_checked"])
+            # a point read from another source than TourAPI (the city's tourism site, a homepage) carries the day
+            # it was read; the page shows that source, so its date counts as the page's (sitemap lastmod, IndexNow)
+            geo_day = geo.get("checked_at") if e["_geo"] and geo.get("source") not in (None, "", "TourAPI") else None
+            e["_page_date"] = latest(e.get("reviewed_at"), e["_facts_checked"], geo_day)
             # production only: a page below the index criteria is noindex and left out of sitemap/llms
             e["_noindex"] = mode == "production" and not e["_index_ok"]
         # Footer/about/llms.txt "원문 수집일": the configured date, else the latest one among built pages.
@@ -499,6 +543,25 @@ class State:
             g["_url"] = self.abs(g["_path"])
             g["_page_date"] = latest(g.get("reviewed_at"), g.get("checked_at"))
         self.ent_by_slug = {e["slug"]: e for e in self.entities}
+        # places that belong together (data part_of, pipeline/relations.py, operator decision 2026-10-16): _parent,
+        # _rel, _parts, _same, _alias_of, _family on every built place; a parent outside the build drops the relation
+        self.relation_warnings = relations.resolve(self.entities_all, self.entities)
+        # every record by slug, built or not: a nearby list names places by slug, and the providers of their points
+        # are named under it (schema.nearby_geo_providers)
+        self.ent_all_by_slug = {e["slug"]: e for e in self.entities_all if e.get("slug")}
+        # dated facility notices (data/<region>/notices.json, pipeline/notices.py, operator decision 2026-10-15): shown
+        # near the key facts in every language until their `until` date; never part of a place record or its hash
+        # combined tickets' fee tables (data/<region>/tickets.json, pipeline/tickets.py, review 2026-10-17): the chat
+        # knowledge's prices, ages and free rules per ticket, and its fee_total tool
+        self.tickets = tickets.load(data_dir)
+        by_id = {e["id"]: e for e in self.entities}
+        for e in self.entities:   # its own fee beside the narrowest one on the first screen (present.slot_value 'fee')
+            e["_tickets"] = tickets.for_place(self.tickets, e["id"], by_id)
+        self.notices_all = notices.load(data_dir)
+        self.notices = notices.active(self.notices_all, self.today)
+        for e in self.entities:
+            e["_notices"] = [{"id": n["id"], "kind": n["kind"], "text": notices.ko_text(n), "provider": n["provider"],
+                              "url": n["url"], "n": n} for n in notices.for_place(self.notices, e["id"])]
         homepages = Counter(_url_key(web_url((x.get("facts") or {}).get("homepage")))
                             for x in self.entities_all if not x.get("duplicate_of"))
         self.shared_homepages = {k for k, n in homepages.items() if k and n > 1}
@@ -566,7 +629,7 @@ class State:
         self.stats = {"entities": len(self.entities),
                       "excluded_entities": sum(1 for x in self.entities_all if x not in self.entities
                                                and not x.get("duplicate_of")),
-                      "index": index_counts(self.entities)}
+                      "index": index_counts(self.entities), "dead_links": len(self.dead_dropped)}
         # Public parking lots and bus stops near each place (parking_lots.json, nearby.json; both optional). Shown on
         # the place page after the map (present.access_vm); not facts of the place, so the index criteria never see them.
         parking = _load(data_dir / "parking_lots.json", {})
@@ -575,9 +638,12 @@ class State:
         nearby = _load(data_dir / "nearby.json", {})
         self.nearby_meta = nearby.get("_meta") or {}
         self.nearby = {k: v for k, v in nearby.items() if not k.startswith("_")}
+        # the city bus timetable's reference-stop first and last times (transit.json, optional; QA 2026-10-15 F09 and
+        # operator decision 4): the course pages' '차 없이 다니기' block; checked against guide-31 by pipeline.validate
+        self.transit = _load(data_dir / "transit.json", {}) or {}
         # View-model fields for the redesigned templates (pipeline/present.py, computed once): e["_type"],
         # e["_photos"] (with image_sizes.json), e["_line"], e["_region"], S.anchors, S.course_vms, S.warnings …
-        self.warnings: list[str] = []
+        self.warnings: list[str] = list(self.relation_warnings)
         present.prepare(self, data_dir)
         self.common_vm = present.common_vm(self)
         self.en = None  # the English site, set by build()/validate() (pipeline/en_site.load_all)
@@ -599,11 +665,11 @@ class State:
             if facts.get(key):
                 value = squash_ws(facts[key])
                 if len(value) <= 26:
-                    out.append({"label": FACT_LABELS[key], "value": value})
+                    out.append({"label": fact_label(e, key), "value": value})
                 else:
                     long_key = long_key or key
         if not out and long_key:
-            out = [{"label": FACT_LABELS[long_key], "value": "장소 페이지에서 확인", "more": True}]
+            out = [{"label": fact_label(e, long_key), "value": "장소 페이지에서 확인", "more": True}]
         return out[:3]
 
     def common(self, page: dict, page_kind: str) -> dict:
@@ -614,11 +680,14 @@ class State:
                 "tourapi_used": self.tourapi_used, "source_used": self.source_used,
                 "has_map": bool(self.entities), "has_videos": bool(self.videos),
                 "has_search": bool(self.entities), "has_abroad": bool(self.abroad or self.abroad_videos),
+                "has_plan": bool(self.entities),   # /plan/, the AI course planner (Korean pages)
                 "art_slots": art.for_lang(self.art, "ko"), **self.common_vm,
                 **present.page_chrome(page_kind, bool(self.courses))}
 
     def name_related(self, e: dict) -> list[dict]:
-        """Places whose name contains this place's full name or is contained in it (e.g. a bridge in a park)."""
+        """Places whose name contains this place's full name or is contained in it ('이름이 비슷한 곳'), never the
+        page's own family (its parent, parts and same-building partners have their own lines, pipeline/relations.py)
+        and never an alias beside its parent."""
         key = lambda x: "".join(squash_ws(x["name"]).split())
         mine = key(e)
         if len(mine) < 3:
@@ -626,7 +695,8 @@ class State:
         out = [x for x in self.entities if x is not e and len(key(x)) >= 3 and (
             (key(x).startswith(mine) and e.get("kind") == "attraction")
             or (mine.startswith(key(x)) and x.get("kind") == "attraction"))]
-        return sorted(out, key=lambda x: (x.get("kind") != "attraction", x["name"]))[:4]
+        out = relations.keep_rows(e, sorted(out, key=lambda x: (x.get("kind") != "attraction", x["name"])), lambda x: x)
+        return out[:4]
 
     def area_neighbours(self, e: dict) -> dict:
         """Places in the same 읍·면·동 by address, or on the same road when the address names no 읍·면·동
@@ -634,7 +704,8 @@ class State:
         field = "_area" if e["_area"] else "_road"
         if not e[field]:
             return {}
-        same = [x for x in self.entities if x is not e and x[field] == e[field]]
+        # never the page's own family nor an alias beside its parent (pipeline/relations.py), as the nearby rows
+        same = relations.keep_rows(e, [x for x in self.entities if x is not e and x[field] == e[field]], lambda x: x)
         rank = lambda x: (x.get("tier") != "full", not x.get("summary"), x["name"])
         out = {k: sorted((x for x in same if x.get("kind") == k), key=rank)[:n]
                for k, n in (("attraction", 4), ("stay", 3), ("food", 3))}
@@ -670,30 +741,179 @@ def qualified_name(e: dict, region: str) -> str:
     return f"{region} {name}"
 
 
-def answer_description(summary: str, fallback: str, key_rows: list[dict], limit: int = 160) -> str:
-    """The summary's first sentence (the next one too while under 40 characters) plus up to two short
-    (≤30 chars) fact values that no other source contradicts and the summary does not already say.
-    No boilerplate tail."""
+# ---------------------------------------------------------------- meta description (Korean pages)
+# <meta name="description"> and og:description of every Korean page: at most DESC_MAX characters (owner 2026-10-14 —
+# Naver Search Advisor: '80자 이내로 설명문을 작성해주세요'), answer first, made only of what the page itself shows.
+# Whole sentences or one fact line: a sentence is never cut and never ends in '…'. JSON-LD descriptions are separate
+# (they repeat the on-screen summary, pipeline.validate) and are not shortened. The other language versions keep their
+# own rule (pipeline/en_site.py answer_description, locale desc_max).
+DESC_MAX = 80
+FACT_VALUE_MAX = 30   # a fact value longer than this stays on the page, not in the description
+
+
+def fit_sentences(text: str | None, limit: int = DESC_MAX) -> str:
+    """The text's whole sentences from the start while the total stays within `limit`; '' when the first one alone
+    is longer (a sentence is never cut)."""
+    out = ""
+    for s in summary_sentences(squash_ws(text)):
+        nxt = f"{out} {s}" if out else s
+        if len(nxt) > limit:
+            break
+        out = nxt
+    return out
+
+
+def first_fit(*candidates: str | None, limit: int = DESC_MAX) -> str:
+    """The first non-empty candidate within `limit` (each one a whole sentence or fact line); '' when none fits."""
+    return next((c for c in candidates if c and len(c) <= limit), "")
+
+
+def full_stop(text: str | None) -> str:
+    """A heading or fact line as a sentence: one final '.', unless it already ends in . ! or ?."""
+    t = squash_ws(text)
+    return t if not t or t.endswith((".", "!", "?")) else f"{t}."
+
+
+def settled_facts(rows: list[dict]):
+    """(row, value as the page shows it) for each row whose value no other source contradicts ('also' values — a second
+    dish — do not contradict) and is at most FACT_VALUE_MAX characters."""
+    for r in rows:
+        if not r["value"] or any(not a["also"] for a in r["alternatives"]):
+            continue
+        value = squash_ws(display_value(r["key"], r["value"])).rstrip(".")
+        if value and len(value) <= FACT_VALUE_MAX:
+            yield r, value
+
+
+def place_head(e: dict) -> str:
+    """'<이름>: <동> <유형>' as the place page's first screen shows them (동 from the address; a stay's type is a kind of
+    lodging, an attraction's or restaurant's type is followed by its kind: '일식 음식점', '박물관·전시 관광지')."""
+    kind = e.get("kind", "attraction")
+    typ = e.get("_type") or ""
+    label = typ if typ and kind == "stay" else " ".join(x for x in (typ, KIND_LABELS.get(kind, "")) if x)
+    return f"{e['name']}: " + " ".join(x for x in (e.get("_area") or "", label) if x)
+
+
+def place_line(head: str, rows: list[dict], limit: int = DESC_MAX) -> str:
+    """One fact line, '<이름>: <동> <유형>, <라벨> <값>, ….': the settled short values in the page's key-row order
+    (운영시간·쉬는 날·요금·주차·체크인·대표 메뉴 …, then 전화) while the line stays within `limit`."""
+    out = squash_ws(head)
+    for r, value in settled_facts(rows):
+        label = "전화" if r["key"] == "infocenter" else r["label"]  # the first screen's key line calls it 전화
+        nxt = f"{out}, {label} {value}"
+        if len(nxt) + 1 <= limit:
+            out = nxt
+    return full_stop(out)
+
+
+DESC_SHORT = 40      # under this a description takes one more whole sentence or fact while it fits
+FIGURE = re.compile(r"\d+(?:[:.,]\d+)*")
+WORD = re.compile(r"[0-9A-Za-z가-힣]+(?:[:.,]\d+)*")
+# how a summary says a value in its own words (compared without spaces): '쉬는 날 없이 상시 개방합니다' says 연중무휴
+SAID_AS = {"연중무휴": ("쉬는날없이", "쉬는날이없", "쉬는날도없", "상시개방", "상시열려"),
+           "상시개방": ("언제든", "상시열려"),
+           "무료": ("요금없이", "요금이없", "요금은없", "입장료없이", "요금을받지않")}
+PARKING_SAID_AS = {"가능": ("주차할수있", "주차도할수있", "차를세울수", "주차공간"), "불가": ("주차는할수없", "주차할수없")}
+
+
+def said_already(key: str, value: str, said: str) -> bool:
+    """The description's sentences already say this fact value, compared without spaces ('~' and '–' alike): every
+    word of the value ('매주 토요일~일요일과 법정공휴일에는 쉽니다' says '매주 토요일~일요일 / 법정공휴일'), every
+    figure in it ('좌석 160석, 주차 100대' says '100대/160석'; '입실 시간은 14:00, 퇴실 시간은 12:00' says '- 입실 14:00
+    - 퇴실 12:00'), or the summary's usual wording of it (SAID_AS; a parking row's 가능·불가, PARKING_SAID_AS). A short
+    value said in another sense ('체험이 가능' for 주차 가능) only leaves that fact out of the description."""
+    v, s = (re.sub(r"\s+", "", t.replace("–", "~")) for t in (value, said))
+    words = WORD.findall(v)
+    if words and all(w in s for w in words):
+        return True
+    wordings = SAID_AS.get(v, ()) + (PARKING_SAID_AS.get(v, ()) if key.startswith("parking") else ())
+    if any(w in s for w in wordings):
+        return True
+    figures = FIGURE.findall(v)
+    return bool(figures) and set(figures) <= set(FIGURE.findall(s))
+
+
+def answer_description(summary: str, fallback: str, key_rows: list[dict], limit: int = DESC_MAX,
+                       head: str = "", extra_rows: list[dict] | tuple = ()) -> str:
+    """A place page's description, within `limit`; a sentence is never cut, no boilerplate tail.
+    - The summary's first sentence when it fits (the next one too while under DESC_SHORT), plus up to two short (≤30
+      chars) key-row values that no other source contradicts and the summary does not already say, each only while the
+      total fits; still under DESC_SHORT, an extra row (the phone the first screen shows) the same way.
+    - A first sentence longer than `limit`: the place's fact line instead (place_line: head + key rows + extra rows);
+      still under DESC_SHORT, the summary's next whole sentences while they fit. Without a head, the fallback sentence."""
     sentences = summary_sentences(squash_ws(summary)) or [fallback]
-    out = first_sentence(sentences[0], limit)
+    out = sentences[0]
+    if len(out) > limit:
+        if not head:
+            return fallback
+        out = place_line(head, list(key_rows) + list(extra_rows), limit)
+        for nxt in sentences[1:]:
+            if len(out) >= DESC_SHORT or len(out) + 1 + len(nxt) > limit:
+                break
+            out = f"{out} {nxt}"
+        return out
     for nxt in sentences[1:]:
-        if len(out) >= 40 or len(out) + 1 + len(nxt) > limit:
+        if len(out) >= DESC_SHORT or len(out) + 1 + len(nxt) > limit:
             break
         out = f"{out} {nxt}"
     added, said = 0, out
-    for r in key_rows:
+    for r, value in settled_facts(key_rows):
         if added == 2:
             break
-        if not r["value"] or any(not a["also"] for a in r["alternatives"]):
-            continue
-        value = squash_ws(display_value(r["key"], r["value"])).rstrip(".")  # as the page shows it
         sentence = f"{r['label']}: {value}."
-        if len(value) > 30 or len(out) + 1 + len(sentence) > limit:
+        if len(out) + 1 + len(sentence) > limit:
             continue
-        if len(value) >= 6 and value in said:  # the summary already says it (e.g. the same menu list)
+        if said_already(r["key"], value, said):  # the summary already says it (the same menu, the same hours)
             continue
         out, added = f"{out} {sentence}", added + 1
+    for r, value in settled_facts(extra_rows):
+        sentence = f"{'전화' if r['key'] == 'infocenter' else r['label']}: {value}."
+        if len(out) < DESC_SHORT and len(out) + 1 + len(sentence) <= limit and not said_already(r["key"], value, said):
+            out = f"{out} {sentence}"
     return out
+
+
+def guide_description(g: dict, S, limit: int = DESC_MAX) -> str:
+    """A guide's description, the first of these within `limit` (each whole; from the guide's own page):
+    1. the summary's first sentence (the answer line the page shows big);
+    2. the first body heading — the content's answer sentence, shown verbatim on the page — when it holds a figure
+       (a heading without one, '작품별 촬영지: 어느 작품을 어디서 찍었나', is a topic, not the answer); under
+       DESC_SHORT the next heading follows while it fits;
+    3. the guide's short answer (present.guide_answer, the line /guides/ shows) when every figure in it is written on
+       the guide page;
+    4. the title as one line, '<question>: <its list>.' (a title with ' — ');
+    5. '<label>: <place>·<place> 등 <n>곳.' — the label, the first names of its place list and the list's count."""
+    lead = (present.ko_sentences(present.decaution(g.get("summary"))) or [""])[0]
+    heads = [full_stop(b.get("heading")) for b in g.get("body") or [] if squash_ws(b.get("heading"))]
+    heading = heads[0] if heads and present.figures(heads[0]) else ""
+    for nxt in heads[1:] if heading else []:  # under DESC_SHORT: the next heading too, while it fits
+        if len(heading) >= DESC_SHORT or len(heading) + 1 + len(nxt) > limit:
+            break
+        heading = f"{heading} {nxt}"
+    answer = present.guide_answer(g, S)["answer"]
+    if not present.figures(answer) <= present.figures(present.guide_text(g)):
+        answer = ""
+    title = squash_ws(g.get("title"))
+    title_line = ": ".join(title.split(" — ", 1)) if " — " in title else ""
+    found = first_fit(lead, full_stop(heading), full_stop(answer), full_stop(title_line), limit=limit)
+    if found:
+        return found
+    label = squash_ws(g.get("label")) or title
+    names = [squash_ws((S.ent_by_slug.get(it.get("place_slug") or "") or {}).get("name") or it.get("name"))
+             for it in g.get("items") or []]
+    names = [n for n in names if n]
+    out = ""
+    for k in range(1, len(names) + 1):
+        line = f"{label}: {'·'.join(names[:k])}{' 등' if k < len(names) else ''} {len(names)}곳."
+        if len(line) > limit:
+            break
+        out = line
+    return out or first_fit(full_stop(title), full_stop(label), limit=limit) or full_stop(label)
+
+
+def near_target(S, n: dict) -> dict | None:
+    """The built place a nearby entry points at (by slug, else by TourAPI contentid), or None."""
+    return S.ent_by_slug.get(n.get("internal_slug") or "") or S.ent_by_cid.get(str(n.get("contentid")))
 
 
 def entity_ctx(e: dict, S: State) -> dict:
@@ -708,7 +928,7 @@ def entity_ctx(e: dict, S: State) -> dict:
     all_rows = key_rows + info_rows + fit_rows
     alt_keys = {r["key"] for r in all_rows if r["alternatives"]}
     missing = [FACT_LABELS[k] for k in KEY_FACTS_BY_CATEGORY.get(e.get("category"), KEY_FACTS.get(kind, ()))
-               if not has_fact(facts, k) and not ({k, *FACT_ALIASES.get(k, ())} & alt_keys)]
+               if not has_fact(e, k) and k not in alt_keys]
     fact_srcs = fact_source_groups(all_rows)
     facts_checked = facts_checked_date(e, all_rows)
     geo = e["_geo"] or {}
@@ -720,8 +940,10 @@ def entity_ctx(e: dict, S: State) -> dict:
                         kakao_place_id=mid.get("kakao_place_id", ""))
     links = sorted(links, key=lambda l: (not l["precise"], l["role"] != "map"))
     nearby = []
-    for n in e.get("nearby") or []:
-        target = S.ent_by_slug.get(n.get("internal_slug") or "") or S.ent_by_cid.get(str(n.get("contentid")))
+    # the page's own family (parent, parts, same-building partners) has its own lines, and an alias never shows beside
+    # its parent (pipeline/relations.py): both left out of the nearby rows
+    for n in relations.keep_rows(e, e.get("nearby") or [], lambda n: near_target(S, n)):
+        target = near_target(S, n)
         track = {"stay": "stay_click", "food": "food_click"}.get(n.get("kind"), "nearby_click")
         nearby.append({**n, "href": target["_path"] if target else search_link(n["name"], region),
                        "internal": bool(target), "track": track})
@@ -740,11 +962,14 @@ def entity_ctx(e: dict, S: State) -> dict:
     themes = e["_themes"]
     list_cfg = LISTS.get(kind, LISTS["attraction"])
     crumbs = [("홈", S.site_url + "/"), (list_cfg["title"], S.abs(list_cfg["path"])), (e["name"], e["_url"])]
-    labels = list(dict.fromkeys(TITLE_LABELS[r["key"]] for r in key_rows if r["key"] in TITLE_LABELS))[:3]
+    # a seat count alone ('30석') answers no parking question: no '주차' in the title
+    labels = list(dict.fromkeys(TITLE_LABELS[r["key"]] for r in key_rows if r["key"] in TITLE_LABELS
+                                and not (r["key"] == "parking_seats" and parking_seats_half(e) == "seats")))[:3]
     title = f"{qualified_name(e, region)} {'·'.join(labels) or '방문 정보·지도'}"  # <title> adds ' | site_name' (base)
     summary = e.get("summary") or ""
     fallback = f"{josa(e['name'], '은/는')} {city.current().place_where(e.get('_district') or '', e['_area'] or '')}에 있는 {KIND_LABELS.get(kind, '')}입니다."
-    description = answer_description(summary, fallback, key_rows)
+    # a first sentence over DESC_MAX: the fact line (head + key rows, then the phone the first screen shows)
+    description = answer_description(summary, fallback, key_rows, head=place_head(e), extra_rows=rows(["infocenter"]))
     faqs = [f for f in e.get("faq") or [] if f.get("q") and f.get("a")]
     # facts.homepage joins sameAs only when it is this place's own site: a homepage several places share
     # (the city's tourism portal, a museum group's site) is not the same entity.
@@ -755,7 +980,8 @@ def entity_ctx(e: dict, S: State) -> dict:
     shown_images = images[:7]  # hero + gallery images[1:7], exactly what the page renders
     kakao = next((l["url"] for l in links if l["key"] == "kakao" and l["precise"]), "")
     graph = jsonld.place_graph(e, site, S.site_url, e["_url"], title, crumbs, shown_images, same_as,
-                               [orig.get("source_url")], faqs, e.get("reviewed_at") or "", facts_checked, kakao)
+                               [orig.get("source_url")], faqs, e.get("reviewed_at") or "", facts_checked, kakao,
+                               parent=e.get("_parent") if e.get("_rel") == "inside" else None, parts=e.get("_parts") or ())
     page = {"title": title, "description": description, "canonical": e["_url"],
             "og_type": "article", "image": og_image(images),
             "geo": e["_geo"], "geo_placename": f"{site.get('locality', '')} {e['name']}".strip(),
@@ -785,8 +1011,9 @@ def entity_ctx(e: dict, S: State) -> dict:
     # the redesign's {self, near, anchors} is `place_points`).
     vm = present.place_vm(S, e, ctx)
     ctx.update({k: v for k, v in vm.items() if k not in ctx})
-    # inside `p` the names the prototype templates use are free: p.faqs, p.points, p.onroute
-    ctx["p"] = {**vm, "faqs": vm["faq_vm"], "points": vm["place_points"], "onroute": vm["boards"]}
+    # inside `p` the names the prototype templates use are free: p.faqs, p.points, p.segs (the course segments of
+    # the 주변·함께 가기 chapter, present.route_segs)
+    ctx["p"] = {**vm, "faqs": vm["faq_vm"], "points": vm["place_points"], "segs": vm["route_segs"]}
     return ctx
 
 
@@ -810,7 +1037,8 @@ def _render(env, S: State, out: Path, template: str, path: str, page: dict, page
     """lastmod is a date from data (확인일·검수일 — kept in the sitemap and JSON-LD, not shown on the page since the
     operator decision of 2026-10-09); None (unknown) means no <lastmod>, never the build date.
     With other language versions (S.intl, pipeline/en_site.py): hreflang links when the page has a twin, and the
-    language menu (each version's counterpart, else its home)."""
+    language menu (each version's counterpart, else its list of the same kind or its home, with a 'not translated'
+    note: Intl.menu)."""
     intl = getattr(S, "intl", None)
     if intl:
         page.setdefault("alternates", intl.alternates(path))
@@ -1162,13 +1390,20 @@ def event_months(events: list[dict]) -> list[dict]:
 
 def event_last_day(ev: dict) -> str:
     """The last day an edition can run: its end date, else the last day of `end_month` (a source that says
-    only '~10월'), else its start date."""
+    only '~10월'), else its start date. For sorting and upcoming/past only — never printed: a month-only end is
+    shown as its month (event_end_month), never as that month's last day (QA 2026-10-15 SRC-06)."""
     if ev.get("end_date"):
         return ev["end_date"]
     if re.fullmatch(r"\d{4}-\d{2}", ev.get("end_month") or ""):
         y, m = int(ev["end_month"][:4]), int(ev["end_month"][5:])
         return (dt.date(y + m // 12, m % 12 + 1, 1) - dt.timedelta(days=1)).isoformat()
     return ev.get("start_date") or ""
+
+
+def event_end_month(ev: dict) -> str:
+    """'2026-10' when the source gives the edition's end only as a month (no end_date), else ''."""
+    em = ev.get("end_month") or ""
+    return em if not ev.get("end_date") and re.fullmatch(r"\d{4}-\d{2}", em) else ""
 
 
 def upcoming_events(S: State) -> list[dict]:
@@ -1188,8 +1423,18 @@ def course_title(name: str, n_stops: int, region: str) -> str:
     return f"{core} — 경유지 {n_stops}곳"
 
 
-def event_answer(ev: dict, with_place: bool = True) -> str:
-    """Tense-free answer line: '2026 ○○축제 기간: 2026년 10월 2일(금)~10월 5일(월) · 장소: …'."""
+def _number(v) -> bool:
+    """A coordinate value that reads as a finite number (int, float or a numeric string)."""
+    if v is None or isinstance(v, bool):
+        return False
+    try:
+        return math.isfinite(float(v))
+    except (TypeError, ValueError):
+        return False
+
+
+def event_period(ev: dict) -> str:
+    """'2026년 10월 2일(금)~10월 5일(월)' — the exact dates of the edition (an end month without a day stays '~10월')."""
     start, end = ev["start_date"], ev.get("end_date") or ""
     period = ko_date(start)
     if end and end != start:
@@ -1197,8 +1442,38 @@ def event_answer(ev: dict, with_place: bool = True) -> str:
     elif not end and re.fullmatch(r"\d{4}-\d{2}", ev.get("end_month") or ""):  # '~10월': no end day in the source
         y, m = ev["end_month"][:4], int(ev["end_month"][5:])
         period += f"~{y + '년 ' if y != start[:4] else ''}{m}월"
+    return period
+
+
+def event_answer(ev: dict, with_place: bool = True) -> str:
+    """Tense-free answer line: '2026 ○○축제 기간: 2026년 10월 2일(금)~10월 5일(월) · 장소: …'."""
     place = squash_ws(ev.get("place_name"))
-    return f"{ev['_title']} 기간: {period}" + (f" · 장소: {place}" if place and with_place else "")
+    return f"{ev['_title']} 기간: {event_period(ev)}" + (f" · 장소: {place}" if place and with_place else "")
+
+
+def place_summary(place: str | None) -> tuple[str, str]:
+    """An event place, shorter: (the place without its notes in brackets, the first place of the list + '일원').
+    '구 ○○세관 본관~○○ 역사문화공간(○○철로)~구 ○○은행 일원' -> ('구 ○○세관 본관~○○ 역사문화공간~구 ○○은행 일원',
+    '구 ○○세관 본관 일원'). A '·' is not a list separator here ('3·1운동', '구·시청광장')."""
+    bare = squash_ws(re.sub(r"\s*\([^()]*\)", "", squash_ws(place)))
+    first = re.split(r"\s*(?:,|~|/|:|\s및\s)\s*", bare, maxsplit=1)[0].strip()
+    first = re.sub(r"\s*일원$", "", first)
+    return bare, (f"{first} 일원" if first else "")
+
+
+def event_description(ev: dict, series_name: str = "", limit: int = DESC_MAX) -> str:
+    """An event page's description, the first of these within `limit`; the dates are always the whole, exact period:
+    1. the answer line the page shows, '<행사명> 기간: <기간> · 장소: <장소>.', with ' 요금: <요금>.' when it fits;
+    2. '<행사명> <기간>, <장소 요약>.' — the place without its bracketed notes, else its first place + '일원';
+    3. '<행사명> <기간>.', then '<행사 이름(이 페이지의 목록 이름)> <기간>.'."""
+    answer = event_answer(ev)
+    fee = squash_ws(ev.get("fee"))
+    title, period = squash_ws(ev["_title"]), event_period(ev)
+    bare, first = place_summary(ev.get("place_name"))
+    return first_fit(f"{answer}. 요금: {fee}." if fee else "", f"{answer}.",
+                     f"{title} {period}, {bare}." if bare else "", f"{title} {period}, {first}." if first else "",
+                     f"{title} {period}.", f"{squash_ws(series_name)} {period}." if series_name else "",
+                     limit=limit) or f"{title} {period}."
 
 
 # Before the first collection there are no places: a preview / sample build makes the honest empty-state site (the
@@ -1253,6 +1528,7 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
         desc = t.get("description") or f"{region}의 {t['name']} 여행지 목록입니다."
         if len(desc) < 40:
             desc = f"{desc} — {region} 여행지 {len(members)}곳의 이용시간·요금·주차를 장소별 출처와 함께 정리했습니다."
+        desc = first_fit(desc, fit_sentences(desc), f"{t['name']} — {region} 여행지 {len(members)}곳.")
         lastmod = date_of(members)
         L = present.list_vm(S, "attraction", t)
         # the ItemList follows the page: the records in the order the list shows them (권역 groups, list_vm)
@@ -1310,7 +1586,7 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
         points = map_points(targets)
         unique = list({t["slug"]: t for t in targets}.values())
         about = [jsonld.place_ref(t["_url"], t) for t in unique]
-        page = {"title": g['title'], "description": first_sentence(g.get("summary"), 150),
+        page = {"title": g['title'], "description": guide_description(g, S),
                 "canonical": g["_url"], "og_type": "article", "crumbs": crumbs, "map": bool(points),
                 "image": next((og_image(t["_images"]) for t in targets if t["_images"]), ""),
                 # the summary and FAQ answers as guide.html.j2 shows them (present.decaution), so the structured
@@ -1354,8 +1630,11 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
                 else {"@type": "Place", "name": s["name"]} for s in stops
                 if present.stop_kind(squash_ws(s.get("name")), s["target"]) == "place"]
         description = course_lede if c.get("summary_auto") else c.get("summary")
+        # its first sentence, whole; one over DESC_MAX gives way to the stops line (count, first and last stop)
         page = {"title": course_title(c["name"], co["n_places"], region),
-                "description": first_sentence(description, 150),
+                "description": first_fit(first_sentence(description, len(squash_ws(description)) + 1),
+                                         f"{name}: 경유지 {co['n_places']}곳, {co['first']}에서 {co['last']}까지.",
+                                         f"{name}: 경유지 {co['n_places']}곳.") or f"{name}.",
                 "canonical": c["_url"], "crumbs": crumbs, "map": bool(co["map"]),
                 "image": c["_cover"]["url"] if c.get("_cover") else "",
                 "jsonld": [jsonld.dumps(jsonld.course_graph(c, c["_url"], crumbs, refs, orig.get("source_url") or "",
@@ -1365,7 +1644,7 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
                 c=c, stops=stops, orig=orig, show_original=show_original, linked=linked, legs=legs,
                 co=co, course_lede=course_lede, lede=course_lede, course_name=name, orig_url=orig.get("source_url") or "",
                 orig_name=orig.get("source_name") or S.site["source"]["name"], collected=orig.get("collected_at") or "",
-                week=present.week_grid([s["t"] for s in co["stops"] if s["t"]]))
+                week=present.week_grid([s["t"] for s in co["stops"] if s["t"]]), move=present.course_move(S, co))
     if S.courses:
         path = "/courses/"
         crumbs = [("홈", S.site_url + "/"), ("여행 코스", S.abs(path))]
@@ -1382,10 +1661,7 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
             ev = sr["newest"]
             crumbs = [("홈", S.site_url + "/"), ("행사·축제", S.abs(index_path)), (sr["name"], sr["_url"])]
             answer = event_answer(ev)
-            fee = squash_ws(ev.get("fee"))
-            description = f"{answer}." + (f" 요금: {fee}." if fee and len(answer) + len(fee) + 7 <= 160 else "")
-            if len(description) > 160:  # never cut a value mid-way: drop the place, keep the whole period
-                description = f"{event_answer(ev, with_place=False)}."
+            description = event_description(ev, sr["name"])  # never cut a value mid-way: the whole period stays
             places = [S.ent_by_slug[x] for x in sr["place_slugs"] if x in S.ent_by_slug]
             page = {"title": f"{ev['_title']} 기간·장소", "description": description,
                     "canonical": sr["_url"], "og_type": "article", "crumbs": crumbs,
@@ -1414,9 +1690,9 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
         checked = latest(*(v.get("checked_at") for v in S.videos))
         official = sum(v.get("channel_kind") == "official" for v in S.videos)
         page = _simple_page(S, path, f"영상으로 보는 {region} — 주제별 YouTube 영상 {len(S.videos)}편",
-                            f"{region} {'·'.join(g['title'] for g in groups if g['title'] != '기타')}을 다룬 YouTube 영상 "
-                            f"{len(S.videos)}편을 주제별로 모았습니다."
-                            f" 공식 채널 영상은 {official}편입니다.", crumbs,
+                            fit_sentences(f"{region} {'·'.join(g['title'] for g in groups if g['title'] != '기타')}을 다룬 "
+                                          f"YouTube 영상 {len(S.videos)}편을 주제별로 모았습니다. 공식 채널 영상은 {official}편입니다."),
+                            crumbs,
                             None, videos=True)  # no ItemList: the items are YouTube pages, not this site's URLs
         _render(env, S, out, "videos.html.j2", path, page, "videos", checked, groups=groups, checked=checked,
                 official=official, total=len(S.videos), places=S.ent_by_slug, topic=None,
@@ -1427,8 +1703,9 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
             tchecked = latest(*(v.get("checked_at") for v in g["items"]))
             kinds = Counter(v.get("channel_kind") for v in g["items"])
             page = _simple_page(S, g["_path"], f"{region} {label} 영상 {len(g['items'])}편 — YouTube 모아 보기",
-                                f"{region} {label} 주제를 다룬 YouTube 영상 {len(g['items'])}편입니다. 공식 채널 {kinds['official']}편,"
-                                f" 방송사 {kinds['broadcaster']}편, 크리에이터 {kinds['creator']}편을 이 순서로 실었습니다.",
+                                fit_sentences(f"{region} {label} 주제를 다룬 YouTube 영상 {len(g['items'])}편입니다. 공식 채널 "
+                                              f"{kinds['official']}편, 방송사 {kinds['broadcaster']}편, 크리에이터 "
+                                              f"{kinds['creator']}편을 이 순서로 실었습니다."),
                                 tcrumbs, None, videos=True)
             _render(env, S, out, "videos.html.j2", g["_path"], page, "videos", tchecked, groups=[g], checked=tchecked,
                     official=kinds["official"], total=len(g["items"]), places=S.ent_by_slug, topic=g,
@@ -1442,10 +1719,9 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
         crumbs = [("홈", S.site_url + "/"), ("해외에서 본 " + region, S.abs(path))]
         articles = [a for a in S.abroad if a.get("kind") == "article"]
         posts = [a for a in S.abroad if a.get("kind") == "post"]
-        outlets = list(dict.fromkeys(a["outlet"] for a in articles if a.get("outlet")))
+        # the counts the page shows, in one sentence within DESC_MAX (the outlet names are on the page, not in here)
         desc = (f"{region} 관련 외신·해외 매체 기사 {len(articles)}건과 외국어 영상 {len(S.abroad_videos)}편"
-                + (f", SNS 게시물 {len(posts)}건" if posts else "") + "을 모았습니다."
-                + (f" {', '.join(outlets[:3])} 등의 기사를 우리가 쓴 한 줄 소개와 원문 링크로 싣고, 일부는 원문 그대로 인용합니다." if outlets else ""))
+                + (f", SNS 게시물 {len(posts)}건" if posts else "") + "을 원문 링크와 함께 모았습니다.")
         page = _simple_page(S, path, f"해외에서 본 {region} — 외신 기사·외국어 영상" + ("·SNS" if posts else ""),
                             desc, crumbs, None, videos=bool(S.abroad_videos))
         checked = latest(*(a.get("checked_at") for a in S.abroad), *(v.get("checked_at") for v in S.abroad_videos),
@@ -1472,8 +1748,24 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
         page = _simple_page(S, path, f"{region} 여행 검색 — 장소·대표 메뉴·동·코스",
                             f"{region}의 장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름으로 찾습니다.", crumbs,
                             robots="noindex, follow")
+        # the query words, the city and the planner (built just below, under the same condition) for search.js
         _render(env, S, out, "search.html.j2", path, page, "search", None, in_sitemap=False,
-                directory=present.search_directory(S), n_index=len(index))
+                directory=present.search_directory(S), n_index=len(index),
+                search_data=present.search_form_data(region, "/plan/"))
+
+    if S.entities:
+        # /plan/: the AI course planner (operator 2026-10-17; chatbot/planner.js answers /api/plan/). The page draws a
+        # plan from /plan/places.json — each place's first-screen values, photo and point (present.plan_places). A
+        # utility page: noindex, not in the sitemap, Korean only.
+        path = "/plan/"
+        (out / "plan").mkdir(parents=True, exist_ok=True)
+        (out / "plan" / "places.json").write_text(
+            json.dumps(present.plan_places(S), ensure_ascii=False, separators=(",", ":")), "utf-8")
+        crumbs = [("홈", S.site_url + "/"), ("AI 코스 만들기", S.abs(path))]
+        page = _simple_page(S, path, f"AI 코스 만들기 — 조건대로 짜는 {region} 여행 일정",
+                            f"날짜·이동 수단·동행·취향을 고르면 {region}의 장소 정보로 일정을 짜고, 휴무·운영시간·입장료 합계를 "
+                            "사이트 자료로 확인합니다.", crumbs, robots="noindex, follow")
+        _render(env, S, out, "plan.html.j2", path, page, "plan", None, in_sitemap=False, **present.plan_vm(S))
 
     path = "/about/"
     crumbs = [("홈", S.site_url + "/"), ("소개·출처", S.abs(path))]
@@ -1517,9 +1809,12 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
     # first four of `featured`), so the structured data never names a place the page does not show
     shown = [c["e"] for c in h["featured"]] or featured[:4]
     page = {"title": f"{S.site['site_name']} — {region} 관광지·맛집·숙소·코스·축제·영상",
-            "description": (f"{region} 관광지 {len(S.lists['attraction'])}곳, 음식점 {len(S.lists['food'])}곳, "
-                            f"숙소 {len(S.lists['stay'])}곳의 이용시간·쉬는 날·요금·주차·길찾기와 공식 코스, 축제 일정, "
-                            f"영상 {len(S.videos)}편을 한곳에서 찾을 수 있습니다."),
+            # the counts the home shows, in one sentence: the longest wording within DESC_MAX
+            "description": first_fit(*(f"{region} 관광지 {len(S.lists['attraction'])}곳, 음식점 {len(S.lists['food'])}곳, "
+                                       f"숙소 {len(S.lists['stay'])}곳의 {tail}" for tail in (
+                                           f"이용시간·쉬는 날·요금·주차와 공식 코스, 축제 일정, 영상 {len(S.videos)}편을 모았습니다.",
+                                           f"이용시간·쉬는 날·요금·주차와 코스·축제 일정, 영상 {len(S.videos)}편을 모았습니다.",
+                                           "이용시간·쉬는 날·요금·주차를 모았습니다."))),
             "canonical": S.site_url + "/", "crumbs": [],
             "image": hero[0]["img"]["url"] if hero else "",
             # FAQPage only where the FAQ is visible: home.html.j2 does not render site_faq (yet), so no FAQPage.
@@ -1543,7 +1838,11 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
             counts=counts, guides=S.guides, courses=S.courses, purposes=purposes,
             course_groups=groups, events=upcoming_events(S)[:3], top_areas=top_areas,
             themes=[t for t in S.themes if any(t["slug"] in (e.get("themes") or []) for e in S.entities)], h=h,
-            ask_starters=ask_starters)
+            ask_starters=ask_starters,
+            # the SNS row (owner 2026-10-14: 'SNS 게시물이 좀 더 잘 보이면'): the newest published posts, our notes only
+            home_posts=sorted([a for a in getattr(S, "abroad", None) or [] if a.get("kind") == "post"],
+                              key=lambda a: (a.get("date") or "", a["id"]), reverse=True)[:8],
+            n_posts=sum(a.get("kind") == "post" for a in getattr(S, "abroad", None) or []))
 
     page = {"title": f"페이지를 찾을 수 없습니다 | {S.site['site_name']}", "description": "", "canonical": S.site_url + "/",
             "crumbs": [], "jsonld": []}
@@ -1559,6 +1858,10 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
         if stale:  # the Korean changed after the translation: only the Korean page is built until it is redone
             print(f"경고: {code} 번역이 현재 한국어와 달라(ko_hash 불일치) 페이지를 만들지 않은 항목 {stale}건 "
                   f"{st['stale_skipped']} — tools/en_content.py prepare --lang {code}로 다시 번역", file=sys.stderr)
+        untranslated = {k: n for k, n in st["untranslated"].items() if n}
+        if untranslated:  # a published Korean record this version never got: only the Korean page (the menu says so)
+            print(f"경고: {code} 번역이 없는 공개 항목 {sum(untranslated.values())}건 {untranslated} "
+                  f"— tools/en_content.py prepare --lang {code}", file=sys.stderr)
         if st.get("missing_strings"):
             print(f"경고: {code} strings.json에 없는 이름표 {len(st['missing_strings'])}개(대신 키를 표시) "
                   f"{st['missing_strings'][:5]}", file=sys.stderr)
@@ -1591,6 +1894,8 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
     # reads them from public/chat/ (vercel.json includeFiles)
     S.stats["chat"] = chat_index.export(S, out)
 
+    if S.dead_dropped:
+        print(f"홈페이지 링크 숨김 {len(S.dead_dropped)}건(data/{data_dir.name}/dead_links.json)", file=sys.stderr)
     S.stats.update({"mode": mode, "pages": len(S.pages), "guides": len(S.guides), "courses": len(S.courses),
                     "events": len(S.events), "event_pages": len(S.series), "out": str(out)})
     if S.warnings:  # view-model notes (pipeline/present.py): a hard-wired place or anchor missing from the data

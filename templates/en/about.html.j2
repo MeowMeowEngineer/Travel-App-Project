@@ -28,6 +28,7 @@
     <p>{{ t.about_how_1 }}</p>
     <p>{{ t.f('about_how_2', note=loc.conflict, missing=t.not_listed) }}</p>
     <p>{{ t.about_how_3 }}</p>
+    <p id="booking">{{ book_words[loc.code].about }}</p>
   </div>
 </section>
 
@@ -46,12 +47,86 @@
   </div>
 </section>
 
+{#- #emergency (operator 2026-10-15): the numbers and phrases of site.json emergency (KTO VisitKorea, linked), in this
+    version's words — an inline table like _ask.html.j2 ASK_S, so no version is left without it; {p} the provider
+    (t.kto_visitkorea), {l} the source pages; no check date (operator 2026-10-09). French: a no-break space before ':'. -#}
+{% if site.emergency %}{% set em = site.emergency %}
+{% set SOS_ALL = {
+  'en': {'h': 'Emergency numbers', 'lead': 'If someone collapses or is hurt, or there is a fire or a crime, call at once.',
+         'fire_ambulance': 'Fire and ambulance', 'police': 'Police',
+         'travel_helpline': 'Travel information and interpretation, by phone or chat', 'abroad': 'from abroad',
+         'interpreter': "No Korean? Once you are through, ask for 'English please' or 'Interpreter please' and an interpreter joins the call.",
+         'location': 'Say where you are: the name of a building nearby, or the location your phone shows (GPS).',
+         'kto_safety': 'emergency help for visitors', 'kto_1330': '1330 travel helpline',
+         'src': 'Source: {p} — {l}. This site gives no first-aid or medical advice.'},
+  'ja': {'h': '緊急連絡先', 'lead': '人が倒れた・けがをした、火事や犯罪にあったときは、すぐに電話してください。',
+         'fire_ambulance': '消防・救急車', 'police': '警察', 'travel_helpline': '観光案内・通訳（電話・チャット）', 'abroad': '海外から',
+         'interpreter': "韓国語が話せない場合は、電話がつながったら 'English please' または 'Interpreter please' と伝えると、通訳につないでもらえます。",
+         'location': 'いる場所は、近くの建物の名前やスマートフォンが示す位置（GPS）で伝えてください。',
+         'kto_safety': '外国人旅行者向けの安全情報', 'kto_1330': '1330 観光通訳案内',
+         'src': '出典：{p}（{l}、英語）。このサイトは応急処置や医療の案内はしていません。'},
+  'zh-Hans': {'h': '紧急联系电话', 'lead': '有人晕倒或受伤、发生火灾或遇到犯罪时，请立即拨打电话。',
+         'fire_ambulance': '消防·救护车', 'police': '警察', 'travel_helpline': '旅游咨询·翻译（电话·聊天）', 'abroad': '从海外拨打',
+         'interpreter': "不会说韩语时，电话接通后说 'English please' 或 'Interpreter please'，会为您转接翻译。",
+         'location': '请用附近建筑物的名称或手机显示的位置（GPS）告知您所在的地方。',
+         'kto_safety': '面向外国游客的安全信息', 'kto_1330': '1330 旅游翻译咨询',
+         'src': '来源：{p}（{l}，英文）。本站不提供急救或医疗建议。'},
+  'zh-Hant': {'h': '緊急聯絡電話', 'lead': '有人昏倒或受傷、發生火災或遇到犯罪時，請立即撥打電話。',
+         'fire_ambulance': '消防·救護車', 'police': '警察', 'travel_helpline': '旅遊諮詢·翻譯（電話·聊天）', 'abroad': '從海外撥打',
+         'interpreter': "不會說韓語時，電話接通後說 'English please' 或 'Interpreter please'，會為您轉接翻譯。",
+         'location': '請用附近建築物的名稱或手機顯示的位置（GPS）告知您所在的地方。',
+         'kto_safety': '給外國旅客的安全資訊', 'kto_1330': '1330 旅遊翻譯諮詢',
+         'src': '來源：{p}（{l}，英文）。本站不提供急救或醫療建議。'},
+  'de': {'h': 'Notrufnummern', 'lead': 'Bricht jemand zusammen oder ist verletzt, bei Feuer oder einer Straftat: sofort anrufen.',
+         'fire_ambulance': 'Feuerwehr und Rettungswagen', 'police': 'Polizei',
+         'travel_helpline': 'Reiseauskunft und Dolmetschen, per Telefon oder Chat', 'abroad': 'aus dem Ausland',
+         'interpreter': "Wenn Sie kein Koreanisch sprechen: Sagen Sie nach dem Verbinden 'English please' oder 'Interpreter please' – dann wird ein Dolmetscher zugeschaltet.",
+         'location': 'Sagen Sie, wo Sie sind: den Namen eines Gebäudes in der Nähe oder den Standort, den Ihr Handy anzeigt (GPS).',
+         'kto_safety': 'Sicherheitshinweise für ausländische Reisende', 'kto_1330': 'Reise-Hotline 1330',
+         'src': 'Quelle: {p} — {l} (Englisch). Diese Website gibt keine Ratschläge zu Erster Hilfe oder Medizin.'},
+  'fr': {'h': 'Numéros d’urgence', 'lead': 'Si quelqu’un s’effondre ou est blessé, en cas d’incendie ou de délit : appelez tout de suite.',
+         'fire_ambulance': 'Pompiers et ambulance', 'police': 'Police',
+         'travel_helpline': 'Informations touristiques et interprétariat, par téléphone ou chat', 'abroad': 'depuis l’étranger',
+         'interpreter': "Si vous ne parlez pas coréen, dites 'English please' ou 'Interpreter please' une fois en ligne : un interprète rejoint l’appel.",
+         'location': 'Indiquez où vous êtes : le nom d’un bâtiment proche, ou la position affichée par votre téléphone (GPS).',
+         'kto_safety': 'informations de sécurité pour les visiteurs étrangers', 'kto_1330': 'ligne d’assistance touristique 1330',
+         'src': 'Source : {p} — {l} (en anglais). Ce site ne donne aucun conseil de premiers secours ni médical.'},
+  'es': {'h': 'Números de emergencia', 'lead': 'Si alguien se desmaya o está herido, o hay un incendio o un delito, llame enseguida.',
+         'fire_ambulance': 'Bomberos y ambulancia', 'police': 'Policía',
+         'travel_helpline': 'Información turística e interpretación, por teléfono o chat', 'abroad': 'desde el extranjero',
+         'interpreter': "Si no habla coreano, diga 'English please' o 'Interpreter please' cuando le atiendan: le pasarán con un intérprete.",
+         'location': 'Indique dónde está: el nombre de un edificio cercano o la ubicación que muestra su teléfono (GPS).',
+         'kto_safety': 'información de seguridad para visitantes extranjeros', 'kto_1330': 'línea de ayuda turística 1330',
+         'src': 'Fuente: {p} — {l} (en inglés). Este sitio no da consejos de primeros auxilios ni médicos.'},
+  'ru': {'h': 'Экстренные номера', 'lead': 'Если человеку стало плохо или он ранен, при пожаре или преступлении — звоните сразу.',
+         'fire_ambulance': 'Пожарные и скорая помощь', 'police': 'Полиция',
+         'travel_helpline': 'Туристическая справка и перевод, по телефону или в чате', 'abroad': 'из-за рубежа',
+         'interpreter': "Если вы не говорите по-корейски, после соединения скажите 'English please' или 'Interpreter please' — вас соединят с переводчиком.",
+         'location': 'Сообщите, где вы: название ближайшего здания или место, которое показывает телефон (GPS).',
+         'kto_safety': 'сведения о безопасности для иностранных туристов', 'kto_1330': 'туристическая линия 1330',
+         'src': 'Источник: {p} — {l} (на английском). Этот сайт не даёт советов по первой помощи и медицине.'},
+} %}
+{% set S = SOS_ALL.get(loc.html) or SOS_ALL['en'] %}
+<section class="wrap chapter ch-rail" id="emergency" aria-labelledby="h-sos">
+  <h2 id="h-sos" class="rail-label">{{ S.h }}</h2>
+  <div class="rail-body prose">
+    <p>{{ S.lead }}</p>
+    <ul class="sos">
+      {% for x in em.lines %}<li><a class="sos-tel tn" href="tel:{{ x.tel }}" data-track="tel_click">{{ x.tel }}</a><span class="sos-what">{{ S[x.what] }}{% if x.abroad %} · {{ S.abroad }} <a href="tel:{{ x.abroad }}" data-track="tel_click">{{ x.abroad }}</a>{% endif %}</span></li>{% endfor %}
+    </ul>
+    {% for s in em.steps %}<p>{{ S[s.id] }}</p>{% endfor %}
+    {% set sos_links %}{% for k, s in em.sources.items() %}<a href="{{ s.url }}" rel="noopener"{% if loc.html != 'en' %} hreflang="en"{% endif %} data-track="official_click">{{ S[k] }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endset %}
+    <p class="sos-src">{{ (S.src|e)|replace('{p}', t.kto_visitkorea)|replace('{l}', sos_links) }}</p>
+  </div>
+</section>
+{% endif %}
+
 <section class="wrap chapter ch-rail" id="chatbot" aria-labelledby="h-chatbot">
   <h2 id="h-chatbot" class="rail-label">Site assistant</h2>
   <div class="rail-body prose">
     <p>The ‘Ask’ button at the bottom right opens an assistant that answers only from this site's information: the values and sources on its place, guide, course and event pages, with a link to each page it uses. Where two sources differ it gives both; where the site has no value it says so and points to the phone number or official website in the data.</p>
-    <p>Answers are written by Claude Haiku 5.5, an AI model by Anthropic. AI answers can be wrong: check the linked pages and the official sources before you go. It cannot book, pay or sign you up.</p>
-    <p>This site does not store conversations. The conversation stays in this browser tab and is cleared when you press ‘New chat’ or close the tab. Each time you ask, the new question, the conversation before it (the last 12 messages) and the address of the page you are on go through this site's server function to the Anthropic API, which writes the answer. The server log keeps only the outcome and usage numbers, never your questions or the answers. What happens to them at Anthropic follows Anthropic's policies, and this site cannot delete what has already been sent.</p>
+    <p>Answers are written by Claude Haiku 5.5, an AI model by Anthropic. AI answers can be wrong: check the linked pages and the official sources before you go. It cannot book, pay or sign you up; it only links to official booking pages.</p>
+    <p>This site does not store conversations on its server. The conversation stays only in this browser tab and is cleared when you press ‘New chat’ or close the tab. Each time you ask, the new question, the conversation before it (the last 12 messages) and the address of the page you are on go through this site's server function to the Anthropic API, which writes the answer. The server log keeps only the outcome and usage numbers, never your questions or the answers. What happens to them at Anthropic follows Anthropic's policies, and this site cannot delete what has already been sent.</p>
     <p>Please do not type personal details such as names or phone numbers: nothing masks them automatically. If you typed one by mistake, press ‘New chat’; otherwise it is sent again with the conversation the next time you ask.</p>
   </div>
 </section>
@@ -65,6 +140,31 @@
     <p>{{ t.f('about_operator', op=op) }}</p>
   </div>
 </section>
+
+{%- set op = site.operator %}
+{%- if op.business_no %}
+{#- the company that runs the site, as its official papers and its own site give it (operator 2026-10-17, the CEO's mail;
+    site.json operator.sources): names in Korean beside the English, addresses as the company's English site writes them -#}
+<section class="wrap chapter ch-rail" id="company" aria-labelledby="h-company">
+  <h2 id="h-company" class="rail-label">{{ t.co_heading }}</h2>
+  <div class="rail-body">
+    {%- set ed_role = (site.editor.role_en if loc.code == 'en' and site.editor else '') or t.editor_role %}
+    <dl class="src-dl co-dl">
+      <div><dt>{{ t.co_name }}</dt><dd>{% if op.name_en %}{{ op.name_en }} (<span lang="ko">{{ op.legal_name or op.name }}</span>){% else %}<span lang="ko">{{ op.legal_name or op.name }}</span>{% endif %}{% if loc.code == 'en' and op.about_en %}, {{ op.about_en }}{% endif %}</dd></div>
+      {% if op.ceo %}<div><dt>{{ t.co_ceo }}</dt><dd>{% if loc.code == 'en' and op.ceo_en %}{{ op.ceo_en }} (<span lang="ko">{{ op.ceo }}</span>){% else %}<span lang="ko">{{ op.ceo }}</span>{% if op.ceo_en %} ({{ op.ceo_en }}){% endif %}{% endif %}</dd></div>{% endif %}
+      <div><dt>{{ t.co_biz_no }}</dt><dd>{{ op.business_no }}</dd></div>
+      {% if op.corporate_no %}<div><dt>{{ t.co_corp_no }}</dt><dd>{{ op.corporate_no }}</dd></div>{% endif %}
+      {% if op.founded %}<div><dt>{{ t.co_founded }}</dt><dd>{{ loc.date_bare(op.founded) }}</dd></div>{% endif %}
+      {% if op.head_office_en %}<div><dt>{{ t.co_head_office }}</dt><dd>{{ op.head_office_en }}</dd></div>{% endif %}
+      {% if op.lab_en %}<div><dt>{{ t.co_lab }}</dt><dd>{{ op.lab_en }}</dd></div>{% endif %}
+      {% if op.tel or op.email %}<div><dt>{{ t.co_contact }}</dt><dd>{% if op.tel %}{{ t.co_tel }} <a href="tel:+82{{ op.tel|replace('-', '')|replace('0', '', 1) }}">{{ op.tel }}</a>{% endif %}{% if op.tel and op.email %} · {% endif %}{% if op.email %}<a href="mailto:{{ op.email }}">{{ op.email }}</a>{% endif %}</dd></div>{% endif %}
+      {% if site.editor and site.editor.name %}<div><dt>{{ ed_role }}</dt><dd><span lang="ko">{{ site.editor.name }}</span>{% if op.contact %} · <a href="mailto:{{ op.contact }}">{{ op.contact }}</a>{% endif %}</dd></div>{% endif %}
+      {% if op.url %}<div><dt>{{ t.co_site }}</dt><dd><a href="{{ op.url }}" rel="noopener">{{ op.url }}</a></dd></div>{% endif %}
+    </dl>
+    <p class="co-note">{{ t.co_note }}</p>
+  </div>
+</section>
+{%- endif %}
 
 <section class="wrap chapter ch-rail" aria-labelledby="h-official">
   <h2 id="h-official" class="rail-label">{{ t.official_sites }}</h2>

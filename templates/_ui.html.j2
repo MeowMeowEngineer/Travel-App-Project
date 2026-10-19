@@ -22,9 +22,9 @@
       notes(items, cls) / chnotes(items)                      numbered source notes
       route(primary, front, rest, place, hid, nm)             route block: 3 in front, the rest under '다른 지도'
       lnav(title, links, cta, label)  the local bar (base.html.j2 {% block lnav %}): title, section links, one pill
-      board(cv, s) / onroute(rows, place) / stoprow(stops, …) / linemeta(cv)    course parts
+      board(cv, s) / stoprow(stops, …) / linemeta(cv)            course parts (a place page's course
+                                      segments, nearby rows and cards: _near.html.j2)
       coursemap(m, title, caption, cls)                       the course's stops on the map (present.course_map)
-      near(items, place)              distance-sorted list (place_vm near_sights / near_biz)
       mapfig(data, label, cls, caption)                       map box; map.js reads data-map
       faq(items, ns)                  visible Q → A
       chead(title, hid, …) / sec_head(eyebrow, title, hid, …) / rail(hid, label, nm, block, cls){caller}   headings
@@ -40,7 +40,8 @@
       rec(it, kind)                   ledger row (present.list_vm items: slots)
       week(W, hid, title)             places × 월–일 (present.week_grid)
       video(v, place, linked, eager, tag) / vrow(v, linked, eager)    video card / compact row, thumbnail facade
-      search_form(id, value, label, placeholder, live)        GET /search/ form (search.js enhances [data-search])
+      search_form(id, value, label, placeholder, live, note, data)
+                                      GET /search/ form (search.js enhances [data-search])
       bento(a){caller} / mark(text, phrase) / nums(items, hid, title, note) / bigword(word)
                                       the home accent points (45-accent.css): colour bento tile, lime marker,
                                       big-numerals band, the black band's oversized word
@@ -90,6 +91,16 @@
 {%- elif name == 'chat' %}<path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 17h-8l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5Z"/><path d="M8.5 11.2h.01M12 11.2h.01M15.5 11.2h.01"/>
 {%- elif name == 'up' %}<path d="M12 19V5M6 11l6-6 6 6"/>
 {%- elif name == 'close' %}<path d="M6 6l12 12M18 6 6 18"/>
+{#- the course planner's choices (/plan/, 2026-10-17): interim looks until their 3D pictures come -#}
+{%- elif name == 'moon' %}<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>
+{%- elif name == 'bag' %}<rect x="5" y="7" width="14" height="13" rx="2.5"/><path d="M9 7V5a3 3 0 0 1 6 0v2M9 20v1.5M15 20v1.5"/>
+{%- elif name == 'user' %}<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>
+{%- elif name == 'heart' %}<path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.5 4.2 4.2 0 0 1 19.5 10C19.5 15.4 12 20 12 20Z"/>
+{%- elif name == 'cup' %}<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5Z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8.5 3.5c0 1.2 1.2 1.2 1.2 2.5M12.5 3.5c0 1.2 1.2 1.2 1.2 2.5"/>
+{%- elif name == 'camera' %}<path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4Z"/><circle cx="12" cy="13" r="3.5"/>
+{%- elif name == 'walk' %}<circle cx="13" cy="4.5" r="1.8"/><path d="m10 21 2-6.5 2.5 2.5V21M9 10.5l3-3 3 3 2.5 1M12 7.5 10.5 14"/>
+{%- elif name == 'wallet' %}<path d="M4 7.5h14a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M4 7.5 15 4l1 3.5M16 13.5h4"/>
+{%- elif name == 'swap' %}<path d="M5 9a7 7 0 0 1 12.5-3M19 15a7 7 0 0 1-12.5 3"/><path d="M17.5 2.5V6H14M6.5 21.5V18H10"/>
 {%- else %}<path d="M12 21s-6.5-5.8-6.5-10.5a6.5 6.5 0 1 1 13 0C18.5 15.2 12 21 12 21Z"/><circle cx="12" cy="10.5" r="2.3"/>
 {%- endif %}
 {%- endmacro %}
@@ -156,8 +167,8 @@
     on the place page; plain '외' inside a card whose whole area is a link). A conflict shows both values with their
     providers. compact (card rows) leaves the sub-line of a conflict out. -#}
 {% macro kfv(s, more_href='', compact=false, place='') -%}
-{% if s.missing %}<span class="kf-na">확인 필요</span>
-{%- elif s.conflict %}{% for v in s.vals %}<span class="kf-alt"><span class="kf-main tn{% if v.closed %} closed{% endif %}">{{ v.main|nwt }}</span>{% if v.sub and not compact %}<span class="kf-sub tn">{{ v.sub|nwt }}</span>{% endif %}<span class="kf-src">{{ v.provider }}</span></span>{% endfor %}
+{% if s.missing %}<span class="kf-na">확인 필요</span>{% if s.sub %}<span class="vh"> · </span><span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}
+{%- elif s.conflict %}{% for v in s.vals %}<span class="kf-alt"><span class="kf-main tn{% if v.closed %} closed{% endif %}">{{ v.main|nwt }}</span>{% if v.sub and not compact %} <span class="kf-sub tn">{{ v.sub|nwt }}</span>{% endif %}<span class="kf-src">{{ v.provider }}</span></span>{% endfor %}
 {%- else %}<span class="kf-main tn{% if s.closed %} closed{% endif %}">{% if s.key == 'tel' %}<a class="tel" href="tel:{{ s.tel }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.main }}</a>{% else %}{{ s.main|nwt }}{% endif %}</span>{% if s.sub %}<span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}{% if s.more %}{% if more_href %} <a class="kf-more" href="{{ more_href }}">외 ↓</a>{% else %} <span class="kf-more">외</span>{% endif %}{% endif %}
 {%- endif %}
 {%- endmacro %}
@@ -276,14 +287,30 @@
 </div>
 {%- endmacro %}
 
+{#- book(items, W, place, box): 예약하기 (step 1, pipeline/booking.py) for every version — the official booking pages in
+    the data as outlined buttons (W.book + the service's name in W.svc, or a facility's own booking address by its
+    domain), in the version's language when the service has such a page (hreflang; another language's page names that
+    language), else the Korean page '(in Korean)'. One short note under them, once. Plain links, visible without
+    script; GA4 booking_click (track.js, + link_lang from hreflang). box: a guide's or course's titled box (#h-book);
+    a place page puts the row under its route row. items = booking.view(); W = locales.BOOK_WORDS[code]. -#}
+{% macro book(items, W, place='', box=false) -%}
+{% if items %}<div class="book{{ ' book-box' if box }}" data-block="booking">{% if box %}<h2 id="h-book" class="book-h">{{ W.box }}</h2>{% endif %}
+<ul class="book-l">{% for b in items %}<li><a class="btn btn-ol btn-book" href="{{ b.url }}" rel="noopener" data-track="booking_click" data-provider="{{ b.key }}"{% if place %} data-place="{{ place }}"{% endif %}{% if b.hreflang %} hreflang="{{ b.hreflang }}"{% endif %}><span class="book-t">{{ W.book }}</span> <span class="book-s">{{ b.name }}{% if b.note %} · <span lang="{{ b.note_lang }}">{{ b.note }}</span>{% endif %}</span><span class="arr" aria-hidden="true">↗</span></a></li>{% endfor %}</ul>
+<p class="book-n">{{ W.note }}</p></div>{% endif %}
+{%- endmacro %}
+
 {#- lnav(title, links, cta, label): the local bar, put in {% block lnav %} of base.html.j2. title = the page name;
     links = [(label, '#id')] (desktop only); cta = {url, label, ext, track, provider, place} | none — the page's one
-    contextual action (place: 길찾기 / 지도 to the exact route, course: 경유지 목록, event: 길찾기, guide: 걷는 순서). -#}
-{% macro lnav(title, links=[], cta=none, label='') -%}
+    contextual action (place: 길찾기 / 지도 to the exact route, course: 경유지 목록, event: 길찾기, guide: 걷는 순서).
+    share = {id, lang} | none — the 공유 button before it (operator 2026-10-17; site.js [data-share]: the phone's share
+    sheet, else the link copied; GA4 'share'): id = the place, guide, course or event series id, lang = the words of
+    SHARE_WORDS; JS only (data-js-only), an icon with its word hidden on phones. -#}
+{% macro lnav(title, links=[], cta=none, label='', share=none) -%}
 <nav class="lnav" aria-label="{{ label or (title ~ ' 바로가기') }}" data-lnav>
 <div class="wrap lnav-in">
 <p class="lnav-t">{{ title }}</p>
 {% if links %}<ul class="lnav-links">{% for lab, href in links %}<li><a href="{{ href }}">{{ lab }}</a></li>{% endfor %}</ul>{% endif %}
+{% if share %}{% set sw = SHARE_WORDS[share.lang] %}<button type="button" class="lnav-share" data-share data-share-id="{{ share.id }}" data-copied="{{ sw.copied }}" data-failed="{{ sw.failed }}" data-js-only><svg class="lnav-share-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lnav-share-t">{{ sw.label }}</span></button>{% endif %}
 {% if cta %}<a class="lnav-cta" href="{{ cta.url }}"{% if cta.ext %} rel="noopener"{% endif %}{% if cta.track %} data-track="{{ cta.track }}"{% endif %}{% if cta.provider %} data-provider="{{ cta.provider }}"{% endif %}{% if cta.place %} data-place="{{ cta.place }}"{% endif %}>{{ cta.label }}</a>{% endif %}
 </div>
 </nav>
@@ -293,26 +320,15 @@
     code · type · 동, the name, ← previous │ ● │ next → with straight-line distances. -#}
 {% macro board(cv, s) -%}
 <div class="board">
-<p class="board-top"><span class="code tn">{{ s.code }}</span><span class="board-k">{{ s.type or '경유지' }}{% if s.dong %} · {{ s.dong }}{% endif %}</span><span class="board-cum tn">{% if s.n == 1 %}출발{% elif s.cum %}출발부터 직선 {{ s.cum|pdist }}{% endif %}</span></p>
+<p class="board-top"><span class="code tn">{{ s.code }}</span><span class="board-k">{{ s.type or '경유지' }}{% if s.dong %} · {{ s.dong }}{% endif %}{% if s.optional %} · 선택 경유지{% endif %}</span><span class="board-cum tn">{% if s.n == 1 %}출발{% elif s.cum %}출발부터 직선 {{ s.cum|pdist }}{% endif %}</span></p>
 <p class="board-name">{{ s.short }}{% if s.paren %} <span class="b-paren">{{ s.paren }}</span>{% endif %}</p>
 {% if s.label %}<p class="board-label">코스 원문 표기 {{ s.label }}</p>{% endif %}
 <div class="board-bar">
-{% if s.prev %}<a class="b-prev" href="#s{{ s.prev.n }}"><span class="b-dir" aria-hidden="true">←</span><span class="b-nm">{{ s.prev.name }}</span>{% if s.prev_m is not none %}<span class="b-d tn">{{ s.prev_m|pdist }}</span>{% endif %}</a>{% else %}<span class="b-prev b-end">출발 경유지</span>{% endif %}
+{% if s.prev %}<a class="b-prev" href="#s{{ s.prev.n }}"><span class="b-dir" aria-hidden="true">←</span><span class="b-nm">{{ s.prev.name }}</span>{% if s.prev_m is not none %}<span class="b-d tn">{{ s.prev_m|pdist }}</span>{% endif %}</a>{% else %}<span class="b-prev b-end">{{ s.day ~ ' 시작' if s.brk else '출발 경유지' }}</span>{% endif %}
 <span class="b-here" aria-hidden="true"></span>
-{% if s.next %}<a class="b-next" href="#s{{ s.next.n }}">{% if s.next_m is not none %}<span class="b-d tn">{{ s.next_m|pdist }}</span>{% endif %}<span class="b-nm">{{ s.next.name }}</span><span class="b-dir" aria-hidden="true">→</span></a>{% else %}<span class="b-next b-end">마지막 경유지</span>{% endif %}
+{% if s.next %}<a class="b-next" href="#s{{ s.next.n }}">{% if s.next_m is not none %}<span class="b-d tn">{{ s.next_m|pdist }}</span>{% endif %}<span class="b-nm">{{ s.next.name }}</span><span class="b-dir" aria-hidden="true">→</span></a>{% else %}<span class="b-next b-end">{{ s.day ~ ' 끝' if s.n < cv.n_places else '마지막 경유지' }}</span>{% endif %}
 </div>
 </div>
-{%- endmacro %}
-
-{#- onroute(rows, place): the official courses through a place (place_vm.boards: [{cv, s}]), one row each. -#}
-{% macro onroute(rows, place='') -%}
-<table class="onroute"><caption class="h-sub">이곳을 지나는 공식 코스 {{ rows|length }}개</caption><tbody>
-{% for b in rows %}{% set s = b.s %}
-<tr><th scope="row"><a href="{{ b.cv.path }}#s{{ s.n }}" data-track="course_click" data-place="{{ place }}">{{ b.cv.display }}</a><span class="or-n tn">{{ s.n }}/{{ b.cv.stops|length }}</span></th>
-<td class="or-prev">{% if s.prev %}{% if s.prev.path %}<a href="{{ s.prev.path }}">{% endif %}<span aria-hidden="true">← </span><span class="vh">이전 </span>{{ s.prev.name }}{% if s.prev.path %}</a>{% endif %}{% if s.prev_m is not none %} <span class="tn">{{ s.prev_m|pdist }}</span>{% endif %}{% else %}<span class="muted">출발</span>{% endif %}</td>
-<td class="or-next">{% if s.next %}{% if s.next_m is not none %}<span class="tn">{{ s.next_m|pdist }}</span> {% endif %}{% if s.next.path %}<a href="{{ s.next.path }}">{% endif %}<span class="vh">다음 </span>{{ s.next.name }}<span aria-hidden="true"> →</span>{% if s.next.path %}</a>{% endif %}{% else %}<span class="muted">마지막</span>{% endif %}</td></tr>
-{% endfor %}
-</tbody></table>
 {%- endmacro %}
 
 {#- stoprow(stops, label, more, k): a course line's stops by name in course order — the first k (every one when there
@@ -337,13 +353,7 @@
     factual '경유지 n곳 중 좌표가 있는 m곳 · 순서대로 직선 연결'; the credit is the map's own (Kakao's logo in its
     corner, once). -#}
 {% macro coursemap(m, title, caption='', cls='') -%}
-{{ mapfig({'course': m.points}, title, 'course-mapfig' ~ (' ' ~ cls if cls else ''), caption or ('경유지 ' ~ m.n_all ~ '곳 중 좌표가 있는 ' ~ m.n_geo ~ '곳 · 순서대로 직선 연결'), false) }}
-{%- endmacro %}
-
-{#- near(items, place): distance-sorted list (place_vm near_sights / near_biz: {name, href, internal, kind, type, m,
-    closed?}); figures right-aligned, tabular; a place's weekly closed day (closed: a key-facts slot) beside its type. -#}
-{% macro near(items, place='') -%}
-<ol class="near">{% for n in items %}<li><a href="{{ n.href }}"{% if not n.internal %} rel="noopener"{% endif %} data-track="{{ {'stay': 'stay_click', 'food': 'food_click'}.get(n.kind, 'nearby_click') }}" data-place="{{ place }}">{{ n.name }}</a><span class="near-t">{{ n.type }}{% if not n.internal %} · 지도 검색{% endif %}{% if n.closed %} · {% if n.closed.closed %}<span class="closed">{{ n.closed.main }}</span>{% else %}{{ n.closed.main }}{% endif %}{% endif %}</span><span class="near-d tn">{{ n.m|pdist }}</span></li>{% endfor %}</ol>
+{{ mapfig({'course': m.points}, title, 'course-mapfig' ~ (' ' ~ cls if cls else ''), caption or ('경유지 ' ~ m.n_all ~ '곳 중 좌표가 있는 ' ~ m.n_geo ~ '곳 · 순서대로 직선 연결' ~ (' · 선택 경유지 ' ~ m.n_opt ~ '곳은 그리지 않음' if m.n_opt else '')), false) }}
 {%- endmacro %}
 
 {#- mapfig(data, label, cls, caption): a map box (shown only with JS; every map has a text equivalent on its page).
@@ -353,7 +363,7 @@
     screen, after load. Without JS the figure is not shown (css/10-base.css) and the page's lists are the answer. -#}
 {% macro mapfig(data, label, cls='', caption='', credit=true) -%}
 <figure class="mapfig{% if cls %} {{ cls }}{% endif %}">
-<div class="map" role="region" aria-label="{{ label }}" data-map="{{ data|tojson_attr }}"{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-lenis-prevent><p class="map-off">지도를 불러오는 중입니다.</p></div>
+<div class="map" role="region" aria-label="{{ label }}" data-map="{{ data|tojson_attr }}"{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-lenis-prevent><p class="map-off">이 지도의 장소는 이 페이지에 글로도 적었습니다.</p></div>
 <figcaption>{% if caption %}{{ caption }}{% if credit %} · {% endif %}{% endif %}{% if credit %}지도: 카카오맵{% endif %}</figcaption>
 </figure>
 {%- endmacro %}
@@ -422,7 +432,7 @@
 </form>
 {% if ev %}<a class="abar-ev" href="{{ ev.path or ev.source_url }}"{% if not ev.path %} rel="noopener" data-track="official_click"{% endif %}>
 <span class="chip">{{ ev.chip }}</span>
-{% if ev.dp and ev.dp.a %}<span class="abar-ev-d tn">{{ ev.dp.a.md }}<span class="wdp">({{ ev.dp.a.wd }})</span>{% if ev.dp.b %}–{{ ev.dp.b.md }}<span class="wdp">({{ ev.dp.b.wd }})</span>{% endif %}</span>{% endif %}
+{% if ev.dp and ev.dp.a %}<span class="abar-ev-d tn">{{ ev.dp.a.md }}<span class="wdp">({{ ev.dp.a.wd }})</span>{% if ev.dp.b %}–{{ ev.dp.b.md }}<span class="wdp">({{ ev.dp.b.wd }})</span>{% elif ev.dp.end_month %}–{{ ev.dp.end_month|int }}월{% endif %}</span>{% endif %}
 <span class="abar-ev-t">{{ ev.title }}</span>
 {% if ev.fee %}<span class="abar-ev-m">{{ ev.fee }}</span>{% endif %}
 <span class="arr" aria-hidden="true">›</span>
@@ -481,9 +491,9 @@
 </a></li>
 {%- endmacro %}
 
-{#- evrow(r): a dated event tile — the date big (r.dp: present.date_parts), the relative chip (present.ranked_events:
-    오늘 · 내일 시작 · n일 뒤 시작 · m월 d일 시작 · 진행 중 · m.d.까지), the name, place · time · fee. Without an
-    event page the tile links to the source. -#}
+{#- evrow(r): a dated event tile — the date big (r.dp: present.date_parts; an end the source gives only as a month
+    reads '–10월'), the relative chip (present.ranked_events: 오늘 · 내일 시작 · n일 뒤 시작 · m월 d일 시작 · 진행 중 ·
+    m.d.까지 / 진행 중 · m월 중 끝남), the name, place · time · fee. Without an event page the tile links to the source. -#}
 {% macro evrow(r) -%}
 <li class="evr"><a href="{{ r.path or r.source_url }}"{% if not r.path %} rel="noopener" data-track="official_click"{% endif %}>
 {% if r.dp and r.dp.a %}<span class="evr-date"><span class="num tn">{{ r.dp.a.md }}</span><span class="wd">{{ r.dp.a.wd }}</span>{% if r.dp.b %}<span class="num dash">–</span><span class="num tn">{{ r.dp.b.md }}</span><span class="wd">{{ r.dp.b.wd }}</span>{% elif r.dp.end_month %}<span class="num dash">–</span><span class="wd wd-m">{{ r.dp.end_month|int }}월</span>{% endif %}</span>{% endif %}
@@ -568,6 +578,70 @@
 </section>
 {%- endmacro %}
 
+{#- move(M, name): a course's '차 없이 다니기' (present.course_move, QA 2026-10-15 F09) — from data the site holds,
+    never a travel mode, a time or 'walkable' of our own: the nearest bus stops of each place stop (p data-bus +
+    data-for = the place id; pipeline.validate course_move_problems checks them against nearby.json), every measured
+    leg with a 카카오맵 대중교통 길찾기 link (li data-leg; the map computes the route and its time), the city bus
+    timetable's reference-stop first and last times (li data-route, transit.json: both sources where they differ and
+    one call line), the guides, the one '확인 필요' line and the sources. -#}
+{% macro mvbus(r) -%}
+<li data-for="{{ r.id }}">
+<p class="acc-h"><span class="tn mv-n">{{ r.n }}</span> <a href="{{ r.s.path }}" data-track="nearby_click" data-place="{{ r.id }}">{{ r.s.short }}</a></p>
+{% for b in r.bus %}<p class="acc-s" data-bus="{{ b.name }}" data-for="{{ r.id }}">'{{ b.name }}' 정류장 <span class="tn">{{ b.m }}m</span>{% if b.routes %} · 시내버스 <span class="tn">{{ b.routes_text }}</span>번{% endif %}</p>{% endfor %}
+</li>
+{%- endmacro %}
+{% macro mvtimes(ts, key) -%}
+{% for t in ts %}{{ t.stop }} <span class="tn">{{ t[key] }}</span>(<span class="tn">{{ t[key ~ '_n'] }}</span>회){% if not loop.last %}, {% endif %}{% endfor %}
+{%- endmacro %}
+{% macro mvroute(R, M) -%}
+<li data-route="{{ R.no }}">
+<p class="acc-h">시내버스 <span class="tn">{{ R.no }}</span>번</p>
+<p class="acc-s">{% if R.same %}평일·토·일·공휴일 같음{% else %}평일{% endif %} · 가는 편 {{ mvtimes(R.out, 'weekday') }}{% if R.back %} · 돌아오는 편 {{ mvtimes(R.back, 'weekday') }}{% endif %}</p>
+{% if not R.same %}<p class="acc-s">토·일·공휴일 · 가는 편 {{ mvtimes(R.out, 'weekend') }}{% if R.back %} · 돌아오는 편 {{ mvtimes(R.back, 'weekend') }}{% endif %}</p>{% endif %}
+{% for t in R.alts %}<p class="acc-s acc-call"><span class="flag">{{ '가는 편' if t.dir == 'out' else '돌아오는 편' }} {{ t.stop }} 시각 출처마다 다름</span> 시간표 {{ t.every }} · {{ t.alt.provider }} {{ t.alt.value }} · 방문 전 전화 확인 {{ M.tel_html }}</p>{% endfor %}
+</li>
+{%- endmacro %}
+{% macro move(M, name) -%}
+<h2 id="h-move" class="h-sec">차 없이 다니기</h2>
+<div class="acc-cols">
+{% if M.lead %}
+<div class="acc-g">
+<h3 class="h-sub">경유지 근처 버스 정류장 <span class="acc-r">직선거리 <span class="tn">{{ M.bus_radius }}m</span> 안</span></h3>
+<ol class="acc-list mv-bus">{% for r in M.lead %}{{ mvbus(r) }}{% endfor %}</ol>
+{% if M.rest %}<details class="nb-more mv-more"><summary><span>다른 경유지 근처 정류장 ({{ M.rest|length }}곳)</span></summary>
+<ol class="acc-list mv-bus">{% for r in M.rest %}{{ mvbus(r) }}{% endfor %}</ol></details>{% endif %}
+</div>
+{% endif %}
+{% if M.legs %}
+<div class="acc-g">
+<h3 class="h-sub">경유지 사이 대중교통 길찾기 <span class="acc-r">경로와 시간은 카카오맵이 계산</span></h3>
+<ol class="acc-list mv-legs">{% for l in M.legs %}
+<li data-leg="{{ l.a.n }}-{{ l.b.n }}">
+<p class="acc-h"><span class="tn mv-n">{{ l.a.n }}</span> {{ l.a.short }} → <span class="tn mv-n">{{ l.b.n }}</span> {{ l.b.short }}</p>
+<p class="acc-d tn">직선 {{ l.d|pdist }}</p>
+<p class="acc-s"><a href="{{ l.url }}" rel="noopener" data-track="route_click" data-provider="kakao_transit">카카오맵 대중교통 길찾기</a>{% if l.guide %} · <a href="{{ l.guide.path }}" data-track="guide_click">가이드 '{{ l.guide.label }}'</a>{% endif %}</p>
+</li>{% endfor %}</ol>
+</div>
+{% endif %}
+</div>
+{% if M.routes %}
+{#- the city's island route open (site.json city.course_move.island_route: the only bus to the islands), the other
+    routes folded; a city without one folds them all -#}
+{% set top = M.routes|selectattr('no', 'equalto', M.island_route)|list if M.island_route else [] %}{% set others = M.routes|rejectattr('no', 'equalto', M.island_route)|list if M.island_route else M.routes %}
+<h3 class="h-sub mv-tt-h">시내버스 첫차·막차 <span class="acc-r">시간표의 기준 정류장 시각</span></h3>
+{% if top %}<ul class="acc-list mv-tt">{% for R in top %}{{ mvroute(R, M) }}{% endfor %}</ul>{% endif %}
+{% if others %}<details class="nb-more mv-more"><summary><span>{% if top %}다른 {% endif %}노선 {{ others|map(attribute='no')|join('·') }}번</span></summary>
+<ul class="acc-list mv-tt">{% for R in others %}{{ mvroute(R, M) }}{% endfor %}</ul></details>{% endif %}
+{% endif %}
+{% if M.guides %}<p class="mv-guides">가이드: {% for g in M.guides %}<a href="{{ g.path }}" data-track="guide_click">{{ g.label }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+<p class="kf-need">확인 필요: {{ M.missing|join('·') }}</p>
+{% set src = [] %}
+{% if 'stops' in M.source_keys %}{% set _ = src.append('정류장·거리 ' ~ M.sources[0]) %}{% endif %}
+{% if 'timetable' in M.source_keys %}{% set _ = src.append('노선 번호 ' ~ M.sources[-1]) %}{% endif %}
+{% if M.legs %}{% set _ = src.append('대중교통 길찾기 카카오맵') %}{% endif %}
+{% if src or M.routes %}<p class="note acc-src-l">출처: {% for x in src %}<span class="nw">{{ x }}</span>{% if not loop.last or M.routes %} · {% endif %}{% endfor %}{% if M.routes %}시각 <a href="{{ M.tt.url }}" rel="noopener" data-track="official_click">{{ M.tt.source_name }}</a> — {{ M.tt.provider }}{% endif %}</p>{% endif %}
+{%- endmacro %}
+
 {#- video(v, place, linked, eager, tag): a video card — the channel's YouTube thumbnail (stored oEmbed URL, linked,
     not re-hosted) as a link to YouTube; site.js swaps in a youtube-nocookie player on press, nothing else loads
     from YouTube before that. linked: places the video shows (entities). tag 'li' inside ul.vids, 'div' elsewhere.
@@ -603,14 +677,17 @@
 {% set t = v.thumbnail or {} %}<li class="vid vl{% if v.channel_kind == 'official' %} is-official{% endif %}"><a class="vl-a" href="{{ v.url }}" rel="noopener" data-track="video_click">{% if t.url %}<img src="{{ t.url }}" width="{{ t.width or 320 }}" height="{{ t.height or 180 }}" alt="" loading="lazy" decoding="async">{% else %}<span class="vl-ph"></span>{% endif %}<span class="vl-t">{{ v.title }}</span><span class="vl-m">{{ v.channel }}{% if v.channel_kind == 'official' %} · 공식{% endif %}{% if v.published_date %} · <time datetime="{{ v.published_date }}" class="tn">{{ v.published_date|short_iso }}</time>{% endif %}</span></a>{% if linked %}<p class="vid-places">관련 장소 {% for x in linked %}<a href="{{ x._path }}">{{ x.name }}</a>{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}</p>{% endif %}</li>
 {%- endmacro %}
 
-{#- search_form(id, value, label, placeholder, live): GET /search/. live=true adds data-search (assets/search.js then
-    fetches /search/index.json and prints results into the page's [data-results] element). -#}
-{% macro search_form(id='q', value='', label='장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', placeholder=none, live=true) -%}
+{#- search_form(id, value, label, placeholder, live, note, data): GET /search/. live=true adds data-search
+    (assets/search.js then fetches /search/index.json and prints results into the page's [data-results] element).
+    note: one line under the box on what the search covers (the input's description); data: more data-* attributes
+    for search.js (present.search_form_data: concepts, region, planner). -#}
+{% macro search_form(id='q', value='', label='장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', placeholder=none, live=true, note='', data={}) -%}
 {% set placeholder = placeholder or search_hint or '장소 이름·메뉴·동 이름' %}
-<form class="search" action="/search/" method="get" role="search"{% if live %} data-search data-index="/search/index.json"{% endif %}>
+<form class="search" action="/search/" method="get" role="search"{% if live %} data-search data-index="/search/index.json"{% for k, v in data|dictsort %} data-{{ k }}="{{ v }}"{% endfor %}{% endif %}>
 <label class="search-l" for="{{ id }}">{{ label }}</label>
-<div class="search-row"><input id="{{ id }}" name="q" type="search" value="{{ value }}" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="{{ placeholder }}"><button type="submit" class="btn">찾기</button></div>
-</form>
+<div class="search-row"><input id="{{ id }}" name="q" type="search" value="{{ value }}" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="{{ placeholder }}"{% if note %} aria-describedby="{{ id }}-note"{% endif %}><button type="submit" class="btn">찾기</button></div>
+{% if note %}<p class="search-note" id="{{ id }}-note">{{ note }}</p>
+{% endif %}</form>
 {%- endmacro %}
 
 {#- ---------------------------------------------------------------- accent points (owner, 2026-10-09, after

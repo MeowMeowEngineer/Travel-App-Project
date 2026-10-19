@@ -5,6 +5,7 @@
 {% block bodyclass %}pg-guides{% endblock %}
 {% block content %}
 <header class="pg-hero">{{ artm.band((art_slots or {}).get('list.head.guides'), loc.code) }}<div class="wrap">
+<p class="hd-pic">{{ ui.kpic('guide', 'book', 64) }}</p>
 <h1 class="h-list vt-title">{{ t.f('guides_h1', r=region) }} <span class="count tn">{{ rows|length }}</span></h1>
 <p class="list-lede">{{ t.guides_lede }}</p>
 </div></header>

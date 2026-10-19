@@ -8,14 +8,18 @@ function through functions.includeFiles).
                  differ; its other names, '다른 이름'; the places of a combined ticket in its fee table, '통합권 N곳').
                  It is the cached part of the system prompt: deterministic (sorted, no build date) and under
                  CATALOG_BUDGET estimated tokens (estimate_tokens) so the whole prompt stays in the cheaper price tier.
-    docs.json    {v, site, docs: {key: {t title, k kind, e English path, u page, h heading, a other names, x text}},
+    docs.json    {v, site, docs: {key: {t title, k kind, e English path, l {hreflang: that version's path}, n {hreflang:
+                 that version's name}, u page, h heading, a other names, x text}},
                  alias, ext}: what get_pages returns. key = the page path (a guide section: the guide path + '#h-b<n>', the section's anchor on the
                  page; an /abroad/ article or a video: 'abroad:<id>' / 'video:<id>' with u = the page that lists it).
                  x = every fact with its source, the address it came from and 출처 확인일, both values where sources
                  differ, a combined ticket's places as the guides name them (ticket_lines), FAQ, nearby public parking
                  and bus stops, guide sections (a timetable chain spelled out stop by stop with the way back),
-                 course stops, event editions with programmes. alias maps an English path to its key; ext lists the
-                 outside addresses the data links to (the only outside links an answer may carry).
+                 course stops, event editions with programmes. alias maps every version's path to its key; ext lists the
+                 outside addresses the data links to (the only outside links an answer may carry); book = the
+                 예약하기 addresses the docs list (pipeline/booking.py) {url: {k service, p {hreflang: the page that
+                 version's button opens}, l {page: its language}}}: chatbot/knowledge.js links that page for a reader
+                 of that language.
     index.json   {v, docs: {key: [title tokens, body tokens]}} for search_site (tokens(): Hangul and CJK bigrams,
                  Latin / Cyrillic / digit words; api/chat.js tokenizes queries the same way).
 
@@ -32,9 +36,10 @@ import re
 import unicodedata
 from pathlib import Path
 
-from . import city, jsonld, present
+from . import booking, city, fee_table, jsonld, present, relations, tickets
+from . import locales as LC
 from .schema import FACT_LABELS, FACT_ORDER, FIT_ORDER, KIND_LABELS, designations
-from .textutil import display_address, first_sentence, squash_ws, web_url
+from .textutil import display_address, first_sentence, squash_ws, web_text, web_url
 
 CHAT_DIR = "chat"
 VERSION = 1
@@ -83,6 +88,15 @@ def estimate_tokens(text: str) -> int:
 
 
 # ---------------------------------------------------------------- small helpers
+# a month range written with the first 월 left out ('3~10월 09:00~18:00'): the model read it as days of one month in a
+# Spanish answer ('3–10 de octubre', review 2026-10-17 L08); the docs and catalog name both months ('3월~10월')
+MONTH_RANGE = re.compile(r"(?<![\d.\-/월])(1[0-2]|[1-9])\s*~\s*(1[0-2]|[1-9])월")
+
+
+def month_ranges(text: str) -> str:
+    return MONTH_RANGE.sub(r"\1월~\2월", text)
+
+
 def _clean(text) -> str:
     return squash_ws(str(text or "").replace("\n", " "))
 
@@ -289,9 +303,31 @@ class Knowledge:
         self.en_names = {}
         for p in (getattr(en, "places", {}) or {}).values():
             self.en_names[p["e"]["id"]] = p["name"]
+        # every version's twin of a Korean page, its path and name: a reader of that language opens that page and
+        # sees its name on the link card (chatbot/knowledge.js pathFor, fixLinks); ko path → {hreflang: [path, name]}
+        self.twins: dict[str, dict[str, list[str]]] = {}
+        intl = getattr(S, "intl", None)
+        for site in (intl.sites.values() if intl else [en] if en else []):
+            names = {p["e"]["_path"]: p["name"] for p in site.places.values()}
+            names.update({x["g"]["_path"]: squash_ws(x["rec"].get("title")) for x in site.guides.values()})
+            names.update({x["c"]["_path"]: squash_ws(x["rec"].get("name")) for x in site.courses.values()})
+            # an event series opens <home>events/#anchor there: its card carries the series' name in that language
+            by_slug = {x["slug"]: x for x in getattr(site, "series", None) or []}
+            names.update({sr["_path"]: squash_ws(by_slug[sr["slug"]]["rec"].get("series_name"))
+                          for sr in getattr(S, "series", None) or [] if sr["slug"] in by_slug})
+            for ko, path in {**site.event_links, **site.ko2en}.items():
+                self.twins.setdefault(ko, {})[site.loc.html] = [path, names.get(ko, "")]
+            # the site search of that version (en_site Pages.search builds <home>search/ whenever it has places; not
+            # in Site.ko2en: no hreflang or sitemap row for a noindex utility page): the chat's '사이트 검색' link
+            # opens the reader's own (QA 2026-10-15)
+            if site.places:
+                self.twins.setdefault("/search/", {})[site.loc.html] = [f"{site.home}search/", ""]
+        if en is not None and en.places:
+            self.ko2en.setdefault("/search/", f"{en.home}search/")
         self.lines: list[str] = []
         self.docs: dict[str, dict] = {}
         self.ext: set[str] = set()
+        self.book: dict[str, dict] = {}   # 예약하기 addresses the docs list: url → {k: service, p: {hreflang: page}}
         self.video_topic: dict[str, dict] = {}
         self._names: list | None = None
         self._sentences: list | None = None
@@ -307,14 +343,122 @@ class Knowledge:
             if u.startswith(("http://", "https://")) and not u.startswith(self.site):
                 self.ext.add(u)
 
+    def booking_lines(self, targets: list[dict]) -> list[str]:
+        """예약하기 (pipeline/booking.py): the official booking pages the page shows as buttons, each with the page of
+        the services in other languages and the basis in the data; kept as outside addresses (ext) and in docs.json
+        'book', where chatbot/knowledge.js turns a link to one into the reader's language page."""
+        if not targets:
+            return []
+        services = booking.registry(self.S).get("services") or {}
+        L = ["예약하기(페이지의 공식 예약 페이지 버튼 — 이 사이트와 챗봇은 예약을 받지 않는다):"]
+        for t in targets:
+            p = {}
+            for code in LC.ORDER:   # the page each version's button opens (booking.view's choice)
+                k = booking.page_lang(t["pages"], code)
+                if k:
+                    p[LC.get(code).html] = t["pages"][k]
+            # the language of each page (hreflang on the chat's card); a facility's own address: none claimed
+            hl = {} if t["key"] == booking.OWN else {t["url"]: "ko", **{u: LC.get(k).html for k, u in t["pages"].items()}}
+            if t["key"] == booking.OWN:
+                L.append(f"- 시설 자체 예약 주소({web_text(t['url'])}, 정보의 '예약 주소' 값): {t['url']}")
+            else:
+                s = services.get(t["key"]) or {}
+                other = "; ".join(f"{LC.get(k).label} 페이지 {u}" for k, u in t["pages"].items())
+                L.append(f"- {booking.service_name(t, 'ko')}: {t['url']}" + (f" ({other})" if other else "")
+                         + f" — 근거: {_clean(s.get('basis'))} (출처 확인 {_clean(s.get('checked_at'))})")
+            self.keep_url(t["url"], *t["pages"].values())
+            self.book[t["url"]] = {"k": t["key"], "p": p, **({"l": hl} if hl else {})}
+        return L
+
+    def plan_facts(self, e: dict) -> dict:
+        """What chatbot/knowledge.js checkPlan reads of a place (review 2026-10-17 G01: a plan put 0 minutes between
+        two places 5.7 km apart): its point (g), its hours (h) and closed days (c) as each source writes them — the whole
+        value, so a last entry time and the months of a season stay —, the bus routes of the stops near it (b) and its
+        dated notices still shown (n)."""
+        from . import build as B
+        out: dict = {}
+        geo = e.get("_geo") or {}
+        if isinstance(geo.get("lat"), (int, float)) and isinstance(geo.get("lng"), (int, float)):
+            out["g"] = [round(geo["lat"], 6), round(geo["lng"], 6)]
+        for slot in present.key_facts(e, "hero")["slots"]:
+            if slot["key"] not in ("hours", "closed"):
+                continue
+            row = B.fact_row(e, slot["src_key"]) if slot["src_key"] in FACT_ORDER + FIT_ORDER else None
+            if row and row["value"] and slot["key"] == "hours":
+                texts = [{"p": row["source"].get("provider", ""), "t": month_ranges(_clean(row["value"]))}]
+                texts += [{"p": a.get("provider", ""), "t": month_ranges(_clean(a["value"]))}
+                          for a in row["alternatives"] if not a["also"]]
+            else:   # closed days as the first screen splits them, and hours a combined field gives
+                texts = [{"p": v.get("provider") or slot.get("provider") or "",
+                          "t": month_ranges(", ".join(x for x in (v.get("main"), v.get("sub")) if x))}
+                         for v in (slot["vals"] or [slot])]
+            texts = [x for x in texts if x["t"]]
+            if texts:
+                out["h" if slot["key"] == "hours" else "c"] = texts
+        acc = present.access_vm(self.S, e) or {}
+        routes = sorted({r for st in acc.get("stops") or [] for r in st.get("routes") or []})
+        if routes:
+            out["b"] = routes
+        notes = []
+        for row in e.get("_notices") or []:
+            n = row["n"]
+            start = str(n.get("start") or n.get("date") or "")
+            notes.append({k: v for k, v in {"k": n["kind"], "s": start, "e": str(n.get("end") or start),
+                                             "f": n.get("from"), "t": n.get("to"), "l": n.get("last_entry")}.items() if v})
+        if notes:
+            out["n"] = notes
+        # what the course planner checks a plan's conditions with (review 2026-10-17, AI 코스 만들기 집중 평가: fees the
+        # model left out or counted twice, access the page has said to be missing): the fee value read as a table
+        # (fee_table.parse, the other sources' values beside it), the access rows as each source writes them, the own
+        # parking value and the nearest public lot, the type the indoor check reads, the check-in time
+        out["kd"] = e["kind"]
+        if e.get("_type"):
+            out["ty"] = e["_type"]
+        if e.get("_region") and city.current().island_region(e["_region"]):
+            out["isl"] = 1   # an island 권역 (site.json city.plan.island_regions): the planner's '섬·바다' liking
+        row = B.fact_row(e, "usefee")
+        if row and (row["value"] or row["alternatives"]):
+            fee = fee_table.parse(row["value"]) if row["value"] else {}
+            fee["t"] = _clean(row["value"]) if row["value"] else ""
+            fee["p"] = row["source"].get("provider", "") if row["value"] else ""
+            alt = [{"p": a.get("provider", ""), "t": _clean(a["value"])} for a in row["alternatives"] if not a["also"]]
+            if alt:
+                fee["alt"] = alt
+            out["fee"] = fee
+        access = []
+        for key in ("accessible_route", "wheelchair", "accessible_toilet", "accessible_parking", "babycarriage"):
+            row = B.fact_row(e, key)
+            if not row:
+                continue
+            if row["value"]:
+                access.append({"k": key, "t": _clean(row["value"]), "p": row["source"].get("provider", "")})
+            access += [{"k": key, "t": _clean(a["value"]), "p": a.get("provider", "")} for a in row["alternatives"] if not a["also"]]
+        if access:
+            out["ac"] = access
+        row = B.fact_row(e, "parking")
+        if row and row["value"]:
+            out["pk"] = _clean(row["value"])
+        lots = acc.get("lots") or []
+        if lots:
+            out["pkn"] = {"n": lots[0].get("name") or "", "m": lots[0].get("m")}
+        row = B.fact_row(e, "checkin")
+        if row and row["value"]:
+            out["ci"] = _clean(row["value"])
+        return out
+
     def add_doc(self, key: str, title: str, kind: str, text: str, en: str = "", page: str = "", head: str = "",
                 alt: list[str] | None = None) -> None:
-        text = text.strip()
+        text = month_ranges(text.strip())
         if len(text) > DOC_LIMIT:
             text = text[:DOC_LIMIT].rsplit("\n", 1)[0] + "\n… (이하 생략: 전체는 페이지에서)"
         doc = {"t": title, "k": kind, "x": text}
         if en:
             doc["e"] = en
+        twins = self.twins.get(key) if "#" not in key else None   # a guide section opens its guide's twin + anchor
+        if twins:
+            doc["l"] = {h: v[0] for h, v in twins.items()}
+            if any(v[1] for v in twins.values()):
+                doc["n"] = {h: v[1] for h, v in twins.items() if v[1]}
         if page:
             doc["u"] = page
         if head:   # a guide section's own heading: the title of its link card
@@ -428,6 +572,14 @@ class Knowledge:
                              f"{e['_region']} 권역" if e.get("_region") not in (None, "", present.none_label()) else "") if x]
         if where:
             L.append("위치: " + " · ".join(where))
+        # places that belong together (pipeline/relations.py): the page's own lines, so an answer about one names the other
+        parent = e.get("_parent")
+        if parent is not None and e.get("_rel") == "inside":
+            L.append(f"속한 곳: {parent['name']} {parent['_path']} (이곳은 {parent['name']} 안에 있는 곳이며 페이지가 따로 있음)")
+        for x in e.get("_same") or []:
+            L.append(f"같은 건물: {x['name']} {x['_path']} (같은 건물·시설의 다른 페이지)")
+        if e.get("_parts"):
+            L.append(f"{e['name']} 안에 있는 곳: " + "; ".join(f"{c['name']} {c['_path']}" for c in e["_parts"]))
         if e.get("summary"):
             L.append("요약: " + _clean(e["summary"]))
         for d in e.get("details") or []:
@@ -457,6 +609,8 @@ class Knowledge:
                 L.append(line)
             if k == "usefee":
                 L += self.ticket_lines(e)
+                L += tickets.place_lines(getattr(S, "tickets", None) or {}, e, self.place_ref)
+        L += self.booking_lines(booking.place_targets(S, e))
         official = e.get("official") or {}
         if tourapi and official.get("visitkorea_url"):
             L.append("한국관광공사 TourAPI 값은 API 자료다. 같은 콘텐츠의 공개 페이지: 대한민국 구석구석 "
@@ -465,6 +619,13 @@ class Knowledge:
         kf = present.key_facts(e, "hero")
         if kf["missing"]:
             L.append("사이트에 없는 값(확인 필요): " + "·".join(kf["missing"]))
+        # dated notices of the facility (pipeline/notices.py; only those still shown, i.e. until ≥ the build date): a
+        # question about one of these dates is answered from them, with the provider's post as the link
+        for row in e.get("_notices") or []:
+            n = row["n"]
+            L.append(f"- 날짜별 공지: {row['text']} — {_src({'provider': n['provider'], 'checked_at': n['checked_at']}, n['url'])}"
+                     f" (이 공지는 {n['until']}까지 표시; 그 밖의 날은 위 이용시간·쉬는 날)")
+            self.keep_url(n["url"])
         for d in designations(e):
             L.append(f"- 지정: {d['label']} (출처: {_clean(d.get('source_name'))} {d.get('url') or ''})".rstrip())
             self.keep_url(d.get("url"))
@@ -481,8 +642,9 @@ class Knowledge:
                     f"{s['name']} {s['m']}m" + (f" (노선 {s['routes_text']})" if s["routes_text"] else "") for s in acc["stops"]))
             L.append("출처: " + "; ".join(self._access_source(name) for name in acc["sources"]))
         near = []
-        for n in e.get("nearby") or []:
-            t = S.ent_by_slug.get(n.get("internal_slug") or "") or S.ent_by_cid.get(str(n.get("contentid")))
+        target = lambda n: S.ent_by_slug.get(n.get("internal_slug") or "") or S.ent_by_cid.get(str(n.get("contentid")))  # noqa: E731
+        for n in relations.keep_rows(e, e.get("nearby") or [], target):   # never its own family (relations.py)
+            t = target(n)
             if t and n.get("distance_m"):
                 near.append(f"{t['name']} {t['_path']} 직선 {present.dist(n['distance_m'])}")
         if near:
@@ -506,6 +668,14 @@ class Knowledge:
             L.append("공식 링크: " + "; ".join(f"{lab} {u}" for lab, u in links))
             self.keep_url(*(u for _, u in links))
         self.add_doc(e["_path"], e["name"], "place", "\n".join(L), en, alt=alt)
+        facts = self.plan_facts(e)
+        if facts:
+            self.docs[e["_path"]]["f"] = facts
+
+    def place_ref(self, pid: str) -> dict:
+        """{name, path} of a place id (the id and no path when it has no page here)."""
+        e = next((x for x in self.S.entities if x["id"] == pid), None)
+        return {"name": e["name"], "path": e["_path"]} if e else {"name": pid, "path": ""}
 
     # -- places named in sentences, and the combined tickets
     def names(self) -> list[tuple[str, str, dict]]:
@@ -696,6 +866,7 @@ class Knowledge:
         L.append(dates)
         if timetables:
             L.append("시간표 시행일: " + "; ".join(timetables))
+        L += self.booking_lines(booking.guide_targets(S, g))   # before the body: a long guide is cut at DOC_LIMIT
         at = next((i for i, b in enumerate(body, 1) if _chain_lines(_clean(b.get("text")))), 0)
         if at:   # the summary names stop times too ('○○ 기준 시각은 …'): how to read them, and where they are spelled out
             L.append(f"시각 읽는 법: '○○ 기준 시각'은 버스가 그 정류장에 오는 시각이라 그 정류장에서 타는 시각이고, 그 정류장으로 "
@@ -746,18 +917,51 @@ class Knowledge:
         parts = [f"C {c['_path']}", head, f"경유지 {len(stops)}곳: " + " > ".join(stops), cv.get("closed_note") or ""]
         L = [f"{head} — 여행 코스", "요약: " + _clean(cv.get("lede"))]
         for r in cv["rows"]:
+            if r["sep"] and r["kind"] == "day":   # the source's day / option heading (1일차, 2일차(1안) …)
+                L.append(f"[{r['kind_label']}]")
+                continue
             if r["sep"]:
                 L.append(f"  ({r['kind_label']}: {r['name']}{' — ' + r['note'] if r.get('note') else ''})")
                 continue
             nxt = f" → 다음 경유지까지 직선 {present.dist(r['next_m'])}" if r.get("next_m") else ""
             L.append(f"{r['n']}. {r['name']}{' ' + r['path'] if r['path'] else ''}"
-                     f"{' (원문 표기: ' + r['label'] + ')' if r.get('label') else ''}{' — ' + r['note'] if r.get('note') else ''}{nxt}")
+                     f"{' (원문 표기: ' + r['label'] + ')' if r.get('label') else ''}{' (선택 경유지)' if r.get('optional') else ''}"
+                     f"{' — ' + r['note'] if r.get('note') else ''}{nxt}")
+        if cv.get("taketime"):
+            tk = cv["taketime"]
+            L.append(f"소요시간(코스 원문): {tk['value']} — {tk.get('source_name', '')} {tk.get('source_url', '')}".rstrip())
         if cv.get("show_total"):
             L.append(f"경유지 사이 직선거리 합: {present.dist(cv['total'])} ({cv['measure_note']}, 실제 이동 거리 아님)")
-        if any(r.get("next_m") for r in cv["rows"]):
-            L.append("이동: 경유지 사이 값은 직선거리다. 걷는 길, 탈 버스, 걸리는 시간은 이 코스 자료에 없다(이동 미확인).")
+        # 차 없이 다니기 (present.course_move, QA 2026-10-15 F09): where the course starts and ends, the nearest stops and
+        # routes, the timetable's first and last buses of those routes, the guides; never a travel time of our own
+        mv = present.course_move(self.S, cv) or {}
+        if mv.get("lead"):
+            L.append("차 없이: 출발·끝 경유지 근처 버스 정류장(직선거리) — " + "; ".join(
+                f"{r['s']['name']}: " + ", ".join(f"'{b['name']}' {b['m']}m" + (f" 시내버스 {b['routes_text']}번" if b["routes"] else "")
+                                                for b in r["bus"]) for r in mv["lead"]))
+        for R in mv.get("routes") or []:
+            fmt = lambda ts, k: ", ".join(f"{t['stop']} {t[k]}({t[k + '_n']}회)" for t in ts)
+            line = f"시내버스 {R['no']}번 첫차~막차(시간표 기준 정류장): 평일 가는 편 {fmt(R['out'], 'weekday')}"
+            line += f", 돌아오는 편 {fmt(R['back'], 'weekday')}" if R["back"] else ""
+            line += "; 토·일·공휴일 같음" if R["same"] else (f"; 토·일·공휴일 가는 편 {fmt(R['out'], 'weekend')}"
+                                                         + (f", 돌아오는 편 {fmt(R['back'], 'weekend')}" if R["back"] else ""))
+            for t in R["alts"]:
+                line += (f"; {t['stop']}: 시간표 {t['every']}, {t['alt']['provider']} {t['alt']['value']} — 출처마다 다름, "
+                         f"방문 전 전화 확인 {mv.get('tel', '')}")
+            L.append(line)
+        if mv.get("routes"):
+            tt = mv["tt"]
+            L.append(f"시각 출처: {tt.get('source_name', '')} — {tt.get('provider', '')} {tt.get('url', '')} ({tt.get('checked_at', '')} 확인)")
+            self.keep_url(tt.get("url"))
+        if mv.get("legs"):
+            L.append(f"경유지 사이 대중교통 길찾기: 잰 구간 {len(mv['legs'])}곳마다 카카오맵 대중교통 길찾기 링크가 페이지에 있다(경로와 시간은 지도 앱이 계산).")
+        if mv.get("guides"):
+            L.append("차 없이 다니는 법 가이드: " + ", ".join(f"{g['label']} {g['path']}" for g in mv["guides"]))
+        L.append("이동: 경유지 사이 값은 직선거리다. 구간별 소요시간" + ("은 자료에 없다(이동 미확인)." if cv.get("taketime")
+                                                         else "·총 소요시간은 자료에 없다(이동 미확인)."))
         if cv.get("closed_note"):
             L.append(f"쉬는 날 주의: {cv['closed_note']}")
+        L += self.booking_lines(booking.course_targets(self.S, c))
         if cv.get("orig_url"):
             L.append(f"출처: {cv['orig_name']} {cv['orig_url']}")
             self.keep_url(cv["orig_url"])
@@ -916,6 +1120,8 @@ class Knowledge:
             out.append(SEP.join(p for p in (f"S {path}", line) if p))
             self.add_doc(path, line.split(":")[0].split(" — ")[0], "page", line + (f"\n{extra}" if extra else ""), en)
         self.about_doc()
+        if site.get("emergency"):
+            out.append(self.emergency(site["emergency"]))
         return out
 
     def source_names(self) -> str:
@@ -923,6 +1129,31 @@ class Knowledge:
         S = self.S
         names = [*([(S.site.get("source") or {}).get("name", "")] if S.source_used else []), "한국관광공사 TourAPI"]
         return "·".join(n for n in names if n)
+
+    def emergency(self, em: dict) -> str:
+        """The emergency numbers the about pages list (#emergency; site.json emergency, operator 2026-10-15): one short
+        catalog line without addresses (prompt rule 14 answers from it at once, without a tool) and a doc with each
+        number's source, the address it came from and 출처 확인일, and the words a reader may search with."""
+        src = em.get("sources") or {}
+        checked = em.get("checked_at") or ""
+        nums = ", ".join(f"{x['tel']} {x['ko']}" + (f" 해외 {x['abroad']}" if x.get("abroad") else "")
+                         for x in em.get("lines") or [])
+        phrases = "·".join(f"'{p}'" for p in em.get("phrases") or [])
+        line = SEP.join(["S /about/#emergency", f"긴급 연락처(출처 확인 {checked}): {nums}"
+                         + (f"; 통역: 연결 뒤 {phrases}" if phrases else "")])
+        L = ["긴급 연락처 — 여행 중 위급할 때(사람이 쓰러짐·다침·화재·범죄·물에 빠짐·아이를 잃어버림) 바로 전화",
+             "페이지: /about/#emergency (언어판마다 같은 절이 있다)"]
+        for x in em.get("lines") or []:
+            s = src.get(x.get("src")) or {}
+            L.append(f"- {x['tel']}: {x['ko']}" + (f" — 해외에서 걸 때 {x['abroad']}" if x.get("abroad") else "")
+                     + f" — {s.get('provider', '')} {s.get('url', '')} (출처 확인 {checked})")
+        for x in em.get("steps") or []:
+            s = src.get(x.get("src")) or {}
+            L.append(f"- {x['ko']} — {s.get('provider', '')} {s.get('url', '')} (출처 확인 {checked})")
+        L.append("이 사이트는 응급처치·의료 안내를 하지 않는다. 찾는 말: 응급, 구급차, 긴급, 경찰, 소방, 통역, 신고")
+        self.keep_url(*(s.get("url") for s in src.values()))
+        self.add_doc("/about/#emergency", "긴급 연락처", "page", "\n".join(L), self.en_path("/about/"), head="긴급 연락처")
+        return line
 
     def about_doc(self) -> None:
         S = self.S
@@ -942,7 +1173,9 @@ class Knowledge:
              "사진: 한국관광공사 TourAPI의 공공누리 제1·3유형만, 출처와 함께. 제3유형은 자르거나 보정하지 않는다.",
              "거리: 코스·가이드·주변 목록의 거리는 모두 좌표 사이의 직선거리다.",
              "사이트 안내 챗봇(/about/#chatbot): 이 사이트에 실린 정보로만 답하고 답마다 페이지 링크를 단다. 모델은 Anthropic의 "
-             "Claude Haiku 5.5. AI 답은 틀릴 수 있어 방문 전 확인이 필요하다. 예약·결제·회원가입은 하지 않는다.",
+             "Claude Haiku 5.5. AI 답은 틀릴 수 있어 방문 전 확인이 필요하다. 예약·결제·회원가입은 하지 않고, 공식 예약 페이지 "
+             "링크만 단다.",
+             "예약하기: " + LC.BOOK_WORDS["ko"]["about"],
              "챗봇이 보내고 남기는 것: ① 브라우저 — 대화는 이 탭(sessionStorage)에만 남고, '새 대화'를 누르거나 탭을 닫으면 "
              "지워진다. ② 이 사이트의 서버 함수(/api/chat/) — 질문할 때마다 새 질문과 그 앞의 대화(최근 12개 메시지, 이전 답은 "
              "2,000자까지), 보고 있는 페이지 주소, 화면 언어를 받는다. 대화를 저장하지 않고, 서버 기록에는 처리 상태와 사용량 "
@@ -955,15 +1188,23 @@ class Knowledge:
 
     # -- output
     def catalog(self) -> str:
-        return "\n".join(self.lines).rstrip("\n") + "\n"
+        return month_ranges("\n".join(self.lines).rstrip("\n")) + "\n"
 
     def docs_json(self) -> dict:
         alias = {}
         for key, d in self.docs.items():
-            if d.get("e") and "#" not in key and d["e"] not in alias:
-                alias[d["e"]] = key
-        return {"v": VERSION, "site": self.site, "docs": dict(sorted(self.docs.items())),
-                "alias": dict(sorted(alias.items())), "ext": sorted(self.ext)}
+            if "#" in key:
+                continue
+            for path in [d.get("e"), *(d.get("l") or {}).values()]:
+                if path and path not in alias:
+                    alias[path] = key
+        out = {"v": VERSION, "site": self.site, "docs": dict(sorted(self.docs.items())),
+               "alias": dict(sorted(alias.items())), "ext": sorted(self.ext), "book": dict(sorted(self.book.items()))}
+        # the combined tickets' tables for the fee_total tool (pipeline/tickets.py; chatbot/knowledge.js feeTotal)
+        data = getattr(self.S, "tickets", None) or {}
+        if data.get("tickets"):
+            out["tickets"] = tickets.export(data, self.place_ref)
+        return out
 
     def index_json(self) -> dict:
         out = {}
@@ -974,6 +1215,9 @@ class Knowledge:
             # a place's other names count as its title: a museum's other name finds the building's page first
             alt = next((x[len("다른 이름: "):] for x in lines[1:3] if x.startswith("다른 이름: ")), "")
             head += [t for t in tokens(alt) if t not in head]
+            # its names on the other versions of the site: a Japanese or a German name find the page as its
+            # Korean name does (review 2026-10-17 E03: 10 of 16 such names missed the top 8)
+            head += [t for t in tokens(" ".join((d.get("n") or {}).values())) if t not in head]
             # web addresses (sources, official links) are not words a reader searches for: 'tour', 'view', '305395'
             body = [t for t in tokens(URL_RX.sub(" ", d["x"])) if t not in set(head)]
             out[key] = [" ".join(head), " ".join(body)]
@@ -985,15 +1229,17 @@ def dumps(obj) -> str:
 
 
 def site_json(S) -> dict:
-    """The site the assistant answers for (chatbot/site.js): the public address, the site's name, the city's name in
-    each language (site.json city.chat.names; Korean defaults to the region) and the further origins the owner allows
-    (city.chat.origins)."""
+    """The site the assistant and the planner answer for (chatbot/site.js): the public address, the site's name, the
+    city's name in each language (site.json city.chat.names; Korean defaults to the region), the further origins the
+    owner allows (city.chat.origins) and the planner's hubs (city.plan.hubs)."""
     chat = city.current().get("chat", {}) or {}
     names = {k: str(v) for k, v in (chat.get("names") or {}).items() if str(v).strip()}
     if S.site.get("region") and "ko" not in names:
         names["ko"] = S.site["region"]
     return {"url": S.site_url, "name": S.site.get("site_name", ""), "city": names,
-            "origins": [str(o) for o in chat.get("origins") or [] if str(o).strip()]}
+            "origins": [str(o) for o in chat.get("origins") or [] if str(o).strip()],
+            # the AI course planner's start and end points (city.plan.hubs; chatbot/plan_prompt.js) — none: no hub
+            "hubs": {h["key"]: h["name"] for h in city.current().plan["hubs"]}}
 
 
 def export(S, out: Path) -> dict:

@@ -20,14 +20,15 @@
 {% block main_class %}{% endblock %}
 {% block lnav %}
 {% set links = [] %}
+{% if G.booking %}{% set _ = links.append((G.bw.nav, '#h-book')) %}{% endif %}
 {% if G.route %}{% set _ = links.append(('걷는 순서', '#h-route')) %}{% endif %}
 {% if G.places %}{% set _ = links.append(('장소', '#h-items')) %}{% endif %}
 {% if G.faqs %}{% set _ = links.append(('질문', '#h-faq')) %}{% endif %}
 {% set _ = links.append(('출처', '#h-src')) %}
 {% if G.route %}{% set cta = {'url': '#h-route', 'label': '걷는 순서'} %}
-{% elif has_courses %}{% set cta = {'url': '/courses/', 'label': '코스 보기', 'track': 'course_click'} %}
+{% elif has_courses %}{% set cta = {'url': '/courses/', 'label': '추천 코스', 'track': 'course_click'} %}
 {% else %}{% set cta = none %}{% endif %}
-{{ ui.lnav(G.label or G.title, links, cta) }}
+{{ ui.lnav(G.label or G.title, links, cta, share={'id': G.g.id, 'lang': 'ko'}) }}
 {% endblock %}
 {% block content %}
 {% macro credit_ko(cards) -%}
@@ -62,6 +63,8 @@
       </div>
       {% endif %}
     </div>
+    {#- 예약하기: the booking services the guide cites (pipeline/booking.py guide_targets), after the answer card -#}
+    {{ ui.book(G.booking, G.bw, '', true) }}
   </div>
   </header>
 

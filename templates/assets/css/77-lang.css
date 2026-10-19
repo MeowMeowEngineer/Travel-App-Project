@@ -24,9 +24,10 @@
 .lang-menu .mast-lang:hover { background: var(--bg-2); color: var(--ink); text-decoration: none; }
 .lang-menu .mast-lang[aria-current] { font-weight: 700; }
 .lang-menu .mast-lang[aria-current]::after { content: ""; width: 7px; height: 7px; margin-left: auto; padding-left: 0; border-radius: 50%; background: var(--blue); }
-html:not(.is-scrolled) .pg-en-home .mast .lang-btn { color: #fff; }
-html:not(.is-scrolled) .pg-en-home .mast:has(.menu[open]) .lang-btn { color: var(--ink); }   /* the phone menu turns the bar white */
-html:not(.is-scrolled) .pg-en-home .mast .lang-menu .lang-list a.mast-lang { color: var(--ink); }   /* beats 46-hero's :is() list */
+/* a version without this page: its item links that version's list (or home) and says so under the name ('Guides ·
+   not translated', Intl.menu) — in the menu, the phone panel (.menu-sub) and the footer; same color as the name */
+:is(.lang-menu .mast-lang, .menu-panel li a, .foot-col a, a):has(> .lang-note) { flex-direction: column; align-items: flex-start; justify-content: center; white-space: normal; padding-block: 6px; }
+.lang-note { display: block; font-size: 12px; line-height: 1.3; font-weight: 400; letter-spacing: 0; }
 @media (max-width: 1023px) {
   .lang-btn { justify-content: center; padding: 0; }
   .lang-cur { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -45,6 +46,8 @@ html:not([lang="ko"]):not([lang="en"]) .kf-alt .kf-sub { display: block; margin:
 .lang-list :is(:lang(ko), :lang(en), :lang(de), :lang(fr), :lang(es), :lang(ru)) { --font: 'Pretendard', 'Pretendard Fallback Noto', 'Pretendard Fallback WQY', 'Pretendard Fallback Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
 html:is([lang="ja"], [lang="zh-Hans"], [lang="zh-Hant"]) body { word-break: normal; line-break: strict; }
 html:is([lang="ja"], [lang="zh-Hans"], [lang="zh-Hant"]) [lang="ko"] { word-break: keep-all; }
+/* a chapter's rail heading ('トングク寺の周辺と関連情報') breaks between Japanese phrases, never inside a word (Chromium) */
+html[lang="ja"] .rail-label { word-break: auto-phrase; }
 /* German, French, Spanish, Russian prose: hyphenate long words instead of leaving ragged gaps */
 :is(:lang(de), :lang(fr), :lang(es), :lang(ru)) :is(p, li, dd, h1, h2, h3) { hyphens: auto; -webkit-hyphens: auto; }
 

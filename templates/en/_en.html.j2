@@ -11,6 +11,7 @@
     kfv(s, more_href, compact, place) · kf(K, cls, place) · kfnote(K, place) · kfrows(K, place) ·
     route(R, place, nm) · factrow(r, fn, place) · notes(items, place) · chnotes(items, place) · faq(items, ns) ·
     mapfig(data, label, cls, caption) · card(c, cls, sizes, track) · ko(name) · nm(name) · sup(n) · csup(n) ·
+    week(W, hid, title, cw) · move(M, cw) (a course's closed-day grid and '차 없이 다니기', QA 2026-10-15 F09) ·
     dzchips(ds, place) · dzrow(ds, place) (official designations, Site.designations: the chips under the answer, each
     linking to its list, and the facts card's 'Designations' row with each list's name as a link — dd
     data-key="designations"). No checked, reviewed, collected or translated dates on any page (operator decision
@@ -46,20 +47,27 @@
 {#- key facts: slots from Site.key_facts — {key, label, main, sub, more, closed, conflict, vals [{provider, main, sub,
     closed}], tel, missing} -#}
 {% macro kfv(s, more_href='', compact=false, place='') -%}
-{% if s.missing %}<span class="kf-na">{{ t.not_listed }}</span>
+{% if s.missing %}<span class="kf-na">{{ t.not_listed }}</span>{% if s.sub %}<span class="vh"> · </span><span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}
 {%- elif s.conflict %}{% for v in s.vals %}<span class="kf-alt"><span class="kf-src">{{ v.provider }}</span> <span class="kf-main tn{% if v.closed %} closed{% endif %}">{{ v.main|nwt }}</span>{% if v.sub and not compact %} <span class="kf-sub tn">{{ v.sub|nwt }}</span>{% endif %}</span>{% endfor %}
 {%- else %}<span class="kf-main tn{% if s.closed %} closed{% endif %}">{% if s.key == 'tel' and s.tel %}<a class="tel" href="tel:{{ s.tel }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.main }}</a>{% else %}{{ s.main|nwt }}{% endif %}</span>{% if s.sub %}<span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}{% if s.more %}{% if more_href %} <a class="kf-more" href="{{ more_href }}">{{ t.more_down }}</a>{% else %} <span class="kf-more">{{ t.more }}</span>{% endif %}{% endif %}
 {%- endif %}
 {%- endmacro %}
 
+{#- kf: the first-screen tiles as on the Korean page (ui.kf): on the place opening (kf-hero) each label with its small
+    3D picture (ui.FACT_PIC) -#}
 {% macro kf(K, cls='', place='') -%}
-{% if K.slots %}<dl class="kf{% if cls %} {{ cls }}{% endif %}">{% for s in K.slots %}<div class="kf-i kf-{{ s.key }}{% if s.conflict %} is-conflict{% endif %}"><dt>{{ s.label }}</dt><dd>{{ kfv(s, '#h-facts', false, place) }}</dd></div>{% endfor %}</dl>{% endif %}
+{% set hero = 'kf-hero' in cls %}{% if K.slots %}<dl class="kf{% if cls %} {{ cls }}{% endif %}">{% for s in K.slots %}<div class="kf-i kf-{{ s.key }}{% if s.conflict %} is-conflict{% endif %}"><dt>{% if hero and s.key in ui.FACT_PIC %}{{ ui.kpic(ui.FACT_PIC[s.key][0], ui.FACT_PIC[s.key][1], 32) }}{% endif %}{{ s.label }}</dt><dd>{{ kfv(s, '#h-facts', false, place) }}</dd></div>{% endfor %}</dl>{% endif %}
 {%- endmacro %}
 
 {% macro kfnote(K, place='') -%}
 {% if K.conflict %}{% set labs %}{% for s in K.slots if s.conflict %}{{ s.label }}{% if not loop.last %}{{ loc.list_sep }}{% endif %}{% endfor %}{% endset %}<p class="kf-call"><span class="flag">{{ t.f('kf_differ', labels=labs) }}</span> · {{ t.call_before }}{% if K.tel and K.tel[1] %} <a class="tel" href="tel:{{ K.tel[1] }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ K.tel[0] }}</a>{% endif %}</p>{% endif %}
 {% if K.missing %}<p class="kf-need">{{ t.f('not_listed_list', items=K.missing|join(loc.list_sep)) }}</p>{% endif %}
 {% if K.providers %}<p class="kf-prov">{{ t.f('sources_list', items=K.providers|join(loc.list_sep)) }}</p>{% endif %}
+{%- endmacro %}
+
+{#- notices(v.notices): the facility's dated notices as on the Korean page (p1.notices), in this version's fixed words -#}
+{% macro notices(items, place='') -%}
+{% for n in items %}{% set link %}<a href="{{ n.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ n.provider }}</a>{% endset %}<p class="kf-ntc" data-notice="{{ n.id }}"><span class="ntc-k">{{ t.notice }}</span> {{ n.text }} · {{ t.f('source_is', name=link) }}</p>{% endfor %}
 {%- endmacro %}
 
 {% macro kfrows(K, place='') -%}
@@ -80,10 +88,12 @@
 
 {#- factrow(r, fn, place): <dd data-key> holds the whole value as one run of text (line breaks kept), so the JSON-LD
     that repeats it and pipeline.validate read it whole. A conflict prints each source's value under its name, then
-    the record's note and the call number. -#}
+    the record's note and the call number. Call links dial the +82 form (telx); a contact row adds the '+82 …' form of
+    each number that answers from abroad after the whole value (never inside it: the value stays one run). -#}
 {% macro val(r, text, place='') -%}
 {% if r.url %}<a href="{{ r.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ text }}</a>
-{%- elif r.key in ('infocenter', 'reservation') %}{% for line in text.split('\n') %}{{ line|tel(place) }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+{%- elif r.html %}{{ r.html }}
+{%- elif r.key in ('infocenter', 'reservation') %}{% for line in text.split('\n') %}{{ line|telx(place) }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% set xs = text|intl_forms %}{% if xs %} <span class="tel-intl tn">{% for x in xs %}<span class="nw">{{ x }}</span>{% if not loop.last %}{{ loc.list_sep }}{% endif %}{% endfor %}</span>{% endif %}
 {%- else %}{{ text|nl2br }}{% endif %}
 {%- endmacro %}
 {% macro factrow(r, fn=true, place='', address_ko='') -%}
@@ -129,19 +139,97 @@
 
 {% macro faq(items, ns=[], place='') -%}
 <div class="faq">{% for f in items %}
-<div class="qa"><h3>{{ f.q }}</h3><p>{{ f.a }}{% if ns|length > 1 %}{{ csup(f.n) }}{% endif %}</p></div>
+<div class="qa"><h3>{{ f.q }}</h3><p>{{ f.a|telx_faq(place) }}{% if ns|length > 1 %}{{ csup(f.n) }}{% endif %}</p></div>
 {% endfor %}</div>
 {{ chnotes(ns, place) }}
 {%- endmacro %}
 
 {#- mapfig: the map box; the other versions also give map.js their words (data-words: zoom buttons, 'whole course',
-    the failure line) — English is map.js's own -#}
-{% macro mapfig(data, label, cls='', caption='', credit=true) -%}
+    the failure line) — English is map.js's own. geo_forms (a list map): the caption's plural forms ({n}), so site.js
+    keeps its count in step with the list's filter ([data-geo-cap]); tail: markup after the caption (a list map's places
+    without coordinates, _filters.off_map) -#}
+{% macro mapfig(data, label, cls='', caption='', credit=true, geo_forms=none, tail='') -%}
 {% set json = (data|tojson_attr)|replace('&', '&amp;')|replace("'", '&#39;')|replace('<', '&lt;')|replace('>', '&gt;') %}
 <figure class="mapfig{% if cls %} {{ cls }}{% endif %}">
-<div class="map" role="region" aria-label="{{ label }}" data-points='{{ json|safe }}'{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-lenis-prevent{% if loc.code != 'en' %} data-words="{{ t.map_words() }}"{% endif %}><p class="map-off">{{ t.map_loading }}</p></div>
-<figcaption>{% if caption %}{{ caption }}{% if credit %} · {% endif %}{% endif %}{% if credit %}{{ t.map_credit }}{% endif %}</figcaption>
+<div class="map" role="region" aria-label="{{ label }}" data-points='{{ json|safe }}'{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-lenis-prevent{% if loc.code != 'en' %} data-words="{{ t.map_words() }}"{% endif %}><p class="map-off">{{ t.map_text }}</p></div>
+<figcaption>{% if caption %}{% if geo_forms %}<span data-geo-cap data-forms="{{ geo_forms|tojson_attr }}">{{ caption }}</span>{% else %}{{ caption }}{% endif %}{{ tail }}{% if credit %} · {% endif %}{% endif %}{% if credit %}{{ t.map_credit }}{% endif %}</figcaption>
 </figure>
+{%- endmacro %}
+
+{#- week(W, hid, title, cw): ui.week in this language (QA 2026-10-15 F09-a; en_site.Site.course_week) — places ×
+    Monday–Sunday from the Korean parse, red squares only where the source names a weekly closed day; the text column
+    is this version's closed-day value, a contested one the version's sources-differ note. cw = locales.COURSE_WORDS. -#}
+{% macro week(W, hid, title, cw) -%}
+<section class="week" aria-labelledby="{{ hid }}">
+<div class="week-head"><h2 id="{{ hid }}" class="h-sec">{{ title }}</h2>
+<p class="week-sum">{% for i, n in W.per_day %}{% if n %}<span class="ws"><i class="sq" aria-hidden="true"></i>{{ cw.wd_short[i] }} <b class="tn">{{ n }}</b></span>{% endif %}{% endfor %}</p></div>
+<div class="week-scroll"><table class="wk">
+<thead><tr><th scope="col" class="wk-name">{{ cw.place }}</th>{% for d in cw.wd_short %}<th scope="col" class="wk-d">{{ d }}</th>{% endfor %}<th scope="col" class="wk-src">{{ cw.src_col }}</th></tr></thead>
+<tbody>
+{% for r in W.rows %}
+<tr><th scope="row" class="wk-name">{% if r.path %}<a href="{{ r.path }}">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}</th>
+{% for c in r.cells %}<td class="wk-d{% if c %} wk-{{ c }}{% endif %}">{% if c == 'closed' %}<i class="sq" aria-hidden="true"></i><span class="vh">{{ cw.closed_on.format(day=loc.weekdays[loop.index0]) }}</span>{% elif c == 'partial' %}<i class="sq sq-part" aria-hidden="true"></i><span class="vh">{{ cw.partial }}</span>{% elif c == 'na' %}<span class="vh">{{ t.not_listed }}</span>{% endif %}</td>{% endfor %}
+<td class="wk-src">{% if r.contested %}<span class="flag">{{ loc.conflict }}</span>{% elif r.text %}{{ r.text }}{% elif not r.stated %}<span class="muted">{{ t.not_listed }}</span>{% endif %}</td></tr>
+{% endfor %}
+</tbody></table></div>
+<p class="note wk-key"><span><i class="sq" aria-hidden="true"></i>{{ cw.key_closed }}</span>{% if W.partial %}<span><i class="sq sq-part" aria-hidden="true"></i>{{ cw.key_partial }}</span>{% endif %}<span>{{ cw.key_blank }}</span>{% if W.na %}<span><i class="wk-na-key" aria-hidden="true"></i>{{ cw.key_na }}</span>{% endif %}</p>
+</section>
+{%- endmacro %}
+
+{#- move(M, cw): ui.move in this language (QA 2026-10-15 F09; en_site.Site.course_move) — bus-stop and timetable
+    stop names stay Korean (lang="ko") with their romanization; every measured leg links Google Maps public-transport
+    directions between the two stored coordinates (the map computes route and time); never a time of our own. -#}
+{% macro stopname(s) -%}{{ ko(s.ko) }}{% if s.rr %} ({{ s.rr }}){% endif %}{%- endmacro %}
+{% macro mvbus(r, cw) -%}
+<li data-for="{{ r.id }}">
+<p class="acc-h"><span class="tn mv-n">{{ r.n }}</span> {% if r.path %}<a href="{{ r.path }}" data-track="nearby_click" data-place="{{ r.id }}">{{ r.name }}</a>{% else %}{{ r.name }}{% endif %}</p>
+{% for b in r.bus %}<p class="acc-s" data-bus="{{ b.name }}" data-for="{{ r.id }}">{{ stopname(b.stop) }} {{ cw.stop_word }} · <span class="tn">{{ loc.dist(b.m) }}</span>{% if b.routes %} · {{ cw.city_bus.format(routes=b.routes_text) }}{% endif %}</p>{% endfor %}
+</li>
+{%- endmacro %}
+{% macro mvtimes(ts, k) -%}
+{% for x in ts %}{{ stopname(x.stop) }} <span class="tn">{{ x[k] }}</span> ({{ x[k ~ '_n'] }}){% if not loop.last %}{{ loc.list_sep }}{% endif %}{% endfor %}
+{%- endmacro %}
+{% macro mvroute(R, M, cw) -%}
+<li data-route="{{ R.no }}">
+<p class="acc-h">{{ cw.bus_no.format(no=R.no) }}</p>
+<p class="acc-s">{{ cw.same_all if R.same else cw.weekdays }} · {{ cw.out }} {{ mvtimes(R.out, 'wd') }}{% if R.back %} · {{ cw.back }} {{ mvtimes(R.back, 'wd') }}{% endif %}</p>
+{% if not R.same %}<p class="acc-s">{{ cw.weekend }} · {{ cw.out }} {{ mvtimes(R.out, 'we') }}{% if R.back %} · {{ cw.back }} {{ mvtimes(R.back, 'we') }}{% endif %}</p>{% endif %}
+{% for a in R.alts %}<p class="acc-s acc-call"><span class="flag">{% set st %}{{ stopname(a.stop) }}{% endset %}{{ (cw.differ|safe).format(dir=cw.out if a.dir == 'out' else cw.back, stop=st) }}</span> {{ cw.tt_two.format(a=a.every_l, provider=a.provider, b=a.alt_l) }} · {{ t.call_before }} {{ M.tel|telx }}</p>{% endfor %}
+</li>
+{%- endmacro %}
+{% macro move(M, cw) -%}
+<h2 id="h-move" class="h-sec">{{ cw.move_h }}</h2>
+<div class="acc-cols">
+{% if M.lead %}
+<div class="acc-g">
+<h3 class="h-sub">{{ cw.bus_h }} <span class="acc-r">{{ cw.bus_r.format(m=M.bus_radius) }}</span></h3>
+<ol class="acc-list mv-bus">{% for r in M.lead %}{{ mvbus(r, cw) }}{% endfor %}</ol>
+{% if M.rest %}<details class="nb-more mv-more"><summary>{{ cw.more_bus.format(n=M.rest|length) }}</summary>
+<ol class="acc-list mv-bus">{% for r in M.rest %}{{ mvbus(r, cw) }}{% endfor %}</ol></details>{% endif %}
+</div>
+{% endif %}
+{% if M.legs %}
+<div class="acc-g">
+<h3 class="h-sub">{{ cw.legs_h }} <span class="acc-r">{{ cw.legs_r }}</span></h3>
+<ol class="acc-list mv-legs">{% for l in M.legs %}
+<li data-leg="{{ l.a.n }}-{{ l.b.n }}">
+<p class="acc-h"><span class="tn mv-n">{{ l.a.n }}</span> {{ l.a.place_name or l.a.name }} → <span class="tn mv-n">{{ l.b.n }}</span> {{ l.b.place_name or l.b.name }}</p>
+<p class="acc-d tn">{{ M.leg_word.format(d=loc.dist(l.d)) }}</p>
+<p class="acc-s"><a href="{{ l.url }}" rel="noopener" data-track="route_click" data-provider="google_transit">{{ cw.transit_link }}</a>{% if l.guide %} · <a href="{{ l.guide.path }}" data-track="guide_click">{{ cw.guide.format(name=l.guide.name) }}</a>{% endif %}</p>
+</li>{% endfor %}</ol>
+</div>
+{% endif %}
+</div>
+{% if M.routes %}
+{% set top = M.routes|selectattr('no', 'equalto', '99')|list %}{% set others = M.routes|rejectattr('no', 'equalto', '99')|list %}
+<h3 class="h-sub mv-tt-h">{{ cw.tt_h }} <span class="acc-r">{{ cw.tt_r }}</span></h3>
+{% if top %}<ul class="acc-list mv-tt">{% for R in top %}{{ mvroute(R, M, cw) }}{% endfor %}</ul>{% endif %}
+{% if others %}<details class="nb-more mv-more"><summary>{{ (cw.routes_more if top else cw.routes_all).format(nos=others|map(attribute='no')|join('·')) }}</summary>
+<ul class="acc-list mv-tt">{% for R in others %}{{ mvroute(R, M, cw) }}{% endfor %}</ul></details>{% endif %}
+{% endif %}
+{% if M.guides %}<p class="mv-guides">{{ cw.guides_h }}: {% for g in M.guides %}<a href="{{ g.path }}" data-track="guide_click">{{ g.name }}</a>{% if not loop.last %}{{ loc.list_sep }}{% endif %}{% endfor %}</p>{% endif %}
+<p class="kf-need">{{ t.f('not_listed_list', items=M.missing|join(loc.list_sep)) }}</p>
+{% if M.src_stops or M.routes or M.legs %}<p class="note acc-src-l">{% if M.src_stops %}{{ cw.src_bus.format(stops=M.src_stops, tt=M.src_tt) }}{% endif %}{% if M.routes %}{% if M.src_stops %} · {% endif %}{% set nm %}<a href="{{ M.tt_url }}" rel="noopener" data-track="official_click">{{ M.src_tt }}</a>{% endset %}{{ (cw.src_times|safe).format(name=nm, provider=M.tt_provider) }}{% endif %}{% if M.legs %}{% if M.src_stops or M.routes %} · {% endif %}{{ cw.src_dir }}{% endif %}</p>{% endif %}
 {%- endmacro %}
 
 {#- card(c): the place card (classes of ui.card) — photo (KOGL-1 cropped to fill, KOGL-3 whole), credit, the name

@@ -23,6 +23,11 @@
 .kf-main .tel:hover { text-decoration: underline; }
 .kf-main.closed { color: var(--red); }
 .kf-main.closed::before { width: 10px; height: 10px; vertical-align: .12em; }
+/* the last entry folded into its range ('09:00–18:00(입장마감 17:30)', the nwt filter): its own weight wherever a value
+   shows, a size down only on the big line of the first screen's tiles it was made for, never under 13px (review
+   2026-10-18, fourth round: '.kf-main .kfl' made it about 10px in list rows and cards, 11.6px on the phone's tiles) */
+.kf-main .kfl { font-weight: 400; letter-spacing: -.01em; }   /* 400 or 700 only: the fonts are split so */
+.kf-hero .kf-main .kfl { font-size: max(13px, .68em); }
 .kf-sub { display: block; font-size: 14px; font-weight: 400; color: var(--ink-2); margin-top: 3px; letter-spacing: -.01em; line-height: 1.35; }
 .kf-more { font-size: 14px; font-weight: 400; color: var(--link); white-space: nowrap; letter-spacing: -.01em; }
 a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
@@ -30,7 +35,9 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 .kf-alt { display: block; }
 .kf-alt + .kf-alt { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hair); }
 .kf-src { display: inline-block; margin-left: 6px; font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: 0; }
-.kf-alt .kf-sub { display: inline; margin-left: 4px; }
+/* a conflicted value's sub line runs on after its value, a space apart (the templates put it in): a margin indented the
+   line it wrapped to (UI review 2026-10-19) */
+.kf-alt .kf-sub { display: inline; }
 .kf .is-conflict { grid-column: span 2; }
 .kf .is-conflict dd { font-size: clamp(17px, 5.4cqi, 21px); }
 .kf-hero { --kf-n: 5; }
@@ -41,6 +48,11 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 .kf-call .flag { font-size: 15px; }
 .kf-call .tel { color: var(--link); font-weight: 700; text-decoration: none; }
 .kf-need { color: var(--ink-2); }
+/* a dated notice of the facility (공지: 휴관·개관·운영 시간) with the link to its post — first under the tiles */
+.kf-ntc { color: var(--ink); font-size: 15px; }
+.kf-ntc .ntc-k { font-weight: 700; margin-right: 2px; }
+.kf-ntc a { color: var(--link); }
+.kf-notes .kf-ntc + p:not(.kf-ntc) { margin-top: 6px; }
 /* card rows (ui.kfrows): label | value, the kind's three slots in place ('확인 필요' when missing) */
 .kfr { margin-top: 14px; }
 .kfr-i { display: grid; grid-template-columns: 5.2em minmax(0, 1fr); column-gap: 10px; padding: 8px 0; border-top: 1px solid var(--hair); align-items: baseline; }
@@ -54,6 +66,7 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
   .kf, .kf:has(.is-conflict) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .kf-i { padding: 13px 15px 12px; border-radius: 16px; gap: 3px; }
   .kf dd { font-size: 19px; }
+  .kf .kf-tel dd { font-size: min(19px, 12.6cqi); }   /* a 0507 number in a half-width tile at 360px: sized by the tile */
   .kf dt { font-size: 13px; }
   .kf:not(:has(.is-conflict)) .kf-i:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .kf .is-conflict { grid-column: 1 / -1; }
@@ -77,6 +90,8 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 .or { font-size: 13px; color: var(--ink-3); }
 .facts .tel, .rec .tel { color: var(--link); text-decoration: none; }
 .facts .tel:hover, .rec .tel:hover { text-decoration: underline; }
+/* the '+82 …' form a caller abroad dials, after a contact row's value (the other versions' place pages) */
+.tel-intl { color: var(--ink-2); font-size: .92em; }
 .facts a { overflow-wrap: anywhere; }
 .facts-more { background: var(--tile); border-radius: var(--r-l); padding: 6px 24px; }
 .facts-more .fr { grid-template-columns: 8.4em minmax(0, 1fr); }
@@ -151,7 +166,22 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 @media (max-width: 760px) { .route { margin-top: 14px; } }
 @media (max-width: 359px) { .route-row { grid-template-columns: 1fr 1fr; } .route-row .btn-go { grid-column: 1 / -1; } }
 
-/* ---------------------------------------------------------------- near lists (ui.near): sorted, figures right-aligned */
+/* ---------------------------------------------------------------- 예약하기 (ui.book, pipeline/booking.py): the official
+   booking pages as outlined buttons — a row of its own under a place's route row (one short note under it), a titled
+   box under a guide's answer card or a course's lede. A long name wraps, never cut; the word stays bold on the left,
+   the ↗ (another site) on the right. Phones: full width, one button per row (48px for one line). */
+.book { margin-top: 10px; }
+.book-l { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.btn-book { min-height: 48px; padding: 6px 18px; gap: .45em; justify-content: flex-start; white-space: normal; text-align: left; font-size: 15px; line-height: 1.25; }
+.btn-book .book-t { flex: none; font-weight: 700; }
+.btn-book .arr { display: inline-block; flex: none; margin-left: auto; padding-left: 6px; }
+.book-n { margin: 6px 0 0; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.book-box { margin-top: 18px; padding: 14px 16px; border: 1px solid var(--hair); border-radius: 14px; }
+.book-h { margin: 0 0 10px; font-size: 17px; font-weight: 700; line-height: 1.3; }
+@media (max-width: 760px) { .book-l { display: grid; } .btn-book { width: 100%; } }
+
+/* ---------------------------------------------------------------- near lists (.near: an event's places, event.html.j2):
+   figures right-aligned. A place page's nearby rows are css/71-nearby.css */
 .near li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--hair); min-height: 44px; }
 .near li:first-child { border-top: 0; }
 .near a { font: 700 17px/1.4 var(--font); color: var(--ink); text-decoration: none; letter-spacing: -.015em; }
@@ -159,9 +189,6 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 .near a:hover { color: var(--link); }
 .near-t { grid-column: 1; grid-row: 2; font-size: 13px; color: var(--ink-3); }
 .near-d { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 15px; color: var(--ink-2); }
-.near-cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--g); }
-.near-cols2 .tile { padding: 18px 22px 10px; }
-@media (max-width: 760px) { .near-cols2 { grid-template-columns: 1fr; } }
 .same { columns: 2 16em; column-gap: calc(var(--g) * 2); }
 .same li { break-inside: avoid; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; padding: 10px 0; border-bottom: 1px solid var(--hair); min-height: 44px; position: relative; }
 .same a { font: 700 17px/1.4 var(--font); color: var(--ink); text-decoration: none; }
@@ -200,24 +227,6 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 .acc-call .tel { position: relative; z-index: 1; display: inline-block; min-height: 44px; line-height: 44px; margin: -12px 0; color: var(--link); font-weight: 700; text-decoration: none; }
 .acc-src-l { margin-top: 8px; }
 
-/* ---------------------------------------------------------------- courses through a place (ui.onroute): one row each */
-.onroute { width: 100%; font-size: 15px; line-height: 1.45; }
-.onroute caption { caption-side: top; }
-.onroute th, .onroute td { padding: 12px 0; border-top: 1px solid var(--hair); vertical-align: baseline; text-align: left; }
-.onroute th { font-weight: 400; width: 40%; padding-right: 16px; }
-.onroute th a { font: 700 17px/1.4 var(--font); color: var(--ink); text-decoration: none; }
-.onroute th a:hover { color: var(--link); }
-.or-n { margin-left: 8px; font-size: 13px; color: var(--ink-3); }
-.onroute td { color: var(--ink-2); }
-.onroute td a { color: var(--link); text-decoration: none; }
-.onroute td .tn { color: var(--ink-3); font-size: 13.5px; }
-.or-next { text-align: right !important; padding-left: 16px !important; }
-@media (max-width: 760px) {
-  .onroute tr { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--hair); padding: 8px 0; }
-  .onroute th { grid-column: 1 / -1; width: auto; border: 0; padding: 0 0 4px; }
-  .onroute td { border: 0; padding: 0; font-size: 14px; }
-}
-
 /* ---------------------------------------------------------------- 자세히, FAQ (ui.faq), sources */
 .details h3 { font: 700 21px/1.4 var(--font); color: var(--ink); margin-top: 28px; letter-spacing: -.02em; }
 .details h3:first-child { margin-top: 0; }
@@ -232,11 +241,25 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 .src-dl div { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 12px; padding: 10px 0; border-top: 1px solid var(--hair); font-size: 15px; line-height: 1.55; }
 .src-dl div:first-child { border-top: 0; }
 .src-dl dt { font-weight: 700; font-size: 14px; color: var(--ink-3); padding-top: 1px; }
-.src-dl a { display: inline-flex; min-height: 28px; align-items: center; text-decoration: none; }
+.src-dl dd { min-width: 0; overflow-wrap: anywhere; }
+.src-dl a { display: inline-flex; min-height: 28px; align-items: center; text-decoration: none; max-width: 100%; overflow-wrap: anywhere; }
 .src-list li { position: relative; padding: 10px 0; border-top: 1px solid var(--hair); font-size: 15px; }
 .src-list li:first-child { border-top: 0; }
 .src-list a { color: var(--link); }
 .src-list a::after { content: ""; position: absolute; inset: 0; }
+/* a cited site's own page in the reader's language next to the cited page (other versions' guides): above the row's
+   stretched link, with its own 44px hit area */
+.src-list .src-entry { position: relative; z-index: 1; white-space: nowrap; }
+.src-list .src-entry::after { inset: auto; top: 50%; left: 50%; width: max(100% + 8px, 44px); height: 44px; transform: translate(-50%, -50%); }
+/* /about/#emergency (about.html.j2, en/about.html.j2): each number a 48px call button (white on #c9252c 5.7:1), what it
+   is for beside it, wrapping under it on a narrow screen */
+.sos { display: grid; gap: 10px; margin: 4px 0 18px; }
+.sos li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.sos-tel { display: inline-flex; align-items: center; justify-content: center; min-width: 96px; min-height: 48px; padding: 0 18px; border-radius: 12px; background: #c9252c; color: #fff; font: 700 22px/1 var(--font); letter-spacing: 0; }
+.sos-tel:hover { background: #a51e24; color: #fff; text-decoration: none; }
+.sos-what { flex: 1 1 9em; min-width: 0; font-size: 17px; line-height: 1.5; }
+.sos-what a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; white-space: nowrap; }
+.prose p.sos-src { font-size: 15px; color: var(--ink-3); }
 .prog li { padding: 11px 0 11px 1.1em; border-top: 1px solid var(--hair); font-size: 16px; line-height: 1.6; position: relative; }
 .prog li:first-child { border-top: 0; }
 .prog li::before { content: ""; position: absolute; left: 0; top: 1.25em; width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); }
@@ -560,6 +583,34 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 .f-panel .f-row button[aria-pressed="true"] { background: var(--sea); }
 .f-panel .f-row button[aria-pressed="true"]:hover { background: var(--sea-hi); }
 .f-tools .f-result { padding: 0; margin-right: auto; font-size: 14px; white-space: nowrap; }
+/* faceted counts (site.js): a chip that would show nothing with the other filters reads 0 and is drawn faint — no
+   fill, a dashed ring (a 1px border in place of the hairline shadow, the padding one px less: the chip keeps its size),
+   the grey label — but stays a working button in the tab order, so its text keeps 4.5:1 (ink-3 on #fff 5.62, on the
+   panel's bg-2 5.22). A chip that is on is never faint (site.js); the /map/ tabs and kind toggles take the same look */
+.f-row button.is-zero, .f-row > a.is-zero { background: transparent; box-shadow: none; border: 1px dashed var(--ink-3); padding: 0 15px; color: var(--ink-3); }
+.f-row button.is-zero .tn, .f-row > a.is-zero .tn { color: var(--ink-3); }
+.f-check.is-zero { color: var(--ink-3); }
+/* a live count keeps the width of its build-time number (site.js holdWidth: data-w, the largest it can read — a
+   faceted count only falls from the whole list's): an invisible copy above the number, no height, sets the box's
+   width, so a chip never narrows and the chips after it never move when its count changes (outside evaluation
+   2026-10-18); the number keeps to the label's side (a button would centre it). The copy is no text for a screen
+   reader (visibility: hidden, and the empty alternative where read) */
+.tn[data-w] { display: inline-block; text-align: start; }
+.tn[data-w]::before { content: attr(data-w); content: attr(data-w) / ""; display: block; height: 0; overflow: hidden; visibility: hidden; }
+/* the zero-result panel (_filters.zero, /map/): the sentence, then the buttons that bring places back — one per
+   filter in the sea tint, the reset of every filter as the quiet white pill; 44px each, wrapping */
+.f-undo { display: flex; flex-wrap: wrap; gap: 8px; margin: -12px 0 24px; }
+.f-undo button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 0; border-radius: 980px; background: var(--tint); color: var(--sea-deep); font: 700 15px var(--font); letter-spacing: -.01em; text-align: left; cursor: pointer; transition: background-color .2s var(--fb); }
+.f-undo button:hover { background: var(--tint2); }
+.f-undo [data-f-reset], .f-undo [data-map-reset] { background: #fff; box-shadow: inset 0 0 0 1px var(--hair); color: var(--ink); font-weight: 400; }
+.f-undo [data-f-reset]:hover, .f-undo [data-map-reset]:hover { background: var(--bg-2); }
+/* a mouse cannot swipe a sideways row whose scrollbar is hidden (operator 2026-10-18 on /food/: '오른쪽으로 넘기는 버튼도
+   없고, 가로 스크롤도 안 되네'): with a fine pointer the chips wrap onto another line, every one in view; touch keeps
+   the one row it swipes */
+@media (hover: hover) and (pointer: fine) {
+  .f-row { flex-wrap: wrap; overflow-x: visible; }
+  .f-top .f-row { -webkit-mask-image: none; mask-image: none; padding-right: 0; margin-right: 0; }
+}
 @media (max-width: 1023px) {
   html.js .seg { display: inline-flex; }
   .lg-head { display: none; }
@@ -570,7 +621,8 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
 }
 @media (max-width: 760px) {
   .f-top { flex-wrap: wrap; }
-  .f-top .f-row { flex-basis: 100%; margin-right: calc(-1 * var(--m)); padding-right: var(--m); }
+  /* to the screen's edge; its end clears the 36px fade, so the last chip scrolled to (site.js) shows whole */
+  .f-top .f-row { flex-basis: 100%; margin-right: calc(-1 * var(--m)); padding-right: max(var(--m), 36px); }
   .f-tools { width: 100%; justify-content: space-between; padding: 2px 0; }
   .f-tools .seg { margin-left: auto; }
   .lg-group { margin-top: 18px !important; }
@@ -710,9 +762,10 @@ img.t3, img.t0, img[data-kogl="3"], img[data-kogl="0"] { object-fit: contain !im
 .mk-a { display: block; width: max-content; color: inherit; text-decoration: none; line-height: 0; cursor: pointer; }
 span.mk-a { cursor: default; }
 .mk-a:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 50%; }
-/* a marker that is a link (not a list map's dots, whose rows are the links) answers a 44px touch round its centre */
-a.mk-a:not([tabindex="-1"]) { position: relative; }
-a.mk-a:not([tabindex="-1"])::before { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
+/* a marker that is a link answers a 44px touch round its centre — not a list map's dots (.mk-li): packed 9px dots
+   whose 44px areas would overlap (the list rows are the same links) */
+a.mk-a:not([tabindex="-1"]):not(.mk-li) { position: relative; }
+a.mk-a:not([tabindex="-1"]):not(.mk-li)::before { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
 .mk-foot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink); opacity: .85; pointer-events: none; }
 .mk-self { width: 22px; height: 22px; border-radius: 50%; background: var(--blue); border: 4px solid #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, .3); }
 .mk-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 2px #fff; transition: transform .2s var(--fb), background-color .2s var(--fb); }
@@ -757,6 +810,7 @@ a.mk-a:not([tabindex="-1"])::before { content: ""; position: absolute; left: 50%
 .search input:focus, .search input:focus-visible { outline: none; }
 .search .btn { min-width: 84px; justify-content: center; }
 .search .btn-line { background: var(--blue); color: #fff; box-shadow: none; }
+.search-note { margin-top: 8px; font-size: 14px; color: var(--ink-3); }
 .results { margin-top: 24px; }
 .res-g { margin-top: 24px; }
 .res-g h2 { font-size: 15px; font-weight: 700; color: var(--ink-3); padding-bottom: 8px; }
@@ -770,6 +824,23 @@ a.mk-a:not([tabindex="-1"])::before { content: ""; position: absolute; left: 50%
 .res-why { flex-basis: 100%; font-size: 14px; color: var(--ink-2); }
 .res-st { display: flex; flex-wrap: wrap; gap: 0 12px; flex-basis: 100%; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .res-none { color: var(--ink-2); font-size: 16px; }
+/* nothing found (QA 2026-10-15 F08): the names it may have meant, the diet note, then the help — list links, the AI
+   chat, the whole directory on request; every target 44px */
+.res-sug { margin-top: 10px; font-size: 16px; color: var(--ink-2); }
+.res-sug a, .res-lists a, .res-plan a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 980px; background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--hair); color: var(--ink); font-weight: 700; text-decoration: none; }
+.res-sug a { margin: 6px 6px 0 0; }
+.res-sug a:hover, .res-lists a:hover, .res-plan a:hover { background: var(--bg-3); text-decoration: none; }
+/* query words (evaluation 2026-10-18): the words a query was also searched as; the AI course planner for a query that
+   plans a trip (its link a 44px pill, as the names above) */
+.res-syn { margin-top: 8px; font-size: 14px; color: var(--ink-3); }
+.res-plan { margin-top: 12px; font-size: 16px; color: var(--ink-2); }
+.res-plan a { margin-right: 8px; }
+.res-diet { margin-top: 12px; max-width: 46em; padding: 14px 18px; border-radius: 14px; background: var(--bg-2); color: var(--ink); font-size: 16px; line-height: 1.6; }
+.res-help { display: grid; gap: 16px; max-width: 46em; margin-top: 20px; }
+.res-help-l { margin-bottom: 8px; font-size: 14px; color: var(--ink-3); }
+.res-lists ul { display: flex; flex-wrap: wrap; gap: 8px; }
+.res-acts { display: flex; flex-wrap: wrap; gap: 10px; }
+.res-acts .btn { min-height: 48px; white-space: normal; text-align: center; line-height: 1.25; padding-top: 8px; padding-bottom: 8px; }
 .jump { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .jump a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 10px; border-radius: 980px; background: var(--bg-2); font-weight: 700; color: var(--ink); text-decoration: none; }
 .jump a:hover { background: var(--bg-3); text-decoration: none; }
@@ -785,9 +856,9 @@ a.mk-a:not([tabindex="-1"])::before { content: ""; position: absolute; left: 50%
 
 /* ---------------------------------------------------------------- small inline links in tables and source lines: a 44px
    hit area on touch widths (24px on desktop) without changing the row */
-.onroute a, .wk-name a, .wk-src a, .u-s a, .vid-places a { display: inline-block; padding-top: 4px; padding-bottom: 4px; margin-top: -4px; margin-bottom: -4px; }
+.wk-name a, .wk-src a, .u-s a, .vid-places a { display: inline-block; padding-top: 4px; padding-bottom: 4px; margin-top: -4px; margin-bottom: -4px; }
 @media (max-width: 1023px) {
-  .onroute a, .wk-name a, .wk-src a, .u-s a, .vid-places a { display: inline-block; padding: 13px 0; margin: -13px 0; }
+  .wk-name a, .wk-src a, .u-s a, .vid-places a { display: inline-block; padding: 13px 0; margin: -13px 0; }
   .wk th, .wk td { padding: 12px 0; }
   .vid-places { padding: 4px 0 14px; line-height: 2; }
 }
