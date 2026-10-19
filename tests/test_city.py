@@ -77,19 +77,46 @@ def _foreign_hits(out: Path) -> list[str]:
     return hits
 
 
+# the operator's 권역 of 2026-10-19: each 구·군 TourAPI lists in exactly one 권역
+REGION_OF = {"제물포구": "개항장·월미", "영종구": "영종·용유", "연수구": "송도·연수", "강화군": "강화", "옹진군": "옹진 섬",
+             "미추홀구": "도심·소래", "남동구": "도심·소래", "부평구": "도심·소래", "계양구": "도심·소래", "서해구": "도심·소래",
+             "검단구": "도심·소래"}
+
+
+def test_incheon_districts_are_tourapi_s_eleven_each_in_one_region():
+    """site.json districts are the 11 구·군 TourAPI's ldongCode2 (lDongRegnCd 28) lists, the old names stay readable
+    (districts_former), and the district rule puts every one of them in exactly one 권역 — the operator's table."""
+    site = json.loads((INCHEON / "site.json").read_text("utf-8"))
+    assert site["districts"] == ["제물포구", "영종구", "미추홀구", "연수구", "남동구", "부평구", "계양구", "서해구", "검단구",
+                                 "강화군", "옹진군"]
+    assert site["districts_former"] == ["중구", "동구", "서구"]
+    C = city.activate(site)
+    for district, region in REGION_OF.items():
+        hits = [r.name for r in C.regions if any(m.get("district") == district for m in r.match)]
+        assert hits == [region], district                                        # one 권역, never two
+        assert C.district_region(district, "") == region == C.district_region(district, "테스트동")
+    assert set(REGION_OF) == set(site["districts"])
+    assert [r.name for r in C.regions] == ["개항장·월미", "영종·용유", "송도·연수", "강화", "옹진 섬", "도심·소래"]
+    # an address with an old name follows the 구·군 that took its place
+    assert C.district_region("동구", "송림동") == "개항장·월미" and C.district_region("서구", "") == "도심·소래"
+    assert C.district_region("중구", "을왕동") == "영종·용유" and C.district_region("중구", "신포동") == "개항장·월미"
+    assert C.district_region("중구", "") is None                               # 중구 with no 법정동: 권역 미정
+
+
 def test_incheon_district_rule_and_its_text():
     C = city.activate_dir(INCHEON)
     assert C.region_method == "district" and C.locality == "인천광역시" and C.region_admin == ""
     cases = {
         "인천광역시 중구 공항로 272 (운서동)": ("중구", "영종·용유"),
-        "인천광역시 중구 신포로27번길 80 (관동1가)": ("중구", "개항장·원도심"),   # a 법정동 with a 가 number stays whole
+        "인천광역시 중구 신포로27번길 80 (관동1가)": ("중구", "개항장·월미"),   # a 법정동 with a 가 number stays whole
         "인천광역시 중구 공항로 272": ("중구", None),                            # 중구 without a 법정동: not split
         "인천광역시 영종구 하늘중앙로 201": ("영종구", "영종·용유"),
-        "인천광역시 제물포구 금곡로 27 (송림동)": ("제물포구", "개항장·원도심"),
-        "인천광역시 동구 테스트로 1": ("동구", "개항장·원도심"),
+        "인천광역시 제물포구 금곡로 27 (송림동)": ("제물포구", "개항장·월미"),
+        "인천광역시 동구 테스트로 1": ("동구", "개항장·월미"),
         "인천광역시 연수구 테스트대로 2": ("연수구", "송도·연수"),
-        "인천광역시 서해구 테스트로 3": ("서해구", "도심 생활권"),
-        "인천광역시 검단구 테스트로 4": ("검단구", "도심 생활권"),
+        "인천광역시 서해구 테스트로 3": ("서해구", "도심·소래"),
+        "인천광역시 검단구 테스트로 4": ("검단구", "도심·소래"),
+        "인천광역시 남동구 테스트로 8": ("남동구", "도심·소래"),
         "인천광역시 강화군 강화읍 테스트로 5": ("강화군", "강화"),
         "인천광역시 옹진군 테스트면 테스트리 6": ("옹진군", "옹진 섬"),
         "서울특별시 중구 테스트로 7": ("", None),                                 # another city's 중구 is not Incheon's
@@ -100,9 +127,10 @@ def test_incheon_district_rule_and_its_text():
         assert C.district_region(d, area_from_address(address)) == region, address
     assert C.district_of("테스트로 5", "제물포구") == "제물포구"                   # TourAPI's 구·군 when the address has none
     lines = C.region_rule_lines()
-    assert lines[0] == f"개항장·원도심: 제물포구, 동구, 중구 중 {'·'.join(YJ)}을 뺀 곳"
-    assert lines[1] == f"영종·용유: 영종구, 중구 중 {'·'.join(YJ)}"
-    assert [line.split(":")[0] for line in lines] == ["개항장·원도심", "영종·용유", "송도·연수", "도심 생활권", "강화", "옹진 섬"]
+    assert lines[0] == f"개항장·월미: 제물포구, 옛 동구, 옛 중구 중 {'·'.join(YJ)}을 뺀 곳"
+    assert lines[1] == f"영종·용유: 영종구, 옛 중구 중 {'·'.join(YJ)}"
+    assert lines[5] == "도심·소래: 미추홀구, 남동구, 부평구, 계양구, 서해구, 검단구, 옛 서구"
+    assert [line.split(":")[0] for line in lines] == ["개항장·월미", "영종·용유", "송도·연수", "강화", "옹진 섬", "도심·소래"]
     # the city's own names in the stock-phrase rule, the address split for JSON-LD, the prefix that goes
     assert re.match(C.taut_rx("가"), "가는 인천광역시 중구 테스트동에 있는 관광지입니다.")
     assert not re.match(C.taut_rx("가"), "가는 바다를 내려다보는 전망대가 있는 관광지입니다.")
@@ -124,32 +152,76 @@ def test_neutral_city_assumes_nothing():
     assert C.strip_prefix("어디시 테스트로 1") == "어디시 테스트로 1" and C.district_of("어디시 중구 1") == ""
 
 
+SITE = "https://incheon.webforai.kr"   # site_url (operator 2026-10-19)
+
+
 def test_incheon_fixture_builds_and_validates_with_no_trace_of_the_sample_city(tmp_path):
     data = _incheon_data(tmp_path, with_fixture=True)
     out = tmp_path / "out"
     stats = build(data, out, "preview")
-    assert stats["entities"] == 5
+    assert stats["entities"] == 7
     errors, _, _ = validate(data, out, "preview")
     assert errors == [], errors[:5]
     assert _foreign_hits(out) == []
     # the map page prints the rule that assigned the places, and the places sit in their 권역
     page = (out / "map" / "index.html").read_text("utf-8")
-    assert "권역은 주소에 적힌 구·군" in page and "영종·용유: 영종구, 중구 중 운서동" in page
+    assert "권역은 주소에 적힌 구·군" in page and "영종·용유: 영종구, 옛 중구 중 운서동" in page
     regions = re.findall(r'<h2 id="r-[^"]*-h">([^<]*?) <span', page)
-    assert regions == ["개항장·원도심", "영종·용유", "송도·연수", "강화", "권역 미정"]
+    assert regions == ["개항장·월미", "영종·용유", "송도·연수", "강화", "옹진 섬", "도심·소래", "권역 미정"]
     assert "중구 운서동" in page                                           # a 광역시's 동 carries its 구·군
     # the home: the assistant's card in the centre (data/incheon/ask.json), the city's words for chat.js
     home = (out / "index.html").read_text("utf-8")
-    assert 'id="ask-q"' in home and 'data-chat-site="https://incheon.example.com"' in home
-    assert "지금 인천 · " in home and "인천 여행의 모든 것" in home
+    assert 'id="ask-q"' in home and f'data-chat-site="{SITE}"' in home
+    assert "지금 인천 · " in home and "인천 여행의 모든 것" not in home      # the old provisional name is gone
     site = json.loads((out / "chat" / "site.json").read_text("utf-8"))
     # no planner hubs yet (site.json city.plan.hubs: the operator's): the form asks none, the planner refuses one
-    assert site == {"city": {"en": "Incheon", "ko": "인천"}, "name": "인천 여행의 모든 것", "origins": [],
-                    "url": "https://incheon.example.com", "hubs": {}}
+    assert site == {"city": {"en": "Incheon", "ko": "인천"}, "name": "인천각", "origins": [], "url": SITE, "hubs": {}}
     # structured data: the neutral city node, a 광역시 address split into 시 and 구
-    assert '"@id":"https://incheon.example.com/#city","name":"인천광역시"' in home.replace(" ", "")
+    assert f'"@id":"{SITE}/#city","name":"인천광역시"' in home.replace(" ", "")
     beach = (out / "places" / "test-beach-a" / "index.html").read_text("utf-8").replace(" ", "")
     assert '"addressRegion":"인천광역시","addressLocality":"중구"' in beach
+    # everything made from site_url names the operator's domain (canonical, sitemap, the assistant's site above)
+    assert f'<link rel="canonical" href="{SITE}/">' in home
+    assert f"<loc>{SITE}/cafes/</loc>" in (out / "sitemap.xml").read_text("utf-8")
+
+
+def test_incheon_brand_name_symbol_and_h1(tmp_path):
+    """Operator 2026-10-19: the site is 인천각 (English Incheongak), its symbol the bridge-pylon bookmark redrawn from
+    the chosen raster (templates/assets/brand/incheongak-*.svg, tools/brand_kit.py) beside the name in the header and
+    footer, the name's end '각' in the logo's blue (present.wordmark), titles and structured data named 인천각, and the
+    home's H1 '오늘, 인천 가는 각' (city.home.h1)."""
+    site = json.loads((INCHEON / "site.json").read_text("utf-8"))
+    assert (site["site_url"], site["site_name"], site["brand"]) == (SITE, "인천각", "인천각")
+    assert site["brand_symbol"] == "incheongak-symbol.svg" and "site_name_status" not in site
+    assert site["city"]["intl"]["en"] == {"site_name": "Incheongak", "city": "Incheon"}
+    assert site["brand_colors"] == {"sea": "#1764C0", "coral": "#FF7A5C", "ink": "#172033"}
+    brand = ROOT / "templates" / "assets" / "brand"
+    import xml.etree.ElementTree as ET
+    for name in ("symbol", "symbol-reverse", "symbol-mono", "logo", "app-icon"):
+        svg = ET.parse(brand / f"incheongak-{name}.svg").getroot()
+        assert svg.tag.endswith("svg") and svg.get("viewBox"), name
+    sym = (brand / "incheongak-symbol.svg").read_text("utf-8")
+    assert 'aria-hidden="true"' in sym and 'fill="#1764C0"' in sym and 'fill="#FF7A5C"' in sym    # sea, coral sun
+    assert 'fill="#FF7A5C"' not in (brand / "incheongak-symbol-reverse.svg").read_text("utf-8")   # the sun cut out
+    assert 'aria-label="인천각 Incheongak"' in (brand / "incheongak-logo.svg").read_text("utf-8")
+    from PIL import Image
+    for px in (48, 96, 180, 192, 512):
+        with Image.open(brand / f"icon-{px}.png") as im:
+            assert im.size == (px, px) and im.getpixel((0, 0))[:3] == (0x17, 0x64, 0xC0)     # full bleed, sea blue
+    with Image.open(brand / "favicon.ico") as ico:
+        assert {(16, 16), (32, 32), (48, 48)} <= set(ico.info["sizes"])
+    data = _incheon_data(tmp_path, with_fixture=True)
+    out = tmp_path / "out"
+    build(data, out, "preview")
+    home = (out / "index.html").read_text("utf-8")
+    assert '<h1 id="h-home" class="op-h1 hk-h1">오늘, 인천 가는 각</h1>' in home
+    assert '<title>인천각 — 인천 관광지·맛집·숙소·코스·축제·영상</title>' in home
+    assert '<meta property="og:site_name" content="인천각">' in home
+    assert '"@type":"WebSite"' in home.replace(" ", "") and '"name":"인천각"' in home.replace(" ", "")
+    mark = '<span class="wm-a">인천<span class="wm-em">각</span></span>'
+    assert home.count(mark) == 2 and home.count('<span class="wm-sym" aria-hidden="true"><svg') == 2   # bar and footer
+    cafe = (out / "places" / "test-cafe-f" / "index.html").read_text("utf-8")
+    assert "<title>" in cafe and " | 인천각</title>" in cafe
 
 
 def test_incheon_before_collection_preview_is_empty_state_and_production_stops(tmp_path, capsys):

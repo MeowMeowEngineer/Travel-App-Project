@@ -64,9 +64,11 @@
   var W = null;
   try { W = JSON.parse(form.getAttribute("data-words") || "null"); } catch (e) { W = null; }
   var LANG = doc.documentElement.lang || "ko";
-  var KIND = (W && W.kinds) || { attraction: "관광지", stay: "숙소", food: "음식점", course: "코스", guide: "가이드", event: "행사" };
-  var ORDER = ["attraction", "food", "stay", "course", "guide", "event"];
-  var PLACES = ["attraction", "stay", "food"];
+  var KIND = (W && W.kinds) || { attraction: "관광지", stay: "숙소", food: "음식점", cafe: "카페·디저트", shopping: "쇼핑",
+    course: "코스", guide: "가이드", event: "행사" };
+  // the result groups in this order (카페·디저트 after 음식점, operator 2026-10-19); PLACES: the kinds of place pages
+  var ORDER = ["attraction", "food", "cafe", "stay", "shopping", "course", "guide", "event"];
+  var PLACES = ["attraction", "stay", "food", "cafe", "shopping"];
   var STRIP = /[\s·\-()（）\[\]|,]/g, LIMIT = 80, DOT = /\s*·\s*/;
   // query words (present.SEARCH_CONCEPTS): SAY [a word said (normalised), its concept]; SHOWN a normalised word as
   // the table writes it; the city's names; the planner's path (the Korean page only)

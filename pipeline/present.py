@@ -29,16 +29,18 @@ from . import art, booking, city, jsonld, media, relations, tickets   # booking 
 from . import locales as LC          # locales imports nothing from the package
 from .enrich import haversine_m
 from .maplinks import kakao_route_url, kakao_transit_url
-from .schema import (FACT_ALIASES, FACT_LABELS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS, alias_holds,
-                     designations, fact_label, geo_provider, geo_providers, parking_seats_half)
+from .schema import (BUSINESS_KINDS, FACT_ALIASES, FACT_LABELS, FOOD_KINDS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS,
+                     KIND_NOUNS, alias_holds, designations, fact_label, geo_provider, geo_providers, parking_seats_half)
 from .textutil import (TILDE, TIME, course_display_name, dash_times, display_address, display_value, josa, link_url,
                        normalize_name, parking_text, phone_e164, restore_lines, squash_ws, url_domain, web_text, web_url)
 
 WEEK = "월화수목금토일"
-LIST_PATH = {"attraction": "/places/", "stay": "/stays/", "food": "/food/"}
+LIST_PATH = {"attraction": "/places/", "stay": "/stays/", "food": "/food/", "cafe": "/cafes/", "shopping": "/shopping/"}
 # Main navigation (owner, 2026-10-08): 관광지 숙소 음식점 영상 코스 가이드 행사 지도 (+ 검색 in the masthead). Each item
-# shows only when its page is built (nav_items); 영상 sits in the first four so a 390px phone shows it.
+# shows only when its page is built (nav_items); 영상 sits in the first four so a 390px phone shows it. 카페·디저트
+# (operator 2026-10-19) follows 음식점; 쇼핑 has its list (/shopping/) without a menu item — the home's tiles lead to it.
 NAV = (("관광지", "/places/", "attraction"), ("숙소", "/stays/", "stay"), ("음식점", "/food/", "food"),
+       ("카페·디저트", "/cafes/", "cafe"),
        ("영상", "/videos/", "videos"), ("코스", "/courses/", "courses"), ("가이드", "/guides/", "guides"),
        ("행사", "/events/", "events"), ("지도", "/map/", "map"), ("해외에서 본 {region}", "/abroad/", "abroad"))
 
@@ -66,7 +68,8 @@ def region_art() -> dict:
 # Type labels: plain names; generic source buckets ('음식점', '기타') are not shown as a type.
 STAY_TYPE = {"여관/모텔": "모텔·여관", "숙박": "숙박업소", "기타": "그 밖의 숙소", "": "그 밖의 숙소",
              "일반호텔": "호텔", "굿스테이": "굿스테이 인증 숙소"}
-FOOD_TYPE = {"식육(숯불구이)": "고기구이", "음식점": "", "기타": ""}
+FOOD_TYPE = {"식육(숯불구이)": "고기구이", "음식점": "", "기타": "", "카페·디저트": ""}
+SHOP_TYPE = {"쇼핑": "", "기타": ""}
 ATTR_TYPE = {"쇼핑": "시장·쇼핑", "레포츠": "레포츠", "문화시설": "문화시설", "산업/회의 시설": "산업·회의 시설",
              "공중하강체험시설": "체험"}
 # '숙소 문의: 독채 여부·반려동물 동반' only where the answer can differ (small stays), never on a 181-room hotel
@@ -307,10 +310,12 @@ def kind_type(e: dict, theme_names: dict) -> str:
     cat = squash_ws(e.get("category"))
     if kind == "stay":
         return STAY_TYPE.get(cat, cat)
-    if kind == "food":
+    if kind in FOOD_KINDS:
         if "특화거리" in cat:
             return cat.partition("(")[2].rstrip(")").strip()
         return FOOD_TYPE.get(cat, cat)
+    if kind == "shopping":
+        return SHOP_TYPE.get(cat, cat)
     g = e.get("_group") or ""
     if g and g != "테마 여행지":
         return g
@@ -325,7 +330,7 @@ def kind_type(e: dict, theme_names: dict) -> str:
 def street_of(e: dict) -> str:
     """'짬뽕 특화거리' for a food place listed under a 특화거리 category."""
     cat = squash_ws(e.get("category"))
-    return cat.partition("(")[0].strip() if e.get("kind") == "food" and "특화거리" in cat else ""
+    return cat.partition("(")[0].strip() if e.get("kind") in FOOD_KINDS and "특화거리" in cat else ""
 
 
 def name_key(name: str):
@@ -777,7 +782,9 @@ def ticket_rows(e: dict, notes: Notes) -> list[dict]:
 # ----------------------------------------------------------------------------- status line (핵심 정보 줄)
 STATUS_KEYS = {"attraction": ("usetime", "restdate", "usefee", "parking"),
                "stay": ("checkin", "checkout", "parking", "roomcount"),
-               "food": ("usetime_restdate", "usetime", "restdate", "menu", "parking_seats", "parking")}
+               "food": ("usetime_restdate", "usetime", "restdate", "menu", "parking_seats", "parking"),
+               "cafe": ("usetime_restdate", "usetime", "restdate", "menu", "parking_seats", "parking"),
+               "shopping": ("usetime", "restdate", "parking")}
 STATUS_PREFIX = {"usefee": "요금", "parking_seats": "주차·좌석", "checkin": "체크인", "checkout": "체크아웃",
                  "roomcount": "객실", "menu": "대표 메뉴"}
 CONTEST_LABEL = {"usetime": "이용시간", "restdate": "쉬는 날", "usefee": "요금", "parking": "주차",
@@ -793,7 +800,7 @@ def _closed_word(text: str, kind: str) -> str:
         return text if re.search(r"무휴|개방|휴", text) else f"휴무일 {text}"
     if re.search(r"휴|쉼|쉬", text) or not re.search(r"(요일|[0-9]일|날|명절|연휴|설날|추석)\)?$", text):
         return text
-    return f"{text} {'휴무' if kind == 'food' else '휴관'}"
+    return f"{text} {'휴무' if kind in FOOD_KINDS or kind == 'shopping' else '휴관'}"
 
 
 def missing_keys(e: dict) -> list[str]:
@@ -1289,12 +1296,17 @@ SLOT_LABEL = {"hours": "이용시간", "closed": "쉬는 날", "fee": "요금", 
               "checkin": "체크인", "checkout": "체크아웃", "rooms": "객실"}
 HERO_SLOTS = {"attraction": ("hours", "closed", "fee", "parking", "tel"),
               "food": ("hours", "closed", "menu", "parking", "tel"),
-              "stay": ("checkin", "checkout", "parking", "rooms", "tel")}
+              "stay": ("checkin", "checkout", "parking", "rooms", "tel"),
+              "cafe": ("hours", "closed", "menu", "parking", "tel"),
+              "shopping": ("hours", "closed", "parking", "tel")}
 KF_CARD_SLOTS = {"attraction": ("hours", "closed", "fee"), "food": ("menu", "hours", "closed"),
-                 "stay": ("checkin", "parking", "rooms")}
+                 "stay": ("checkin", "parking", "rooms"), "cafe": ("menu", "hours", "closed"),
+                 "shopping": ("hours", "closed", "parking")}
 KF_LIST_COLS = {"attraction": (("hours", "이용시간"), ("closed", "쉬는 날"), ("fee", "요금"), ("parking", "주차")),
                 "stay": (("checkin", "체크인"), ("checkout", "체크아웃"), ("parking", "주차"), ("tel", "전화")),
-                "food": (("menu", "대표 메뉴"), ("hours", "영업시간"), ("closed", "쉬는 날"), ("parking", "주차"))}
+                "food": (("menu", "대표 메뉴"), ("hours", "영업시간"), ("closed", "쉬는 날"), ("parking", "주차")),
+                "cafe": (("menu", "대표 메뉴"), ("hours", "영업시간"), ("closed", "쉬는 날"), ("parking", "주차")),
+                "shopping": (("hours", "영업시간"), ("closed", "쉬는 날"), ("parking", "주차"), ("tel", "전화"))}
 
 
 def slot_provider(p: str | None) -> str:
@@ -1306,7 +1318,7 @@ def slot_provider(p: str | None) -> str:
 
 
 def _slot_label(e: dict, name: str) -> str:
-    return "영업시간" if name == "hours" and e.get("kind") == "food" else SLOT_LABEL[name]
+    return "영업시간" if name == "hours" and e.get("kind") in (*FOOD_KINDS, "shopping") else SLOT_LABEL[name]
 
 
 def slot_value(e: dict, name: str) -> dict | None:
@@ -1359,7 +1371,7 @@ def slot_value(e: dict, name: str) -> dict | None:
                 return out
         return None
     if name in ("hours", "closed"):
-        hkey = "usetime_restdate" if kind == "food" and f.get("usetime_restdate") else "usetime"
+        hkey = "usetime_restdate" if kind in FOOD_KINDS and f.get("usetime_restdate") else "usetime"
         base = BASE_LABEL.get(hkey, "")
         hb, hclosed = brief_hours(f.get(hkey), base) if f.get(hkey) else (None, "")
         if name == "hours":
@@ -2096,7 +2108,10 @@ def course_groups_vm(S) -> list[dict]:
 PRACTICAL = {"attraction": ("usetime", "restdate", "usefee", "parking", "parkingfee", "spendtime", "infocenter", "address"),
              "stay": ("checkin", "checkout", "parking", "roomcount", "infocenter", "reservation", "address"),
              "food": ("usetime_restdate", "usetime", "restdate", "menu", "parking_seats", "parking", "infocenter",
-                      "reservation", "address")}
+                      "reservation", "address"),
+             "cafe": ("usetime_restdate", "usetime", "restdate", "menu", "parking_seats", "parking", "infocenter",
+                      "reservation", "address"),
+             "shopping": ("usetime", "restdate", "fairday", "parking", "infocenter", "address")}
 MORE = ("openperiod", "discount", "usefee", "roomtype", "cooking", "subfacility", "treatmenu", "seat", "packing",
         "creditcard", "expguide", "filming", "reservationurl", "homepage", "spendtime")
 FIT = ("babycarriage", "pet", "kidsfacility", "expagerange", "useseason", "accessible_parking", "wheelchair",
@@ -2261,8 +2276,8 @@ def access_vm(S, e: dict) -> dict | None:
 # ----------------------------------------------------------------------------- 주변·함께 가기 (templates/_near.html.j2)
 # the course segments through a place, the nearby rows with one stepped straight-line scale per page, the guide and
 # event cards. Words: locales.NEAR_WORDS. Every distance is a straight line between stored coordinates.
-NEAR_GLYPH = {"attraction": "pin", "stay": "bed", "food": "bowl"}
-NEAR_TRACK = {"stay": "stay_click", "food": "food_click"}
+NEAR_GLYPH = {"attraction": "pin", "stay": "bed", "food": "bowl", "cafe": "cup", "shopping": "bag"}
+NEAR_TRACK = {"stay": "stay_click", "food": "food_click", "cafe": "food_click"}
 NEAR_STEPS = (100, 250, 500, 1000, 2000)
 
 
@@ -2499,7 +2514,8 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
     fq = ChapterNotes(labels, default_src)
     faqs = [{"q": f["q"], "a": f["a"], "html": tel_markup(squash_ws(f["a"])), "source": squash_ws(f.get("source")),
              "n": fq.ref(f.get("source"))} for f in ctx["faqs"]]
-    area_same = {"attraction": ctx["area_sights"], "stay": ctx["area_stays"], "food": ctx["area_food"]}[kind]
+    area_same = {"attraction": ctx["area_sights"], "stay": ctx["area_stays"], "food": ctx["area_food"],
+                 "cafe": ctx["area_cafes"], "shopping": ctx["area_shops"]}[kind]
     official = e.get("official") or {}
     n_facts = len([r for r in practical if r["key"] != "address"])
     lead = e["_photos"][0] if e["_photos"] else None
@@ -2511,7 +2527,8 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
         "hero_k3": lead if lead and lead["type"] != 1 else None,
         "thumbs": [{"url": p["th"]["url"], "w": p["th"]["w"], "h": p["th"]["h"], "alt": p["alt"], "type": p["type"]}
                    for p in e["_photos"][:6] if p.get("th") and p["th"].get("w")],
-        "e": e, "kind": kind, "kind_label": KIND_LABELS[kind], "name": e["name"], "list_path": LIST_PATH[kind],
+        "e": e, "kind": kind, "kind_label": KIND_LABELS[kind], "kind_noun": KIND_NOUNS[kind], "name": e["name"],
+        "list_path": LIST_PATH[kind],
         "type": e["_type"], "region": e["_region"], "dong": e["_area"], "city": city_line(S, e), "kicker": kicker,
         "where": city.current().place_short(e.get("_district") or "", e["_area"] or ""),   # '<시> (<구·군>) <동>'
         "alt_names": ctx["alt_names"], "status": status,
@@ -2523,8 +2540,10 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
         **links, "precise": bool(e["_geo"]),
         "photos": e["_photos"], "geo": e["_geo"], "place_points": place_points, "anchors": anchors,
         "access": access_vm(S, e),
-        "near_sights": [n for n in near if n["kind"] == "attraction"],
-        "near_biz": [n for n in near if n["kind"] in ("stay", "food")],
+        "near_sights": [n for n in near if n["kind"] not in BUSINESS_KINDS],
+        "near_biz": [n for n in near if n["kind"] in BUSINESS_KINDS],
+        # the heading of those rows: '주변 숙소·음식점', with 카페 when a café is among them
+        "near_biz_title": "주변 숙소·음식점" + ("·카페" if any(n["kind"] == "cafe" for n in near) else ""),
         "nearby_source": ctx["nearby_source"], "boards": boards, "near_scale": scale, "route_segs": segs,
         # whose point this is: the map caption's '위치: …' (the nearby note prints nearby_source.provider, which
         # tools/tourapi_bulk.compute_nearby writes from every point it used; validate.nearby_provenance_problems)
@@ -2568,6 +2587,10 @@ LIST_CFG = {
              "check": ("checkin", "체크인 시간 있음")},
     "food": {"title": "음식점", "cols": [("menu", "대표 메뉴"), ("usetime_restdate", "영업시간·정기휴일"), ("parking_seats", "주차·좌석"), ("tel", "문의")],
              "check": ("open_mon", "월요일 영업 표기")},
+    "cafe": {"title": "카페·디저트", "cols": [("menu", "대표 메뉴"), ("usetime_restdate", "영업시간·정기휴일"), ("parking_seats", "주차·좌석"), ("tel", "문의")],
+             "check": ("open_mon", "월요일 영업 표기")},
+    "shopping": {"title": "쇼핑", "cols": [("usetime", "영업시간"), ("restdate", "쉬는 날"), ("parking", "주차"), ("tel", "문의")],
+                 "check": ("open_mon", "월요일 영업 표기")},
 }
 ASK_WORDS = re.compile(r"^\s*전화\s*문의\s*$")
 CELL_MAX = 48
@@ -2630,7 +2653,9 @@ def cell(e: dict, key: str) -> dict:
 # Place cards: the same key values in the same slots on every card of a kind (owner feedback 2026-10-08).
 CARD_SLOTS = {"attraction": (("usetime", "이용시간"), ("restdate", "쉬는 날"), ("usefee", "요금")),
               "food": (("menu", "대표 메뉴"), ("usetime_restdate", "영업시간")),
-              "stay": (("checkin", "체크인"), ("parking", "주차"))}
+              "stay": (("checkin", "체크인"), ("parking", "주차")),
+              "cafe": (("menu", "대표 메뉴"), ("usetime_restdate", "영업시간")),
+              "shopping": (("usetime", "영업시간"), ("restdate", "쉬는 날"))}
 
 
 def card_vm(e: dict, photo: dict | None = None, mode: str = "card") -> dict:
@@ -2943,7 +2968,9 @@ def home_vm(S) -> dict:
         regions.append({"name": rname, "n": len(members), "k": Counter(e["kind"] for e in members),
                         "dongs": [d for d, _ in dongs], "anchor": anchor, "id": "r-" + frag(rname)})
     annual_n = sum(1 for ev in S.events if not ev.get("start_date") and "매년" in str(ev.get("period_text") or ""))
-    h = {"answers": answers, "search_example": search_example(S), "guides": S.guides, "events": events,
+    region = S.site.get("region") or S.site.get("locality", "")
+    h = {"h1": squash_ws(city.current().home("h1", "")) or f"{region} 여행의 모든 것",   # the opening's H1 (city.home.h1)
+         "answers": answers, "search_example": search_example(S), "guides": S.guides, "events": events,
          "ev_head": ev_head, "annual_n": annual_n, "last_event": event_row(past[0]) if past and not events else None,
          "lines": lines, "course_total": len(S.courses), "regions": regions,
          "region_rule": region_rule_vm(S),
@@ -3476,6 +3503,10 @@ def home_services(S, n_events: int = 0) -> list[dict]:
             ("숙소", "/stays/", "bed", len(lists.get("stay") or []), "곳", "", bool(lists.get("stay")), True),
             ("가는 법", gm[way[1]]["_path"] if way and way[1] in gm else "", "bus", 0, "",
              "guide_click", bool(way and way[1] in gm), True),
+            # 카페·디저트 and 쇼핑 (operator 2026-10-19): their own lists, in the compact row
+            ("카페·디저트", "/cafes/", "cup", len(lists.get("cafe") or []), "곳", "", bool(lists.get("cafe")), False),
+            ("쇼핑", "/shopping/", "bag", len(lists.get("shopping") or []), "곳", "", bool(lists.get("shopping")),
+             False),
             ("코스", "/courses/", "route", len(S.courses), "개", "course_click", bool(S.courses), False),
             ("지도", "/map/", "map", 0, "", "", bool(S.entities), False),
             ("행사 달력", "/events/", "calendar", n_events, "건", "", bool(S.events), False),
@@ -3484,6 +3515,7 @@ def home_services(S, n_events: int = 0) -> list[dict]:
             (f"해외에서 본 {S.site.get('region', '')}", "/abroad/", "globe", abroad, "건", "",
              bool(getattr(S, "abroad", None) or getattr(S, "abroad_videos", None)), False)]
     pics = {"/food/": "icon-food", "/stays/": "icon-stay", "/places/": "icon-sights", "/courses/": "icon-course",
+            "/cafes/": "icon-cafe", "/shopping/": "kind-shopping",
             "/events/": "icon-events", "/map/": "icon-map", "/videos/": "icon-video", "/abroad/": "icon-abroad"}
     return [{"label": label, "href": href, "icon": icon, "n": n, "unit": unit, "track": track, "core": core,
              "pic": pics.get(href, "icon-getting-here")}   # the 3D picture's ID (pipeline/icons.py, _pic.html.j2)
@@ -4250,7 +4282,9 @@ def search_index(S) -> list[dict]:
     en_series = {x["slug"]: x for x in (en.series if en else [])}
     out = []
     for e in S.entities:
-        row = {"n": e["name"], "a": " ".join(jsonld.alternate_names(e)), "k": e["kind"], "t": e["_type"],
+        # a café or shop without a finer type carries its kind as its type: '카페' and '쇼핑' find them
+        row = {"n": e["name"], "a": " ".join(jsonld.alternate_names(e)), "k": e["kind"],
+               "t": e["_type"] or (KIND_LABELS[e["kind"]] if e["kind"] in ("cafe", "shopping") else ""),
                "d": e["_area"] or e.get("_road") or "", "r": e["_region"], "p": e["_path"]}
         other_names(row, (e.get("_en") or {}).get("name") if en else "")
         m = menu_words(e)
@@ -4329,6 +4363,7 @@ def video_groups_vm(groups: list[dict]) -> list[dict]:
 def nav_items(S) -> list[tuple[str, str]]:
     """[(label, href)] of NAV whose page this build writes (/places/ always; the others when they have data)."""
     built = {"attraction": True, "stay": bool(S.lists.get("stay")), "food": bool(S.lists.get("food")),
+             "cafe": bool(S.lists.get("cafe")),
              "videos": bool(getattr(S, "videos", None)), "courses": bool(S.courses), "guides": bool(S.guides),
              "events": bool(S.events), "map": bool(S.entities), "abroad": bool(getattr(S, "abroad", None))}
     region = S.site.get("region") or S.site.get("locality", "")
@@ -4345,7 +4380,8 @@ def common_vm(S) -> dict:
 
 
 CURRENT = {"plan": "/plan/", "place-attraction": "/places/", "places": "/places/", "theme": "/places/", "place-stay": "/stays/",
-           "list-stay": "/stays/", "place-food": "/food/", "list-food": "/food/", "course": "/courses/",
+           "list-stay": "/stays/", "place-food": "/food/", "list-food": "/food/", "place-cafe": "/cafes/",
+           "list-cafe": "/cafes/", "place-shopping": "/shopping/", "list-shopping": "/shopping/", "course": "/courses/",
            "courses": "/courses/", "guide": "/guides/", "guides": "/guides/", "events": "/events/", "map": "/map/",
            "search": "/search/", "about": "/about/", "videos": "/videos/", "abroad": "/abroad/"}
 
@@ -4372,7 +4408,8 @@ def page_chrome(page_kind: str, has_courses: bool) -> dict:
 # no photo gets its kind's 3D picture (never an illustration in a photo's place, CLAUDE.md 4).
 KIND_PIC = {"bed": "kind-stay", "bowl": "kind-food", "museum": "kind-museum", "spark": "kind-experience",
             "building": "theme-modern-history", "wave": "theme-islands-sea", "tree": "theme-parks-nature",
-            "lamp": "theme-alleys-culture", "pin": "kind-attraction", "cup": "kind-cafe"}   # _ui.html.j2 KIND_PIC
+            "lamp": "theme-alleys-culture", "pin": "kind-attraction", "cup": "kind-cafe",
+            "bag": "kind-shopping"}   # _ui.html.j2 KIND_PIC
 
 
 def plan_places(S) -> dict:
@@ -4430,7 +4467,8 @@ PLAN_CHOICES = {
 }
 # the pictures the result draws by ID (plan.js clones them from the page's <template>; one missing here is drawn as an
 # empty pale circle: every pic("…") of plan.js and every KIND_PIC value — tests/test_plan_page.py)
-PLAN_RESULT_PICS = ("kind-attraction", "kind-food", "kind-stay", "kind-cafe", "kind-museum", "kind-experience",
+PLAN_RESULT_PICS = ("kind-attraction", "kind-food", "kind-stay", "kind-cafe", "kind-shopping", "kind-museum",
+                    "kind-experience",
                     "theme-modern-history", "theme-islands-sea", "theme-parks-nature", "theme-alleys-culture",
                     "transit-bus", "sit-walk", "fact-parking", "plan-budget", "plan-swap", "icon-map", "fact-hours",
                     "fact-closed", "fact-fee", "cond-wheelchair", "icon-course")

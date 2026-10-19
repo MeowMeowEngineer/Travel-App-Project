@@ -39,6 +39,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pipeline.enrich import load_dotenv
+from pipeline.schema import KIND_LABELS
 from pipeline.tourapi import TourAPIError, TourAPIStopError, normalize_key, redact
 from tools import tourapi_bulk as bulk
 from tools import tourapi_doctor as doctor
@@ -53,7 +54,6 @@ NO_KEY = ("TOURAPI_KEY가 없습니다. 공공데이터포털 '한국관광공�
 # The visit-decision facts a place page leads with (CLAUDE.md 1절), as fact keys -> labels
 VISIT_FACTS = (("infocenter", "전화"), ("usetime", "이용시간"), ("restdate", "쉬는 날"), ("usefee", "요금"),
                ("parking", "주차"), ("checkin", "체크인"))
-KIND_LABELS = {"attraction": "관광지", "food": "음식점", "stay": "숙소"}
 
 
 def key_forms(raw: str) -> list[str]:

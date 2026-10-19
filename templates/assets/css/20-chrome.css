@@ -18,7 +18,7 @@ html.is-scrolled .mast::before { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
 .wordmark { display: inline-flex; align-items: baseline; gap: 8px; min-height: 44px; align-self: center; color: var(--ink); text-decoration: none; margin-right: auto; padding-top: 12px; }
 .wordmark:hover { text-decoration: none; color: var(--ink); }
 .wm-a { font: 700 19px/1 var(--font); letter-spacing: -.03em; white-space: nowrap; }
-.wm-em { color: var(--sea); }   /* 각 / gak (present.wordmark, operator 2026-10-17): 4.75:1 on the bar, 4.61:1 on the footer */
+.wm-em { color: var(--brand, var(--sea)); }   /* 각 / gak (present.wordmark): the logo's blue — 5.80:1 on white, 5.40:1 on bg-2 */
 .wm-sym { display: inline-flex; align-self: center; margin: -12px 0 0; }   /* the symbol beside the name: centred on the bar (the wordmark sits 12px low for the name's baseline) */
 .wm-sym svg { display: block; width: auto; height: 28px; }
 .foot-mark .wm-sym { margin: 0; }

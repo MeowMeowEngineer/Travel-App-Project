@@ -126,7 +126,7 @@
     (docs/handover/gpt_image_prompts_3d_2026-10-14.md, docs/handover/specs/icon_audit.md I04–I08). -#}
 {% set KIND_PIC = {'bed': 'kind-stay', 'bowl': 'kind-food', 'museum': 'kind-museum', 'spark': 'kind-experience',
   'building': 'theme-modern-history', 'wave': 'theme-islands-sea', 'tree': 'theme-parks-nature',
-  'lamp': 'theme-alleys-culture', 'pin': 'kind-attraction', 'cup': 'kind-cafe'} %}
+  'lamp': 'theme-alleys-culture', 'pin': 'kind-attraction', 'cup': 'kind-cafe', 'bag': 'kind-shopping'} %}
 {% macro kpic(id, glyph, size=56, alt='') -%}
 {%- import "_pic.html.j2" as pk -%}{{ pk.pic(id, glyph, size, alt) }}
 {%- endmacro %}
@@ -548,7 +548,7 @@
 {% macro rec(it, kind) -%}
 <li class="rec" data-vt-scope id="{{ it.id }}" data-tags="|{{ it.tags|join('|') }}|" data-region="{{ it.region }}" data-themes="{{ it.themes|join(' ') }}"{% for k, v in it.flags.items() %}{% if v %} data-{{ k }}="1"{% endif %}{% endfor %}>
 <div class="rec-name">
-<a class="rec-link" href="{{ it.path }}" data-vt data-track="{{ {'stay': 'stay_click', 'food': 'food_click'}.get(kind, 'nearby_click') }}" data-place="{{ it.e.id }}">{{ it.name }}</a>
+<a class="rec-link" href="{{ it.path }}" data-vt data-track="{{ {'stay': 'stay_click', 'food': 'food_click', 'cafe': 'food_click'}.get(kind, 'nearby_click') }}" data-place="{{ it.e.id }}">{{ it.name }}</a>
 {% set bits = [] %}{% if it.type %}{% set _ = bits.append(it.type) %}{% endif %}{% if it.street %}{% set _ = bits.append(it.street) %}{% endif %}{% if it.dong %}{% set _ = bits.append(it.dong) %}{% endif %}{% if it.rooms %}{% set _ = bits.append('객실 ' ~ it.rooms ~ ('실' if it.rooms.isdigit() else '')) %}{% endif %}
 <span class="rec-meta">{{ bits|join(' · ') }}</span>
 {% if it.web %}<a class="rec-web" href="{{ it.web }}" rel="noopener" data-track="{{ 'stay_click' if kind == 'stay' else 'official_click' }}" data-place="{{ it.e.id }}">{{ it.web_text }}</a>{% endif %}

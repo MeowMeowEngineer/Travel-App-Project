@@ -106,7 +106,10 @@
     a.appendChild(div(cls, html));
     return a;
   }
-  function kindPin(kind, url, label, quiet) { return pin(kind === "stay" ? "mk-ring" : kind === "food" ? "mk-sq" : "mk-dot", "", url, label, quiet); }
+  // a place's marker by its kind: 관광지 dot, 숙소 ring, 음식점 square, 카페·디저트 hollow square, 쇼핑 bar (the map page's
+  // toggles draw the same shapes, css .mk-a/s/f/c/h)
+  var KIND_MK = { stay: "mk-ring", food: "mk-sq", cafe: "mk-sqr", shopping: "mk-bar" };
+  function kindPin(kind, url, label, quiet) { return pin(KIND_MK[kind] || "mk-dot", "", url, label, quiet); }
   function textW(t) { return Math.min(280, 13.4 * String(t).length + 8); }
   function idOf(p) { return p.id || decodeURIComponent((p.url || "").split("/")[2] || ""); }
   // the middle of the points (outliers stay on the map, one zoom-out away)

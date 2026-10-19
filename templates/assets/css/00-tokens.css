@@ -58,6 +58,9 @@
   --bg: #ffffff; --bg-2: #F4F7FB; --bg-3: #E7EDF4; --tile: #F4F7FB;
   --ink: #172033; --ink-2: #3E4757; --ink-3: #5F6878; --hair: #D8E0EA;
   --blue: var(--sea); --blue-hi: var(--sea-hi); --link: var(--sea-hi); --red: #C9252C; --focus: var(--sea);
+  /* the logo's own blue (site.json brand_colors.sea, the symbol and the wordmark's emphasised end, operator
+     2026-10-19): 5.80:1 on #fff, 5.40:1 on bg-2 */
+  --brand: #1764C0;
   /* retired accents (lime / lavender / sky): the names point at the sea tints until every rule is rewritten */
   --lime: var(--tint2); --lime-hi: var(--g2); --lav: var(--tint); --lav-hi: var(--tint2); --sky: var(--g1); --sky-hi: var(--g2);
   /* the reference's shapes and motion */

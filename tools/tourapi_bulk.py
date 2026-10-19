@@ -15,8 +15,11 @@
 4. Fills tourapi.contentid, geo (TourAPI; a point from another source — the city's official tourism site, a
    facility's homepage — stays, the report lists how far TourAPI's is), images (cpyrhtDivCd Type1/Type3 only, https,
    credit 한국관광공사), with --gallery also detailImage2 photos named after the place, then straight-line nearby
-   places (attraction/stay/food, within 2 km) computed from those coordinates; nearby_source names every provider of
+   places (each kind, within 2 km) computed from those coordinates; nearby_source names every provider of
    the points used ('한국관광공사 TourAPI·<another provider> 좌표').
+   Every place TourAPI lists keeps the item's classification codes (tourapi.lclsSystm1·2·3, cat1·2·3) and its kind
+   follows them (pipeline.tourapi.kind_of: lclsSystm3 FD05… or FD030100 — cat3 A05020900 without the new
+   classification — is 'cafe', 카페·디저트; type 38 is 'shopping'), unless "kind" is in its locks (reclassify).
 5. --events (searchFestival2, all pages) asks for the festivals from today (--events-from YYYYMMDD for an earlier
    day) and runs before --details/--add-new, so the time-sensitive festival list is refreshed first when the
    per-run call cap is reached. A 광역시 asks once for the whole 시도.
@@ -54,9 +57,10 @@ if __package__ in (None, ""):
 
 from pipeline.enrich import haversine_m, load_dotenv
 from pipeline.relations import raw_family
-from pipeline.schema import TOURAPI_LICENSE_MAP, geo_providers, license_allowed, nearby_provider
+from pipeline.schema import (KIND_LABELS, KINDS, TOURAPI_LICENSE_MAP, base_kind, geo_providers, license_allowed,
+                             nearby_provider)
 from pipeline.textutil import normalize_name
-from pipeline.tourapi import KIND_BY_TYPE, TourAPIError, TourAPIStopError, from_site_config
+from pipeline.tourapi import CONTENT_TYPES, TourAPIError, TourAPIStopError, from_site_config, kind_of, lcls3
 
 LIST_TYPES = ("12", "14", "28", "38", "32", "39")
 ROAD = re.compile(r"([가-힣0-9]+(?:로|길))\s*([0-9]+(?:-[0-9]+)?)")
@@ -197,11 +201,18 @@ def region_codes(api, site: dict, only: list[str] | None = None) -> tuple[str, l
     return regn, [hit], notes
 
 
+def same_kind(item: dict, kind: str | None) -> bool:
+    """A TourAPI item can be a place of this kind: the same kind read alike (schema.base_kind) — a café TourAPI
+    files under 음식점 is our food record's twin, a type-38 shop our attraction record's — so a record matches before
+    its kind follows TourAPI's classification (reclassify)."""
+    return bool(kind) and base_kind(kind_of(item)) == base_kind(kind)
+
+
 def match(place: dict, by_name: dict, by_road: dict, region: str) -> tuple[dict | None, str]:
     kind = place.get("kind")
     nk = name_key(place.get("name"), region)
     rk = road_key((place.get("facts") or {}).get("address"))
-    same_name = [c for c in by_name.get(nk, []) if KIND_BY_TYPE.get(str(c.get("contenttypeid"))) == kind]
+    same_name = [c for c in by_name.get(nk, []) if same_kind(c, kind)]
     if len(same_name) == 1:
         return same_name[0], "same_name"
     if len(same_name) > 1 and rk:
@@ -209,14 +220,14 @@ def match(place: dict, by_name: dict, by_road: dict, region: str) -> tuple[dict 
         if len(hit) == 1:
             return hit[0], "same_name_address"
     if rk:
-        near = [c for c in by_road.get(rk, []) if KIND_BY_TYPE.get(str(c.get("contenttypeid"))) == kind
+        near = [c for c in by_road.get(rk, []) if same_kind(c, kind)
                 and SequenceMatcher(None, nk, name_key(c.get("title"), region)).ratio() >= 0.6]
         if len(near) == 1:
             return near[0], "same_address_similar_name"
-    if rk and kind in ("stay", "food"):  # a business at one address: '게스트하우스 소설여행' = '소설여행'
+    if rk and kind in ("stay", "food", "cafe"):  # a business at one address: '게스트하우스 소설여행' = '소설여행'
         core = lambda s: GENERIC.sub("", s)
         branches = lambda s: set(BRANCH.findall(s or ""))
-        hit = [c for c in by_road.get(rk, []) if KIND_BY_TYPE.get(str(c.get("contenttypeid"))) == kind
+        hit = [c for c in by_road.get(rk, []) if same_kind(c, kind)
                and branches(c.get("title")) == branches(place.get("name"))
                and min(len(core(nk)), len(core(name_key(c.get("title"), region)))) >= 2
                and (core(nk) in core(name_key(c.get("title"), region))
@@ -236,6 +247,40 @@ def https(url: str) -> str:
     return "https://" + url[len("http://"):] if url.startswith("http://") else url
 
 
+def keep_classification(place: dict, item: dict) -> None:
+    """The place's `tourapi` block takes the item's classification codes (lclsSystm1·2·3, cat1·2·3 as TourAPI gives
+    them); the older single `lcls` field (lclsSystm3, records collected before 2026-10-19) goes once lclsSystm3 is
+    there."""
+    from tools.tourapi_details import classification
+    t = place.setdefault("tourapi", {})
+    t.update(classification(item))
+    if t.get("lclsSystm3"):
+        t.pop("lcls", None)
+
+
+def reclassify(places: list[dict], by_cid: dict) -> list[str]:
+    """Every place with a TourAPI contentid in this run's lists keeps TourAPI's classification codes
+    (keep_classification) and its kind follows them (pipeline.tourapi.kind_of: a café or bakery TourAPI files under
+    음식점 is 'cafe' — 카페·디저트, operator 2026-10-19; type 38 is 'shopping') when the two kinds read alike
+    (food ↔ cafe, attraction ↔ shopping: schema.base_kind) and "kind" is not in the place's locks. The category of a
+    TourAPI-only place follows its kind. No calls (the list items are this run's). Returns 'name: old → new' lines."""
+    out = []
+    for p in places:
+        cid = str((p.get("tourapi") or {}).get("contentid") or "")
+        item = by_cid.get(cid)
+        if p.get("duplicate_of") or not item:
+            continue
+        keep_classification(p, item)
+        new, old = kind_of({"contenttypeid": item.get("contenttypeid"), **p["tourapi"]}), p.get("kind")
+        if not new or new == old or base_kind(new) != base_kind(old) or "kind" in set(p.get("locks") or []):
+            continue
+        p["kind"] = new
+        if str(p.get("id", "")).startswith("tourapi-"):
+            p["category"] = KIND_LABELS["cafe"] if new == "cafe" else CONTENT_TYPES.get(str(item.get("contenttypeid")), "")
+        out.append(f"{p['name']}: {KIND_LABELS.get(old, old)} → {KIND_LABELS.get(new, new)}")
+    return out
+
+
 def fill(place: dict, cand: dict, basis: str, allowed: list | None) -> dict:
     locks = set(place.get("locks") or [])
     changed = {"geo": False, "image": ""}
@@ -244,6 +289,7 @@ def fill(place: dict, cand: dict, basis: str, allowed: list | None) -> dict:
     place["tourapi"] = {**(place.get("tourapi") or {}), "contentid": str(cand["contentid"]),
                         "contenttypeid": str(cand.get("contenttypeid", "")), "title": cand.get("title", ""),
                         "match_basis": basis, "modifiedtime": cand.get("modifiedtime", "")}
+    keep_classification(place, cand)
     try:
         lat, lng = float(cand.get("mapy")), float(cand.get("mapx"))
     except (TypeError, ValueError):
@@ -304,8 +350,8 @@ def compute_nearby(places: list[dict], today: str) -> int:
     lines on the page) is never its nearby place, and a same-building alias is skipped while its parent is listable
     (one building, one row); the next places fill the slots. Network-free: also run alone with --nearby-only."""
     live = [p for p in places if not p.get("duplicate_of") and (p.get("geo") or {}).get("lat") is not None]
-    listable = lambda q: not q.get("exclude") and (q.get("category") != "쇼핑" or
-                                                     (q.get("tourapi") or {}).get("lcls", "").startswith(NEARBY_SHOP_LCLS))
+    listable = lambda q: not q.get("exclude") and ((q.get("kind") != "shopping" and q.get("category") != "쇼핑")
+                                                   or lcls3(q).startswith(NEARBY_SHOP_LCLS))
     family, alias = raw_family(places)
     shown = {q["id"] for q in live if listable(q)}
     n = 0
@@ -316,7 +362,7 @@ def compute_nearby(places: list[dict], today: str) -> int:
         dists = sorted(((haversine_m(p["geo"]["lat"], p["geo"]["lng"], q["geo"]["lat"], q["geo"]["lng"]), q)
                         for q in live if q is not p and listable(q) and q["id"] not in fam
                         and alias.get(q["id"]) not in shown), key=lambda x: x[0])
-        groups = {"attraction": [], "stay": [], "food": []}
+        groups = {k: [] for k in KINDS}
         geos = [p["geo"]]
         for d, q in dists:
             if d > NEARBY_RADIUS_M:
@@ -327,7 +373,7 @@ def compute_nearby(places: list[dict], today: str) -> int:
                           "distance_m": int(round(d)), "internal_slug": q["slug"],
                           "contentid": (q.get("tourapi") or {}).get("contentid", "")})
                 geos.append(q["geo"])
-        nearby = groups["attraction"] + groups["stay"] + groups["food"]
+        nearby = [n for k in KINDS for n in groups[k]]
         kept = (p.get("nearby_source") or {}).get("checked_at") if nearby == p.get("nearby") else ""
         p["nearby"] = nearby
         # whose coordinates the distances come from: this place's point and every listed place's, TourAPI first
@@ -440,6 +486,8 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
             stats["images"][ch["image"]] += 1
         elif cand.get("firstimage"):
             stats["image_other_type"] += 1
+    # every place TourAPI lists keeps its classification codes, and its kind follows them (카페·디저트, 쇼핑)
+    stats["reclassified"] = reclassify(places, by_cid)
     if gallery:
         stats["gallery_added"] = sum(add_gallery(api, p, allowed) for p in places
                                      if not p.get("duplicate_of") and (p.get("tourapi") or {}).get("match_basis"))
@@ -585,6 +633,7 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
              f"- 직선거리 주변이 생긴 장소 {stats['nearby_pages']}",
              f"- 남은 호출(캐시에 없는 응답, 캐시 우선 기준): {stats['remaining_calls']}"]
     lines += [f"- 다른 출처 좌표 유지: {x}" for x in stats.get("geo_kept") or []]
+    lines += [f"- 종류 변경(TourAPI 분류): {x}" for x in stats.get("reclassified") or []]
     if stats.get("stopped"):
         lines.append(f"- 중단: {stats['stopped']}")
     if details:

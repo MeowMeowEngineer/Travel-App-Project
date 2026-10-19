@@ -11,7 +11,7 @@ import { tokens } from "../../chatbot/knowledge.js";
 import { createDevServer, devHandler } from "../../tools/chat_dev.mjs";
 import { fakeClient, sseEvents, textRound } from "./fake_model.js";
 
-const SITE = "https://incheon.example.com";
+const SITE = "https://incheon.webforai.kr";
 
 async function builtFolder() {
   const dir = await mkdtemp(path.join(tmpdir(), "chat-dev-"));
@@ -24,7 +24,7 @@ async function builtFolder() {
   await writeFile(path.join(dir, "chat", "catalog.txt"), "P /places/test-beach-a/ | [테스트] 가상 해변 A\n");
   await writeFile(path.join(dir, "chat", "docs.json"), JSON.stringify({ v: 1, site: SITE, docs, alias: {}, ext: [] }));
   await writeFile(path.join(dir, "chat", "index.json"), JSON.stringify(index));
-  await writeFile(path.join(dir, "chat", "site.json"), JSON.stringify({ url: SITE, name: "인천 여행의 모든 것",
+  await writeFile(path.join(dir, "chat", "site.json"), JSON.stringify({ url: SITE, name: "인천각",
     city: { ko: "인천", en: "Incheon" }, origins: [] }));
   return dir;
 }

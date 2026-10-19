@@ -1,23 +1,28 @@
 {
  "_notes": [
   "2026-10-19 군산 site.json 구조를 옮겨 인천 값으로 만든 초안이다. 사람이 정할 값(CLAUDE.md 6절)은 비워 두거나 자리표시로 두었다.",
-  "site_url: 도메인은 운영자가 정한다. 지금 값 https://incheon.example.com은 자리표시라 production 검증(pipeline/validate.py PLACEHOLDERS 'example.com')이 막는다. 정해지면 처음부터 최종 주소로 넣고 공개 뒤에는 바꾸지 않는다.",
-  "site_name·brand '인천 여행의 모든 것'은 가칭이다. 운영자가 확정한다(도메인과 같은 이름으로 읽히게).",
+  "site_url: 운영자 결정(2026-10-19) https://incheon.webforai.kr — 회사 도메인의 하위 주소로 처음부터 최종 주소다. 공개 뒤에는 바꾸지 않는다. canonical·sitemap·robots·llms.txt·챗봇 허용 출처(public/chat/site.json url)·IndexNow host가 모두 이 값에서 나온다. 카카오 지도 JavaScript 키는 이 주소를 카카오 개발자 콘솔의 웹 도메인으로 등록한 키여야 한다.",
+  "site_name·brand: 운영자 결정(2026-10-19) '인천각'(MZ 표현 '~하는 각?' — '오늘 인천 가는 각'), 영어 'Incheongak'(로고 아래 줄, city.intl.en.site_name — 영어판을 만들 때의 이름). 이전 가칭 '인천 여행의 모든 것'은 쓰지 않는다. 머리말·바닥글 글자는 '인천' 잉크 + '각' 바다색(pipeline/present.wordmark, 'Incheon' + 'gak'), 심볼은 brand_symbol(인천대교 주탑 + 책갈피, 운영자 선택 시안 A, templates/assets/brand/incheongak-*.svg). 홈 첫 화면 h1은 city.home.h1 '오늘, 인천 가는 각'.",
   "ga4_id·gtm_id·search_verification·indexnow_key·operator.contact는 비어 있다. 운영자가 정한다(indexnow_key는 공개 직전에 만든다: tools/indexnow.py).",
   "kakao_js_key: 비어 있다. 운영자가 카카오 개발자 콘솔에서 새 도메인을 웹 도메인으로 등록한 JavaScript 키를 넣는다(공개 키). 비어 있으면 지도 상자는 글과 '지도를 불러오지 못했습니다' 줄만 남는다.",
   "publish_rules·crawler_policy는 군산 사이트의 값을 기본값으로 옮겼다. 인천 사이트용으로 운영자가 확인한다.",
   "official_links: 2026-10-19에 직접 열어 본 주소만 넣었다 — 인천투어 https://itour.incheon.go.kr/ (200, 제목 'Discover Incheon, 인천투어(itour) 메인'), 인천관광공사 https://www.ito.or.kr/ (200, 제목 '인천관광공사'). 인천광역시 https://www.incheon.go.kr/ 는 그날 연결이 끊겨 확인하지 못해 넣지 않았다.",
   "인천투어 하단 표기 'COPYRIGHT(c) 2018 Incheon Metropolitan City. ALL RIGHTS RESERVED.', 첫 화면에 공공누리 표시 없음(2026-10-19 확인) → 원문·사진은 게재하지 않고 링크와 표의 값만 쓴다(CLAUDE.md 3절 3항). 페이지별 이용조건은 수집 단계에서 다시 확인한다.",
   "source(인천투어)는 빌드한 레코드가 실제로 인용할 때만(원문·값의 출처·코스·가이드·행사의 출처가 그 이름이거나 그 주소) 바닥글·/about/·llms.txt·사이트 도우미에 '원문 출처'로 나온다(pipeline/build.py source_cited). TourAPI로만 모은 동안은 '한국관광공사 TourAPI'만 출처로 적고, 인천투어는 official_links의 공식 안내 링크로만 남는다.",
-  "구·군(2026-10-19 확인): 「인천광역시 제물포구ㆍ영종구 및 검단구 설치 등에 관한 법률」(법률 제20161호, 2024. 1. 30. 제정, 시행 2026. 7. 1.) 제2조 — 중구·동구 폐지, 제물포구·영종구·검단구 설치, 서구에서 검단구 관할을 뺌(국가법령정보센터 law.go.kr에서 확인). 서구의 새 이름 '서해구'(법률 제21734호, 2026. 6. 2.)는 위키백과(서해구·인천광역시 문서)로만 확인했다 — 운영자 확인 필요. districts는 지금 이름, districts_former는 옛 이름이다. 주소·TourAPI 자료가 옛 이름을 쓸 수 있어 엔진은 둘 다 읽는다(pipeline/city.py district_of).",
+  "구·군(2026-10-19 확인): 「인천광역시 제물포구ㆍ영종구 및 검단구 설치 등에 관한 법률」(법률 제20161호, 2024. 1. 30. 제정, 시행 2026. 7. 1.) 제2조 — 중구·동구 폐지, 제물포구·영종구·검단구 설치, 서구에서 검단구 관할을 뺌(국가법령정보센터 law.go.kr에서 확인). 서구의 새 이름 '서해구'(법률 제21734호, 2026. 6. 2.)는 처음에 위키백과(서해구·인천광역시 문서)로 확인했고, 같은 날 TourAPI 목록으로도 확인했다(아래). districts는 지금 이름, districts_former는 옛 이름이다. 주소·TourAPI 자료가 옛 이름을 쓸 수 있어 엔진은 둘 다 읽는다(pipeline/city.py district_of). 2026-10-19 TourAPI 법정동 코드 목록(ldongCode2, lDongRegnCd 28)이 11개 구·군 — 제물포구·영종구·미추홀구·연수구·남동구·부평구·계양구·서해구·검단구·강화군·옹진군 — 을 돌려준다(서해구 포함). districts는 이 11개다.",
   "광역시: region_full '인천광역시' 아래 구·군을 tools/tourapi_bulk.py가 TourAPI 법정동 코드 목록(ldongCode2)대로 모두 돈다(site.json tourapi.scope 'sido'). 주소가 '인천광역시 ○○구 …'라 region_admin은 비우고 locality를 '인천광역시'로 둔다.",
   "TourAPI 지역 코드(lDongRegnCd·lDongSignguCd)는 키 없이 확인할 수 없어 여기에 적지 않는다 — 수집 도구가 실행할 때마다 ldongCode2에서 받고(응답은 data/cache), 키를 넣은 뒤 python tools/tourapi_doctor.py --data data/incheon 이 코드와 구·군 이름(site.json districts와 다른 이름 포함)을 보여 준다.",
   "city 블록(pipeline/city.py): 엔진이 도시마다 다르게 쓰는 값. 권역 규칙·거리 기준 장소·지정 목록·홈 이야기·사진 고르기·가이드 답 문구·다국어 이름. 비어 있는 키는 그 블록을 빼고 만든다(데이터·운영자 결정 전)."
  ],
- "site_url": "https://incheon.example.com",
- "site_name": "인천 여행의 모든 것",
- "site_name_status": "가칭 — 운영자 확정 전",
- "brand": "인천 여행의 모든 것",
+ "site_url": "https://incheon.webforai.kr",
+ "site_name": "인천각",
+ "brand": "인천각",
+ "brand_symbol": "incheongak-symbol.svg",
+ "brand_colors": {
+  "sea": "#1764C0",
+  "coral": "#FF7A5C",
+  "ink": "#172033"
+ },
  "region": "인천",
  "region_full": "인천광역시",
  "locality": "인천광역시",
@@ -35,7 +40,7 @@
   "강화군",
   "옹진군"
  ],
- "description": "인천 여행의 모든 것은 인천의 관광지·맛집(음식점)·숙소·여행 코스·축제를 한곳에 모으는 여행 정보 사이트입니다. 장소마다 이용시간·쉬는 날·요금·주차·길찾기와 값별 출처를 적습니다.",
+ "description": "인천각은 인천의 관광지·맛집(음식점)·카페·숙소·여행 코스·축제를 한곳에 모으는 여행 정보 사이트입니다. 장소마다 이용시간·쉬는 날·요금·주차·길찾기와 값별 출처를 적습니다.",
  "disclaimer": "인천광역시·인천관광공사 공식 홈페이지와 별도로 운영되는 독립 사이트입니다. 원문·사진의 권리는 각 출처에 있으며 표시된 이용조건을 따릅니다.",
  "affiliation": "",
  "operator": {
@@ -112,11 +117,11 @@
   "_notes": [
    "address_prefixes: 주소 앞의 '인천광역시'만 지운다(목록·행사 장소 줄). 구·군 이름은 위치 정보라 남긴다.",
    "official: 인천투어(https://itour.incheon.go.kr/)는 인천광역시 관광 안내 — 원문·사진은 링크만(CLAUDE.md 3절 3항). 값의 출처 이름이 '인천투어'·'인천광역시'를 담으면 짧은 이름 '인천광역시'로 보인다.",
-   "travel_regions: 권역은 주소의 구·군(없으면 TourAPI 법정동 코드의 구·군)과, 영종도가 들어 있던 옛 중구만 법정동으로 나눈다. 영종구 법정동 8개(운서·운남·운북·중산·을왕·남북·덕교·무의동)는 위키백과 「영종구의 행정 구역」(2026-10-19)에서 옮겼다 — 운영자가 행정표준코드관리시스템으로 확인. 권역 이름과 나눔은 제안이며 운영자가 바꿀 수 있다. 지도 페이지는 이 설정에서 만든 문장을 그대로 보인다.",
+   "travel_regions: 운영자 결정(2026-10-19) — 장소마다 주소의 구·군(없으면 TourAPI 법정동 코드의 구·군) 하나로 권역 하나: 개항장·월미 = 제물포구, 영종·용유 = 영종구, 송도·연수 = 연수구, 강화 = 강화군, 옹진 섬 = 옹진군, 도심·소래 = 미추홀구·남동구·부평구·계양구·서해구·검단구. 옛 이름(districts_former)으로 적힌 주소는 지금 구·군을 따라 같은 권역에 넣는다: 동구 → 개항장·월미, 서구 → 도심·소래, 중구는 영종도 법정동 8개(운서·운남·운북·중산·을왕·남북·덕교·무의동 — 위키백과 「영종구의 행정 구역」, 운영자가 행정표준코드로 확인)면 영종·용유, 그 밖의 법정동이면 개항장·월미, 법정동이 없으면 '권역 미정'. 지도 페이지는 이 설정에서 만든 문장을 그대로 보인다(pipeline/city.py region_rule_lines).",
    "distance_anchors: 장소 페이지가 직선거리를 재는 기준 장소 제안. 수집한 데이터에서 이름으로 찾고, 없으면 빌드 경고와 함께 뺀다. 운영자 확인.",
    "designations: 인천광역시가 운영하는 음식점 지정 목록(시 지정 맛집 등)은 아직 조사하지 않았다 — 조사 뒤 order·short에 넣는다. 전국 목록(백년가게·모범음식점·착한가격업소·안심식당 등)은 엔진 기본값.",
-   "home: 홈 이야기 장(story)·첫 화면 사진(photos)·갤러리·코스 지도·답 문구는 수집한 데이터와 운영자가 고른 사진·문장이 생기면 넣는다. 그 전에는 홈이 그 블록 없이 데이터만으로 만들어진다.",
-   "intl: 한국어만 먼저(이식 안내서 권장). 다른 언어판은 data/incheon/<code>와 여기 이름(site_name, city …)이 둘 다 있어야 만들어진다.",
+   "home: 홈 이야기 장(story)·첫 화면 사진(photos)·갤러리·코스 지도·답 문구는 수집한 데이터와 운영자가 고른 사진·문장이 생기면 넣는다. 그 전에는 홈이 그 블록 없이 데이터만으로 만들어진다. h1: 홈 첫 화면 큰 제목(운영자 결정 2026-10-19 '오늘, 인천 가는 각'). 없으면 '<region> 여행의 모든 것'.",
+   "intl: 한국어만 먼저(이식 안내서 권장). 다른 언어판은 data/incheon/<code>와 여기 이름(site_name, city …)이 둘 다 있어야 만들어진다. en의 이름(Incheongak·Incheon)은 운영자 결정(2026-10-19)으로 미리 적어 두었다 — data/incheon/en이 없으니 영어판은 아직 만들어지지 않는다.",
    "chat: 사이트 도우미가 쓰는 도시 이름과 추천 질문. 추천 질문은 데이터로 답할 수 있게 된 뒤 넣는다."
   ],
   "address_prefixes": [
@@ -137,10 +142,10 @@
   "travel_regions": {
    "method": "district",
    "none_label": "권역 미정",
-   "rule_note": "2026년 7월 1일 폐지된 중구·동구로 적힌 주소도 같은 기준으로 나눴고, 법정동이 적히지 않은 중구 주소는 어느 쪽인지 알 수 없어 나누지 않았습니다.",
+   "rule_note": "2026년 7월 1일 전의 이름으로 적힌 주소는 지금의 구·군을 따라 나눴습니다: 동구는 개항장·월미, 서구는 도심·소래, 중구는 영종도 법정동이면 영종·용유이고 그 밖이면 개항장·월미이며, 법정동이 적히지 않은 중구 주소는 어느 쪽인지 알 수 없어 나누지 않았습니다.",
    "regions": [
     {
-     "name": "개항장·원도심",
+     "name": "개항장·월미",
      "match": [
       {
        "district": "제물포구"
@@ -193,7 +198,23 @@
      ]
     },
     {
-     "name": "도심 생활권",
+     "name": "강화",
+     "match": [
+      {
+       "district": "강화군"
+      }
+     ]
+    },
+    {
+     "name": "옹진 섬",
+     "match": [
+      {
+       "district": "옹진군"
+      }
+     ]
+    },
+    {
+     "name": "도심·소래",
      "match": [
       {
        "district": "미추홀구"
@@ -211,26 +232,10 @@
        "district": "서해구"
       },
       {
-       "district": "서구"
+       "district": "검단구"
       },
       {
-       "district": "검단구"
-      }
-     ]
-    },
-    {
-     "name": "강화",
-     "match": [
-      {
-       "district": "강화군"
-      }
-     ]
-    },
-    {
-     "name": "옹진 섬",
-     "match": [
-      {
-       "district": "옹진군"
+       "district": "서구"
       }
      ]
     }
@@ -247,10 +252,17 @@
   "list_hubs": {},
   "purposes": [],
   "hero_picks": [],
-  "home": {},
+  "home": {
+   "h1": "오늘, 인천 가는 각"
+  },
   "access_sources": {},
   "fee_sources": {},
-  "intl": {},
+  "intl": {
+   "en": {
+    "site_name": "Incheongak",
+    "city": "Incheon"
+   }
+  },
   "chat": {
    "names": {
     "ko": "인천",

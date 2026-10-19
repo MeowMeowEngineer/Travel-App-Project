@@ -488,7 +488,7 @@
     var facts = h("ul", { class: "trp-facts" }, [
       h("li", { class: "trp-day trp-day-" + st }, [h("span", { class: "trp-fl", text: "그날" }), h("span", { text: LABEL.day[st].replace("그날 ", "") })]),
       factRow("시간", p.h), factRow("쉬는 날", p.c, "trp-closed"),
-      factRow(p.k === "food" ? "메뉴" : "요금", p.k === "food" ? p.m : p.f), factRow("주차", p.p),
+      factRow(p.k === "food" || p.k === "cafe" ? "메뉴" : "요금", p.k === "food" || p.k === "cafe" ? p.m : p.f), factRow("주차", p.p),
       s.role === "stay" ? factRow("체크인", p.ci) : null]);
     var notes = (s.flags || []).map(function (f) { return h("li", { class: "bad", text: f }); })
       .concat((s.checks || []).map(function (f) { return h("li", { text: "확인: " + f }); }));

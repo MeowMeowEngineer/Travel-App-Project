@@ -514,8 +514,8 @@ a.kf-more { display: inline-flex; align-items: center; min-height: 28px; }
    A clean comparison table: the list markup sets --cols with .kind-<kind> on the ledger; '확인 필요' or '—' =
    not in the source. Filters are pills (hidden without JS); the 필터 panel holds 권역 · 테마 · the check box. */
 .lg-head { position: sticky; top: var(--bar); z-index: 5; display: grid; grid-template-columns: var(--cols); column-gap: 16px; background: rgba(255, 255, 255, .92); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border-bottom: 1px solid var(--hair); padding: 12px 12px 10px; font-size: 13px; font-weight: 700; color: var(--ink-3); margin-top: 14px; }
-.kind-attraction, .kind-food, .kind-stay { --cols: minmax(0, 3.2fr) minmax(0, 2fr) minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 1.5fr); }
-.kind-food { --cols: minmax(0, 3fr) minmax(0, 1.8fr) minmax(0, 2.2fr) minmax(0, 1.5fr) minmax(0, 1.5fr); }
+.kind-attraction, .kind-food, .kind-stay, .kind-cafe, .kind-shopping { --cols: minmax(0, 3.2fr) minmax(0, 2fr) minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 1.5fr); }
+.kind-food, .kind-cafe { --cols: minmax(0, 3fr) minmax(0, 1.8fr) minmax(0, 2.2fr) minmax(0, 1.5fr) minmax(0, 1.5fr); }
 .kind-stay { --cols: minmax(0, 3.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.8fr) minmax(0, 1.6fr); }
 .lg-group { margin-top: 28px; }
 .lg-group:first-of-type { margin-top: 12px; }
@@ -771,6 +771,8 @@ a.mk-a:not([tabindex="-1"]):not(.mk-li)::before { content: ""; position: absolut
 .mk-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 2px #fff; transition: transform .2s var(--fb), background-color .2s var(--fb); }
 .mk-ring { width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 2.5px solid var(--ink); box-shadow: 0 0 0 1.5px #fff; transition: transform .2s var(--fb); }
 .mk-sq { width: 9px; height: 9px; border-radius: 2px; background: var(--ink); box-shadow: 0 0 0 2px #fff; transition: transform .2s var(--fb); }
+.mk-sqr { width: 10px; height: 10px; border-radius: 2px; background: #fff; border: 2.5px solid var(--ink); box-shadow: 0 0 0 1.5px #fff; transition: transform .2s var(--fb); }
+.mk-bar { width: 13px; height: 7px; border-radius: 4px; background: var(--ink); box-shadow: 0 0 0 2px #fff; transition: transform .2s var(--fb); }
 .mk-anchor { width: 12px; height: 12px; border-radius: 3px; background: #fff; border: 2px solid var(--ink); }
 .mk-num { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); font: 700 13px/24px var(--font); text-align: center; color: var(--ink); font-variant-numeric: tabular-nums; transition: transform .2s var(--fb), background-color .2s var(--fb); }
 .mk-num.past { background: var(--ink); color: #fff; }

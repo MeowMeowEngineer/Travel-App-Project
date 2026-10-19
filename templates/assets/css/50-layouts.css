@@ -192,6 +192,8 @@
 .mk-a { border-radius: 50%; background: var(--ink); }
 .mk-s { border-radius: 50%; border: 2px solid var(--ink); }
 .mk-f { background: var(--ink); border-radius: 2px; transform: scale(.85); }
+.mk-c { border: 2px solid var(--ink); border-radius: 2px; transform: scale(.85); }
+.mk-h { width: 12px; height: 7px; align-self: center; border-radius: 4px; background: var(--ink); }
 /* the kind toggles are on together by default: a quiet 'on' (white, dark ring, full marker) instead of the lime chip,
    which stays for the one-of-many rows (45-accent); 'off' = grey with a faded marker */
 .f-kinds button[aria-pressed="true"] { background: #fff; color: var(--sea-deep); box-shadow: inset 0 0 0 1.5px var(--sea); font-weight: 700; }
@@ -214,7 +216,8 @@
 .dong h3 .tn { color: var(--ink-3); margin-left: 4px; font-weight: 400; }
 .dong li { display: flex; gap: 9px; align-items: center; padding: 6px 0; border-top: 1px solid var(--hair); font-size: 15px; line-height: 1.4; min-height: 36px; position: relative; }
 .dong li .mk { width: 8px; height: 8px; }
-.dong li .mk-s { border-width: 1.5px; }
+.dong li .mk-s, .dong li .mk-c { border-width: 1.5px; }
+.dong li .mk-h { width: 10px; height: 6px; }
 .dong li a { color: var(--ink); text-decoration: none; }
 .dong li a::after { content: ""; position: absolute; inset: 0; }
 .dong li a:hover, .dong li.hl a { color: var(--link); }

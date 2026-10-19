@@ -261,6 +261,7 @@ const once = (cache, doc, read) => {
 export function isCafe(doc) {
   return once(CAFE, doc, (d) => {
     const f = (d && d.f) || {};
+    if (f.kc === "cafe") return true;   // the site's own 카페·디저트 kind (TourAPI's café and bakery classes; docs.json kc)
     if (f.kd !== "food" || f.ty) return false;
     return CAFE_MENU.test(menuLines(d).join(" "));
   });

@@ -28,9 +28,9 @@ import sys
 from difflib import SequenceMatcher
 from pathlib import Path
 
-from .schema import TOURAPI_LICENSE_MAP, license_allowed
+from .schema import KINDS, TOURAPI_LICENSE_MAP, license_allowed
 from .textutil import extract_url, normalize_name, strip_html
-from .tourapi import (CONTENT_TYPES, DEFAULT_MAX_CALLS, INTRO_FIELDS, KIND_BY_TYPE, TourAPI, TourAPIError,
+from .tourapi import (CONTENT_TYPES, DEFAULT_MAX_CALLS, INTRO_FIELDS, TourAPI, TourAPIError, kind_of,
                       TourAPIStopError, from_site_config)
 
 MATCH_THRESHOLD = 0.75
@@ -176,11 +176,11 @@ def fill_entity(api: TourAPI, e: dict, site: dict, by_contentid: dict, today: st
         radius = int(tconf.get("nearby_radius_m", 2000))
         per_kind = int(tconf.get("nearby_per_kind", 3))
         items = api.location_based(e["geo"]["lat"], e["geo"]["lng"], radius=radius)
-        groups: dict[str, list] = {"attraction": [], "stay": [], "food": []}
+        groups: dict[str, list] = {k: [] for k in KINDS}
         self_name = normalize_name(e["name"])
         for it in items:
             icid, ict = str(it.get("contentid")), str(it.get("contenttypeid"))
-            kind = KIND_BY_TYPE.get(ict)
+            kind = kind_of(it)
             if not kind or icid == cid or normalize_name(it.get("title")) == self_name:
                 continue
             if len(groups[kind]) >= per_kind:
@@ -195,7 +195,7 @@ def fill_entity(api: TourAPI, e: dict, site: dict, by_contentid: dict, today: st
                 "internal_slug": target.get("slug", "") if target else "",
                 "address": strip_html(it.get("addr1")),
             })
-        e["nearby"] = groups["attraction"] + groups["stay"] + groups["food"]
+        e["nearby"] = [n for k in KINDS for n in groups[k]]
         e["nearby_source"] = {"provider": "한국관광공사 TourAPI 위치기반", "radius_m": radius,
                               "distance_basis": "직선거리", "checked_at": today}
 

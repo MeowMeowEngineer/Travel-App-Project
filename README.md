@@ -1,11 +1,11 @@
-# 인천 여행 사이트 (가칭 '인천 여행의 모든 것')
+# 인천각 (Incheongak) — 인천 여행 사이트
 
-인천의 관광지·맛집(음식점)·숙소·여행 코스·행사를 모아, 장소마다 **방문 판단 정보**(이용시간·쉬는 날·요금·주차·전화·체크인)를 값별 출처와 함께 싣는 정적 여행 사이트입니다. 사이트에 실린 정보로만 답하는 **사이트 도우미(챗봇, Claude Haiku 5.5)** 가 함께 있습니다.
+인천의 관광지·맛집(음식점)·카페·디저트·숙소·쇼핑·여행 코스·행사를 모아, 장소마다 **방문 판단 정보**(이용시간·쉬는 날·요금·주차·전화·체크인)를 값별 출처와 함께 싣는 정적 여행 사이트입니다. 사이트에 실린 정보로만 답하는 **사이트 도우미(챗봇, Claude Haiku 5.5)** 가 함께 있습니다.
 
 - 군산 여행 사이트(https://gunsan.webforai.kr)의 엔진을 옮겨 와(2026-10-19, 이력 없이 복사) 도시와 무관하게 고쳤습니다. 도시마다 다른 값은 모두 `data/<도시>/site.json`(지역 키와 `city` 블록)에 있고 `pipeline/city.py`가 읽습니다.
 - 사실은 TourAPI(한국관광공사)·인천광역시/인천관광공사 공식 관광 사이트·시설 공식 홈페이지에서만 가져옵니다. 지어내지 않습니다.
 - 작업 규칙은 `CLAUDE.md`, 데이터 표준은 `docs/02_page_standard.md`에 있습니다.
-- 사이트 이름·도메인·GA4·검색엔진 인증·공개 여부는 운영자가 정합니다(`CLAUDE.md` 6절).
+- 사이트 이름 **인천각**(Incheongak)과 도메인 **https://incheon.webforai.kr**은 운영자가 정했습니다(2026-10-19, `CLAUDE.md` 2절). GA4·검색엔진 인증·공개 여부는 운영자가 정합니다(6절).
 
 ## 키만 넣으면 사이트가 나오기까지
 
@@ -38,7 +38,7 @@
 6. **공개 선별 미리보기**(`tools/build_review.py`): 요약과 주소 외 실용 정보가 함께 있는 장소(코스·가이드가 가리키는 곳 포함)만 골라 noindex 미리보기를 만들고, 고른 목록을 `reports/review_build_selection.json`에 씁니다. 선별은 검수·공개 승인이 아닙니다(status를 바꾸지 않음). 요약이 하나도 없으면 '선별 0곳'이라고 알립니다.
 7. **운영자 공개 승인**(사람, `tools/approve_publication.py`): 6단계의 선별 목록에 든 장소와 가이드·코스·행사를 `status: published`로 바꾸고 `approved_at`(승인한 날)을 남깁니다. `--apply` 없이는 미리 보기만 합니다. 선별 목록이 없으면 6단계를 먼저 하라고 알리고 멈춥니다. 검수 시트(`tools/make_review_sheet.py` → `tools/apply_review.py`)는 공개 경로가 아닙니다: 시트에는 `tier: full` 장소와 가이드·코스·행사만 오르고(수집한 장소는 모두 `tier: basic`), OK로 표시한 행을 `status: reviewed`·`reviewed_at`(검수일)으로만 바꿉니다 — published 전환은 하지 않습니다.
 8. **공개 설정과 공개 빌드**: 공개 빌드는 공개(published) 레코드만, 색인 기준 미달 페이지는 noindex·sitemap 제외로 만듭니다. production 검증은 아래 세 값이 비어 있거나 자리표시인 동안 오류(종료 코드 1)를 내며, 그동안 `public/`은 배포할 수 없습니다. 세 값 모두 운영자가 정합니다(CLAUDE.md 3절 7항·6절).
-   - `site_url`: 최종 https 주소. 지금은 자리표시 `https://incheon.example.com`입니다.
+   - `site_url`: 최종 https 주소 — 운영자 결정 `https://incheon.webforai.kr`(2026-10-19).
    - `ga4_id`: GA4 측정 ID. 운영자가 GA4를 공개 뒤에 달기로 정했다면 `site.json`에 `"launch_exceptions": {"ga4_id": "<운영자 사유>"}`를 두면 경고로 바뀝니다.
    - `operator.contact`: 정정 요청을 받을 연락처.
    
@@ -47,7 +47,9 @@
 
 ### 도시 설정(`data/incheon/site.json`)
 - **지역**: `region` '인천', `locality` '인천광역시', `districts` 지금 구·군 11곳(2026-07-01 행정체제 개편 뒤), `districts_former` 옛 이름(중구·동구·서구 — 주소·TourAPI가 옛 이름을 쓸 수 있어 둘 다 읽는다).
-- **여행 권역**(`city.travel_regions`, method 'district'): 주소의 구·군(없으면 TourAPI가 준 구·군)과, 옛 중구만 법정동으로 나눈다. 개항장·원도심 · 영종·용유 · 송도·연수 · 도심 생활권 · 강화 · 옹진 섬. 지도 페이지가 이 설정에서 만든 기준 문장을 그대로 보인다.
+- **여행 권역**(`city.travel_regions`, method 'district', 운영자 결정 2026-10-19): 주소의 구·군(없으면 TourAPI가 준 구·군) 하나에 권역 하나 — 개항장·월미(제물포구) · 영종·용유(영종구) · 송도·연수(연수구) · 강화(강화군) · 옹진 섬(옹진군) · 도심·소래(미추홀·남동·부평·계양·서해·검단구). 옛 이름 주소는 그 자리를 이은 구를 따르고, 옛 중구만 법정동으로 나눈다. 지도 페이지가 이 설정에서 만든 기준 문장을 그대로 보인다.
+- **카페·디저트·쇼핑**: TourAPI 신분류 `lclsSystm3` FD05…(카페/찻집)·FD030100(제과) — 신분류가 없으면 옛 cat3 A05020900 — 은 `kind: cafe`(목록 `/cafes/`, 음식점과 별도), 유형 38은 `kind: shopping`(목록 `/shopping/`). 수집이 장소마다 분류 코드(`tourapi.lclsSystm1·2·3`, cat1·2·3)를 남기고 종류를 그에 맞춘다(`pipeline/tourapi.kind_of`, `tools/tourapi_bulk.py` reclassify).
+- **브랜드**: `site_name`·`brand` '인천각', `brand_symbol`(머리말·바닥글 심볼), `brand_colors`, 영어 이름 `city.intl.en.site_name` 'Incheongak', 홈 h1 `city.home.h1` '오늘, 인천 가는 각'. 심볼·로고·아이콘은 `python tools/brand_kit.py --data data/incheon --out templates/assets/brand --png`(shapely·fonttools·Playwright)로 다시 만든다.
 - **거리 기준 장소**(`city.distance_anchors`): 수집한 데이터에서 이름으로 찾고, 없으면 빌드 경고와 함께 뺀다.
 - **홈**(`city.home`): 홈 이야기 장·첫 화면 사진·갤러리·코스 지도·답 문구는 비어 있다 — 데이터와 운영자가 고른 사진이 생기면 넣는다. 그 전에는 그 블록 없이 데이터만으로 만든다. 가운데 사이트 도우미 카드는 `data/incheon/ask.json`이 켠다(장소가 생기면 보인다).
 - **챗봇**(`city.chat`): 도시 이름(언어별)·추천 질문·추가 허용 출처. 빌드가 `public/chat/site.json`에 공개 주소·사이트 이름과 함께 쓰고, 함수(`chatbot/site.js`)와 화면(`templates/assets/chat.js`)이 그것을 읽는다. 코드에 도시 이름이 없다.

@@ -1952,3 +1952,16 @@ test("5th round fixes, the words: '곳이라', a date's particle, causes said to
   ], plan), ["근대역사박물관: 10월 20일(화)은 쉬는 날이라 일정에서 뺐습니다",
     "점심: 식사할 곳이 없어 앞 장소 해망굴에서 가까운 음식점 한일옥(직선 700m, 그날 그 시각에 여는 곳)을 12:00~13:00에 넣었습니다"]);
 });
+
+test("a page of the site's own 카페·디저트 kind (docs.json kc) is a café to the planner and never a meal", () => {
+  // pipeline/chat_index.py: kd is the kind the planner reads (a café as food, a shop as a place to visit), kc the site's
+  // own kind — a café TourAPI classes FD05 / FD030100 is one even without a coffee or bread word on its menu line
+  const cafe = { t: "[테스트] 가상 카페", k: "place", x: "[테스트] 가상 카페 — 카페·디저트", f: { kd: "food", kc: "cafe" } };
+  const shop = { t: "[테스트] 가상 시장", k: "place", x: "[테스트] 가상 시장 — 쇼핑", f: { kd: "attraction", kc: "shopping" } };
+  assert.equal(isCafe(cafe), true);
+  assert.equal(isMeal(cafe), false);
+  assert.equal(prefFits("cafe", cafe), true);
+  assert.equal(prefFits("food", cafe), false);
+  assert.equal(isCafe(shop), false);
+  assert.equal(isMeal(shop), false);
+});

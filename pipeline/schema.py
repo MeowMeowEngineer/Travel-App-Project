@@ -7,8 +7,23 @@ from __future__ import annotations
 
 import re
 
-KINDS = ("attraction", "stay", "food")
-KIND_LABELS = {"attraction": "관광지", "stay": "숙소", "food": "음식점"}
+KINDS = ("attraction", "stay", "food", "cafe", "shopping")
+KIND_LABELS = {"attraction": "관광지", "stay": "숙소", "food": "음식점", "cafe": "카페·디저트", "shopping": "쇼핑"}
+# the kind as the noun of a sentence ('…에 있는 쇼핑 장소입니다'): the label, but for the two that are no noun alone
+KIND_NOUNS = {**KIND_LABELS, "cafe": "카페·디저트 가게", "shopping": "쇼핑 장소"}
+# Two kinds read like another on a page (the same key facts, slots and words): a café or bakery (카페·디저트, TourAPI's
+# new classification FD05 / FD030100 under type 39: pipeline/tourapi.kind_of) is a food business — 대표 메뉴, 영업시간,
+# 휴무 — with its own list; a shop or market (쇼핑, TourAPI type 38) a place to visit without an admission fee.
+KIND_BASE = {"cafe": "food", "shopping": "attraction"}
+FOOD_KINDS = ("food", "cafe")          # menu, 영업시간·정기휴일, 휴무 (not 휴관)
+BUSINESS_KINDS = ("stay", "food", "cafe")   # the place page's '주변 숙소·음식점' rows (the rest: '주변 볼거리')
+
+
+def base_kind(kind: str | None) -> str:
+    """The kind a page reads like: 'cafe' -> 'food', 'shopping' -> 'attraction', the others themselves."""
+    return KIND_BASE.get(kind or "", kind or "")
+
+
 STATUSES = ("draft", "reviewed", "published")
 TIERS = ("full", "basic")
 
@@ -132,12 +147,16 @@ KEY_FACTS = {
     "attraction": ("usetime", "restdate", "usefee", "parking"),
     "stay": ("checkin", "checkout", "parking", "infocenter"),
     "food": ("usetime", "restdate", "menu", "parking"),
+    "cafe": ("usetime", "restdate", "menu", "parking"),
+    "shopping": ("usetime", "restdate", "parking"),
 }
-# Shops and markets (TourAPI type 38) are attractions without an admission fee.
+# Shops and markets (TourAPI type 38) have no admission fee: the shopping kind, and an attraction record that still
+# carries the category (data collected before the kind existed).
 KEY_FACTS_BY_CATEGORY = {"쇼핑": ("usetime", "restdate", "parking")}
 
 # schema.org type per kind (the default; schema_type() narrows it from the source category)
-SCHEMA_TYPES = {"attraction": "TouristAttraction", "stay": "LodgingBusiness", "food": "Restaurant"}
+SCHEMA_TYPES = {"attraction": "TouristAttraction", "stay": "LodgingBusiness", "food": "Restaurant",
+                "cafe": "CafeOrCoffeeShop", "shopping": "Store"}
 # Most specific type from the source `category` (and the name suffix) — an explicit map, nothing inferred.
 # Heritage categories become a building/landmark type only for things that are one: movable objects
 # (statues, documents, sutras) and 무형 heritage keep plain TouristAttraction.
@@ -147,7 +166,7 @@ MOVABLE_HERITAGE = re.compile(r"좌상|삼존상|나한상|불상|기록물|신�
 STAY_TYPES = {"관광호텔": "Hotel", "일반호텔": "Hotel", "여관/모텔": "Motel"}
 CUISINE = {"한식": "한식", "중식": "중식", "일식": "일식", "분식": "분식", "짬뽕 특화거리 ( 중식)": "중식"}
 ENTITY_TYPES = frozenset(SCHEMA_TYPES.values()) | {"Museum", "Park", "Mountain", "LandmarksOrHistoricalBuildings",
-                                                   "GolfCourse", "Hotel", "Motel"}
+                                                   "GolfCourse", "Hotel", "Motel", "Bakery"}
 
 
 def schema_type(e: dict) -> str | list[str]:
@@ -157,6 +176,9 @@ def schema_type(e: dict) -> str | list[str]:
     name = re.sub(r"\s+", " ", str(e.get("name") or "")).strip()
     if kind == "stay":
         return STAY_TYPES.get(cat, SCHEMA_TYPES["stay"])
+    if kind == "cafe":   # TourAPI's 제과 class (pipeline/tourapi.BAKERY_LCLS) is a bakery, the rest cafés and tea houses
+        from .tourapi import BAKERY_LCLS, lcls3
+        return "Bakery" if lcls3(e) == BAKERY_LCLS else SCHEMA_TYPES["cafe"]
     if kind != "attraction":
         return SCHEMA_TYPES.get(kind, "TouristAttraction")
     specific = ""
@@ -208,6 +230,8 @@ INDEX_KIND_GROUPS = {
     "attraction": ("hours", "restdate", "fee", "parking", "phone"),
     "food": ("hours", "menu", "parking", "phone"),
     "stay": ("checkin", "parking", "phone", "homepage"),
+    "cafe": ("hours", "menu", "parking", "phone"),
+    "shopping": ("hours", "restdate", "parking", "phone"),
 }
 INDEX_GROUP_LABELS = {"hours": "이용시간", "restdate": "쉬는 날", "fee": "요금", "parking": "주차", "phone": "전화",
                       "homepage": "홈페이지", "checkin": "체크인", "menu": "대표 메뉴"}

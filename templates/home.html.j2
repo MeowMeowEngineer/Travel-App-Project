@@ -52,10 +52,11 @@
   <div class="wrap ho-in"{% if N %} data-hcar aria-roledescription="carousel" aria-label="지금 {{ site.region }} 소식"{% endif %}>
     <div class="ho-text">
       <p class="ho-k"><span class="ho-dot" aria-hidden="true"></span>{{ h.opening.kicker }}</p>
-      {#- the H1 says what the site is (the engine's first site's operator 2026-10-16); its name, site.site_name, is in
-          the bar -#}
-      <h1 id="h-home" class="op-h1 hk-h1">{{ site.region ~ ' 여행의 모든 것' }}</h1>
-      <p class="ho-lede">관광지·음식점·숙소의 여는 시간과 요금, 가는 길을 한곳에 모았습니다.</p>
+      {#- the H1 (present.home_vm h1): the city's own line (site.json city.home.h1 — Incheon's operator 2026-10-19:
+          '오늘, 인천 가는 각', the MZ '~하는 각?' the name 인천각 comes from), else what the site is ('<region> 여행의 모든
+          것', the engine's first site's operator 2026-10-16); the name itself, site.site_name, is in the bar -#}
+      <h1 id="h-home" class="op-h1 hk-h1">{{ h.h1 }}</h1>
+      <p class="ho-lede">관광지·음식점·{% if counts.cafe %}카페·{% endif %}숙소의 여는 시간과 요금, 가는 길을 한곳에 모았습니다.</p>
       {#- two named actions side by side (operator-forwarded evaluation 2026-10-18: one '공식 코스 보기' button and the
           header's course entry led to the city's courses while the AI planner came further down, so a first visitor
           could not tell the city's courses from a course made for them): '내 일정 만들기' (/plan/, the AI planner,
@@ -203,7 +204,7 @@
       <div class="reg-main">
         <ol class="regs">
           {% for r in h.regions2 %}
-          <li><a href="/map/#{{ r.id }}"><span class="rg-name">{{ r.name }}</span><span class="rg-n"><b class="num tn">{{ r.n }}</b><small>곳</small></span><span class="rg-k tn">관광지 {{ r.k.attraction or 0 }} · 숙소 {{ r.k.stay or 0 }} · 음식점 {{ r.k.food or 0 }}</span>{% if r.dongs %}<span class="rg-d">{{ r.dongs|join('·') }}</span>{% endif %}<span class="arr" aria-hidden="true">›</span></a></li>
+          <li><a href="/map/#{{ r.id }}"><span class="rg-name">{{ r.name }}</span><span class="rg-n"><b class="num tn">{{ r.n }}</b><small>곳</small></span><span class="rg-k tn">관광지 {{ r.k.attraction or 0 }} · 숙소 {{ r.k.stay or 0 }} · 음식점 {{ r.k.food or 0 }}{% if counts.cafe %} · 카페 {{ r.k.cafe or 0 }}{% endif %}{% if counts.shopping %} · 쇼핑 {{ r.k.shopping or 0 }}{% endif %}</span>{% if r.dongs %}<span class="rg-d">{{ r.dongs|join('·') }}</span>{% endif %}<span class="arr" aria-hidden="true">›</span></a></li>
           {% endfor %}
         </ol>
         {% if h.region_rule.method == 'nearest_anchor' %}<p class="rule-note">권역은 기준점 {{ h.region_map.anchors|length }}곳({% for a in h.region_map.anchors %}{{ a.place }}{% if not loop.last %}·{% endif %}{% endfor %}) 가운데 직선거리로 가장 가까운 곳으로 묶었습니다.</p>

@@ -17,13 +17,13 @@
     (site.js, map.js). -#}
 {% import "_p1.html.j2" as p1 %}
 {% import "_filters.html.j2" as fb %}
-{% set track = {'stay': 'stay_click', 'food': 'food_click'}.get(L.kind, 'nearby_click') %}
+{% set track = {'stay': 'stay_click', 'food': 'food_click', 'cafe': 'food_click'}.get(L.kind, 'nearby_click') %}
 {% set words = L.title if L.theme else (cfg.h1 if cfg is defined and cfg.h1 else L.title) %}
 {% set label = (site.region ~ ' ' ~ L.title) if not L.theme else L.title %}
 {% block main_class %}{% endblock %}
 {% block bodyclass %}pg-list kind-{{ L.kind }}{% if L.theme %} pg-theme{% endif %}{% endblock %}
 {% block content %}
-<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('theme.head.' ~ L.theme.slug) if L.theme else (art_slots or {}).get('list.head.' ~ {'attraction': 'places', 'food': 'food', 'stay': 'stays'}.get(L.kind, ''))) }}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('theme.head.' ~ L.theme.slug) if L.theme else (art_slots or {}).get('list.head.' ~ {'attraction': 'places', 'food': 'food', 'stay': 'stays', 'cafe': 'cafes', 'shopping': 'shopping'}.get(L.kind, ''))) }}
   <div class="wrap band-grid">
     <div>
       {#- I19: the mascot beside the head of the food list and of the islands theme (icon_audit; 96–120px, the band

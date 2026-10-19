@@ -215,5 +215,114 @@
   "images": [],
   "tourapi": {},
   "district": "제물포구"
+ },
+ {
+  "id": "test-0006",
+  "slug": "test-cafe-f",
+  "name": "[테스트] 가상 카페 F",
+  "kind": "cafe",
+  "category": "카페·디저트",
+  "themes": [],
+  "tier": "basic",
+  "status": "draft",
+  "summary": "",
+  "facts": {
+   "address": "인천광역시 미추홀구 테스트로 6",
+   "menu": "[테스트] 메뉴 값",
+   "usetime": "[테스트] 영업시간 값"
+  },
+  "facts_source": {
+   "provider": "한국관광공사 TourAPI",
+   "contentid": "",
+   "checked_at": "2026-10-19"
+  },
+  "fact_sources": {
+   "address": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "menu": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "usetime": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   }
+  },
+  "official": {},
+  "original": {},
+  "map_ids": {
+   "naver_place_id": "",
+   "google_place_id": ""
+  },
+  "images": [],
+  "tourapi": {
+   "contenttypeid": "39",
+   "lclsSystm1": "FD",
+   "lclsSystm2": "FD05",
+   "lclsSystm3": "FD050100"
+  },
+  "geo": {
+   "lat": 37.45,
+   "lng": 126.65,
+   "source": "TourAPI"
+  }
+ },
+ {
+  "id": "test-0007",
+  "slug": "test-shop-g",
+  "name": "[테스트] 가상 상점 G",
+  "kind": "shopping",
+  "category": "쇼핑",
+  "themes": [],
+  "tier": "basic",
+  "status": "draft",
+  "summary": "",
+  "facts": {
+   "address": "인천광역시 옹진군 테스트면 테스트리 7",
+   "usetime": "[테스트] 영업시간 값",
+   "parking": "[테스트] 주차 값"
+  },
+  "facts_source": {
+   "provider": "한국관광공사 TourAPI",
+   "contentid": "",
+   "checked_at": "2026-10-19"
+  },
+  "fact_sources": {
+   "address": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "usetime": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "parking": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   }
+  },
+  "official": {},
+  "original": {},
+  "map_ids": {
+   "naver_place_id": "",
+   "google_place_id": ""
+  },
+  "images": [],
+  "tourapi": {
+   "contenttypeid": "38"
+  },
+  "geo": {
+   "lat": 37.2,
+   "lng": 126.2,
+   "source": "TourAPI"
+  }
  }
 ]

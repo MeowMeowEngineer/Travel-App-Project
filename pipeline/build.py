@@ -48,10 +48,10 @@ from markupsafe import Markup, escape
 from . import art, ask, chat_index, city, en_site, icons, jsonld, notices, relations, tickets
 from .enrich import haversine_m
 from .maplinks import DEFAULT_TMAP_SCHEME, build_links, precision_summary, search_link
-from .schema import (DEFAULT_ALLOWED_LICENSES, FACT_ALIASES, FACT_LABELS, FACT_ORDER, FIT_ORDER, INDEX_GROUP_LABELS,
-                     INDEX_REASONS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS, LICENSE_LABELS, alias_holds,
-                     designations, fact_label, index_groups, index_status, license_allowed, parking_seats_half,
-                     summary_sentences)
+from .schema import (BUSINESS_KINDS, DEFAULT_ALLOWED_LICENSES, FACT_ALIASES, FACT_LABELS, FACT_ORDER, FIT_ORDER,
+                     INDEX_GROUP_LABELS, INDEX_REASONS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS, KIND_NOUNS,
+                     LICENSE_LABELS, alias_holds, designations, fact_label, index_groups, index_status, license_allowed,
+                     parking_seats_half, summary_sentences)
 from . import present
 from . import locales as LC
 from .textutil import (area_from_address, display_address, display_value, drop_dead_links, first_sentence, josa,
@@ -90,6 +90,14 @@ LISTS = {
     "food": {"path": "/food/", "title": "음식점", "h1": "맛집·음식점",
              "seo": "{region} 맛집·음식점 {n}곳 — 대표 메뉴·영업시간·쉬는 날·주차",
              "lead": "음식점마다 대표 메뉴와 영업시간·정기휴일을 정리했습니다."},
+    # 카페·디저트 (operator 2026-10-19): the cafés, tea houses and bakeries TourAPI files under 음식점 (pipeline/tourapi
+    # kind_of), on their own list; 쇼핑: TourAPI type 38 (markets and shops)
+    "cafe": {"path": "/cafes/", "title": "카페·디저트", "h1": "카페·디저트",
+             "seo": "{region} 카페·디저트 {n}곳 — 카페·찻집·제과점의 대표 메뉴·영업시간·쉬는 날·주차",
+             "lead": "카페·찻집·제과점마다 대표 메뉴와 영업시간·정기휴일을 정리했습니다."},
+    "shopping": {"path": "/shopping/", "title": "쇼핑", "h1": "쇼핑·시장",
+                 "seo": "{region} 쇼핑 {n}곳 — 시장·상점의 영업시간·쉬는 날·주차",
+                 "lead": "시장과 상점마다 영업시간·쉬는 날·주차를 정리했습니다."},
 }
 
 
@@ -114,7 +122,7 @@ def attraction_groups() -> tuple:
     extra = city.current().get("attraction_groups", {}) or {}
     return tuple((label, (*words, *extra.get(label, ()))) for label, words in ATTRACTION_GROUPS)
 VISUALS = {  # tone, icon
-    "stay": ("stay", "bed"), "food": ("food", "bowl"),
+    "stay": ("stay", "bed"), "food": ("food", "bowl"), "cafe": ("food", "cup"), "shopping": ("shop", "bag"),
     "islands-sea": ("sea", "wave"), "parks-nature": ("park", "tree"),
     "modern-history": ("history", "building"), "alleys-culture": ("alley", "lamp"),
     "박물관·전시": ("history", "museum"), "체험": ("craft", "spark"), "문화유산": ("history", "pin"),   # 향교·석탑 too: not the brick building (theme-modern-history)
@@ -657,9 +665,10 @@ class State:
         """Up to three short facts for cards. A chip shows the whole value or is not shown (a value cut
         mid-way is a wrong answer when lifted); when no value fits, one label-only chip points to the page."""
         facts = e.get("facts") or {}
+        food = ("menu", "usetime_restdate", "usetime", "parking_seats")
         order = {"attraction": ("usetime", "usetime_restdate", "usefee", "restdate", "parking", "expagerange"),
-                 "stay": ("checkin", "parking", "infocenter"),
-                 "food": ("menu", "usetime_restdate", "usetime", "parking_seats")}.get(e.get("kind"), ())
+                 "stay": ("checkin", "parking", "infocenter"), "food": food, "cafe": food,
+                 "shopping": ("usetime", "usetime_restdate", "restdate", "parking")}.get(e.get("kind"), ())
         out, long_key = [], ""
         for key in order:
             if facts.get(key):
@@ -708,7 +717,7 @@ class State:
         same = relations.keep_rows(e, [x for x in self.entities if x is not e and x[field] == e[field]], lambda x: x)
         rank = lambda x: (x.get("tier") != "full", not x.get("summary"), x["name"])
         out = {k: sorted((x for x in same if x.get("kind") == k), key=rank)[:n]
-               for k, n in (("attraction", 4), ("stay", 3), ("food", 3))}
+               for k, n in (("attraction", 4), ("stay", 3), ("food", 3), ("cafe", 3), ("shopping", 3))}
         out["label"] = e["_area"] or f"도로명 주소({e['_road']})"
         return out
 
@@ -944,7 +953,7 @@ def entity_ctx(e: dict, S: State) -> dict:
     # its parent (pipeline/relations.py): both left out of the nearby rows
     for n in relations.keep_rows(e, e.get("nearby") or [], lambda n: near_target(S, n)):
         target = near_target(S, n)
-        track = {"stay": "stay_click", "food": "food_click"}.get(n.get("kind"), "nearby_click")
+        track = {"stay": "stay_click", "food": "food_click", "cafe": "food_click"}.get(n.get("kind"), "nearby_click")
         nearby.append({**n, "href": target["_path"] if target else search_link(n["name"], region),
                        "internal": bool(target), "track": track})
     orig = e.get("original") or {}
@@ -967,7 +976,7 @@ def entity_ctx(e: dict, S: State) -> dict:
                                 and not (r["key"] == "parking_seats" and parking_seats_half(e) == "seats")))[:3]
     title = f"{qualified_name(e, region)} {'·'.join(labels) or '방문 정보·지도'}"  # <title> adds ' | site_name' (base)
     summary = e.get("summary") or ""
-    fallback = f"{josa(e['name'], '은/는')} {city.current().place_where(e.get('_district') or '', e['_area'] or '')}에 있는 {KIND_LABELS.get(kind, '')}입니다."
+    fallback = f"{josa(e['name'], '은/는')} {city.current().place_where(e.get('_district') or '', e['_area'] or '')}에 있는 {KIND_NOUNS.get(kind, '')}입니다."
     # a first sentence over DESC_MAX: the fact line (head + key rows, then the phone the first screen shows)
     description = answer_description(summary, fallback, key_rows, head=place_head(e), extra_rows=rows(["infocenter"]))
     faqs = [f for f in e.get("faq") or [] if f.get("q") and f.get("a")]
@@ -995,11 +1004,12 @@ def entity_ctx(e: dict, S: State) -> dict:
             "fact_srcs": fact_srcs, "facts_checked": facts_checked,
             "alt_names": jsonld.alternate_names(e), "index_note": index_note(e),
             "missing": missing, "links": links, "precision": precision_summary(links),
-            "nearby_sights": [n for n in nearby if n.get("kind") == "attraction"],
-            "nearby_biz": [n for n in nearby if n.get("kind") in ("stay", "food")],
+            "nearby_sights": [n for n in nearby if n.get("kind") not in BUSINESS_KINDS],
+            "nearby_biz": [n for n in nearby if n.get("kind") in BUSINESS_KINDS],
             "nearby_source": e.get("nearby_source") or {},
             "area_sights": area.get("attraction", []), "area_stays": area.get("stay", []),
-            "area_food": area.get("food", []), "area_label": area.get("label", ""), "related": S.name_related(e),
+            "area_food": area.get("food", []), "area_cafes": area.get("cafe", []),
+            "area_shops": area.get("shopping", []), "area_label": area.get("label", ""), "related": S.name_related(e),
             "courses": e["_courses"], "guides": e["_guides"], "themes": themes, "events": e["_events"],
             "orig": orig, "show_original": show_original, "images": images,
             "media": place_media(e), "faqs": faqs, "sources": sources,
@@ -1811,7 +1821,9 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
     page = {"title": f"{S.site['site_name']} — {region} 관광지·맛집·숙소·코스·축제·영상",
             # the counts the home shows, in one sentence: the longest wording within DESC_MAX
             "description": first_fit(*(f"{region} 관광지 {len(S.lists['attraction'])}곳, 음식점 {len(S.lists['food'])}곳, "
-                                       f"숙소 {len(S.lists['stay'])}곳의 {tail}" for tail in (
+                                       + "".join(f"{LISTS[k]['title']} {len(S.lists[k])}곳, " for k in ("cafe", "shopping")
+                                                 if S.lists[k])
+                                       + f"숙소 {len(S.lists['stay'])}곳의 {tail}" for tail in (
                                            f"이용시간·쉬는 날·요금·주차와 공식 코스, 축제 일정, 영상 {len(S.videos)}편을 모았습니다.",
                                            f"이용시간·쉬는 날·요금·주차와 코스·축제 일정, 영상 {len(S.videos)}편을 모았습니다.",
                                            "이용시간·쉬는 날·요금·주차를 모았습니다."))),

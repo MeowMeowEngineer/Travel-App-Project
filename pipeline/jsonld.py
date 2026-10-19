@@ -23,7 +23,7 @@ from .textutil import display_address, display_value, extract_phones, phone_intl
 PROP_KEYS = ("usetime", "restdate", "usefee", "parking", "spendtime", "menu", "babycarriage", "pet")
 # `award` (schema.org Organization / LocalBusiness): the official designations a restaurant or lodging page shows
 # (schema.designations) as their visible labels, e.g. '모범음식점(○○시 지정)' — never on a plain Place type
-AWARD_TYPES = {"Restaurant", "LodgingBusiness", "Hotel", "Motel"}
+AWARD_TYPES = {"Restaurant", "CafeOrCoffeeShop", "Bakery", "LodgingBusiness", "Hotel", "Motel"}
 _TIME = re.compile(r"^\d{1,2}:\d{2}$")
 # Image licence pages (both checked to open on 2026-10-08)
 LICENSE_URLS = {"KOGL-1": "https://www.kogl.or.kr/info/licenseType1.do",

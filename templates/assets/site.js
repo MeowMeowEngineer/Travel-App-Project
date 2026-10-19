@@ -805,7 +805,7 @@
   if (tabs) {
     var kinds = doc.querySelector("[data-kinds]"), seg = doc.querySelector("[data-segmap]");
     var mg = doc.querySelector("[data-map-grid], .map-grid");
-    var cur = { region: "", kinds: { attraction: true, stay: true, food: true } };
+    var cur = { region: "", kinds: { attraction: true, stay: true, food: true, cafe: true, shopping: true } };
     // every row once: its kind, its 권역 (the section it sits in) and whether it is a point of the map (data-pt)
     var mrows = $all("[data-kind-row]").map(function (li) {
       var sec = li.closest("[data-region-sec]");

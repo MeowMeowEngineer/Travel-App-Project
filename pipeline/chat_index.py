@@ -38,7 +38,7 @@ from pathlib import Path
 
 from . import booking, city, fee_table, jsonld, present, relations, tickets
 from . import locales as LC
-from .schema import FACT_LABELS, FACT_ORDER, FIT_ORDER, KIND_LABELS, designations
+from .schema import FACT_LABELS, FACT_ORDER, FIT_ORDER, KIND_LABELS, base_kind, designations
 from .textutil import display_address, first_sentence, squash_ws, web_text, web_url
 
 CHAT_DIR = "chat"
@@ -46,8 +46,8 @@ VERSION = 1
 CATALOG_BUDGET = 72_000      # estimated tokens (estimate_tokens). The spec's ceiling is ~80K; 72K keeps 25K+ for the
                              # conversation and tool results (api: 20K characters) under the 100K-token price tier
 DOC_LIMIT = 9_000            # characters of one doc's text (get_pages caps what it returns again, api/chat.js)
-KIND_ORDER = ("attraction", "food", "stay")
-KIND_HEAD = {"attraction": "관광지", "food": "음식점", "stay": "숙소"}
+KIND_ORDER = ("attraction", "food", "cafe", "stay", "shopping")   # 카페·디저트 its own list (operator 2026-10-19)
+KIND_HEAD = {k: KIND_LABELS[k] for k in KIND_ORDER}
 LINE_MAX = 60                # a place's one-line summary: a whole sentence up to this length, else cut at a clause
 GUIDE_LINE_MAX = 100         # a guide's answer line, an event's usual timing
 SEP = " | "
@@ -411,7 +411,11 @@ class Knowledge:
         # model left out or counted twice, access the page has said to be missing): the fee value read as a table
         # (fee_table.parse, the other sources' values beside it), the access rows as each source writes them, the own
         # parking value and the nearest public lot, the type the indoor check reads, the check-in time
-        out["kd"] = e["kind"]
+        # kd: the kind the planner reads (chatbot/plan_*.js): a café as food, a shop as a place to visit
+        # (schema.base_kind); kc: the site's own kind when it differs ('cafe' — always a café to the planner, 'shopping')
+        out["kd"] = base_kind(e["kind"])
+        if out["kd"] != e["kind"]:
+            out["kc"] = e["kind"]
         if e.get("_type"):
             out["ty"] = e["_type"]
         if e.get("_region") and city.current().island_region(e["_region"]):
@@ -483,8 +487,10 @@ class Knowledge:
             f"as is, and link the page as {self.site} + path. A name in brackets is the place's English name; "
             "'다른 이름' = other names of the same place (a building and the museum in it, an old and a new name).",
             "# Place lines carry the key facts exactly as the page's first screen shows them, in this order — attraction: "
-            "시간 (hours), 휴무 (closed days), 요금 (fee), 주차 (parking), 전화 (phone); food: 시간, 휴무, 메뉴 (signature dishes), "
-            "주차, 전화; stay: 체크인, 체크아웃, 주차, 객실 (rooms), 전화. One of these missing from a line = the site has no "
+            "시간 (hours), 휴무 (closed days), 요금 (fee), 주차 (parking), 전화 (phone); food and 카페·디저트 (cafés, tea houses, "
+            "bakeries — their own list, apart from 음식점): 시간, 휴무, 메뉴 (signature dishes), 주차, 전화; 쇼핑 (markets and "
+            "shops): 시간, 휴무, 주차, 전화; stay: 체크인, 체크아웃, 주차, 객실 (rooms), 전화. One of these missing from a line = "
+            "the site has no "
             "value for it. '외' = the page has more. '두 출처 다름' = two sources give different values and the page shows "
             "both (방문 전 전화 확인). '통합권 N곳' = the places a combined ticket in the fee covers, as the guides name "
             "them ('A(=B)': A is the name the guides use, B the place's page name). "
@@ -1094,16 +1100,21 @@ class Knowledge:
         else:
             rule = ""
         pages = [
-            ("/", f"홈 — {site.get('site_name', '')}: 관광지 {n.get('attraction', 0)}곳·음식점 {n.get('food', 0)}곳·숙소 "
-                  f"{n.get('stay', 0)}곳, 가이드 {len(S.guides)}편·코스 {len(S.courses)}개·행사 {len(S.series)}개·영상 {len(S.videos)}편",
+            ("/", f"홈 — {site.get('site_name', '')}: 관광지 {n.get('attraction', 0)}곳·음식점 {n.get('food', 0)}곳·"
+                  + "".join(f"{KIND_LABELS[k]} {n[k]}곳·" for k in ("cafe", "shopping") if n.get(k))
+                  + f"숙소 {n.get('stay', 0)}곳, 가이드 {len(S.guides)}편·코스 {len(S.courses)}개·행사 {len(S.series)}개·영상 {len(S.videos)}편",
              _clean(site.get("description"))),
             ("/places/", f"관광지 목록 {n.get('attraction', 0)}곳 (유형·테마·지역으로 거르기, 지도)", ""),
             ("/food/", f"음식점 목록 {n.get('food', 0)}곳 (대표 메뉴·영업시간·쉬는 날)", ""),
+            *([("/cafes/", f"카페·디저트 목록 {n['cafe']}곳 (카페·찻집·제과점, 대표 메뉴·영업시간·쉬는 날)", "")]
+              if n.get("cafe") else []),
+            *([("/shopping/", f"쇼핑 목록 {n['shopping']}곳 (시장·상점, 영업시간·쉬는 날·주차)", "")]
+              if n.get("shopping") else []),
             ("/stays/", f"숙소 목록 {n.get('stay', 0)}곳 (체크인·체크아웃·주차·문의)", ""),
             ("/guides/", f"목적별 가이드 {len(S.guides)}편", ""),
             ("/courses/", f"여행 코스 {len(S.courses)}개 ({city.current().official['name']} 안내 코스)", ""),
             ("/events/", f"행사·축제 일정 {len(S.series)}개 (월별 기간·장소)", ""),
-            ("/map/", "지도·지역: 읍·면·동 묶음" + (f"과 여행 권역({'·'.join(regions)})" if regions else ""), rule),
+            ("/map/", "지도·지역: 읍·면·동 묶음" + (f"과 여행 권역({', '.join(regions)})" if regions else ""), rule),
             ("/search/", "검색: 장소 이름·다른 이름·대표 메뉴·동 이름·코스·가이드·행사 이름으로 찾는다", ""),
             ("/videos/", f"영상 {len(S.videos)}편, 주제별 (공식 채널 표시, 누를 때만 YouTube 불러옴)", ""),
             ("/abroad/", f"해외에서 본 {region}: 외신·해외 매체 기사 {len(S.abroad)}건과 외국어 영상 {len(S.abroad_videos)}편", ""),

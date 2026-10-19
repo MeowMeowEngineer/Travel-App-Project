@@ -30,7 +30,7 @@ INCHEON = ROOT / "data" / "incheon"
 # stands for this site's configuration before collection
 RECORDS = ("places.json", "events.json", "courses.json", "guides.json", "themes.json", "videos.json")
 TINY = Path(__file__).resolve().parent / "fixtures" / "incheon_tiny"
-SITE = "https://incheon.example.com"
+SITE = "https://incheon.webforai.kr"   # site_url (operator 2026-10-19)
 API = {"get": "off", "post": "off", "gets": 0, "posts": []}
 OFF = "AI 도우미 준비 중"
 ANSWER = "[테스트] 가상 해변 A의 주차는 [테스트] 주차 값입니다(한국관광공사 TourAPI).\n\n[가상 해변 A](/places/test-beach-a/)"

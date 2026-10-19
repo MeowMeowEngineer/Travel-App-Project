@@ -22,7 +22,7 @@
 {% set abroad = p.e._abroad or [] %}{% set ab_art = abroad|selectattr('kind', 'equalto', 'article')|list %}{% set ab_post = abroad|selectattr('kind', 'equalto', 'post')|list %}{% set media_parts = (['영상'] if p.videos else []) + (['소식'] if (media or {}).news else []) + (['해외 기사'] if ab_art else []) + (['SNS'] if ab_post else []) %}
 {% set nm = p.name %}
 {% set lead = p.hero_k1 or p.hero_k3 %}
-{% set kind_word = {'attraction': '볼거리', 'stay': '숙소', 'food': '음식점'}[p.kind] %}
+{% set kind_word = {'attraction': '볼거리', 'stay': '숙소', 'food': '음식점', 'cafe': '카페·디저트', 'shopping': '쇼핑 장소'}[p.kind] %}
 {% set show_same = p.dong and p.area_same and (p.compact or not (p.near_sights or p.near_biz)) %}
 {% set has_near = p.parts or p.segs or p.near_sights or p.near_biz or p.guide_cards or p.event_cards or p.twin_rows or p.rel_rows or show_same %}
 {% block main_class %}{% endblock %}
@@ -59,7 +59,7 @@
         {{ nb.relation(p.relation, ' · ') }}
         <div class="summary" data-block="summary">
           {% if p.lede %}<p class="lede">{{ p.lede }}{% if p.story %} <span class="lede-2">{{ p.story|join(' ') }}</span>{% endif %}</p>
-          {% else %}<p class="lede">{{ nm|josa('은/는') }} {{ p.where }}에 있는 {{ p.kind_label }}입니다.</p>{% endif %}
+          {% else %}<p class="lede">{{ nm|josa('은/는') }} {{ p.where }}에 있는 {{ p.kind_noun }}입니다.</p>{% endif %}
         </div>
         {{ p1.dzchips(p.designations, p.e.id) }}
         {{ ui.kf(p.kf, 'kf-hero', '#h-facts', p.e.id) }}
@@ -150,7 +150,7 @@
       {% if p.segs %}<div class="nb-part">{{ nb.segs(p.segs, p.e.id, w, '이곳을 지나는 공식 코스 ' ~ p.boards|length ~ '개', nm) }}</div>{% endif %}
       {% if p.near_sights or p.near_biz %}
       <div class="nb-part" data-block="near-rows">
-        {{ nb.groups([('주변 볼거리', p.near_sights, 'icon-sights'), ('주변 숙소·음식점', p.near_biz, 'icon-stay')], p.e.id, w, p.points) }}
+        {{ nb.groups([('주변 볼거리', p.near_sights, 'icon-sights'), (p.near_biz_title, p.near_biz, 'icon-stay')], p.e.id, w, p.points) }}
         <p class="note nb-note">{{ w.scale.format(d=p.near_scale|pdist) }}{% if p.nearby_source.provider %} · 반경 {{ p.nearby_source.radius_m|pdist }} 안 · 직선거리 순 · {{ p.nearby_source.provider }}{% endif %}</p>
         {% if p.photo_lics %}<p class="note nb-credit">{{ w.credit.format(lic=p.photo_lics|join(', ')) }}</p>{% endif %}
       </div>
@@ -158,7 +158,7 @@
       {% if show_same %}
       <div class="nb-part">
       <h3 class="h-sub h-same">{{ p.dong }}의 다른 {{ kind_word }} <span class="tn">{{ p.area_same|length }}</span>곳</h3>
-      <ol class="same">{% for x in p.area_same %}<li><a href="{{ x._path }}" data-track="{{ {'stay': 'stay_click', 'food': 'food_click'}.get(x.kind, 'nearby_click') }}" data-place="{{ p.e.id }}">{{ x.name }}</a>{% if x._type %}<span class="same-t">{{ x._type }}</span>{% endif %}</li>{% endfor %}</ol>
+      <ol class="same">{% for x in p.area_same %}<li><a href="{{ x._path }}" data-track="{{ {'stay': 'stay_click', 'food': 'food_click', 'cafe': 'food_click'}.get(x.kind, 'nearby_click') }}" data-place="{{ p.e.id }}">{{ x.name }}</a>{% if x._type %}<span class="same-t">{{ x._type }}</span>{% endif %}</li>{% endfor %}</ol>
       </div>
       {% endif %}
       {% if p.guide_cards %}<div class="nb-part"><h3 class="h-sub nb-h">{{ ui.kpic('guide', '', 40) }}<span>이곳이 포함된 가이드</span></h3>

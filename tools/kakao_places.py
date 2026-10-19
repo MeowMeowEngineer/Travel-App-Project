@@ -120,7 +120,7 @@ LARGE_NAME = re.compile(r"(공원|해수욕장|해변|섬|산|봉|항|포구|호
 LARGE_KAKAO = re.compile(r"섬|공원|해수욕장|해변|산$|산,|봉우리|항구|항$|포구|저수지|호수|댐|숲|휴양림|수목원|유원지|"
                          r"관광단지|마을|방조제|갯벌|습지|골프장|캠핑장")
 # Kakao category groups that cannot be our kind ('달' the guesthouse is not '달' the café in the same building)
-KIND_CONFLICT = {"stay": {"FD6", "CE7"}, "food": {"AD5"}}
+KIND_CONFLICT = {"stay": {"FD6", "CE7"}, "food": {"AD5"}, "cafe": {"AD5"}, "shopping": {"AD5"}}
 
 
 def norm(name: str | None) -> str:

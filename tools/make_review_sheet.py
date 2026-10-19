@@ -42,7 +42,7 @@ KINDS = {"장소": ("places.json", "name"), "가이드": ("guides.json", "title"
 SHEET_FACTS = ("address", "usetime", "restdate", "usetime_restdate", "usefee", "menu", "treatmenu",
                "checkin", "checkout", "roomcount", "parking", "parking_seats", "parkingfee", "infocenter", "homepage")
 EXTRA_LABELS = {"treatmenu": "취급 메뉴", "roomcount": "객실 수"}
-KIND_ORDER = {"attraction": 0, "food": 1, "stay": 2}
+KIND_ORDER = {"attraction": 0, "food": 1, "cafe": 2, "stay": 3, "shopping": 4}
 
 
 def load(data: Path, name: str) -> list[dict]:

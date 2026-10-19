@@ -36,9 +36,43 @@ CONTENT_TYPES = {
     "12": "관광지", "14": "문화시설", "15": "축제·공연·행사", "25": "여행코스",
     "28": "레포츠", "32": "숙박", "38": "쇼핑", "39": "음식점",
 }
-# contentTypeId -> our entity kind
-KIND_BY_TYPE = {"12": "attraction", "14": "attraction", "28": "attraction", "38": "attraction",
+# contentTypeId -> our entity kind (a 음식점 item may be a café: kind_of)
+KIND_BY_TYPE = {"12": "attraction", "14": "attraction", "28": "attraction", "38": "shopping",
                 "32": "stay", "39": "food"}
+# 카페·디저트 (operator 2026-10-19): TourAPI's new classification (lclsSystm3) under FD05 카페/찻집 (카페·찻집·기타음료점)
+# or exactly FD030100 제과; an item without the new classification counts by the old cat3 A05020900 카페/전통찻집.
+CAFE_LCLS_PREFIX = "FD05"
+BAKERY_LCLS = "FD030100"
+CAFE_CAT3 = "A05020900"
+# the classification fields a place keeps from TourAPI (list items and detailCommon2 carry them): the new
+# classification (lclsSystm1·2·3) and the old one (cat1·2·3)
+CLASS_FIELDS = ("lclsSystm1", "lclsSystm2", "lclsSystm3", "cat1", "cat2", "cat3")
+
+
+def is_cafe_class(lcls3: str | None, cat3: str | None = "") -> bool:
+    """The 카페·디저트 rule on TourAPI's classification codes: lclsSystm3 FD05… or FD030100; cat3 A05020900 only
+    when the new classification is missing."""
+    code = str(lcls3 or "").strip()
+    if code:
+        return code.startswith(CAFE_LCLS_PREFIX) or code == BAKERY_LCLS
+    return str(cat3 or "").strip() == CAFE_CAT3
+
+
+def kind_of(item: dict) -> str:
+    """Our kind for a TourAPI item (a list item, a detailCommon2 answer or a place's stored `tourapi` block):
+    KIND_BY_TYPE by contentTypeId, and 'cafe' for an item the classification makes a café or bakery; '' for a type
+    that is not a place of ours (festivals, courses)."""
+    ctype = str(item.get("contenttypeid") or "")
+    if is_cafe_class(item.get("lclsSystm3") or item.get("lcls"), item.get("cat3")):
+        return "cafe"
+    return KIND_BY_TYPE.get(ctype, "")
+
+
+def lcls3(place: dict) -> str:
+    """A place's stored TourAPI new classification (tourapi.lclsSystm3; `lcls` in records collected before
+    2026-10-19)."""
+    t = place.get("tourapi") or {}
+    return str(t.get("lclsSystm3") or t.get("lcls") or "")
 
 # detailIntro field names per contentTypeId -> our fact keys (TourAPI 4.x manual)
 INTRO_FIELDS = {

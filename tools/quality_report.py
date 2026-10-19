@@ -42,6 +42,8 @@ KIND_GROUPS = {  # 유형별로 '있어야 하는' 정보 — 빈칸률을 이 �
     "attraction": ("hours", "restdate", "fee", "parking", "phone"),
     "food": ("hours", "menu", "parking", "phone"),
     "stay": ("checkin", "parking", "phone", "homepage"),
+    "cafe": ("hours", "menu", "parking", "phone"),
+    "shopping": ("hours", "restdate", "parking", "phone"),
 }
 CARD_FIELDS = ("usetime", "restdate", "usetime_restdate", "parking", "parking_seats", "menu")
 CARD_MAX = 24            # 목록 카드 칩에서 잘리기 쉬운 길이(글자)

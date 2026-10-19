@@ -1,10 +1,10 @@
-# CLAUDE.md — 인천 여행 사이트 (가칭 '인천 여행의 모든 것')
+# CLAUDE.md — 인천각(Incheongak), 인천 여행 사이트
 
 > 이 파일이 최우선 지시다. 군산 여행 사이트(https://gunsan.webforai.kr)의 엔진을 복사해 2026-10-19에 시작했다.
 > 데이터 표준: `docs/02_page_standard.md` · 사람이 정할 것: 6절 · 시작 방법: `README.md`
 
 ## 1. 무엇을 만드는가
-- 여행자가 실제로 쓰는 인천 여행 사이트(관광지·맛집·숙소·코스·행사)이자, 공개 후 AI 답변엔진 인용·유입을 측정할 실험 사이트다.
+- 여행자가 실제로 쓰는 인천 여행 사이트(관광지·맛집·카페·숙소·쇼핑·코스·행사)이자, 공개 후 AI 답변엔진 인용·유입을 측정할 실험 사이트다.
 - 정적 사이트: Python 엔진(`pipeline/`)이 `data/incheon/*.json`을 `public/`으로 빌드하고, Vercel이 그대로 배포한다.
 - 사이트 도우미(챗봇): `api/chat.js`(Vercel 함수) + `chatbot/`.
 - 목표: **키만 넣으면 사이트가 나온다.** `TOURAPI_KEY` → 수집 → 빌드 → 검증 → Vercel 배포(`ANTHROPIC_API_KEY`). 순서는 `README.md`.
@@ -23,6 +23,13 @@
 - 키를 받으면: `python tools/collect.py --data data/incheon` 한 명령(키 확인 → 진단 → 목록·좌표·사진 → 행사(오늘부터) → 상세 → TourAPI에만 있는 장소 → 요약·남은 호출·다음 명령). 호출 예산 식은 `README.md` 'TourAPI 호출 예산'.
 - 군산 실데이터(`data/gunsan`)·군산 그림·군산 문서에 기대던 테스트와 군산 측정 질문 도구는 옮기지 않았다: `tests/excluded_gunsan_tests.txt`. 인천 데이터가 생기면 같은 성질의 시험을 인천 데이터로 다시 쓴다. 엔진 시험의 고정 데이터는 `data/sample/`(군산 모양의 가짜 샘플)과 `tests/fixtures/incheon_tiny/`(인천 설정용 가짜 장소 5곳)다.
 - 마스코트는 없다(군산 마스코트는 '군산 사이트 전용'). 엔진은 마스코트 없이 동작한다(`pipeline/icons.py` `mascot()`).
+- **운영자 결정(2026-10-19)**
+  - **이름**: 인천각(MZ 표현 '~하는 각?' — '오늘 인천 가는 각'), 영어 **Incheongak**. `site.json` `site_name`·`brand` '인천각', 영어 이름은 `city.intl.en.site_name`(영어판을 만들 때의 이름, 로고 아래 줄). 가칭 '인천 여행의 모든 것'은 쓰지 않는다. 머리말·바닥글은 심볼(`brand_symbol`) + '인천' 잉크 + '각' 로고 파랑(`pipeline/present.wordmark`, css `--brand`). 페이지 제목·og:site_name·구조화 데이터 WebSite 이름은 site_name에서 나온다. 홈 첫 화면 h1은 `city.home.h1` '오늘, 인천 가는 각'(없으면 '<지역> 여행의 모든 것').
+  - **로고**: 시안 A(인천대교 주탑 + 책갈피, `incoming/brand/logo-a-bridge.png`와 단색·반전 래스터 — 커밋 안 함)를 래스터에서 재서 도형으로 다시 그렸다: `tools/brand_kit.py`(shapely·fonttools, 이 도구만) → `templates/assets/brand/incheongak-symbol.svg`(머리말·바닥글)·`-symbol-reverse`·`-symbol-mono`·`-logo`(가로형, 글자는 Pretendard Bold 윤곽)·`-app-icon`, `icon-48/96/180/192/512.png`·`favicon.ico`. 색은 `site.json` `brand_colors`(바다 파랑 #1764C0, 노을 코랄 #FF7A5C, 잉크 #172033).
+  - **도메인**: `site_url` https://incheon.webforai.kr — canonical·sitemap·robots·llms.txt·챗봇 허용 출처(`public/chat/site.json`)·IndexNow host가 모두 이 값에서 나온다. 카카오 지도 키는 이 도메인을 등록한 키여야 한다.
+  - **구·군**: TourAPI ldongCode2(lDongRegnCd 28)가 돌려주는 11곳 — 제물포구·영종구·미추홀구·연수구·남동구·부평구·계양구·서해구·검단구·강화군·옹진군(`districts`). 옛 이름 중구·동구·서구는 `districts_former`로 둔다(옛 주소를 읽는다).
+  - **여행 권역**: 장소마다 주소의 구·군 하나로 권역 하나 — 개항장·월미 = 제물포구, 영종·용유 = 영종구, 송도·연수 = 연수구, 강화 = 강화군, 옹진 섬 = 옹진군, 도심·소래 = 미추홀·남동·부평·계양·서해·검단구. 옛 이름 주소는 그 자리를 이은 구를 따른다(동구 → 개항장·월미, 서구 → 도심·소래, 중구는 영종도 법정동 8개면 영종·용유, 그 밖이면 개항장·월미, 법정동 없으면 '권역 미정'). 지도 페이지가 이 규칙을 설정에서 만든 문장으로 보인다.
+  - **카페·디저트**(음식점과 별도): TourAPI 신분류 `lclsSystm3`가 FD05로 시작(카페/찻집: 카페·찻집·기타음료점)하거나 FD030100(제과)이면 `kind: cafe`. 신분류가 없을 때만 옛 cat3 A05020900(카페/전통찻집)도 센다(`pipeline/tourapi.kind_of`). 목록 `/cafes/`, 메뉴, 홈 타일(그림 `icon-cafe`), 검색 묶음, 챗봇 카탈로그 절, 사진 없는 행의 그림 `kind-cafe`. **쇼핑**: TourAPI 유형 38은 `kind: shopping`(목록 `/shopping/`, 홈 타일, 그림 `kind-shopping`). `icon-cafe`·`kind-shopping` 파생본은 운영자가 받은 3D 그림(`incoming/icons/`)에서 `tools/icon_media.py`로 만들었다. 수집은 장소마다 `tourapi.lclsSystm1·2·3`(과 cat1·2·3)을 남기고, 다시 돌 때마다 종류가 그 분류를 따른다(`tools/tourapi_bulk.py` `reclassify`, `locks`에 kind가 있으면 그대로). 화면의 사실은 데이터에서, 개수는 계산한다.
 - **엔진 재동기화(2026-10-19)**: 이식 기준(군산 `85d7151`, 10-14) 뒤 군산각 엔진 변경을 도시 중립 형태로 들여왔다 — AI 코스 만들기(`/plan/`, `api/plan.js`, `chatbot/planner.js`·`plan_*.js`), 검색 개선(질문 낱말·관련 가이드·코스 만들기 연결), 목록 필터 칩 개수와 0건에서 돌아가는 길, 장소 관계(`pipeline/relations.py`)·통합권(`tickets.py`·`fee_table.py`)·예약하기(`booking.py`)·시설 공지(`notices.py`), 챗봇 개선(답 언어, 코스 만들기로 넘기기 planQuery, fee_total·check_plan, 긴급 연락처), 홈·핵심 정보, 운영사 정보 바닥글, 9개 언어 엔진, 검증기. 들여온 기능에 딸려 온 도시 값은 `site.json` `city` 블록으로 옮겼다(아래 키, `pipeline/city.py` 설명): `plan`(코스 만들기 출발·도착 hubs, 섬 권역), `course_move`('차 없이 다니기' 가이드·섬 노선·시간표 가이드), `geo_bounds`·`geo_default_points`(좌표 검증), `official_web`(본문에 적힌 공식 사이트), `resident_label`(요금표의 '○○시민', 기본 지역 이름+시민), `brand_em`, `intl.<code>.course_sources`. 예약 서비스 이름 가운데 도시 것은 `booking.json` `services.<key>.names`. 인천 값은 아직 비어 있고 그 블록은 빠진다(코스 만들기는 출발·도착 선택 없이, 섬 취향은 이름에 '섬'이 든 권역으로). 옮기지 않은 것: 군산 그림·마스코트·브랜드 파일, 군산 전용 도구(`brand_kit.py`·`museum_notices.py`·`official_coords.py`), 군산 실데이터 시험(`tests/excluded_gunsan_tests.txt`).
 
 ## 3. 지켜야 할 규칙
@@ -92,27 +99,27 @@
 - **고정 영역**: 모바일 고정 영역 합 ≤ 화면의 15%.
 - **검색**: 이름·대표 메뉴·지역. 빌드 때 만든 정적 색인 + 작은 JS, JS가 없으면 목록 링크.
 - **지도 페이지**: 구·군·동 묶음에 여행 권역 보기를 더하고, 권역을 나눈 기준을 페이지에 적는다(설정 `city.travel_regions`에서 만든 문장 — 장소를 나눈 바로 그 규칙). 지도 제공자는 카카오맵(`site.json` `kakao_js_key`).
-- **인천 권역**(제안, 운영자 확인): 주소의 구·군(없으면 TourAPI 구·군)으로, 옛 중구만 법정동으로 나눈다 — 개항장·원도심(제물포구·동구·영종 법정동 밖 중구), 영종·용유(영종구·중구 운서·운남·운북·중산·을왕·남북·덕교·무의동), 송도·연수(연수구), 도심 생활권(미추홀·남동·부평·계양·서해·서·검단구), 강화(강화군), 옹진 섬(옹진군). 법정동이 없는 중구 주소는 '권역 미정'.
+- **인천 권역**(운영자 결정 2026-10-19, 2절): 개항장·월미 · 영종·용유 · 송도·연수 · 강화 · 옹진 섬 · 도심·소래 — 구·군 하나에 권역 하나.
 - **모션**(GSAP·Lenis): 첫 화면 요소는 처음부터 보이게 한다. reduced-motion이거나 JS가 없으면 최종 상태로 보여 준다. Lenis는 데스크톱에만.
 - **글꼴**: Pretendard를 unicode-range 분할로 자체 호스팅한다(`tools/font_subset.py`).
 - **성능 목표**(`tools/perf_check.py`, 느린 4G·CPU 4배): LCP ≤ 2.5초, CLS ≤ 0.1, 첫 방문 글꼴 ≤ 300KB.
 - **접근성**: 대비 4.5:1, 터치 영역 44px, 보이는 포커스, 이미지 alt.
 
 ## 6. 사람이 정할 것 — 결정하지 말고 선택지와 권장안으로 보고
-- **도메인**(`site_url`): 지금은 자리표시 `https://incheon.example.com`(production 검증이 막는다). 처음부터 최종 주소로 정한다(권장: 회사 하위 주소). 공개 뒤에는 바꾸지 않는다. production 검증은 `ga4_id`(또는 운영자 사유를 적은 `launch_exceptions.ga4_id`)와 `operator.contact`가 비어 있어도 막는다 — 공개 빌드에는 세 값이 모두 필요하다.
-- **사이트 이름**: '인천 여행의 모든 것'은 가칭이다. 도메인과 같은 이름으로 읽히게 확정한다. 운영 표기(에이아이오투오)도 확인한다.
+- **도메인**(`site_url`): 운영자 결정(2026-10-19) https://incheon.webforai.kr. 공개 뒤에는 바꾸지 않는다. production 검증은 `ga4_id`(또는 운영자 사유를 적은 `launch_exceptions.ga4_id`)와 `operator.contact`가 비어 있어도 막는다 — 공개 빌드에는 세 값이 모두 필요하다.
+- **사이트 이름**: 운영자 결정(2026-10-19) 인천각 / Incheongak(2절). 운영 표기(에이아이오투오)는 확인한다.
 - **GA4·GTM**(도시별 별도 속성; `ga4_id`가 비어 있으면 production 검증이 막는다 — GA4를 공개 뒤에 달기로 정하면 `site.json` `launch_exceptions.ga4_id`에 사유), **검색엔진 인증 토큰**(구글·빙·네이버), IndexNow 키(공개 직전).
 - **공개**: 공개 범위·시점, 검수(검수 시트), 운영자 공개 승인.
 - **정정 요청 연락처**(`operator.contact`, 비어 있으면 production 검증이 막는다), 편집 책임자 표기.
 - **페이지 주소 형식**: 한글 슬러그 / 영문 슬러그 — 공개 전에 정한다.
 - **범위**: 구·군 11곳 전체 / 권역부터(`tools/tourapi_bulk.py --districts`).
-- **구·군 이름**: 2026-07-01 「인천광역시 제물포구ㆍ영종구 및 검단구 설치 등에 관한 법률」 시행(국가법령정보센터 확인)으로 중구·동구가 폐지되고 제물포구·영종구·검단구가 생겼다. 서구의 새 이름 '서해구'는 위키백과로만 확인했다 — 확인 필요. 영종구 법정동 8개(권역 규칙)도 위키백과에서 옮겼다 — 행정표준코드로 확인.
-- **여행 권역 이름과 나눔**(`city.travel_regions`), **거리 기준 장소**(`city.distance_anchors`: 인천국제공항·차이나타운·송도센트럴파크·월미도 제안), **홈 이야기·첫 화면 사진**(`city.home`), **시 지정 음식점 목록**(`city.designations`, 조사 전).
+- **구·군 이름**: 2026-07-01 「인천광역시 제물포구ㆍ영종구 및 검단구 설치 등에 관한 법률」 시행(국가법령정보센터 확인)으로 중구·동구가 폐지되고 제물포구·영종구·검단구가 생겼다. TourAPI ldongCode2가 서해구를 포함한 11곳을 돌려준다(2026-10-19). 옛 중구 주소를 나누는 영종구 법정동 8개(권역 규칙)는 위키백과에서 옮겼다 — 행정표준코드로 확인.
+- **거리 기준 장소**(`city.distance_anchors`: 인천국제공항·차이나타운·송도센트럴파크·월미도 제안), **홈 이야기·첫 화면 사진**(`city.home`), **시 지정 음식점 목록**(`city.designations`, 조사 전).
 - **출처 이용 조건**: 인천투어·인천관광공사 자료의 이용 조건, 추가 출처 수집 범위, TourAPI overview 게재 여부.
 - **카카오 지도 JavaScript 키**: 새 도메인을 카카오 개발자 콘솔에 등록하고 키를 보낸다.
 - `publish_rules`·`crawler_policy`: 군산 값을 기본으로 옮겼다. 인천용으로 확인한다.
 - 마스코트·일러스트를 새로 만들지, 영어·다국어판을 할지(권장: 한국어만 먼저).
-- **코스 만들기 출발·도착 장소**(`city.plan.hubs`: 역·터미널·공항 이름 — 비어 있으면 선택이 없다), **섬 권역**(`city.plan.island_regions`), **좌표 범위**(`city.geo_bounds`, 비어 있으면 범위 검사 없음), **긴급 연락처 절**(`site.json` `emergency`: 군산은 한국관광공사 VisitKorea 119·112·1330 — 인천판은 운영자 확인 뒤), **운영사 공식 정보**(`operator.business_no` 등이 있으면 바닥글·/about/#company에 나온다), **사이트 심볼**(`brand_symbol`, 인천각 심볼 파일은 `templates/assets/brand/`에 있다).
+- **코스 만들기 출발·도착 장소**(`city.plan.hubs`: 역·터미널·공항 이름 — 비어 있으면 선택이 없다), **섬 권역**(`city.plan.island_regions`), **좌표 범위**(`city.geo_bounds`, 비어 있으면 범위 검사 없음), **긴급 연락처 절**(`site.json` `emergency`: 군산은 한국관광공사 VisitKorea 119·112·1330 — 인천판은 운영자 확인 뒤), **운영사 공식 정보**(`operator.business_no` 등이 있으면 바닥글·/about/#company에 나온다).
 - 저장소 공개 여부와 원본 데이터(`data/raw`) 위치.
 
 ## 7. 명령어
@@ -133,6 +140,7 @@ python tools/build_public.py --data data/incheon --out public          # 공개 
 python -m pipeline.build --data data/sample --out dist-sample --mode sample && python -m pipeline.validate --data data/sample --out dist-sample --mode sample
 python tools/quality_report.py --data data/incheon --out public
 python tools/perf_check.py --out public                               # Playwright 필요
+python tools/brand_kit.py --data data/incheon --out templates/assets/brand --png   # 로고·심볼·아이콘 다시 그리기(shapely·fonttools·Playwright, 이 도구만)
 ```
 - 도구의 `--data` 기본값은 `data/incheon`이다. 새 도시는 `data/<도시>/site.json`을 만들고 `--data`로 넘긴다(엔진은 바꾸지 않는다).
 - `main`에 push하면 Vercel이 `public/`을 배포한다. 공개 전환은 사람이 정한다.
@@ -148,7 +156,8 @@ python tools/perf_check.py --out public                               # Playwrig
 | `data/sample/` | 테스트용 가짜 데이터(군산 샘플). 공개하지 않는다 |
 | `pipeline/` | 빌드·검증·구조화 데이터·화면 데이터·TourAPI 클라이언트·챗봇 지식 |
 | `templates/` | 화면(Jinja2)·CSS·JS·글꼴·3D 아이콘 |
-| `tools/` | TourAPI 진단·수집, 공개 빌드, 검수 시트·반영, 품질·성능·공개 전 점검 |
+| `tools/` | TourAPI 진단·수집, 공개 빌드, 검수 시트·반영, 품질·성능·공개 전 점검, 브랜드 키트(`brand_kit.py`) |
+| `templates/assets/brand/` | 인천각 심볼·로고·앱 아이콘 SVG와 icon-*.png·favicon.ico(`tools/brand_kit.py`가 만든다), 운영사 로고 |
 | `chatbot/`, `api/chat.js` | 사이트 도우미(Vercel 함수). 사이트 주소·이름·도시 이름은 빌드가 쓴 `public/chat/site.json`에서 읽는다(`chatbot/site.js`) |
 | `api/plan.js`, `chatbot/planner.js`·`plan_*.js`, `templates/plan.html.j2`·`assets/plan.js` | AI 코스 만들기(`/plan/`, 같은 키 `ANTHROPIC_API_KEY`, vercel.json `api/plan.js`). 출발·도착 이름은 `public/chat/site.json` `hubs`(= `city.plan.hubs`) |
 | `pipeline/relations.py`·`tickets.py`·`fee_table.py`·`booking.py`·`notices.py` | 장소 관계(part_of)·통합권·요금표 읽기·예약하기·시설 공지(각각 `data/<도시>/` 파일이 있을 때만) |

@@ -51,7 +51,8 @@
 |---|---|---|
 | `id` | 불변 고유 ID | `incheon-0001`, TourAPI에서 새로 들어온 곳은 `tourapi-<contentid>` |
 | `slug` | URL. 임포트 때 한 번 정하고 공개 후 바꾸지 않음 | `경암동-철길마을` |
-| `name`, `kind` | 명칭, 유형 `attraction`/`stay`/`food` | |
+| `name`, `kind` | 명칭, 유형 `attraction`/`stay`/`food`/`cafe`(카페·디저트: TourAPI 신분류 FD05…·FD030100, 신분류가 없으면 cat3 A05020900)/`shopping`(TourAPI 유형 38) — `pipeline/tourapi.kind_of`, 수집이 분류를 따라 맞춘다(`locks`에 `kind`가 있으면 그대로) | |
+| `tourapi` | `{contentid, contenttypeid, title, match_basis, modifiedtime, lclsSystm1, lclsSystm2, lclsSystm3, cat1, cat2, cat3, overview}` — 분류 코드는 TourAPI가 준 그대로(2026-10-19 전 수집분은 `lcls` = lclsSystm3). overview는 사실 확인용, 화면에 내지 않음 | `{"lclsSystm3": "FD050100"}` |
 | `category`, `themes` | 원본 분류, 테마 slug 목록 | `["alleys-culture"]` |
 | `status` | `draft`(작성·검수 전) → `reviewed`(검수 완료·공개 대기) → `published` | |
 | `tier` | `full`/`basic` | |
@@ -119,7 +120,7 @@
 
 ## 8. 메타 태그
 
-- title: `{지역 이름이 들어간 이름} {있는 정보 라벨 최대 3개} | {site_name}` — 예 `인천 ○○박물관 이용시간·쉬는 날·요금 | 인천 여행의 모든 것`. 라벨은 화면에 있는 핵심 정보(이용시간·영업시간·쉬는 날·요금·주차·체크인·메뉴)에서만, 없으면 `방문 정보·지도`. 코스: `{지역} {이름}({N코스}) — 경유지 n곳 | {site_name}`
+- title: `{지역 이름이 들어간 이름} {있는 정보 라벨 최대 3개} | {site_name}` — 예 `인천 ○○박물관 이용시간·쉬는 날·요금 | 인천각`. 라벨은 화면에 있는 핵심 정보(이용시간·영업시간·쉬는 날·요금·주차·체크인·메뉴)에서만, 없으면 `방문 정보·지도`. 코스: `{지역} {이름}({N코스}) — 경유지 n곳 | {site_name}`
 - description: 요약 첫 문장(40자 미만이면 다음 문장까지) + 다른 출처와 충돌 없는 짧은(30자 이하) 사실 최대 2개, 160자 이하. 상투 꼬리 문장 없음
 - og:image: 장소는 공공누리 1유형 사진 우선(3유형만 있으면 첫 사진 — 미리보기 자르기 허용 여부는 사람 결정), 목록·테마·가이드는 사진 있는 첫 카드, 코스는 표지, 홈은 첫 대표 사진
 - `canonical`, `og:*`(locale ko_KR), `geo.position`·`ICBM`(좌표 있을 때), `html lang="ko"`

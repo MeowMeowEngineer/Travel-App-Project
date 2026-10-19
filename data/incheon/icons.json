@@ -6,6 +6,11 @@
    "label": "맛집",
    "group": "home.menu"
   },
+  "icon-cafe": {
+   "glyph": "cup",
+   "label": "카페·디저트",
+   "group": "home.menu"
+  },
   "icon-stay": {
    "glyph": "bed",
    "label": "숙소",
@@ -102,8 +107,13 @@
    "group": "no-photo"
   },
   "kind-cafe": {
-   "glyph": "lamp",
-   "label": "카페·빵집",
+   "glyph": "cup",
+   "label": "카페·디저트",
+   "group": "no-photo"
+  },
+  "kind-shopping": {
+   "glyph": "bag",
+   "label": "쇼핑",
    "group": "no-photo"
   },
   "kind-museum": {

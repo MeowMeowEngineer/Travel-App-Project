@@ -744,6 +744,8 @@ class Site:
         # places: slugs from name_en, unique and stable (first translated keeps the plain slug)
         self.places: dict[str, dict] = {}
         for e in S.entities:
+            if e.get("kind") not in KINDS:   # 카페·디저트, 쇼핑 (2026-10-19): Korean pages only until the versions have lists
+                continue
             rec = current("places", e["id"])
             if rec:
                 self.places[e["id"]] = {"e": e, "rec": rec}

@@ -22,11 +22,12 @@ INCHEON = ROOT / "data" / "incheon"
 # stands for this site's configuration before collection
 RECORDS = ("places.json", "events.json", "courses.json", "guides.json", "themes.json", "videos.json")
 TINY = Path(__file__).resolve().parent / "fixtures" / "incheon_tiny"
-SITE = "https://incheon.example.com"
+SITE = "https://incheon.webforai.kr"   # site_url (operator 2026-10-19)
 NODE = shutil.which("node")
 # the sample city's names in every script the engine has used (tests/test_city.py FOREIGN)
 FOREIGN = re.compile(r"군산|gunsan|Gunsan|GUNSAN|群山|Кунсан|선유도|Seonyudo|고군산")
-PLACES = {f"/places/{s}/" for s in ("test-beach-a", "test-food-b", "test-stay-c", "test-park-d", "test-market-e")}
+PLACES = {f"/places/{s}/" for s in ("test-beach-a", "test-food-b", "test-stay-c", "test-park-d", "test-market-e",
+                                    "test-cafe-f", "test-shop-g")}
 
 
 def _data(tmp_path: Path, fixture: bool = True) -> Path:
@@ -54,11 +55,11 @@ def test_the_build_writes_this_site_s_knowledge_with_sources_and_no_other_city(b
     chat = built["chat"]
     assert sorted(p.name for p in chat.iterdir()) == ["catalog.txt", "docs.json", "index.json", "site.json"]
     assert json.loads((chat / "site.json").read_text("utf-8")) == {
-        "url": SITE, "name": "인천 여행의 모든 것", "city": {"ko": "인천", "en": "Incheon"}, "origins": [], "hubs": {}}
+        "url": SITE, "name": "인천각", "city": {"ko": "인천", "en": "Incheon"}, "origins": [], "hubs": {}}
     catalog = (chat / "catalog.txt").read_text("utf-8")
-    assert catalog.startswith(f"# Site catalog of 인천 여행의 모든 것 ({SITE}).")
+    assert catalog.startswith(f"# Site catalog of 인천각 ({SITE}).")
     lines = {line.split(" | ")[0][2:]: line for line in catalog.splitlines() if line.startswith("P ")}
-    assert set(lines) == PLACES and built["stats"]["chat"]["places"] == 5
+    assert set(lines) == PLACES and built["stats"]["chat"]["places"] == 7
     assert "주차 [테스트] 주차 값" in lines["/places/test-beach-a/"]               # the first screen's key facts
     assert "메뉴 [테스트] 메뉴 값" in lines["/places/test-food-b/"]
     assert "정정 요청 ," not in catalog                                           # no contact yet: not named at all
@@ -70,7 +71,7 @@ def test_the_build_writes_this_site_s_knowledge_with_sources_and_no_other_city(b
     assert "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI (출처 확인 2026-10-19)" in beach
     assert "사이트에 없는 값(확인 필요): 쉬는 날·요금·전화" in beach
     about = docs["docs"]["/about/"]["x"]
-    assert "Claude Haiku 5.5" in about and "대화를 저장하지 않고" in about and "인천 여행의 모든 것" in about
+    assert "Claude Haiku 5.5" in about and "대화를 저장하지 않고" in about and "인천각" in about
     for f in chat.iterdir():
         hit = FOREIGN.search(f.read_text("utf-8"))
         assert not hit, f"{f.name}: {hit and hit.group(0)}"
@@ -157,7 +158,7 @@ def test_the_function_answers_from_the_built_knowledge_once_a_key_is_set(built):
     assert out["on"] == {"status": 200, "body": {"ready": True}}
     assert out["made"] == ["sk-ant-test-not-a-real-key"]
     assert out["system"].startswith(f"You are 인천 여행 도우미 (the Incheon travel helper), the assistant of the travel "
-                                    f"website 인천 여행의 모든 것 ({SITE})")
+                                    f"website 인천각 ({SITE})")
     assert "/places/test-beach-a/" in out["search"].split("\n")[1]              # search_site found the built page first
     assert "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI (출처 확인 2026-10-19)" in out["read"]
     done = out["events"][-1]

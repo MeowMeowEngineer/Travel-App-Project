@@ -12,8 +12,8 @@ import { apiKey, createHandler, createLimiter, makeClient } from "../../chatbot/
 import { siteFrom } from "../../chatbot/site.js";
 import { fakeClient, sseEvents, textRound, toolRound } from "./fake_model.js";
 
-const SITE = "https://incheon.example.com";
-const site = siteFrom({ url: SITE, name: "인천 여행의 모든 것", city: { ko: "인천", en: "Incheon" } });
+const SITE = "https://incheon.webforai.kr";
+const site = siteFrom({ url: SITE, name: "인천각", city: { ko: "인천", en: "Incheon" } });
 const FAKE_KEY = "sk-ant-test-0000-not-a-real-key";
 
 const DOCS = {
@@ -23,7 +23,7 @@ const DOCS = {
       + "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI (출처 확인 2026-10-19)\n사이트에 없는 값(확인 필요): 쉬는 날·요금·전화" },
   "/places/test-food-b/": { t: "[테스트] 가상 식당 B", k: "place",
     x: "[테스트] 가상 식당 B — 음식점\n위치: 연수구\n- 대표 메뉴: [테스트] 메뉴 값 — 한국관광공사 TourAPI (출처 확인 2026-10-19)" },
-  "/about/": { t: "소개·출처", k: "page", x: "인천 여행의 모든 것 — 소개·출처\n사이트 안내 챗봇: 모델은 Anthropic의 Claude Haiku 5.5." },
+  "/about/": { t: "소개·출처", k: "page", x: "인천각 — 소개·출처\n사이트 안내 챗봇: 모델은 Anthropic의 Claude Haiku 5.5." },
 };
 const CATALOG = "# Site catalog (test)\nP /places/test-beach-a/ | [테스트] 가상 해변 A | 관광지 | 중구·운서동 | 시간 [테스트] 이용시간 값\n"
   + "P /places/test-food-b/ | [테스트] 가상 식당 B | 음식점 | 연수구 | 메뉴 [테스트] 메뉴 값\nS /about/ | 소개·출처";

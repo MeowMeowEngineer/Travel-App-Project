@@ -22,7 +22,8 @@ from difflib import SequenceMatcher
 from pipeline.present import TIME_KEYS, time_set
 from pipeline.schema import TOURAPI_LICENSE_MAP, license_allowed
 from pipeline.textutil import extract_url, normalize_name, slugify, squash_ws, strip_html
-from pipeline.tourapi import CONTENT_TYPES, INTRO_FIELDS, KIND_BY_TYPE
+from pipeline.schema import KIND_LABELS, base_kind
+from pipeline.tourapi import CLASS_FIELDS, CONTENT_TYPES, INTRO_FIELDS, kind_of
 
 PROVIDER = "한국관광공사 TourAPI"
 # KorWithService2: a name that does not contain PROVIDER, so the two never read as each other's confirmation
@@ -342,11 +343,25 @@ def https(url: str) -> str:
     return "https://" + url[len("http://"):] if (url or "").startswith("http://") else (url or "")
 
 
+def classification(item: dict, common: dict | None = None) -> dict:
+    """TourAPI's classification codes of an item, as given (CLASS_FIELDS: lclsSystm1·2·3 and the old cat1·2·3):
+    detailCommon2's where it has them, else the list item's; empty fields left out."""
+    out = {}
+    for k in CLASS_FIELDS:
+        v = str((common or {}).get(k) or item.get(k) or "").strip()
+        if v:
+            out[k] = v
+    return out
+
+
 def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: str, allowed, taken: set) -> dict:
     """A draft/basic place for a TourAPI item that matches nothing in the region's data. A 광역시's items carry the
     구·군 TourAPI listed them under (tourapi_bulk: '_signgu_name'), kept as `district` (pipeline/city.py district_of
-    reads it when the address names none)."""
+    reads it when the address names none). The kind is pipeline.tourapi.kind_of — a 음식점 item TourAPI classifies as
+    a café or bakery is 'cafe' (category '카페·디저트'); the item's classification codes are kept under `tourapi`."""
     cid, ctype = str(item["contentid"]), str(item.get("contenttypeid") or "")
+    codes = classification(item, common)
+    kind = kind_of({"contenttypeid": ctype, **codes})
     name = display_name(common.get("title") or item.get("title"))
     slug, n = slugify(name), 2
     while slug in taken:
@@ -354,8 +369,9 @@ def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: st
     taken.add(slug)
     facts = tourapi_facts(common, intro, info, ctype)
     place = {
-        "id": f"tourapi-{cid}", "name": name, "slug": slug, "kind": KIND_BY_TYPE[ctype],
-        "category": CONTENT_TYPES.get(ctype, ""), "themes": [], "tier": "basic", "status": "draft",
+        "id": f"tourapi-{cid}", "name": name, "slug": slug, "kind": kind,
+        "category": KIND_LABELS["cafe"] if kind == "cafe" else CONTENT_TYPES.get(ctype, ""), "themes": [],
+        "tier": "basic", "status": "draft",
         "official": {"homepage": facts["homepage"]} if facts.get("homepage") else {},
         "original": {}, "map_ids": {"naver_place_id": "", "google_place_id": ""}, "images": [],
         "facts": facts,
@@ -364,8 +380,7 @@ def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: st
         "summary": "",
         "tourapi": {"contentid": cid, "contenttypeid": ctype, "title": common.get("title") or item.get("title", ""),
                     "match_basis": "tourapi_only", "modifiedtime": common.get("modifiedtime") or item.get("modifiedtime", ""),
-                    "lcls": common.get("lclsSystm3") or item.get("lclsSystm3", ""),
-                    "overview": clean(common.get("overview"))},
+                    **codes, "overview": clean(common.get("overview"))},
     }
     try:
         lat, lng = float(common.get("mapy") or item.get("mapy")), float(common.get("mapx") or item.get("mapx"))
@@ -384,13 +399,13 @@ def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: st
 def duplicate_candidates(item: dict, places: list[dict], region: str) -> list[dict]:
     """The region's records that may be the same place as an unmatched TourAPI item (for a person or reviewer)."""
     from tools.tourapi_bulk import GENERIC, name_key, road_key
-    kind = KIND_BY_TYPE.get(str(item.get("contenttypeid")))
+    kind = kind_of(item)
     nk = name_key(display_name(item.get("title")), region)
     rk = road_key(item.get("addr1"))
     core = lambda s: GENERIC.sub("", s)
     out = []
     for p in places:
-        if p.get("duplicate_of") or (p.get("tourapi") or {}).get("contentid") or p.get("kind") != kind:
+        if p.get("duplicate_of") or (p.get("tourapi") or {}).get("contentid") or base_kind(p.get("kind")) != base_kind(kind):
             continue
         pk = name_key(p.get("name"), region)
         ratio = SequenceMatcher(None, nk, pk).ratio()

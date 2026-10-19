@@ -31,7 +31,7 @@ site.json keys read here
     list_hubs          {kind: [guide id, line]} the hub guide a list page points to
     purposes           [[label, guide id, fallback path, note]] the home's entry points
     hero_picks         [[place slug, n-th KOGL-1 photo]] home hero slides
-    home               the home's city content (see home())
+    home               the home's city content (see home()); h1: the opening's H1 (default '<region> 여행의 모든 것')
     access_sources     {key: name} the nearby parking / bus block's source names
     fee_sources        {key: name} a parking fee version's source name
     intl               {code: {site_name, city, source, provider, admin, address: {prefix: [...], tail}}} the
@@ -267,7 +267,8 @@ class City:
         return None
 
     def region_rule_lines(self) -> list[str]:
-        """The district rule as the map page prints it, made from the same configuration that assigns the places."""
+        """The district rule as the map page prints it, made from the same configuration that assigns the places; a
+        name only addresses still use (districts_former) reads '옛 <name>'."""
         if self.region_method != "district":
             return []
         lines = []
@@ -275,6 +276,8 @@ class City:
             parts = []
             for m in r.match:
                 d = m.get("district", "")
+                if d in self.districts_former and d not in self.districts:
+                    d = f"옛 {d}"
                 if m.get("dongs"):
                     parts.append(f"{d} 중 {'·'.join(m['dongs'])}")
                 elif m.get("except_dongs"):

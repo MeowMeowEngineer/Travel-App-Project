@@ -471,4 +471,8 @@ def test_the_site_name_and_the_logos_colour_its_end():
     assert str(present.wordmark("인천각")) == '인천<span class="wm-em">각</span>'
     assert str(present.wordmark("군산 여행")) == "군산 여행" and str(present.wordmark("<b>")) == "&lt;b&gt;"
     css = (ROOT / "templates" / "assets" / "css" / "20-chrome.css").read_text("utf-8")
-    assert ".wm-em { color: var(--sea); }" in css
+    # 인천각 (operator 2026-10-19): '각' in the logo's own blue (site.json brand_colors.sea), the site blue without it
+    assert ".wm-em { color: var(--brand, var(--sea)); }" in css
+    tokens = (ROOT / "templates" / "assets" / "css" / "00-tokens.css").read_text("utf-8")
+    site = json.loads((ROOT / "data" / "incheon" / "site.json").read_text("utf-8"))
+    assert f"--brand: {site['brand_colors']['sea']};" in tokens
