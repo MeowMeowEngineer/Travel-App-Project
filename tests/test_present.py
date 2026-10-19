@@ -2,17 +2,22 @@
 Gunsan data: 빈해원's TourAPI hours, 근대역사박물관's fee table, '가능요금 (무료)', 0507 phone numbers, the meal
 stops of the 2박 3일 course and menu search."""
 import json
+import os
 import re
 import shutil
 import struct
+import subprocess
+from html import unescape
 from pathlib import Path
+from urllib.parse import quote
 
 import pytest
 
 from pipeline import jsonld, present
 from pipeline.build import State, build, entity_ctx
+from pipeline.schema import fact_label, parking_seats_half, parking_seats_part
 from pipeline.textutil import dash_times, display_value, value_shown, value_tokens
-from pipeline.validate import PageScan, fact_shown, validate
+from pipeline.validate import PageScan, fact_shown, seat_only_parking_problems, validate
 from tools.image_sizes import image_size
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -65,6 +70,81 @@ def test_display_value_normalises_presentation_only():
 
 # ------------------------------------------------------------------ 빈해원: TourAPI hours vs 군산시
 # ------------------------------------------------------------------ 근대역사박물관: fees and seasons
+
+def test_stroller_rental_from_the_homepage_and_tourapi_none_show_two_blocks():
+    """QA 2026-10-15 F02: a facility homepage says strollers can be borrowed, TourAPI says 없음 — both shown, the
+    homepage's block first, with the flag and the call line; neither value is picked."""
+    e = {"id": "x", "name": "박물관", "kind": "attraction",
+         "facts": {"babycarriage": "대여 가능(예약 없이 박물관 안내소에서)", "infocenter": "063-454-7870"},
+         "facts_source": {"provider": "군산시 문화관광", "checked_at": "2026-10-08"},
+         "fact_sources": {"babycarriage": {"provider": "군산근대역사박물관 홈페이지", "checked_at": "2026-10-15",
+                                           "url": "https://museum.example/qna/2166"}},
+         "fact_alternatives": {"babycarriage": [{"value": "없음", "provider": "한국관광공사 TourAPI",
+                                                 "checked_at": "2026-10-08", "contentid": "1684836"}]}}
+    rows = present.fact_rows(e, present.FIT, present.Notes(), ("063-454-7870", "0634547870"))
+    row = next(r for r in rows if r["key"] == "babycarriage")
+    assert row["conflict"] and row["flag_text"] == "출처마다 다름 · 방문 전 전화 확인"
+    assert [b["provider_full"] for b in row["blocks"]] == ["군산근대역사박물관 홈페이지", "한국관광공사 TourAPI"]
+    assert [b["text"] for b in row["blocks"]] == ["대여 가능(예약 없이 박물관 안내소에서)", "없음"]
+    assert row["tel"] == ("063-454-7870", "0634547870")
+    assert not any(f["name"] == "유모차 대여" for f in
+                   jsonld.entity_node(e, {"locality": "군산시"}, "https://x", "https://x/p/", [], []).get("amenityFeature", []))
+
+
+# ------------------------------------------------------------------ the fee tile beside a combined ticket
+TICKET_PLACES = ("근대역사박물관", "구-일본-제18은행-군산지점", "군산근대건축관", "진포해양공원", "채만식-문학관",
+                 "31운동-100주년-기념관", "금강미래체험관")
+
+
+def test_a_range_keeps_its_season_in_one_unit_and_the_last_entry_its_own_weight():
+    """Review 2026-10-18, fourth round: on the Korean museum page at 390px the hours tile broke after a season's word
+    ('… 11~2월 | 09:00–17:00(입장마감 16:30)'). The nwt filter keeps the word right before a range — its season or days
+    — with the range and the bracket after it in one unit (.nwu: a line breaks before it, not inside it); a time is
+    never a season. The last entry's bracket is .kfl; the words do not change."""
+    from markupsafe import escape
+
+    from pipeline.build import css_source, make_env
+    nwt = make_env().filters["nwt"]
+    nw, kfl = '<span class="nw">{}</span>', '<span class="kfl">({} <span class="nw">{}</span>)</span>'
+    cases = {
+        "3~10월 09:00–18:00(입장마감 17:30)":
+            '<span class="nwu">3~10월 ' + nw.format("09:00–18:00") + kfl.format("입장마감", "17:30") + "</span>",
+        "동절기(11월~2월) 09:00–17:00(입장 마감 16:30)":
+            '<span class="nwu">동절기(11월~2월) ' + nw.format("09:00–17:00") + kfl.format("입장 마감", "16:30") + "</span>",
+        "평일 09:00–18:00, 토,일 10:00–19:00":
+            '<span class="nwu">평일 ' + nw.format("09:00–18:00") + '</span>, <span class="nwu">토,일 ' + nw.format("10:00–19:00") + "</span>",
+        "11:00–21:00(입장마감 20:00)": '<span class="nwu">' + nw.format("11:00–21:00") + kfl.format("입장마감", "20:00") + "</span>",
+        "09:00–12:00 13:00–18:00": nw.format("09:00–12:00") + " " + nw.format("13:00–18:00"),
+        "09:00–21:00 입장마감 20:30": nw.format("09:00–21:00") + " 입장마감 20:30",
+        "하절기(입장마감 17:30), 동절기(입장마감 16:30)":
+            '<span class="nwu">하절기' + kfl.format("입장마감", "17:30") + '</span>, <span class="nwu">동절기' + kfl.format("입장마감", "16:30") + "</span>",
+        "11:00–21:00 (브레이크 15:00–17:00)": nw.format("11:00–21:00") + ' <span class="kfl">(브레이크 ' + nw.format("15:00–17:00") + ")</span>",
+        "성인 3,000원(1,500원)": "성인 " + nw.format("3,000원(1,500원)"),
+        "A&B 09:00–18:00": '<span class="nwu">A&amp;B ' + nw.format("09:00–18:00") + "</span>",
+        # UI review 2026-10-19: a list mark stays out of the unit after it, at the end of the line before — a Japanese or
+        # Chinese line never starts with '、' (the last entries en_site.last_entry_tr joins with the locale's list mark)
+        "夏季（入場締切17:30）、冬季（入場締切16:30）":
+            '<span class="nwu">夏季<span class="kfl">（入場締切' + nw.format("17:30") + '）</span></span>、<span class="nwu">冬季'
+            '<span class="kfl">（入場締切' + nw.format("16:30") + "）</span></span>",
+        "平日 09:00–18:00、土日 10:00–17:00":
+            '<span class="nwu">平日 ' + nw.format("09:00–18:00") + '</span>、<span class="nwu">土日 ' + nw.format("10:00–17:00") + "</span>",
+        "夏季（17:30停止入场），冬季（16:30停止入场）":
+            '<span class="nwu">夏季<span class="kfl">（' + nw.format("17:30") + '停止入场）</span></span>，<span class="nwu">冬季'
+            '<span class="kfl">（' + nw.format("16:30") + "停止入场）</span></span>",
+        "월,화(입장마감 17:00)": '<span class="nwu">월,화' + kfl.format("입장마감", "17:00") + "</span>",
+    }
+    for text, want in cases.items():
+        assert str(nwt(text)) == want, text
+        assert re.sub(r"<[^>]+>", "", want) == str(escape(text))   # the words do not change
+        assert not re.search(r'class="(?:nwu|kfl|nw)">[、，,;；·・]', want), text   # no unit begins with a list mark
+    css = " ".join(css_source().split())
+    assert ".nwu, .kfl { display: inline-block; }" in css
+    # the size down is the first screen's big tiles' only, never under 13px; elsewhere the bracket keeps the value's size
+    assert ".kf-main .kfl { font-weight: 400; letter-spacing: -.01em; }" in css
+    assert not re.search(r"(?:^|[}/]\s)\.kf-main \.kfl \{[^}]*font-size", css)
+    assert ".kf-hero .kf-main .kfl { font-size: max(13px, .68em); }" in css
+
+
 # ------------------------------------------------------------------ '가능요금 (무료)'
 # ------------------------------------------------------------------ phones
 def test_contested_phone_is_never_the_call_number(tmp_path):
@@ -92,9 +172,69 @@ def test_contested_phone_is_never_the_call_number(tmp_path):
     assert "방문 전 전화 확인" in html
 
 
+def test_official_hosts_in_the_text_are_links_and_the_text_stays():
+    """QA 2026-10-15 SRC-05b: an official site the text writes as a bare host is a link (only OFFICIAL_WEB's hosts);
+    the text of the result is the input, character for character."""
+    t = "예매는 한국해운조합(island.theksa.co.kr), 문의는 1644-8774"
+    h = str(present.tel_markup(t))
+    assert h.count('class="xl"') == 1 and h.count('class="tel"') == 1
+    assert re.sub(r"<[^>]+>", "", h) == t
+    assert 'href="https://island.theksa.co.kr/"' in h and 'data-track="official_click"' in h
+    # the other versions: the English booking page of the same site
+    assert 'href="https://island.theksa.co.kr/page/booking?lang=en"' in str(present.tel_markup(t, intl=True))
+    for plain in ("gsmg-marathon.com은 열리지 않았습니다", "홈페이지 주소는 funvillage.kr입니다", "xwww.korail.com",
+                  "https://www.korail.com/", "abc.mndcamp.com", "www.kobus.co.kr"):
+        assert 'class="xl"' not in str(present.tel_markup(plain)), plain
+    # an FAQ answer (skip): no link starts in its head, which FAQPage repeats and the validator compares as one run
+    a = "It is 063-454-7870. Booking is at island.theksa.co.kr or 063-454-7871."
+    h = str(present.tel_markup(a, intl=True, skip=present.PLAIN_HEAD))
+    assert h.startswith("It is 063-454-7870. ") and h.count('class="tel"') == 1 and 'href="tel:+82634547871"' in h
+    assert h.count('class="xl"') == 1 and re.sub(r"<[^>]+>", "", h) == a
+
+
 # ------------------------------------------------------------------ courses
+
+def _course(S, cid):
+    return next(v for v in S.course_vms.values() if v["c"]["id"] == cid)
+
+
+def _move_block(built, cv) -> str:
+    html = (built / "courses" / cv["slug"] / "index.html").read_text("utf-8")
+    m = re.search(r'<section class="wrap chapter chapter-mid co-move"[^>]*data-block="move">(.*?)</section>', html, re.S)
+    assert m, cv["slug"]
+    return m.group(1)
+
+
 # ------------------------------------------------------------------ search
+
+
+def test_other_names_keep_only_what_the_search_would_not_find_anyway():
+    """present.other_names (QA 2026-10-15 U10): the names in the other versions, ' · '-joined in their order, each
+    once — without one search.js finds anyway (inside n, a or a longer name kept, compared as search.js does)."""
+    row = {"n": "선유도", "a": "선유도 해수욕장"}
+    present.other_names(row, "Seonyudo Island", "", None, "seonyudo island", "선유 도", "2026 Seonyudo Island Festival")
+    assert row["o"] == "2026 Seonyudo Island Festival"
+    row = {"n": "군산시간여행축제", "a": ""}
+    present.other_names(row, "2026 군산시간여행축제", "Gunsan Time Travel Festival")
+    assert row["o"] == "2026 군산시간여행축제 · Gunsan Time Travel Festival"
+    row = {"n": "A", "a": ""}
+    present.other_names(row, "", None, "A")
+    assert "o" not in row
+    present.other_names(row, "선유도", "Seonyudo Island", key="v")
+    assert row["v"] == "선유도 · Seonyudo Island"
+
+
+def test_the_index_has_no_other_language_names_without_the_english_version():
+    """A build without an English version (the sample data): no row carries o or v, and nothing breaks."""
+    S = State(ROOT / "data" / "sample", "sample")
+    assert getattr(S, "en", None) is None
+    rows = present.search_index(S)
+    assert rows and not any("o" in r or "v" in r for r in rows)
+
+
 # ------------------------------------------------------------------ status line, stays, regions, home
+
+
 # ------------------------------------------------------------------ home opening (owner 2026-10-13, specs/home_redesign.md)
 NEWS_ORDER = ("festival", "event", "abroad", "guide", "video")
 
@@ -125,6 +265,9 @@ def _check_news(S, day: str) -> list[dict]:
     top = sorted(S.guides, key=present._guide_rank, reverse=True)
     assert guides and guides == [g["_path"] for g in top[:len(guides)]]
     return news
+
+
+MUSEUM_EV = "fest-군산근대역사박물관-주말상설행사-2026"
 
 
 # ------------------------------------------------------------------ events, photos
@@ -243,3 +386,89 @@ def test_thumb_uses_the_smallest_kogl1_derivative_when_the_provider_has_no_small
     assert present.thumb({**base, "type": 3})["url"] == base["url"]
     assert present.thumb({**base, "webp": ""})["url"] == base["url"]
     assert present.thumb(None) is None
+
+
+# ------------------------------------------------------------------ 군산시 '주차 및 좌석수' with one half only
+def test_parking_seats_part_reads_each_half():
+    for raw in ("40석", "좌석 100석", "1,200석"):
+        assert parking_seats_part(raw) == "seats", raw
+    for raw in ("20대", "공영주차장", "불가"):
+        assert parking_seats_part(raw) == "parking", raw
+    for raw in ("20대/80석", "좌석 40석/ 주차 15대", "30 ~ 40대/100석", "불가능 / 70석", "전화문의", ""):
+        assert parking_seats_part(raw) == "", raw
+
+
+def _seat_only(S) -> list[dict]:
+    out = [e for e in S.entities if parking_seats_half(e) == "seats"]
+    assert "모트" in {e["slug"] for e in out}
+    return out
+
+
+def _text(fragment: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", fragment)).strip()
+
+
+def squash(text: str) -> str:
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def test_an_unspaced_address_keeps_only_its_house_number_together():
+    """present.nowrap_address: a word holding a hyphen ('244-7(장미동)') stays one no-wrap piece; a word longer than
+    ADDRESS_WORD_MAX — an address the source gives without spaces — stays one plain text run (no no-wrap piece, so
+    the body's overflow-wrap can break it on a phone, and the validator reads it whole as JSON-LD has it)."""
+    assert str(present.nowrap_address("전북특별자치도 군산시 해망로 244-7(장미동)")) == \
+        '전북특별자치도 군산시 해망로 <span class="nw">244-7(장미동)</span>'
+    long = "전북특별자치도군산시임피면구신기길104-3수에어항공"
+    assert str(present.nowrap_address(long)) == long
+
+
+SHARE_BTN = re.compile(r'<button type="button" class="lnav-share" data-share data-share-id="([^"]*)" '
+                       r'data-copied="([^"]*)" data-failed="([^"]*)" data-js-only>.*?<span class="lnav-share-t">([^<]*)</span>'
+                       r'</button>', re.S)
+
+
+def _serve(built):
+    """A page.route handler serving the built site at http://site.test/ (nothing leaves the machine)."""
+    import mimetypes
+    from urllib.parse import unquote, urlsplit
+
+    def serve(route):
+        url = route.request.url
+        if not url.startswith("http://site.test/"):
+            return route.abort()
+        path = unquote(urlsplit(url).path)
+        f = built / path.strip("/")
+        f = f / "index.html" if path.endswith("/") else f
+        if not f.is_file():
+            return route.fulfill(status=404, body="")
+        route.fulfill(status=200, body=f.read_bytes(),
+                      content_type=mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+    return serve
+
+
+# the browser's share sheet, clipboard and GA4 sender stood in for: what the page hands them is recorded
+SHARE_STUBS = """
+window.__events = []; window.__copied = []; window.__shared = [];
+window.gunsanTrack = function (name, params) { window.__events.push([name, params]); };
+Object.defineProperty(navigator, 'clipboard', {configurable: true, value: {writeText: function (t) {
+  window.__copied.push(t); return Promise.resolve(); }}});
+var mode = (location.search.match(/share=(\\w+)/) || [])[1];
+Object.defineProperty(navigator, 'share', {configurable: true, value: mode === 'none' ? undefined : function (data) {
+  window.__shared.push(data);
+  if (mode === 'abort') return Promise.reject(new DOMException('closed', 'AbortError'));
+  if (mode === 'deny') return Promise.reject(new DOMException('no', 'NotAllowedError'));
+  return Promise.resolve(); }});
+"""
+
+
+def test_the_site_name_and_the_logos_colour_its_end():
+    """Operator 2026-10-17 (ChatGPT colour study A, 'gak' too): the bar's and the footer's name keeps its text and puts
+    its end in .wm-em (군산<각>, Gunsan<gak>); the light logos draw 각 and gak in the site blue #2F6FC9, the reverse in
+    the lantern yellow #FFD54A, the mono one in one black path per line as before. (The logo files' colours are the
+    city's own brand files — tests/excluded_gunsan_tests.txt; the name's end is the engine's.)"""
+    assert str(present.wordmark("군산각")) == '군산<span class="wm-em">각</span>'
+    assert str(present.wordmark("Gunsangak")) == 'Gunsan<span class="wm-em">gak</span>'
+    assert str(present.wordmark("인천각")) == '인천<span class="wm-em">각</span>'
+    assert str(present.wordmark("군산 여행")) == "군산 여행" and str(present.wordmark("<b>")) == "&lt;b&gt;"
+    css = (ROOT / "templates" / "assets" / "css" / "20-chrome.css").read_text("utf-8")
+    assert ".wm-em { color: var(--sea); }" in css

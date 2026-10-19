@@ -58,6 +58,28 @@ def test_rich_keeps_every_character_and_marks_only_figures():
     # skip: no markup starts inside the first characters (the validator compares them as one run)
     h = present.rich("이 사이트에 실린 군산 숙소 89곳의 정보에는 객실 25실", skip=present.PLAIN_HEAD)
     assert re.findall(r'class="gk"[^>]*>([^<]+)', h) == ["25실"]
+
+
+def test_rich_links_the_official_hosts_the_guide_writes():
+    """QA 2026-10-15 SRC-05b: a host of present.OFFICIAL_WEB written in the guide's text is a link — the Korean page to
+    the checked page, the other versions to the site's English page where it has one, a written path kept — and the
+    text stays character for character. Unlisted or unchecked hosts stay text."""
+    t = "여객선 예매는 한국해운조합(island.theksa.co.kr)에서, 열차는 한국철도공사(www.korail.com, 1544-7788)에서 봅니다."
+    ko, en = present.rich(t, "ko"), present.rich(t, "en")
+    assert text_of(ko) == t and text_of(en) == t
+    assert '<a class="xl" href="https://island.theksa.co.kr/" rel="noopener" data-track="official_click">island.theksa.co.kr</a>' in ko
+    assert 'href="https://island.theksa.co.kr/page/booking?lang=en"' in en and 'href="https://www.korail.com/"' in en
+    assert 'href="tel:15447788"' in en                              # a nationwide number keeps its digits
+    h = present.rich("예약은 홈페이지 실시간 예약(mndcamp.com/resv)이나 전화로 합니다.", "ko")
+    assert '<a class="xl" href="https://mndcamp.com/resv" rel="noopener" data-track="official_click">mndcamp.com/resv</a>' in h
+    h = present.rich("군산 날씨는 kma.go.kr에서 봅니다.", "ko")
+    assert re.findall(r'<a class="xl"[^>]*>([^<]+)</a>', h) == ["kma.go.kr"]
+    for plain in ("군산시 축제정보에 적힌 gsmg-marathon.com은 열리지 않았습니다.", "홈페이지 주소는 funvillage.kr입니다.",
+                  "xwww.korail.com", "전체 시각은 코버스(www.kobus.co.kr)에서 조회합니다."):
+        assert "<a " not in present.rich(plain, "ko"), plain
+    # never inside the answer line's plain head (the validator compares it with the JSON-LD as one run)
+    h = present.rich("예매는 island.theksa.co.kr에서 합니다.", "ko", skip=present.PLAIN_HEAD)
+    assert 'class="xl"' not in h
     # English figures
     t = "About 500 m away; 1,000 won; 10:00–19:00 on Mondays; ages 6 and under; from 18 months; 16 pieces; 2 hours 30 minutes."
     h = present.rich(t, "en")

@@ -143,8 +143,9 @@ def test_incheon_fixture_builds_and_validates_with_no_trace_of_the_sample_city(t
     assert 'id="ask-q"' in home and 'data-chat-site="https://incheon.example.com"' in home
     assert "지금 인천 · " in home and "인천 여행의 모든 것" in home
     site = json.loads((out / "chat" / "site.json").read_text("utf-8"))
+    # no planner hubs yet (site.json city.plan.hubs: the operator's): the form asks none, the planner refuses one
     assert site == {"city": {"en": "Incheon", "ko": "인천"}, "name": "인천 여행의 모든 것", "origins": [],
-                    "url": "https://incheon.example.com"}
+                    "url": "https://incheon.example.com", "hubs": {}}
     # structured data: the neutral city node, a 광역시 address split into 시 and 구
     assert '"@id":"https://incheon.example.com/#city","name":"인천광역시"' in home.replace(" ", "")
     beach = (out / "places" / "test-beach-a" / "index.html").read_text("utf-8").replace(" ", "")

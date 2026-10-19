@@ -15,8 +15,8 @@ from pipeline.build import build, make_env
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = ROOT / "data" / "sample"
 ASSETS = ROOT / "templates" / "assets"
-LABELS = {"ko": "물어보기", "en": "Ask", "ja": "質問する", "zh-Hans": "提问", "zh-Hant": "提問", "de": "Fragen",
-          "fr": "Demander", "es": "Preguntar", "ru": "Спросить"}
+LABELS = {"ko": "AI 챗봇", "en": "AI chat", "ja": "AIチャット", "zh-Hans": "AI助手", "zh-Hant": "AI助手", "de": "KI-Chat",
+          "fr": "Chat IA", "es": "Chat IA", "ru": "ИИ-чат"}
 
 
 @pytest.fixture(scope="module")
@@ -35,9 +35,14 @@ def test_every_page_has_one_launcher_and_nothing_else_of_the_chat(sample):
         # 검색, 중앙 부분에는 AI챗봇') and the home's centre card asks in place
         assert html.count('class="chat-fab"') == 1, p
         openers = re.findall(r'<(?:button|a)[^>]*data-chat-open[^>]*>', html)
+        # one exception: a search that finds nothing offers to ask the chat that query (QA 2026-10-15 F08; the
+        # button is in the hidden help search.js shows then)
+        asks = [o for o in openers if "data-chat-q" in o]
+        assert len(asks) == (1 if p.parent.name == "search" else 0), p
+        openers = [o for o in openers if o not in asks]
         assert len(openers) == 1 and 'class="chat-fab"' in openers[0], p
         assert "mast-ask" not in html, p
-        assert '<span class="chat-fab-l">물어보기</span>' in html and 'aria-haspopup="dialog"' in html
+        assert '<span class="chat-fab-l">AI 챗봇</span>' in html and 'aria-haspopup="dialog"' in html
         fab = html[html.index('class="chat-fab"'):]
         fab = fab[:fab.index("</button>")]
         if icons.mascot("mascot-icon-3d"):                                # the mascot's face (optional, pipeline/icons.py)
@@ -61,15 +66,15 @@ def test_every_page_has_one_launcher_and_nothing_else_of_the_chat(sample):
 
 def test_launcher_in_every_language_is_named_by_its_visible_label():
     tpl = make_env().get_template("_chat.html.j2")
-    for lang, label in {**LABELS, "xx": "Ask"}.items():
+    for lang, label in {**LABELS, "xx": "AI chat"}.items():
         html = tpl.render(lang=lang)
         visible = re.search(r'<span class="chat-fab-l">([^<]+)</span>', html).group(1)
         name = re.search(r'aria-label="([^"]+)"', html).group(1)
         assert visible == label, lang
         assert name.lower().startswith(label.lower()), (lang, name)      # WCAG 2.5.3 label in name
-        # plain words for what it does, no product name (owner 2026-10-13 night: '너무 AI같다')
-        assert not re.search(r"\b(AI|KI|IA)\b|ИИ|도우미|helper|assistant|アシスタント|助手|Helfer|asistente|помощник",
-                             name, re.I), (lang, name)
+        # it says it is an AI chat (owner 2026-10-14: '우측 하단에 지금 뭔지 잘 모르겠는데, AI 챗봇인 거 더 크게 잘
+        # 보이면 좋겠네' — this replaces 2026-10-13's plain-words-only rule for the launcher) and what it is for
+        assert re.search(r"AI|KI|IA|ИИ", label) and " — " in name, (lang, name)
         if lang not in ("ko",):
             assert not re.search(r"[가-힣]", html), lang                 # English pages carry no Hangul
 
@@ -83,7 +88,7 @@ def test_english_pages_render_the_english_launcher():
     html = child.render(site=site, page=page, page_kind="home", lang="en", nav=[], nav_current="", mode="sample",
                         wordmark="All About Gunsan Travel", lang_link=None, tourapi_used=False,
                         t=en_site.UIText(en_site.EN, {}), loc=en_site.EN, langs=[])
-    assert '<span class="chat-fab-l">Ask</span>' in html and "물어보기" not in html
+    assert '<span class="chat-fab-l">AI chat</span>' in html and "챗봇" not in html
     assert html.index('class="chat-fab"') > html.rindex("</footer>")
 
 
@@ -165,5 +170,9 @@ def test_chat_styles_keep_the_type_rules_targets_and_reduced_motion():
         assert "width: 44px" in rules[sel] and "height: 44px" in rules[sel], sel
     for sel in (".chat-chip", ".chat-retry"):
         assert "min-height: 44px" in rules[sel], sel
-    assert "height: 64px" in launcher and "safe-area-inset-bottom" in launcher
+    assert "height: 68px" in launcher and "height: 84px" in launcher and "safe-area-inset-bottom" in launcher
     assert "chat-up" not in launcher                                  # on every page from the first paint
+    # an answer written right to left (QA 2026-10-15 F06): its lists indent on the side it starts from
+    lists = re.findall(r"\.chat-md [uo]l \{([^}]*)\}", panel)
+    assert len(lists) == 2 and all("padding-inline-start" in r and "padding-left" not in r for r in lists), lists
+    assert ".chat-num { white-space: nowrap; }" in panel and ".chat-links[dir=rtl] .chat-card .icon" in panel

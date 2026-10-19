@@ -10,7 +10,7 @@ import pytest
 from pipeline import tourapi
 from pipeline.tourapi import TourAPI
 from tools import refresh
-from tools.tourapi_bulk import compute_nearby, fetched_on
+from tools.tourapi_bulk import compute_nearby, fetched_on, fill
 
 KEY = "SECRETKEY1234567890"
 DOCTOR_OK = json.dumps({"verdict": "정상 — KorService2/searchKeyword2 응답 OK", "attempts": []}, ensure_ascii=False, indent=2)
@@ -153,7 +153,7 @@ def test_client_records_the_fetch_date_and_cache_keeps_its_own(tmp_path, monkeyp
 
 
 def test_nearby_date_moves_only_when_the_list_changes():
-    places = [{"name": n, "slug": n, "kind": "attraction", "geo": {"lat": 35.98 + d, "lng": 126.71}}
+    places = [{"id": n, "name": n, "slug": n, "kind": "attraction", "geo": {"lat": 35.98 + d, "lng": 126.71}}
               for n, d in (("a", 0), ("b", 0.001), ("c", 0.002))]
     compute_nearby(places, "2026-10-01")
     compute_nearby(places, "2026-10-08")
@@ -161,3 +161,34 @@ def test_nearby_date_moves_only_when_the_list_changes():
     places[2]["geo"] = {"lat": 36.5, "lng": 126.71}                  # c moves out of range
     compute_nearby(places, "2026-10-09")
     assert places[0]["nearby_source"]["checked_at"] == "2026-10-09"
+
+
+def test_nearby_names_every_provider_of_the_points_it_used():
+    """nearby_source.provider names whose coordinates the distances join: TourAPI only keeps the old line; a list with
+    a point from 군산시 문화관광 (tools/official_coords.py) names both, TourAPI first, and records them as a list."""
+    tour = lambda lat: {"lat": lat, "lng": 126.71, "source": "TourAPI"}          # noqa: E731
+    places = [{"id": "a", "name": "a", "slug": "a", "kind": "attraction", "geo": tour(35.98)},
+              {"id": "b", "name": "b", "slug": "b", "kind": "food", "geo": tour(35.981)},
+              {"id": "c", "name": "c", "slug": "c", "kind": "stay",
+               "geo": {"lat": 35.99, "lng": 126.71, "source": "군산시 문화관광",
+                       "url": "https://www.gunsan.go.kr/tour/m2096/view/1", "checked_at": "2026-10-16"}},
+              {"id": "far", "name": "far", "slug": "far", "kind": "attraction", "geo": tour(35.70)}]
+    compute_nearby(places, "2026-10-16")
+    by = {p["slug"]: p["nearby_source"] for p in places}
+    assert by["far"]["provider"] == "한국관광공사 TourAPI 좌표" and by["far"]["providers"] == ["한국관광공사 TourAPI"]
+    for slug in ("a", "b", "c"):     # each lists c (군산시 문화관광) or is c
+        assert by[slug]["provider"] == "한국관광공사 TourAPI·군산시 문화관광 좌표", slug
+        assert by[slug]["providers"] == ["한국관광공사 TourAPI", "군산시 문화관광"], slug
+
+
+def test_tourapi_fill_keeps_a_point_from_another_source():
+    """A place whose point came from 군산시 문화관광 or its own homepage keeps it when TourAPI later matches it; the
+    distance to TourAPI's point is reported. A TourAPI point is still refreshed."""
+    city = {"lat": 35.8123, "lng": 126.4030, "source": "군산시 문화관광", "url": "https://www.gunsan.go.kr/tour/m2805",
+            "checked_at": "2026-10-15"}
+    p = {"name": "장자교 스카이워크", "kind": "attraction", "geo": dict(city)}
+    cand = {"contentid": "1", "contenttypeid": "12", "title": "장자교", "mapy": "35.8154", "mapx": "126.4511"}
+    ch = fill(p, cand, "same_name", None)
+    assert p["geo"] == city and ch["geo"] is False and 4000 < ch["geo_kept"] < 5000
+    q = {"name": "x", "kind": "attraction", "geo": {"lat": 35.0, "lng": 126.0, "source": "TourAPI"}}
+    assert fill(q, cand, "same_name", None)["geo"] and q["geo"] == {"lat": 35.8154, "lng": 126.4511, "source": "TourAPI"}

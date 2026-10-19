@@ -54,7 +54,7 @@ def test_the_build_writes_this_site_s_knowledge_with_sources_and_no_other_city(b
     chat = built["chat"]
     assert sorted(p.name for p in chat.iterdir()) == ["catalog.txt", "docs.json", "index.json", "site.json"]
     assert json.loads((chat / "site.json").read_text("utf-8")) == {
-        "url": SITE, "name": "인천 여행의 모든 것", "city": {"ko": "인천", "en": "Incheon"}, "origins": []}
+        "url": SITE, "name": "인천 여행의 모든 것", "city": {"ko": "인천", "en": "Incheon"}, "origins": [], "hubs": {}}
     catalog = (chat / "catalog.txt").read_text("utf-8")
     assert catalog.startswith(f"# Site catalog of 인천 여행의 모든 것 ({SITE}).")
     lines = {line.split(" | ")[0][2:]: line for line in catalog.splitlines() if line.startswith("P ")}

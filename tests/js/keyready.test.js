@@ -158,7 +158,9 @@ test("a rejected key (401): the reader gets a calm 'cannot answer now', the log 
   const err = Object.assign(new Error(`401 invalid x-api-key ${FAKE_KEY}`), { status: 401 });
   const { handle, logs } = setup({ ANTHROPIC_API_KEY: FAKE_KEY }, [{ reject: err }]);
   const evs = await sseEvents(await handle(request()));
-  assert.deepEqual(evs, [{ type: "error", code: "unavailable", message: errorText("ko", "busy") }]);
+  // the stream opens with the answer's language and direction (server.js 'meta'), then the calm error
+  assert.deepEqual(evs, [{ type: "meta", dir: "", site: "ko", lang: "ko" },
+    { type: "error", code: "unavailable", message: errorText("ko", "busy") }]);
   assert.equal(logs.at(-1).status, "unavailable");
   assert.equal(logs.at(-1).api_status, 401);
   assert.equal(logs.at(-1).hint, "check ANTHROPIC_API_KEY");

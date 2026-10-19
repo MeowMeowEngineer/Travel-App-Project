@@ -63,3 +63,15 @@ def test_course_first_route_uses_the_stop_place_id(monkeypatch):
     place["map_ids"] = {}
     assert present.course_stop_details(vm)["first_route"]["url"] == \
         "https://map.kakao.com/link/to/%EC%9D%B4%EC%84%B1%EB%8B%B9,35.9,126.7"
+
+
+def test_transit_directions_between_two_coordinates():
+    """QA 2026-10-15 F09: a course leg's public-transport link lets the map app compute route and time — Kakao's
+    /link/by/traffic with names and coordinates only (the transit mode takes no via point; no place ID), Google's
+    Maps URLs dir with travelmode=transit."""
+    from pipeline.maplinks import google_transit_url, kakao_transit_url
+    assert kakao_transit_url("근대역사박물관", 35.98, 126.71, "비응 마파지길", 35.94, 126.52) == (
+        "https://map.kakao.com/link/by/traffic/%EA%B7%BC%EB%8C%80%EC%97%AD%EC%82%AC%EB%B0%95%EB%AC%BC%EA%B4%80,35.98,126.71/"
+        "%EB%B9%84%EC%9D%91%20%EB%A7%88%ED%8C%8C%EC%A7%80%EA%B8%B8,35.94,126.52")
+    assert google_transit_url(35.98, 126.71, 35.94, 126.52) == (
+        "https://www.google.com/maps/dir/?api=1&origin=35.98%2C126.71&destination=35.94%2C126.52&travelmode=transit")

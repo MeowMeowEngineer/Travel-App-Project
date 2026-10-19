@@ -1,8 +1,14 @@
 """tools/tourapi_details.py — per-field sources, agreement vs. conflict, TourAPI-only places, festivals."""
-from tools.tourapi_details import (alternate_name, duplicate_candidates, event_key, festival_event, merge_facts,
-                                   new_place, same_meaning, tourapi_facts)
+import json
+from pathlib import Path
+
+from pipeline.tourapi import parse_items
+from tools.tourapi_details import (BARRIER_FREE, PROVIDER, alternate_name, confirmed_by_has, duplicate_candidates,
+                                   event_key, festival_event, merge_facts, new_place, same_meaning, tourapi_facts,
+                                   with_facts)
 
 TODAY = "2026-10-08"
+FIXTURE = Path(__file__).parent / "fixtures" / "detailWithTour2_documented_shape.json"
 
 
 def test_same_meaning_keeps_detail_and_flags_real_differences():
@@ -124,3 +130,117 @@ def test_rerun_keeps_confirmations_and_shop_fields_map():
                          [], "38")
     assert shop["usetime"] == "07:00~20:00" and shop["fairday"] == "1, 6일" and shop["saleitem"] == "활어 / 건어물"
     assert shop["infocenter"] == "063-443-1981, 063-443-4819"
+
+
+# ------------------------------------------------------------------ QA 2026-10-15
+def test_homepage_stroller_rental_and_tourapi_none_stay_two_values():
+    """F02: the museum answers that strollers can be borrowed; TourAPI says 없음. Neither side is picked."""
+    museum = {"name": "박물관", "facts": {"babycarriage": "대여 가능(예약 없이 박물관 안내소에서)"},
+              "facts_source": {"provider": "군산시 문화관광", "checked_at": TODAY},
+              "fact_sources": {"babycarriage": {"provider": "군산근대역사박물관 홈페이지", "checked_at": "2026-10-15",
+                                                "url": "https://museum.example/qna/2166"}}}
+    keep = json.loads(json.dumps(museum["fact_sources"]))
+    res = merge_facts(museum, {"babycarriage": "없음"}, TODAY, "1684836")
+    assert res["conflicts"] == ["babycarriage"] and res["confirmed"] == [] and res["added"] == []
+    assert museum["facts"]["babycarriage"] == "대여 가능(예약 없이 박물관 안내소에서)"
+    assert museum["fact_sources"] == keep
+    assert museum["fact_alternatives"]["babycarriage"] == [{"value": "없음", "provider": PROVIDER, "checked_at": TODAY,
+                                                            "contentid": "1684836"}]
+    again = merge_facts(museum, {"babycarriage": "없음"}, TODAY, "1684836")
+    assert again["conflicts"] == ["babycarriage"] and len(museum["fact_alternatives"]["babycarriage"]) == 1
+    assert museum["fact_sources"] == keep
+
+
+def test_same_opening_times_worded_differently_are_kept_as_also():
+    """J16: 군산근대건축관 and 신흥동일본식가옥 state the same hours as TourAPI (one adds last entry); the museum's
+    09:00–21:00 is a real difference."""
+    hall = {"name": "군산근대건축관", "facts_source": {"provider": "군산시 문화관광", "checked_at": TODAY},
+            "facts": {"usetime": "동절기 09:00 - 17:00 하절기 09:00 - 18:00 휴관일 1월 1일, 시장이 휴관일로 정한 날, 매주 월요일"}}
+    res = merge_facts(hall, {"usetime": "[하절기(3~10월)]\n09:00~18:00 (입장마감 17:30)\n[동절기(11월~2월)]\n"
+                                        "09:00~17:00 (입장마감 16:30)"}, TODAY, "2469034")
+    assert res["also"] == ["usetime"] and res["conflicts"] == []
+    assert hall["fact_alternatives"]["usetime"][0]["relation"] == "also" and hall["facts"]["usetime"].startswith("동절기")
+    house = {"name": "군산신흥동일본식가옥(히로쓰가옥)", "facts_source": {"provider": "군산시 문화관광"},
+             "facts": {"usetime": "10:00~17:00  외부,정원만 관람 가능 (매주 월요일 및 1월 1일 휴관),"}}
+    res = merge_facts(house, {"usetime": "10:00~17:00\n※ 20분 전 입장마감\n※ 문화유산 보호를 위하여 실내 개방은 하지 않음"},
+                      TODAY, "2763700")
+    assert res["also"] == ["usetime"] and house["fact_alternatives"]["usetime"][0]["relation"] == "also"
+    museum = {"name": "근대역사박물관", "facts_source": {"provider": "군산시 문화관광"},
+              "facts": {"usetime": "3~10월 09:00~18:00(입장마감 17:30) / 11~2월 09:00~17:00(입장마감 16:30)"}}
+    res = merge_facts(museum, {"usetime": "09:00~21:00(입장마감 20:30)"}, TODAY, "1684836")
+    assert res["conflicts"] == ["usetime"] and "relation" not in museum["fact_alternatives"]["usetime"][0]
+
+
+def test_with_facts_maps_the_documented_detail_with_tour2_shape():
+    item = parse_items(json.loads(FIXTURE.read_text("utf-8")), "detailWithTour2")[0]
+    assert with_facts(item) == {"wheelchair": "대여가능(수동휠체어 2대)", "accessible_parking": "장애인 주차장 있음",
+                                "accessible_toilet": "장애인 화장실 있음"}       # '_무장애 편의시설' removed
+    assert with_facts({"stroller": "대여 가능(5대/안내데스크)", "lactationroom": "수유실 있음(1층)",
+                       "elevator": "엘리베이터 있음", "exit": "턱 없음"}) == {"babycarriage": "대여 가능(5대/안내데스크)"}
+    assert with_facts({"stroller": "유모차 이용 가능"}) == {}                      # not about renting
+    assert with_facts({"route": "출입구까지 경사로가 설치되어 있음(완만함)_무장애 편의시설"}) == {
+        "accessible_route": "출입구까지 경사로가 설치되어 있음(완만함)"}
+    assert with_facts({}) == {} and with_facts({"wheelchair": "-"}) == {}
+
+
+def test_barrier_free_merge_keeps_both_values_and_never_overwrites_tourapi():
+    museum = {"name": "근대역사박물관", "facts_source": {"provider": "군산시 문화관광", "checked_at": TODAY},
+              "facts": {"wheelchair": "대여가능( 8 대)", "babycarriage": "없음", "accessible_toilet": "남 여 화장실 있음",
+                        "creditcard": "가능"},
+              "fact_sources": {k: {"provider": PROVIDER, "checked_at": TODAY, "contentid": "1684836"}
+                               for k in ("babycarriage", "creditcard")}}
+    korservice = json.loads(json.dumps({k: museum["fact_sources"][k] for k in ("babycarriage", "creditcard")}))
+    new = {"wheelchair": "대여 가능(5대/안내데스크)", "babycarriage": "대여 가능(5대/안내데스크)",
+           "accessible_parking": "장애인 주차장 있음(8대/장애인 표지판)", "accessible_toilet": "장애인 화장실 있음(1,3층/자동문 버튼)"}
+    res = merge_facts(museum, dict(new), "2026-10-20", "1684836", provider=BARRIER_FREE)
+    assert sorted(res["conflicts"]) == ["babycarriage", "wheelchair"]
+    assert museum["facts"]["wheelchair"] == "대여가능( 8 대)" and museum["facts"]["babycarriage"] == "없음"
+    assert {k: museum["fact_sources"][k] for k in korservice} == korservice          # KorService2 values untouched
+    assert museum["fact_alternatives"]["wheelchair"] == [{"value": "대여 가능(5대/안내데스크)", "provider": BARRIER_FREE,
+                                                          "checked_at": "2026-10-20", "contentid": "1684836"}]
+    assert res["added"] == ["accessible_parking"]
+    assert museum["fact_sources"]["accessible_parking"]["provider"] == BARRIER_FREE
+    assert res["confirmed"] == ["accessible_toilet"]
+    assert museum["fact_sources"]["accessible_toilet"]["confirmed_by"] == f"{BARRIER_FREE} 2026-10-20"
+    merge_facts(museum, dict(new), "2026-10-27", "1684836", provider=BARRIER_FREE)  # a re-run: nothing doubles
+    assert len(museum["fact_alternatives"]["wheelchair"]) == 1 and len(museum["fact_alternatives"]["babycarriage"]) == 1
+    assert museum["fact_sources"]["accessible_toilet"]["confirmed_by"] == f"{BARRIER_FREE} 2026-10-20"
+    # the KorService2 run that follows still confirms in its own name
+    merge_facts(museum, {"accessible_toilet": "장애인 화장실 있음"}, "2026-10-28", "1684836")
+    assert museum["fact_sources"]["accessible_toilet"]["confirmed_by"] == \
+        f"{BARRIER_FREE} 2026-10-20 · {PROVIDER} 2026-10-28"
+    # agreeing but more detailed: a KorService2 value is confirmed, never replaced by the barrier-free wording
+    hall = {"name": "관", "facts": {"babycarriage": "대여 가능"},
+            "fact_sources": {"babycarriage": {"provider": PROVIDER, "checked_at": TODAY, "contentid": "5"}}}
+    res = merge_facts(hall, {"babycarriage": "대여 가능(2대/안내데스크)"}, "2026-10-20", "5", provider=BARRIER_FREE)
+    assert res["confirmed"] == ["babycarriage"] and hall["facts"]["babycarriage"] == "대여 가능"
+    assert hall["fact_sources"]["babycarriage"]["provider"] == PROVIDER
+
+
+def test_confirmation_compares_whole_entries_not_substrings():
+    assert PROVIDER not in BARRIER_FREE
+    assert confirmed_by_has(f"{PROVIDER} · 군산시 문화관광 본문", PROVIDER)
+    assert confirmed_by_has(f"군산시 문화관광 2026-10-08 · {PROVIDER} 2026-10-08", PROVIDER)
+    assert not confirmed_by_has(f"{PROVIDER} 무장애 2026-10-20", PROVIDER)
+    # a provider whose name contains another's: the other one's confirmation is still written
+    longer = f"{PROVIDER} 무장애"
+    p = {"name": "관", "facts": {"wheelchair": "대여가능( 2 대)"}, "facts_source": {"provider": "군산시 문화관광"}}
+    merge_facts(p, {"wheelchair": "대여 가능(2대)"}, "2026-10-20", "1", provider=longer)
+    merge_facts(p, {"wheelchair": "대여 가능(2대)"}, "2026-10-21", "1")
+    assert p["fact_sources"]["wheelchair"]["confirmed_by"] == f"{longer} 2026-10-20 · {PROVIDER} 2026-10-21"
+
+
+def test_access_route_descriptions_are_compared_by_their_words():
+    """An elevator at one source and a ramp at the other describe two things: both shown, not 'confirmed'."""
+    hall = {"name": "역사관", "facts": {"accessible_route": "출입구에 엘리베이터 설치되어 있음"},
+            "facts_source": {"provider": "군산시 문화관광"}}
+    res = merge_facts(hall, {"accessible_route": "출입구까지 경사로가 설치되어 있음(완만함)"}, TODAY, "2", provider=BARRIER_FREE)
+    assert res["also"] == ["accessible_route"] and res["confirmed"] == [] and res["conflicts"] == []
+    assert hall["fact_alternatives"]["accessible_route"][0]["relation"] == "also"
+    same = {"name": "관", "facts": {"accessible_route": "출입구까지 경사로가 설치되어 있음(완만함)"},
+            "facts_source": {"provider": "군산시 문화관광"}}
+    assert merge_facts(same, {"accessible_route": "출입구까지 경사로가 설치되어 있음"}, TODAY, "3",
+                       provider=BARRIER_FREE)["confirmed"] == ["accessible_route"]
+    none = {"name": "관", "facts": {"accessible_route": "없음"}, "facts_source": {"provider": "군산시 문화관광"}}
+    assert merge_facts(none, {"accessible_route": "경사로 있음"}, TODAY, "4",
+                       provider=BARRIER_FREE)["conflicts"] == ["accessible_route"]

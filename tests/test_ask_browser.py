@@ -8,7 +8,8 @@ the card. Asking from the box at 390
 and 1440 shows the panel at once and brings it into view, the streamed answer, its checked link and link card come in
 the panel (announced once) while nothing above the panel moves and nothing below it moves while it streams, and the
 floating panel is never built there; the panel's own box asks the next question into the same conversation; a starter
-asks (with a modifier key it stays a link); an Enter the input method keeps (a conversion) and an empty box ask
+is a button that asks — a click, Enter or Space — as the panel's chips do (with a modifier key, without JS or once the
+assistant is not connected it is a link); an Enter the input method keeps (a conversion) and an empty box ask
 nothing, in either box, while the Enter that ends a Korean syllable asks at once — on the page served as the public
 host (site.json site_url) too (the 2026-10-14 bug: that Enter was swallowed); the button stops an answer; the
 header's search goes to /search/?q= (desktop: its field; phones: '검색' opens it over the bar; without JS a link);
@@ -26,11 +27,12 @@ import shutil
 import threading
 import time
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlsplit
+from urllib.parse import parse_qs, quote, unquote, urlsplit
 
 import pytest
 
-from pipeline.build import build
+from pipeline import present
+from pipeline.build import State, build
 
 sync_api = pytest.importorskip("playwright.sync_api")
 
@@ -306,7 +308,9 @@ def test_the_opening_asks_and_the_panel_below_answers(browser, site, width, heig
     assert box["y"] >= 0 and box["y"] + box["height"] <= height
     assert page.evaluate("document.querySelector('.hq').contains(document.getElementById('ask-q'))")
     assert page.evaluate("document.querySelector('.hq').nextElementSibling.matches('.hk-conv')")
-    assert page.locator(".chat-fab").is_visible()                    # the launcher too, at load (owner 2026-10-14)
+    # the launcher: at load from 1024px (owner 2026-10-14); below it steps aside while this box is on screen (operator
+    # 2026-10-15: at 390x844 it covered the box's '#' tags)
+    assert page.locator(".chat-fab").is_visible() == (width >= 1024)
     later = ".foot"
     page.fill("#ask-q", "은파 주차")
     above = {s: doc_top(page, s) for s in ("#h-home", ".hk-box", ".hk-note")}
@@ -406,6 +410,42 @@ def test_starters_ask_and_the_boxes_ignore_input_methods_and_empty_questions(bro
     ctx.close()
 
 
+def test_the_starters_are_buttons_that_ask_and_links_without_js(browser, site):
+    """The external evaluation of 2026-10-18: on the home card an example question seemed to go to a guide while the
+    floating panel's chips ask it. With JS the home's starters ask in the card as the panel's chips do — buttons to
+    assistive technology (role=button) that a click, Enter or Space asks with, the page staying where it is — until the
+    assistant says it is not connected (data-chat-off: links again); without JS they are links to the pages that
+    answer them, and the card's no-JS line says so."""
+    ctx, page, errors = open_home(browser, site, 390, 844)
+    chips = page.locator(".hk-pill")
+    assert chips.count() == 2 and [chips.nth(i).get_attribute("role") for i in range(2)] == ["button", "button"]
+    assert page.get_by_role("button", name="이번 달 행사").count() == 1 and page.get_by_role("link", name="이번 달 행사").count() == 0
+    assert page.locator(".hk-nojs").is_hidden()
+    for n, (i, key) in enumerate(((1, "Space"), (0, "Enter"))):
+        chips.nth(i).focus()
+        page.keyboard.press(key)
+        page.wait_for_function(f"document.querySelectorAll('.ask-log .chat-u').length === {n + 1}")
+        page.wait_for_function("document.querySelector('[data-ask-go]').getAttribute('data-mode') !== 'stop'")
+    assert [c["messages"][-1]["content"] for c in API["calls"]] == ["이번 달 행사", "차 없이 하루 여행"]
+    assert page.url.rstrip("/") == site and page.locator(".ask-log .chat-a .chat-md").count() == 2
+    # the assistant not connected: the starters are links again
+    page.evaluate("document.querySelector('[data-chat-dock]').setAttribute('data-chat-off', '')")
+    page.wait_for_function("![...document.querySelectorAll('.hk-pill')].some((a) => a.hasAttribute('role'))")
+    assert errors == []
+    ctx.close()
+    # without JS: links to the pages that answer them, and the line that says so
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR", java_script_enabled=False)
+    page = ctx.new_page()
+    page.goto(site + "/")
+    chip = page.locator(".hk-pill").first
+    assert chip.get_attribute("role") is None and page.get_by_role("link", name="차 없이 하루 여행").count() == 1
+    line = page.locator(".hk-nojs")
+    assert line.is_visible() and "예시 질문은 답이 실린 페이지로 연결합니다" in line.inner_text()
+    chip.click()
+    page.wait_for_url("**/guides/no-car-day-trip/")
+    ctx.close()
+
+
 def test_korean_box_without_the_api_key_is_the_site_search(browser, site):
     ctx, page, errors = open_home(browser, site, 390, 844, mode="503")
     page.fill("#ask-q", "은파호수공원 주차")
@@ -440,19 +480,28 @@ def test_without_chat_js_the_box_searches_and_a_starter_follows_its_link(browser
 def test_the_launcher_is_there_from_the_start_and_goes_to_the_box(browser, site, width, height):
     ctx, page, errors = open_home(browser, site, width, height)
     fab = page.locator(".chat-fab")
+    if width < 1024:
+        # operator 2026-10-15: below 1024px it steps aside while the home's question box is on screen — hidden, out
+        # of the tab order — and is there once the box has left the screen
+        assert not fab.is_visible() and page.evaluate("getComputedStyle(document.querySelector('.chat-fab')).visibility") == "hidden"
+        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        page.wait_for_timeout(400)
     assert fab.is_visible()                                          # from the first paint, on the home too
     b = fab.bounding_box()
-    assert b["height"] == (72 if width >= 1024 else 64) and b["y"] + b["height"] <= height - 16 and b["x"] + b["width"] <= width - 16
+    assert b["height"] == (84 if width >= 1024 else 68) and b["y"] + b["height"] <= height - 16 and b["x"] + b["width"] <= width - 16
     assert fab.get_attribute("aria-haspopup") is None                # here it goes to the box, it opens no dialog
-    # the label beside the face from 700px; from 1024px the round face alone (UI4, the reference's launcher: its label
-    # a tooltip on hover and focus, still the accessible name), so it never covers the question card
-    assert (b["width"] > 72) == (700 <= width < 1024) and "물어보기" in fab.get_attribute("aria-label")
+    # a round button at every width, its label 'AI 챗봇' always on the tag across its bottom (owner 2026-10-14: 'AI
+    # 챗봇인 거 더 크게 잘 보이면'), the start of its accessible name
+    tag = page.locator(".chat-fab-l")
+    assert b["width"] == b["height"] and tag.is_visible() and tag.inner_text() == "AI 챗봇"
+    assert fab.get_attribute("aria-label").startswith("AI 챗봇")
     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
     page.wait_for_timeout(400)
     fab.click()                                                      # nothing asked yet: the card's question box
     page.wait_for_timeout(1000)
     assert page.evaluate("document.activeElement.id") == "ask-q" and in_viewport(page, ".hk-box")
     assert page.locator("#chat").count() == 0 and page.locator("[data-ask-log]").is_hidden()
+    assert fab.is_visible() == (width >= 1024)                       # the box is on screen again (operator 2026-10-15)
     assert errors == []
     ctx.close()
 
@@ -494,7 +543,8 @@ def test_the_launcher_brings_the_conversation_and_the_panel_keeps_it(browser, si
 
 
 UNDER = """(sels) => { const out = []; for (const sel of sels) { const q = document.querySelector(sel);
-  if (!q || getComputedStyle(q).display === 'none') continue; const r = q.getBoundingClientRect();
+  if (!q || getComputedStyle(q).display === 'none' || getComputedStyle(q).visibility === 'hidden') continue;
+  const r = q.getBoundingClientRect();
   for (const [x, y] of [[r.left + 4, r.top + r.height / 2], [r.left + r.width / 2, r.top + 6],
                         [r.left + r.width / 2, r.bottom - 6], [r.left + r.width / 2, r.top + r.height / 2]]) {
     q.style.pointerEvents = 'none'; const all = document.elementsFromPoint(x, y); q.style.pointerEvents = '';
@@ -517,3 +567,127 @@ def test_the_quick_menu_and_the_launcher_cover_no_control_while_scrolling(browse
         hits += page.evaluate(UNDER, [".qm", ".chat-fab"])
     assert sorted(set(hits)) == []
     ctx.close()
+
+
+def test_an_empty_question_says_why_in_the_field(browser, site):
+    """QA 2026-10-15 U30: an empty question asks nothing, and the field says why — the form's data-empty in place of the
+    placeholder (in a contrasting colour, marked aria-invalid) and read out once by its live line — with the focus in
+    the field; typing brings the placeholder back. No layout shift: the live line is visually hidden."""
+    ctx, page, errors = open_home(browser, site, 390, 844)
+    q = page.locator("#ask-q")
+    ph = q.get_attribute("placeholder")
+    want = page.get_attribute("[data-ask-form]", "data-empty")
+    assert want == "질문을 먼저 적어 주세요" and ph != want
+    for press in (lambda: page.click("[data-ask-go]"), lambda: page.press("#ask-q", "Enter")):
+        press()
+        page.wait_for_function("document.querySelector('[data-ask-hint]').textContent !== ''")
+        assert q.get_attribute("placeholder") == want and q.get_attribute("aria-invalid") == "true"
+        assert page.inner_text("[data-ask-hint]") == want and page.evaluate("document.activeElement.id") == "ask-q"
+        assert API["calls"] == [] and page.locator("[data-ask-log]").is_hidden()
+        assert page.evaluate("getComputedStyle(document.querySelector('#ask-q'), '::placeholder').color") == "rgb(201, 37, 44)"
+        page.keyboard.type("은")
+        assert q.get_attribute("placeholder") == ph and q.get_attribute("aria-invalid") is None
+        assert page.evaluate("document.querySelector('[data-ask-hint]').textContent") == ""
+        page.fill("#ask-q", "")
+    assert page.evaluate("window.__ls.filter(e => !e.input).reduce((a, e) => a + e.v, 0)") < 0.01
+    assert errors == []
+    ctx.close()
+
+
+ARABIC = ("المتحف مغلق يوم الاثنين. الهاتف 063-454-3303، الساعات 09:00–18:00، التاريخ 2026-10-15.\n\n"
+          "- [은파호수공원](/places/eunpa-lake-park/) **مجاني**")
+
+
+def test_a_right_to_left_answer_is_drawn_right_to_left_with_its_numbers_in_order(browser, site):
+    """QA 2026-10-15 F06/X1: the server's meta event says the answer is Arabic (rtl), its links open the English pages.
+    The answer gets lang=ar and dir=rtl (its lists indent on the right), a phone number or a date is one left-to-right
+    run (else 063-454-3303 reads 3303-454-063), links take their own direction, the question bubble reads right to
+    left, the cards name their kind in English and their arrows point left. A Korean answer keeps its plain DOM."""
+    ctx, page, errors = open_home(browser, site, 390, 844)
+    events = [{"type": "meta", "dir": "rtl", "site": "en", "lang": "ar"}, {"type": "text", "delta": ARABIC},
+              {"type": "done", "links": [{"title": "Eunpa Lake Park", "url": f"{SITE}/en/places/eunpa-lake-park/", "ext": False}],
+               "fix": {"/places/eunpa-lake-park/": f"{SITE}/en/places/eunpa-lake-park/"}}]
+    body = b"".join(sse(e) for e in events)
+    page.route("**/api/chat/", lambda route: route.fulfill(status=200, body=body,
+                                                          headers={"content-type": "text/event-stream; charset=utf-8"}))
+    page.fill("#ask-q", "هل المتحف مفتوح يوم الاثنين؟")
+    page.click("[data-ask-go]")
+    page.wait_for_selector(".ask-log .chat-a .chat-card")
+    md = page.locator(".ask-log .chat-a .chat-md")
+    assert md.get_attribute("dir") == "rtl" and md.get_attribute("lang") == "ar"
+    assert md.evaluate("e => getComputedStyle(e.querySelector('p')).direction") == "rtl"
+    assert md.evaluate("e => getComputedStyle(e.querySelector('ul')).paddingRight") != "0px"
+    assert md.evaluate("e => [...e.querySelectorAll('span.chat-num[dir=ltr]')].map(s => s.textContent)") == [
+        "063-454-3303", "2026-10-15"]
+    assert md.locator("a").get_attribute("dir") == "auto" and md.locator("strong").get_attribute("dir") == "auto"
+    assert page.evaluate("getComputedStyle(document.querySelector('.ask-log .chat-u p')).direction") == "rtl"
+    assert page.get_attribute(".ask-log .chat-links", "dir") == "rtl" and page.inner_text(".ask-log .chat-card-k") == "Place"
+    assert page.get_attribute(".ask-log .chat-card", "href") == "/en/places/eunpa-lake-park/"
+    assert page.evaluate("getComputedStyle(document.querySelector('.ask-log .chat-card .icon')).transform") != "none"
+    assert page.evaluate("document.querySelector('[data-chat-live]').lang") == "ar"
+    # a Korean answer (this server sends no meta): no direction or language of its own, cards in Korean
+    page.unroute("**/api/chat/")
+    page.click(".ask-new")
+    page.fill("#ask-q", "은파 주차")
+    page.click("[data-ask-go]")
+    page.wait_for_selector(".ask-log .chat-a .chat-card")
+    md = page.locator(".ask-log .chat-a .chat-md")
+    assert md.evaluate("e => e.querySelectorAll('[dir]').length") == 0 and md.get_attribute("lang") is None
+    assert page.inner_text(".ask-log .chat-card-k") == "장소"
+    assert errors == []
+    ctx.close()
+
+
+def test_a_search_that_finds_nothing_helps_instead_of_listing_every_place(browser, site):
+    """QA 2026-10-15 F08 (/search/ of the sample build): a name one letter off offers the name it may have meant, and
+    that link searches it; a diet word ('halal') says the site has no such information; nothing found shows the list
+    links, the AI chat (asked that query; the focus comes back to the button when the panel closes) and every place
+    only on request (the focus goes to its heading) — the directory stays hidden until then. An index that did not
+    load keeps the directory; without JS the directory answers and the help stays hidden."""
+    API.update(mode="ok", gap=0.01, calls=[])
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR")
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(site + "/search/?q=초원사진간")
+    page.wait_for_selector(".res-sug a[data-sug]")
+    assert page.locator(".res-sug a[data-sug]").all_inner_texts() == ["초원사진관"]
+    assert page.locator("[data-directory]").is_hidden() and page.locator("[data-none-help]").is_visible()
+    page.click(".res-sug a[data-sug]")
+    page.wait_for_selector(".f-result")
+    assert parse_qs(urlsplit(page.url).query)["q"] == ["초원사진관"] and page.input_value("#q") == "초원사진관"
+    assert page.locator(".res-nm").first.inner_text() == "초원사진관" and page.locator("[data-none-help]").is_hidden()
+    page.goto(site + "/search/?q=halal")
+    page.wait_for_selector(".res-diet")
+    assert "할랄" in page.inner_text(".res-diet") and page.locator(".res-sug").count() == 0
+    assert page.locator("[data-directory]").is_hidden() and page.locator("[data-none-help]").is_visible()
+    assert page.locator(".res-lists a").count() >= 3
+    ask = page.locator("[data-none-help] [data-chat-open]")
+    assert ask.get_attribute("data-chat-q") == "halal"
+    page.click("[data-show-all]")
+    assert page.locator("[data-directory]").is_visible() and page.evaluate("document.activeElement.id") == "h-dir"
+    ask.click()
+    page.wait_for_selector(".chat-a .chat-card")
+    assert API["calls"][-1]["messages"][-1]["content"] == "halal"
+    page.keyboard.press("Escape")
+    page.wait_for_function("document.activeElement && document.activeElement.hasAttribute('data-chat-q')")
+    page.fill("#q", "")
+    page.press("#q", "Enter")
+    assert page.locator("[data-none-help]").is_hidden() and page.locator("[data-directory]").is_visible()
+    assert errors == []
+    ctx.close()
+    ctx = browser.new_context(viewport={"width": 390, "height": 844})
+    ctx.route("**/search/index.json", lambda route: route.abort())
+    page = ctx.new_page()
+    page.goto(site + "/search/?q=halal")
+    page.wait_for_selector(".res-none")
+    assert page.locator("[data-directory]").is_visible() and page.locator("[data-show-all]").is_hidden()
+    ctx.close()
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, java_script_enabled=False)
+    page = ctx.new_page()
+    page.goto(site + "/search/?q=halal")
+    assert page.locator("[data-directory]").is_visible() and page.locator("[data-none-help]").is_hidden()
+    ctx.close()
+
+
+HREFS = "els => els.map(a => a.getAttribute('href'))"

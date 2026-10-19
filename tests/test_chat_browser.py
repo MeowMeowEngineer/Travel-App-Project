@@ -5,12 +5,14 @@ and returns focus to the launcher, the conversation comes back on the next page 
 modal (page inert, full height), the launcher is there from the first paint (64px; owner 2026-10-13 night), the
 error states (with retry; the not-configured state: tests/test_chat_key_ready_browser.py), a text of its own for each 429 (the client's minute, its day, the whole
 instance, the Vercel Firewall), a cut answer that goes on in place ('이어서 보기': continue: true with the cut answer as
-the last message), earlier answers sent back with their checked links as page paths and a stopped question left out —
-and no console errors. Skipped where Playwright or its Chromium is missing."""
+the last message), earlier answers sent back with their checked links as page paths and a stopped question left out,
+the course planner's door under an answer whose question states trip conditions (Korean pages with /plan/) — and no
+console errors. Skipped where Playwright or its Chromium is missing."""
 import functools
 import http.server
 import json
 import threading
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -181,7 +183,7 @@ def test_phone_sheet_and_error_states(browser, site):
     fab = page.locator(".chat-fab")
     assert fab.is_visible()                                   # there from the first paint, on the home too
     box = fab.bounding_box()
-    assert box["height"] == 64 and box["width"] == 64 and box["y"] + box["height"] <= 844 - 16   # a round face
+    assert box["height"] == 68 and box["width"] == 68 and box["y"] + box["height"] <= 844 - 16   # a round face (owner 2026-10-14: bigger)
     page.mouse.wheel(0, 700)
     page.wait_for_timeout(400)
     assert fab.is_visible()
@@ -288,5 +290,167 @@ def test_earlier_answers_go_back_with_page_paths_and_without_a_stopped_question(
     assert [m["role"] for m in msgs] == ["user", "assistant", "user"]
     assert msgs[0]["content"] == "첫 질문" and msgs[2]["content"] == "새 질문"
     assert len(msgs[1]["content"]) <= 2000 and msgs[1]["content"].endswith(" …\n[가옥](/places/한글/)")
+    assert errors == []
+    ctx.close()
+
+
+def test_an_official_booking_page_is_a_booking_card(browser, site):
+    """예약하기 (pipeline/booking.py, chatbot/knowledge.js: link.book = the service, link.hl = the page's language): the
+    card of an official booking page is a booking_click with the service as data-provider, the page's hreflang and
+    chat_where, named '예약하기 · host'; a site page's card stays chat_link_click."""
+    ferry = "https://island.theksa.co.kr/page/booking?lang="
+    text = f"여객 표는 [한국해운조합 여객선예매]({ferry})에서 예매합니다. [은파호수공원](/places/eunpa-lake-park/)"
+    book = {"title": "한국해운조합 여객선예매", "url": ferry, "ext": True, "book": "ferry", "hl": "ko"}
+    deltas = [{"type": "text", "delta": text[i:i + 7]} for i in range(0, len(text), 7)]
+    end = {"type": "done", "links": [PARK, book], "fix": {"/places/eunpa-lake-park/": PARK["url"], ferry: ferry}}
+    resp = (200, sse(*deltas, end), "text/event-stream; charset=utf-8")
+    ctx, page, errors, calls = open_page(browser, 1440, 900, [resp])
+    page.goto(site + "/places/")
+    page.locator(".chat-fab").click()
+    page.fill("#chat-q", "여객선 예매")
+    page.keyboard.press("Enter")
+    page.wait_for_selector(".chat-a .chat-card >> nth=1")
+    cards = page.locator(".chat-card")
+    assert cards.nth(0).get_attribute("data-track") == "chat_link_click"
+    b = cards.nth(1)
+    assert b.get_attribute("href") == ferry and b.get_attribute("data-track") == "booking_click"
+    assert b.get_attribute("data-provider") == "ferry" and b.get_attribute("hreflang") == "ko"
+    assert b.get_attribute("data-chat-where") == "panel" and b.get_attribute("target") == "_blank"
+    assert b.locator(".chat-card-k").inner_text() == "예약하기 · island.theksa.co.kr"
+    inline = page.locator(".chat-a .chat-md a[href^='https://island']")
+    assert inline.count() == 1 and inline.get_attribute("data-track") == "chat_link_click"
+    assert errors == []
+    ctx.close()
+
+
+# a day ahead in Korea: planQuery leaves out a day gone by
+TRIP = (datetime.now(timezone(timedelta(hours=9))) + timedelta(days=30)).date()
+PLAN_Q = f"{TRIP.year}년 {TRIP.month}월 {TRIP.day}일에 초등학생 아이와 차 없이 군산 당일치기, 점심 포함 코스를 짜 주세요"
+PLAN_URL = f"/plan/?date={TRIP.isoformat()}&days=1&move=transit&with=kids"
+
+
+def test_a_question_with_trip_conditions_gets_the_planner_with_them(browser, site):
+    """The chatbot → planner handoff (2026-10-18): on a Korean page of a site with /plan/ (its header links it), the
+    finished answer to a question that states trip conditions ends with one link, '이 조건으로 AI 코스 만들기', to
+    /plan/ with exactly those conditions as URL parameters (chat.js planQuery; GA4 plan_cta with chat_where); a
+    question that states none gets no link, nor does a failed answer; the link comes back with the conversation on the
+    next page and opens the planner. A page without the planner's link, and a page in another language, never show it."""
+    ctx, page, errors, calls = open_page(browser, 1440, 900, [OK, OK, BUSY])
+    page.goto(site + "/places/")
+    page.locator(".chat-fab").click()
+    page.locator("#chat").wait_for(state="visible")
+    page.fill("#chat-q", PLAN_Q)
+    page.keyboard.press("Enter")
+    page.wait_for_selector(".chat-a .chat-plan")
+    link = page.locator(".chat-a .chat-plan")
+    assert link.count() == 1 and link.inner_text().strip() == "이 조건으로 AI 코스 만들기"
+    assert link.get_attribute("href") == PLAN_URL
+    assert link.get_attribute("data-track") == "plan_cta" and link.get_attribute("data-chat-where") == "panel"
+    # under the answer and its page cards, after the text
+    assert page.evaluate("""(() => { const a = document.querySelector('.chat-a'); const kids = [...a.children];
+      return kids.indexOf(a.querySelector('.chat-plan-w')) > kids.indexOf(a.querySelector('.chat-links')); })()""")
+    for q in ("은파호수공원 주차", "비 오는 날 갈 곳"):   # no condition; a condition but the answer failed
+        page.fill("#chat-q", q)
+        page.keyboard.press("Enter")
+        page.wait_for_function(f"document.querySelectorAll('.chat-a').length === {2 if q.startswith('은파') else 3} "
+                               "&& !document.querySelector('.chat-send[data-mode=stop]')")
+    page.wait_for_selector(".chat-a >> nth=2 >> .chat-err")
+    assert page.locator(".chat-a .chat-plan").count() == 1
+    # the next page: the conversation comes back with its link, which opens the planner with the conditions
+    page.goto(site + "/places/")
+    page.locator("#chat .chat-plan").wait_for()
+    page.click("#chat .chat-plan")
+    page.wait_for_url(f"**{PLAN_URL}")
+    assert [e for e in errors if "status of" not in e] == []
+    ctx.close()
+    # no planner link on the page, or another language: no door
+    for setup in ("document.querySelectorAll('a[data-track=\"plan_cta\"]').forEach((a) => a.remove())",
+                  "document.documentElement.lang = 'en'"):
+        ctx, page, errors, calls = open_page(browser, 1440, 900, [OK])
+        page.goto(site + "/places/")
+        page.evaluate(setup)   # before chat.js loads: it reads both once
+        page.locator(".chat-fab").click()
+        page.locator("#chat").wait_for(state="visible")
+        page.fill("#chat-q", PLAN_Q)
+        page.keyboard.press("Enter")
+        page.wait_for_selector(".chat-a .chat-card")
+        assert page.locator(".chat-plan").count() == 0, setup
+        assert errors == []
+        ctx.close()
+
+
+def test_no_planner_link_under_a_stopped_or_cut_answer_and_the_link_keeps_the_conversation(browser, site):
+    """The planner's door only under a finished answer (review 2026-10-18): an answer the reader stopped after its first
+    words gets none, nor does an answer cut at the length limit while '이어서 보기' may still finish it — the finished
+    answer does. Its link carries the conditions of the conversation's earlier questions with this question's own over
+    them (chat.js planQuery): '자가용으로 가면요?' after the day-trip question keeps the date, the day trip and the
+    child, by car."""
+    ctx, page, errors, calls = open_page(browser, 1440, 900, [stream_of(CUT_TEXT, cut=True), stream_of(REST)])
+    page.goto(site + "/places/")
+    # the first answer streams its first words and then nothing until the reader stops it (the abort ends the stream);
+    # the assistant's status check (GET /api/chat/, key-ready) goes through as it is
+    page.evaluate("""() => { const real = window.fetch; let held = true;
+      window.fetch = (url, opt) => {
+        if (!held || !opt || opt.method !== 'POST') return real(url, opt);
+        held = false;
+        const body = new ReadableStream({ start(c) {
+          c.enqueue(new TextEncoder().encode('data: ' + JSON.stringify({ type: 'text', delta: '10월 19일 당일 후보 일정은 ' }) + '\\n\\n'));
+          opt.signal.addEventListener('abort', () => c.error(new DOMException('stopped', 'AbortError')));
+        } });
+        return Promise.resolve(new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } }));
+      }; }""")
+    page.locator(".chat-fab").click()
+    page.locator("#chat").wait_for(state="visible")
+    page.fill("#chat-q", PLAN_Q)
+    page.keyboard.press("Enter")
+    page.wait_for_function("(document.querySelector('.chat-a .chat-md') || {}).innerText === '10월 19일 당일 후보 일정은'")
+    page.locator(".chat-send[data-mode=stop]").click()
+    page.wait_for_function("(document.querySelector('.chat-a .chat-note2') || {}).innerText === '답을 멈췄습니다.'")
+    page.wait_for_timeout(100)
+    assert page.locator(".chat-plan").count() == 0
+    # cut: '이어서 보기', no door yet
+    page.fill("#chat-q", "자가용으로 가면요?")
+    page.keyboard.press("Enter")
+    more = page.locator(".chat-a >> nth=1 >> .chat-retry")
+    more.wait_for()
+    assert more.inner_text() == "이어서 보기"
+    assert page.locator(".chat-plan").count() == 0
+    # finished: the door, with the conversation's conditions (by car now)
+    more.click()
+    page.wait_for_selector(".chat-a >> nth=1 >> .chat-plan")
+    assert page.locator(".chat-plan").count() == 1
+    href = f"/plan/?date={TRIP.isoformat()}&days=1&move=car&with=kids"
+    assert page.locator(".chat-a >> nth=1 >> .chat-plan").get_attribute("href") == href
+    # the next page: the stopped answer, its words kept, still has none; the finished one keeps its door
+    page.goto(site + "/places/")
+    page.locator("#chat .chat-a >> nth=1 >> .chat-plan").wait_for()
+    first = page.locator("#chat .chat-a").first
+    assert "10월 19일 당일 후보 일정은" in first.inner_text() and first.locator(".chat-plan").count() == 0
+    assert page.locator("#chat .chat-plan").count() == 1
+    assert len(calls) == 2 and calls[1]["continue"] is True
+    assert errors == []
+    ctx.close()
+
+
+def test_a_long_conversation_keeps_its_first_question_and_answer(browser, site):
+    """Review 2026-10-17 E05: only the last 12 messages went along, so the first question's conditions (people, ages,
+    no car, budget) were gone in a long conversation. Past 12 messages, the first question and answer go along in place
+    of the oldest two of the rest: 13 messages, alternating, the new question last."""
+    msgs = []
+    for i in range(10):
+        msgs += [{"r": "u", "t": f"질문 {i}" + (" — 성인 2명, 7살 1명, 차 없음, 예산 1만원" if i == 0 else "")},
+                 {"r": "a", "t": f"답 {i}", "l": []}]
+    ctx, page, errors, calls = open_page(browser, 1440, 900, [OK])
+    page.goto(site + "/places/")
+    page.evaluate("s => sessionStorage.setItem('gs-chat', JSON.stringify(s))", {"v": 1, "open": True, "msgs": msgs})
+    page.reload()
+    page.locator("#chat").wait_for(state="visible")
+    page.fill("#chat-q", "새 질문")
+    page.keyboard.press("Enter")
+    page.wait_for_selector(".chat-a .chat-card")
+    sent = calls[0]["messages"]
+    assert len(sent) == 13 and [m["role"] for m in sent] == ["user", "assistant"] * 6 + ["user"]
+    assert "차 없음" in sent[0]["content"] and sent[1]["content"] == "답 0"
+    assert sent[2]["content"] == "질문 5" and sent[-1]["content"] == "새 질문"
     assert errors == []
     ctx.close()

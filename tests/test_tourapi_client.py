@@ -4,6 +4,7 @@ import json
 import urllib.parse
 import urllib.error
 import traceback
+from pathlib import Path
 
 import pytest
 
@@ -180,3 +181,33 @@ def test_area_based_rejects_invalid_parameters_before_network(tmp_path, monkeypa
     with pytest.raises(ValueError):
         api.area_based(**params)
     assert api.live_calls == 0
+
+
+def test_barrier_free_client_calls_korwith_service2_and_keeps_its_own_cache(tmp_path, monkeypatch):
+    """한국관광공사 무장애 여행 정보 (KorWithService2): detailWithTour2 on its own base_url and cache folder; the
+    KorService2 client and its cache stay as they are (QA 2026-10-15, F02-barrier-free-systemic)."""
+    fixture = json.loads((Path(__file__).parent / "fixtures" / "detailWithTour2_documented_shape.json").read_text("utf-8"))
+    calls = []
+
+    def response(req, timeout=20):
+        calls.append(req.full_url)
+        return FakeResp(json.dumps(fixture).encode("utf-8"))
+
+    monkeypatch.setattr(tourapi.urllib.request, "urlopen", response)
+    site = {"tourapi": {"base_url": "https://apis.data.go.kr/B551011/KorService2", "min_interval": 0}}
+    bf = tourapi.barrier_free_client(site, "synthetic-key", tmp_path)
+    item = bf.detail_with_tour("988449")
+    assert item["wheelchair"] == "대여가능(수동휠체어 2대)" and item["parking"].endswith("_무장애 편의시설")
+    url = urllib.parse.urlsplit(calls[0])
+    assert url.netloc == "apis.data.go.kr" and url.path == "/B551011/KorWithService2/detailWithTour2"
+    assert urllib.parse.parse_qs(url.query)["contentId"] == ["988449"]
+    cached = list((tmp_path / tourapi.BARRIER_FREE_CACHE).glob("detailWithTour-*.json"))
+    assert len(cached) == 1 and not list(tmp_path.glob("*.json"))      # not in the KorService2 folder
+    assert bf.detail_with_tour("988449") == item and bf.live_calls == 1  # served from its own cache
+    kor = tourapi.from_site_config(site, "synthetic-key", tmp_path)
+    assert kor.base_url.endswith("/KorService2") and kor.cache_dir == tmp_path
+    assert tourapi.barrier_free_client({"tourapi": {"barrier_free_base_url": "https://example.test/KWS2/"}},
+                                       "k", tmp_path).base_url == "https://example.test/KWS2"
+    empty = TourAPI("k", cache_dir=tmp_path / "e", min_interval=0)
+    monkeypatch.setattr(tourapi.urllib.request, "urlopen", lambda req, timeout=20: FakeResp(_ok([])))
+    assert empty.detail_with_tour("1") == {}

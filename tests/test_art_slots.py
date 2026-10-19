@@ -281,8 +281,8 @@ def _write_world(data: Path) -> None:
     (data / "site.json").write_text(json.dumps(site, ensure_ascii=False), "utf-8")
     places = json.loads((data / "places.json").read_text("utf-8"))
     for p in places:
-        p["geo"] = {"gyeongam-railroad-village": {"lat": 35.9799, "lng": 126.7244},
-                    "eunpa-lake-park": {"lat": 35.9520, "lng": 126.6935}}.get(p["slug"], p.get("geo"))
+        p["geo"] = {"gyeongam-railroad-village": {"lat": 35.9799, "lng": 126.7244, "source": "TourAPI"},
+                    "eunpa-lake-park": {"lat": 35.9520, "lng": 126.6935, "source": "TourAPI"}}.get(p["slug"], p.get("geo"))
     (data / "places.json").write_text(json.dumps(places, ensure_ascii=False), "utf-8")
     events = json.loads((data / "events.json").read_text("utf-8"))
     events[0].update(start_date=(TODAY + dt.timedelta(days=20)).isoformat(),

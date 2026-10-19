@@ -30,8 +30,8 @@ def sample_build(tmp_path, key: str | None = "test-key-123"):
         site["kakao_js_key"] = key
     (data / "site.json").write_text(json.dumps(site, ensure_ascii=False), "utf-8")
     places = json.loads((data / "places.json").read_text("utf-8"))
-    places[0]["geo"] = {"lat": 35.98, "lng": 126.72, "source": "test"}
-    places[1]["geo"] = {"lat": 35.9805, "lng": 126.7215, "source": "test"}
+    places[0]["geo"] = {"lat": 35.98, "lng": 126.72, "source": "TourAPI"}
+    places[1]["geo"] = {"lat": 35.9805, "lng": 126.7215, "source": "TourAPI"}
     (data / "places.json").write_text(json.dumps(places, ensure_ascii=False), "utf-8")
     out = tmp_path / "out"
     build(data, out, "preview")
@@ -67,8 +67,10 @@ def test_pages_with_a_map_carry_the_loader_and_the_no_js_fallback(tmp_path):
             assert "data-kakao-sdk=" in box and "data-lenis-prevent" in box, path
             assert 'role="region"' in box and 'aria-label="' in box, path
             assert re.search(r"data-(map|points)=", box), path
-        # the box's text while the map loads (and the failure line's place), inside a figure credited to Kakao
-        assert '<p class="map-off">지도를 불러오는 중입니다.</p>' in html, path
+        # the box's own text is true without the map (a text reader, an AI fetching the HTML — review 2026-10-17: '불러오는
+        # 중' was all it read); map.js writes 'loading' when it starts, then the map or the failure line
+        assert '<p class="map-off">이 지도의 장소는 이 페이지에 글로도 적었습니다.</p>' in html, path
+        assert "불러오는 중" not in html.split('<p class="map-off">', 1)[1].split("</p>", 1)[0], path
         assert '<figure class="mapfig' in html and "지도: 카카오맵" in html, path
         # one script in the HTML: the SDK is never in the markup as a script, only as the box's data
         assert html.count("<script src=") == 1 and '<script src="https://dapi.kakao.com' not in html, path
@@ -82,7 +84,16 @@ def test_pages_with_a_map_carry_the_loader_and_the_no_js_fallback(tmp_path):
 
 def test_pages_without_a_map_load_nothing_of_it(tmp_path):
     out, places, pages = sample_build(tmp_path)
-    without = [p for p, h in pages.items() if 'class="map"' not in h]
+    # the course planner (/plan/) draws its numbered maps only after a plan comes back: its root names the SDK address
+    # for that moment (data-kakao-sdk) and the page loads nothing of the map before — no map.js, no SDK script
+    later = [p for p, h in pages.items() if "data-plan " in h and 'class="map"' not in h]
+    for p in later:
+        html = pages[p]
+        assert "map.js" not in html and '<script src="https://dapi.kakao.com' not in html, p
+        assert re.search(r'<div class="trp" data-plan [^>]*data-kakao-sdk="https://dapi\.kakao\.com/', html), p
+    plan_js = (ASSETS / "plan.js").read_text("utf-8")
+    assert 'if (!box.getAttribute("data-kakao-sdk")) return;' in plan_js and "win.GSMapStart(box)" in plan_js
+    without = [p for p, h in pages.items() if 'class="map"' not in h and p not in later]
     assert without
     for p in without:
         html = pages[p]
@@ -99,6 +110,8 @@ def test_pages_without_a_map_load_nothing_of_it(tmp_path):
     assert 'rootMargin: "400px 0px"' in js and 'addEventListener("gs:showmap"' in js
     # the failure line when the SDK is refused (a domain the key is not registered for) or never arrives
     assert '"지도를 불러오지 못했습니다."' in js and "s.onerror = function () { clearTimeout(t); rej(); };" in js
+    # 'loading' only once drawing starts (the box's own text says the page lists the same places)
+    assert 'if (o) o.textContent = W.load || (EN ? "Loading the map." : "지도를 불러오는 중입니다.");\n    afterLoad(' in js
 
 
 def test_no_leaflet_or_openstreetmap_is_left(tmp_path):
@@ -131,5 +144,288 @@ def test_map_module_keeps_44px_controls_and_keyboard_use():
     assert "scrollwheel: false" in js
     assert ".map-zoom button { width: 44px; height: 44px;" in css and ".far-ctl {" in css and "min-height: 44px" in css
     assert ".kmap:focus-visible {" in css and ".mk-a:focus-visible {" in css
+    # every marker that is a link is named by its place (QA 2026-10-15 F10: also a list map's dots, which the phone's
+    # 지도 view puts in the tab order); the packed list dots keep their own small hit area
+    assert 'if (label && url) a.setAttribute("aria-label", label);' in js and "function listQuiet(r)" in js
+    assert 'a.mk-a:not([tabindex="-1"]):not(.mk-li)' in css
     # the site's img rule must not shrink Kakao's tiles
     assert ".kmap img { max-width: none; max-height: none; }" in css
+
+
+def test_in_a_browser_the_sdk_waits_for_load_and_the_box_then_says_it_failed(tmp_path):
+    """Post-launch review 2026-10-14 (the source-text checks above, in a browser — Playwright + Chromium, the build
+    served through page.route, nothing leaves the machine): a place page asks dapi.kakao.com for nothing before the
+    window 'load' event and before a map box nears the screen; scrolled to its map, it asks once; when Kakao refuses
+    (HTTP 401 — a domain the key is not registered for) the box shows the failure line instead of a blank."""
+    import mimetypes
+    from urllib.parse import unquote, urlsplit
+
+    import pytest
+    sync_api = pytest.importorskip("playwright.sync_api")
+    out, places, pages = sample_build(tmp_path)
+    slug = places[0]["slug"]
+    assert MAP_BOX.search(pages[out / "places" / slug / "index.html"])
+    sdk: list[str] = []
+
+    def serve(route):
+        url = route.request.url
+        if "dapi.kakao.com" in url:
+            sdk.append(url)
+            return route.fulfill(status=401, body="unauthorized")
+        if not url.startswith("http://site.test/"):
+            return route.abort()
+        path = unquote(urlsplit(url).path)
+        f = out / path.strip("/")
+        f = f / "index.html" if path.endswith("/") else f
+        if not f.is_file():
+            return route.fulfill(status=404, body="")
+        route.fulfill(status=200, body=f.read_bytes(), content_type=mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+
+    with sync_api.sync_playwright() as p:
+        try:
+            browser = p.chromium.launch()
+        except Exception as ex:  # noqa: BLE001 — Chromium is not installed here
+            pytest.skip(f"Chromium 없음: {ex}")
+        try:
+            ctx = browser.new_context(viewport={"width": 390, "height": 844})
+            ctx.route("**/*", serve)
+            page = ctx.new_page()
+            page.goto(f"http://site.test/places/{slug}/", wait_until="load")
+            page.wait_for_timeout(600)
+            box = page.locator(".map[data-points], .map[data-map]").first
+            far = page.evaluate("(s) => document.querySelector(s).getBoundingClientRect().top > innerHeight + 400",
+                                ".map[data-points], .map[data-map]")
+            if far:
+                assert sdk == []                                       # loaded, but no map near the screen yet
+            box.scroll_into_view_if_needed()
+            page.wait_for_timeout(1500)
+            assert len(sdk) == 1 and "appkey=test-key-123" in sdk[0]    # one request, with the key from site.json
+            assert "지도를 불러오지 못했습니다." in box.inner_text()       # the refusal is said, not a blank box
+        finally:
+            browser.close()
+
+
+def test_every_language_version_names_the_maps_keyboard_use():
+    """Post-launch review 2026-10-14: the Japanese maps' accessible name had no keyboard line (map.js reads it from
+    data-words.keys for the versions other than Korean and English). Every such version has its own."""
+    from pipeline import en_site
+    from pipeline import locales as LC
+    for code, loc in LC.LOCALES.items():
+        if code in ("en", "ko"):
+            continue
+        words = json.loads(en_site.UIText(loc, {}).map_words())
+        assert words["keys"] and "+" in words["keys"] and "−" in words["keys"], code
+
+
+def list_build(tmp_path):
+    """The sample build with three attractions on the map, two of them free ('요금 무료', the attraction list's check
+    box: ?check=1 keeps exactly two of the three map points)."""
+    data = tmp_path / "data"
+    shutil.copytree(ROOT / "data" / "sample", data)
+    site = json.loads((data / "site.json").read_text("utf-8"))
+    site["kakao_js_key"] = "test-key-123"
+    (data / "site.json").write_text(json.dumps(site, ensure_ascii=False), "utf-8")
+    places = json.loads((data / "places.json").read_text("utf-8"))
+    attr = [p for p in places if p.get("kind") == "attraction" and p.get("status") == "published"][:3]
+    assert len(attr) == 3
+    for i, p in enumerate(attr):
+        p["geo"] = {"lat": 35.98 + i * 0.01, "lng": 126.72 + i * 0.012, "source": "TourAPI"}
+    for p in (attr[0], attr[2]):
+        p.setdefault("facts", {})["usefee"] = "무료"
+    (data / "places.json").write_text(json.dumps(places, ensure_ascii=False), "utf-8")
+    out = tmp_path / "out"
+    build(data, out, "preview")
+    return out, attr
+
+
+def test_list_rows_and_the_list_map_share_their_places(tmp_path):
+    """QA 2026-10-15 F04: a list row with coordinates carries data-geo="1" (site.js counts the shown ones: '지도 n' and
+    the map caption's [data-geo-cap]); those rows are exactly the map's points."""
+    import html as H
+    out, attr = list_build(tmp_path)
+    h = (out / "places" / "index.html").read_text("utf-8")
+    rows = re.findall(r'<li class="rec"[^>]*>', h)
+    geo = sorted(re.search(r'id="(r\d+)"', r).group(1) for r in rows if 'data-geo="1"' in r)
+    pts = json.loads(H.unescape(re.search(r"data-points='([^']*)'", h).group(1)))["list"]
+    assert len(geo) == 3 and geo == sorted(p["id"] for p in pts)
+    # the caption also names the list's places that are not on the map (outside evaluation 2026-10-18; site.js keeps
+    # the number to the shown rows, tests/test_list_filters.py)
+    assert ("<figcaption><span data-geo-cap>좌표가 있는 3곳만 표시</span><span data-geo-off data-tpl=\" · 지도에 없는 {n}곳은 "
+            f"목록에서\"> · 지도에 없는 {len(rows) - 3}곳은 목록에서</span> · 지도: 카카오맵</figcaption>") in h
+    assert len(rows) > 3
+    assert '>지도 <span class="tn">3</span></button>' in h
+    assert all('data-group="' in r and 'data-area="' in r and 'data-region="' in r for r in rows)
+    # the bar's tools wrap below 761px instead of pushing the page sideways (QA 2026-10-15 SRC-01d: /places/?check=1
+    # was 449px wide at 412): the 필터 button and the list | map switch never shrink, the count line wraps
+    css = " ".join(css_source().split())
+    assert ".f-tools .f-more, .f-tools .seg { flex: none; }" in css
+    assert ("@media (max-width: 760px) { .f-tools { flex-wrap: wrap; row-gap: 6px; } .f-tools .f-result { flex: 1 1 5.5em; "
+            "min-width: min-content; white-space: normal; line-height: 1.3; } }") in css
+
+
+def test_in_a_browser_the_list_map_follows_the_filter_and_names_its_markers(tmp_path):
+    """QA 2026-10-15 F04 / F10 (Playwright + Chromium; the build served through page.route and a stand-in for the Kakao
+    SDK, tests/js/kakao_stub.js — nothing leaves the machine). On a phone, filtering first and opening the 지도 view
+    after builds the map with the filtered places only, framed on them, and '지도 n' and the caption count them; the
+    same from a URL that sets the filter. The markers are links named by their places, in the tab order while the
+    list is not shown (the phone's 지도 view) and quiet beside the shown list (목록 view, desktop). On a desktop, where
+    the map is built first, the filter takes markers off and back."""
+    import mimetypes
+    from urllib.parse import unquote, urlsplit
+
+    import pytest
+    sync_api = pytest.importorskip("playwright.sync_api")
+    out, attr = list_build(tmp_path)
+    stub = (ROOT / "tests" / "js" / "kakao_stub.js").read_text("utf-8")
+
+    def serve(route):
+        url = route.request.url
+        if "dapi.kakao.com" in url:
+            return route.fulfill(status=200, body=stub, content_type="application/javascript")
+        if not url.startswith("http://site.test/"):
+            return route.abort()
+        path = unquote(urlsplit(url).path)
+        f = out / path.strip("/")
+        f = f / "index.html" if path.endswith("/") else f
+        if not f.is_file():
+            return route.fulfill(status=404, body="")
+        route.fulfill(status=200, body=f.read_bytes(), content_type=mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+
+    state = """() => {
+      const r = GSMaps.find(m => m.data && m.data.list), as = [...r.el.querySelectorAll('a.mk-a')];
+      const rows = [...document.querySelectorAll('.rec:not([hidden])[data-geo] .rec-link')];
+      const b = r.map.getBounds(), sw = b.getSouthWest(), ne = b.getNorthEast(), keep = new Set(as.map(a => a.getAttribute('href')));
+      const name = {}; document.querySelectorAll('.rec-link').forEach(a => { name[a.getAttribute('href')] = a.textContent.trim(); });
+      return { markers: [...keep].sort(), rows: rows.map(a => a.getAttribute('href')).sort(),
+               tn: document.querySelector('[data-view=map] .tn').textContent,
+               cap: document.querySelector('.list-map [data-geo-cap]').textContent,
+               inb: r.data.list.filter(p => keep.has(p.url)).every(p => p.lat >= sw.getLat() && p.lat <= ne.getLat() && p.lng >= sw.getLng() && p.lng <= ne.getLng()),
+               named: as.every(a => a.getAttribute('aria-label') === name[a.getAttribute('href')]),
+               open: as.every(a => a.tabIndex === 0 && !a.hasAttribute('aria-hidden')),
+               quiet: as.every(a => a.tabIndex === -1 && a.getAttribute('aria-hidden') === 'true' && a.getAttribute('aria-label')) };
+    }"""
+    free = sorted(f"/places/{p['slug']}/" for p in (attr[0], attr[2]))
+
+    with sync_api.sync_playwright() as p:
+        try:
+            browser = p.chromium.launch()
+        except Exception as ex:  # noqa: BLE001 — Chromium is not installed here
+            pytest.skip(f"Chromium 없음: {ex}")
+        try:
+            ctx = browser.new_context(viewport={"width": 390, "height": 844})
+            ctx.route("**/*", serve)
+            for how in ("clicks", "url"):
+                page = ctx.new_page()
+                errors: list[str] = []
+                page.on("pageerror", lambda e: errors.append(str(e)))
+                if how == "clicks":   # filter first, then the 지도 view (the map is built only then)
+                    page.goto("http://site.test/places/", wait_until="load")
+                    page.click("[data-f-more]")
+                    page.check("input[data-f=check]")
+                    page.click("[data-filters] [data-view=map]")
+                else:
+                    page.goto("http://site.test/places/?check=1&view=map", wait_until="load")
+                page.wait_for_function("() => (window.GSMaps || []).some(m => m.data && m.data.list)", timeout=10000)
+                page.wait_for_timeout(200)
+                s = page.evaluate(state)
+                assert s["markers"] == s["rows"] == free, (how, s)
+                assert s["tn"] == "2" and "2곳" in s["cap"] and s["inb"], (how, s)
+                assert s["named"] and s["open"], (how, s)
+                page.focus(".list-map .kmap")
+                page.keyboard.press("Tab")
+                assert page.evaluate("() => document.activeElement.matches('.list-map a.mk-a')"), how
+                page.click("[data-filters] [data-view=list]")
+                page.wait_for_timeout(100)
+                assert page.evaluate(state)["quiet"], how
+                assert errors == [], errors
+                page.close()
+            ctx.close()
+            ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+            ctx.route("**/*", serve)
+            page = ctx.new_page()
+            page.goto("http://site.test/places/", wait_until="load")
+            page.evaluate("() => document.querySelector('.list-map').scrollIntoView()")
+            page.wait_for_function("() => (window.GSMaps || []).some(m => m.data && m.data.list)", timeout=10000)
+            assert len(page.evaluate(state)["markers"]) == 3
+            page.click("[data-f-more]")
+            page.check("input[data-f=check]")
+            page.wait_for_timeout(200)
+            s = page.evaluate(state)
+            assert s["markers"] == s["rows"] == free and s["tn"] == "2" and s["inb"] and s["quiet"] and s["named"], s
+            page.uncheck("input[data-f=check]")
+            page.wait_for_timeout(200)
+            s = page.evaluate(state)
+            assert len(s["markers"]) == 3 and s["tn"] == "3" and "3곳" in s["cap"], s
+        finally:
+            browser.close()
+
+
+def test_in_a_browser_the_whole_map_view_lets_its_markers_into_the_tab_order(tmp_path):
+    """Review 2026-10-17 (map access): on /map/ the markers stayed aria-hidden with tabindex -1 after the phone's 지도
+    view hid the directory — listQuiet() only looked at list pages. Now /map/ follows the same rule: beside the shown
+    directory (목록 view, desktop) the markers are quiet (the rows are the same links); in the phone's 지도 view they are
+    links named by their places, in the tab order."""
+    import mimetypes
+    from urllib.parse import unquote, urlsplit
+
+    import pytest
+    sync_api = pytest.importorskip("playwright.sync_api")
+    out, attr = list_build(tmp_path)
+    stub = (ROOT / "tests" / "js" / "kakao_stub.js").read_text("utf-8")
+
+    def serve(route):
+        url = route.request.url
+        if "dapi.kakao.com" in url:
+            return route.fulfill(status=200, body=stub, content_type="application/javascript")
+        if not url.startswith("http://site.test/"):
+            return route.abort()
+        path = unquote(urlsplit(url).path)
+        f = out / path.strip("/")
+        f = f / "index.html" if path.endswith("/") else f
+        if not f.is_file():
+            return route.fulfill(status=404, body="")
+        route.fulfill(status=200, body=f.read_bytes(), content_type=mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+
+    state = """() => {
+      const r = GSMaps.find(m => m.data && m.data.all), as = [...r.el.querySelectorAll('a.mk-a.mk-li')];
+      return { n: as.length,
+               named: as.every(a => a.getAttribute('aria-label')),
+               open: as.length > 0 && as.every(a => a.tabIndex === 0 && !a.hasAttribute('aria-hidden')),
+               quiet: as.length > 0 && as.every(a => a.tabIndex === -1 && a.getAttribute('aria-hidden') === 'true') };
+    }"""
+    with sync_api.sync_playwright() as p:
+        try:
+            browser = p.chromium.launch()
+        except Exception as ex:  # noqa: BLE001 — Chromium is not installed here
+            pytest.skip(f"Chromium 없음: {ex}")
+        try:
+            ctx = browser.new_context(viewport={"width": 390, "height": 844})
+            ctx.route("**/*", serve)
+            page = ctx.new_page()
+            errors: list[str] = []
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.goto("http://site.test/map/", wait_until="load")
+            page.click("[data-segmap] [data-view=map]")
+            page.wait_for_function("() => (window.GSMaps || []).some(m => m.data && m.data.all)", timeout=10000)
+            page.wait_for_timeout(200)
+            s = page.evaluate(state)
+            assert s["n"] == 3 and s["named"] and s["open"], s
+            page.focus(".map-side .kmap")
+            page.keyboard.press("Tab")
+            assert page.evaluate("() => document.activeElement.matches('.map-side a.mk-a')")
+            page.click("[data-segmap] [data-view=list]")
+            page.click("[data-segmap] [data-view=map]")
+            page.wait_for_timeout(100)
+            assert page.evaluate(state)["open"]
+            assert errors == [], errors
+            ctx.close()
+            ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+            ctx.route("**/*", serve)
+            page = ctx.new_page()
+            page.goto("http://site.test/map/", wait_until="load")
+            page.evaluate("() => document.querySelector('.map-side').scrollIntoView()")
+            page.wait_for_function("() => (window.GSMaps || []).some(m => m.data && m.data.all)", timeout=10000)
+            page.wait_for_timeout(200)
+            assert page.evaluate(state)["quiet"]
+        finally:
+            browser.close()

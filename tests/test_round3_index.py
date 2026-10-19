@@ -244,8 +244,8 @@ def test_alternate_name_in_jsonld_and_visible(tmp_path):
 def test_course_shows_straight_line_distances(tmp_path):
     places = json.loads((SAMPLE / "places.json").read_text("utf-8"))
     by = {p["slug"]: p for p in places}
-    by["gyeongam-railroad-village"]["geo"] = {"lat": 35.9800, "lng": 126.7200}
-    by["chowon-photo-studio"]["geo"] = {"lat": 35.9890, "lng": 126.7110}
+    by["gyeongam-railroad-village"]["geo"] = {"lat": 35.9800, "lng": 126.7200, "source": "TourAPI"}
+    by["chowon-photo-studio"]["geo"] = {"lat": 35.9890, "lng": 126.7110, "source": "TourAPI"}
     data = data_with(tmp_path, places)
     out = tmp_path / "preview"
     build(data, out, "preview")
@@ -259,6 +259,37 @@ def test_course_shows_straight_line_distances(tmp_path):
     assert '<dt>좌표 있는 구간</dt><dd class="tn">1/2</dd>' in html
     assert "경유지 사이 2구간 중 1구간을 한국관광공사 TourAPI 좌표 사이 직선으로 잼" in html
     assert "실제 이동 거리와 다릅니다" not in html and "실제 이동 경로가 아닙니다" not in html
+
+
+def test_course_and_place_name_a_point_from_the_city_site(tmp_path):
+    """A stop whose point comes from 군산시 문화관광 (tools/official_coords.py): the course's sources name both
+    providers of the measured leg, the place's map caption names its own, the course list no longer says every
+    distance is TourAPI's; validate checks both lines."""
+    places = json.loads((SAMPLE / "places.json").read_text("utf-8"))
+    by = {p["slug"]: p for p in places}
+    by["gyeongam-railroad-village"]["geo"] = {"lat": 35.9800, "lng": 126.7200, "source": "TourAPI"}
+    by["chowon-photo-studio"]["geo"] = {"lat": 35.9890, "lng": 126.7110, "source": "군산시 문화관광",
+                                        "url": "https://www.gunsan.go.kr/tour/m2096/view/305391",
+                                        "checked_at": "2026-10-16", "note": "지도 좌표"}
+    data = data_with(tmp_path, places)
+    out = tmp_path / "preview"
+    build(data, out, "preview")
+    html = " ".join((out / "courses/day-course-a/index.html").read_text("utf-8").split())
+    assert "경유지 사이 2구간 중 1구간을 한국관광공사 TourAPI·군산시 문화관광 좌표 사이 직선으로 잼" in html
+    lede = " ".join((out / "courses/index.html").read_text("utf-8").split())
+    assert "좌표 출처는 코스마다 표시" in lede and "한국관광공사 좌표" not in lede
+    studio = " ".join((out / "places/chowon-photo-studio/index.html").read_text("utf-8").split())
+    rail = " ".join((out / "places/gyeongam-railroad-village/index.html").read_text("utf-8").split())
+    assert "거리는 좌표 사이 직선 · 위치: 군산시 문화관광" in studio      # the day it was read stays in the data
+    assert "2026-10-16" not in scan_file(out / "places/chowon-photo-studio/index.html").visible
+    assert "거리는 좌표 사이 직선 · 위치: 한국관광공사 TourAPI" in rail
+    assert validate(data, out, "preview")[0] == []
+    (out / "places/chowon-photo-studio/index.html").write_text(studio.replace("위치: 군산시 문화관광", ""), "utf-8")
+    page = out / "courses/day-course-a/index.html"
+    page.write_text(html.replace("TourAPI·군산시 문화관광 좌표", "TourAPI 좌표"), "utf-8")
+    errors = validate(data, out, "preview")[0]
+    assert any("chowon-photo-studio" in x or "초원사진관" in x for x in errors if "위치: 군산시 문화관광" in x), errors
+    assert any(x.startswith("[/courses/day-course-a/]") and "좌표 출처" in x for x in errors), errors
 
 
 def test_verification_meta_only_in_production_when_set(tmp_path):

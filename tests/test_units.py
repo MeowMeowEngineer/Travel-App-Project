@@ -7,7 +7,8 @@ import pytest
 from pipeline import importer
 from pipeline.maplinks import build_links, precision_summary
 from pipeline.textutil import (display_address, extract_phone, extract_phones, extract_url, first_sentence,
-                               normalize_name, phone_domestic, phone_intl, sha256_text, slugify, strip_html)
+                               normalize_name, phone_domestic, phone_e164, phone_intl, phone_intl_shown, sha256_text,
+                               slugify, strip_html)
 from pipeline.tourapi import TourAPIError, parse_items
 
 
@@ -36,10 +37,29 @@ def test_phone_extraction_never_truncates_or_merges():
     assert extract_phone("군산시청 063-454-3337") == "063-454-3337"
     assert extract_phone("010-9267-4166") == "010-9267-4166"
     assert extract_phones("063-443-1981, 063-443-4819") == ["063-443-1981", "063-443-4819"]
-    # P2-6: +82 form for markup, and back to the visible domestic form
-    assert phone_intl("063-454-7870") == "+82-63-454-7870" and phone_intl("1577-4050") == "+82-1577-4050"
+    # P2-6: +82 form for markup, and back to the visible domestic form; a nationwide number has no +82 form (QA
+    # 2026-10-15 SRC-05a: structured data keeps 1577-4050 as written)
+    assert phone_intl("063-454-7870") == "+82-63-454-7870" and phone_intl("1577-4050") == "1577-4050"
     for n in ("063-454-7870", "0507-1302-6070", "010-9267-4166", "1577-4050"):
         assert phone_domestic(phone_intl(n)) == n
+
+
+def test_phone_international_forms_only_for_numbers_that_answer_from_abroad():
+    # QA 2026-10-15 SRC-05a: the +82 form a caller abroad dials; never for a domestic-only number
+    assert phone_e164("063-454-7870") == "+82-63-454-7870"
+    assert phone_e164("02-530-6311") == "+82-2-530-6311"
+    assert phone_e164("010-4891-5402") == "+82-10-4891-5402"
+    assert phone_e164("070-4064-1517") == "+82-70-4064-1517"
+    assert phone_e164("0507-1394-3390") == "+82-507-1394-3390"
+    for n in ("1577-4050", "1644-8774", "080-123-4567", "060-123-4567"):
+        assert phone_e164(n) == "" and phone_intl(n) == n, n
+    # the visible '+82 …' form: area codes, mobiles, 070 — not 0507 (reach from abroad unverified), 15xx, 080, 060
+    assert phone_intl_shown("02-530-6311") == "+82 2-530-6311"
+    assert phone_intl_shown("063-454-7870") == "+82 63-454-7870"
+    assert phone_intl_shown("010-4891-5402") == "+82 10-4891-5402"
+    assert phone_intl_shown("070-4064-1517") == "+82 70-4064-1517"
+    for n in ("0507-1394-3390", "1577-4050", "080-123-4567", "060-123-4567", "050-123-4567"):
+        assert phone_intl_shown(n) == "", n
 
 
 def test_display_address_rewrites_only_the_province_prefix():

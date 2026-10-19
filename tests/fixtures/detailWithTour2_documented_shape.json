@@ -1,0 +1,46 @@
+{
+  "_fixture": "DOCUMENTED-SHAPE FIXTURE, not a live response. Field names, order and the sample values (contentid 988449) are the request/response example of detailWithTour2 in 한국관광공사 개방데이터 활용매뉴얼(무장애여행) v4.3 (data.go.kr 15101897, 참고문서, modified 2026-02-26), turned into the JSON envelope KorService2 answers with _type=json. Replace it with the first real response (contentId 1684836) once TOURAPI_KEY and the KorWithService2 활용신청 exist, and re-check tools/tourapi_details.WITH_FIELDS against it.",
+  "response": {
+    "header": {"resultCode": "0000", "resultMsg": "OK"},
+    "body": {
+      "items": {
+        "item": [
+          {
+            "contentid": "988449",
+            "parking": "장애인 주차장 있음_무장애 편의시설",
+            "route": "",
+            "publictransport": "출입구까지 경사로가 설치되어 있음",
+            "ticketoffice": "",
+            "promotion": "",
+            "wheelchair": "대여가능(수동휠체어 2대)",
+            "exit": "주출입구는 경사로가 있어 휠체어 접근 가능함",
+            "elevator": "",
+            "restroom": "장애인 화장실 있음",
+            "auditorium": "",
+            "room": "",
+            "handicapetc": "",
+            "braileblock": "",
+            "helpdog": "",
+            "guidehuman": "",
+            "audioguide": "",
+            "bigprint": "",
+            "brailepromotion": "",
+            "guidesystem": "",
+            "blindhandicapetc": "",
+            "signguide": "",
+            "videoguide": "",
+            "hearingroom": "",
+            "hearinghandicapetc": "",
+            "stroller": "",
+            "lactationroom": "",
+            "babysparechair": "",
+            "infantsfamilyetc": ""
+          }
+        ]
+      },
+      "numOfRows": 1,
+      "pageNo": 1,
+      "totalCount": 1
+    }
+  }
+}

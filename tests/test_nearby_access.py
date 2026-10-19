@@ -146,6 +146,21 @@ def test_place_page_shows_the_block_after_the_map_and_keeps_the_first_screen(tmp
 
 
 # ---------------------------------------------------------------- validator
+def test_the_heading_names_only_what_the_block_lists(tmp_path):
+    """No bus stop in nearby.json (most 군산시 문화관광 points: the stop file 15030105 is not in yet): the heading says
+    parking only, not '주차·버스' (a reader would take it for 'no bus nearby'); stops only: bus only."""
+    for name, row, words, blocks in (
+            ("lots", {"parking": NEARBY["sample-0001"]["parking"], "bus": []}, "근처 주차", ("근처 공영주차장",)),
+            ("stops", {"parking": [], "bus": NEARBY["sample-0001"]["bus"]}, "근처 버스", ("가까운 버스 정류장",))):
+        out = tmp_path / name / "site"
+        data = data_with(tmp_path / name, nearby={**NEARBY, "sample-0001": row})
+        build(data, out, "sample")
+        b = block((out / "places" / "gyeongam-railroad-village" / "index.html").read_text("utf-8"))
+        assert re.sub(r"<[^>]+>", "", b.split("</h2>")[0]).endswith(f"경암동 철길마을 {words}"), name
+        assert all(x in b for x in blocks) and "주차·버스" not in b, name
+        assert access_errors(data, out) == [], name
+
+
 def test_validator_passes_the_built_block_and_catches_changed_values(tmp_path):
     data, out = data_with(tmp_path), tmp_path / "site"
     build(data, out, "sample")

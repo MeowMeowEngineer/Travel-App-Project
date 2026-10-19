@@ -250,6 +250,22 @@ def test_script_checks():
     assert LC.script_problems("Это музей.", "ru") == [] and LC.script_problems("This museum is open.", "ru")
 
 
+def test_plain_spanish_is_spanish():
+    """2026-10-14 (the Spanish build): a plain Spanish sentence whose only function words are the ones French shares
+    (de, la, en, un) was read as 'English left in Spanish'. Spanish-only words count now; English and German left in
+    Spanish are still caught, and a German sentence with 'es' is still German."""
+    for t in ("Jumbo Jjamppong es un restaurante chino de la calle especializada en jjamppong, en Dongnyeong-gil, "
+              "Jangmi-dong.",
+              "Huirak es un restaurante de sopas cuya especialidad es la sopa de pescado (saengseontang).",
+              "E-mart (sucursal de Gunsan): preguntas frecuentes ¿Hasta qué hora abre E-mart (sucursal de Gunsan)? "
+              "E-mart (sucursal de Gunsan) abre en horario 10:00–23:00."):
+        assert LC.script_problems(t, "es") == [], t
+    english = "The museum is the former Gunsan branch of the Bank of Chosun and it is open to visitors every day."
+    assert "English left in Spanish" in " ".join(LC.script_problems(english, "es"))
+    german = "Es gibt einen Parkplatz, und das Museum ist von 9 bis 18 Uhr geöffnet; es ist montags geschlossen."
+    assert LC.script_problems(german, "de") == [] and "German left in Spanish" in " ".join(LC.script_problems(german, "es"))
+
+
 def test_parity_reads_grouped_decimals_and_room_lists():
     """Review 2026-10-14: '1,868.7㎡' is one decimal number in every language ('1.868,7 m²' in German, '1 868,7' in
     Russian), and '203,204호' lists two rooms; neither may make a faithful translation fail."""
@@ -261,6 +277,18 @@ def test_parity_reads_grouped_decimals_and_room_lists():
     assert parity_l("면적은 1,868.7㎡입니다.", "Die Fläche beträgt 1.868 m².", "de")       # a dropped decimal still fails
     assert parity_l("2층 203,204호", "2. Stock, Nr. 203 und 204", "de") == []
     assert parity_l("2층 203,204호", "2. Stock, Nr. 203", "de")                            # a dropped room still fails
+
+
+def test_parity_never_reads_a_times_minutes_as_an_amount():
+    """Review 2026-10-14 (zh-hans): '14:00~17:00, 원풍갈비' is a time range and a restaurant's name, not 0 won;
+    '07:00~16:00만' is 'only 07:00–16:00', not 0 × 10,000 — a faithful translation passes, a real amount still counts."""
+    from tools.en_content import parity, parity_l
+    assert parity_l("영업은 14:00~17:00, 원풍갈비는 매일 엽니다.", "营业时间14:00–17:00，元丰排骨每天营业。", "zh-hans") == []
+    assert parity_l("아침은 07:00~16:00만 엽니다.", "早上只在07:00–16:00营业。", "zh-hans") == []
+    assert parity("영업은 14:00~17:00, 원풍갈비는 매일 엽니다.", "Open 14:00–17:00; Wonpung Galbi opens daily.") == []
+    assert parity_l("입장료 3,000원, 10:00~17:00", "门票3,000韩元，10:00–17:00", "zh-hans") == []
+    assert parity_l("입장료 3,000원, 10:00~17:00", "门票10:00–17:00", "zh-hans")            # a dropped amount still fails
+    assert parity_l("사업비 2만 5천원", "费用25,000韩元", "zh-hans") == []
 
 
 def test_vet_matches_needs_the_building_number_or_a_name_and_one_item_per_place():
@@ -284,3 +312,22 @@ def test_vet_matches_needs_the_building_number_or_a_name_and_one_item_per_place(
     assert vet_matches(rows, places, loc) == ["p2"]
     assert rows["p1"]["name_ja"] == "李盛堂" and rows["p2"]["name_ja"] == "" and rows["p2"]["name_ja_source"] == "translated"
     assert rows["p2"]["match_basis"].startswith("rejected") and rows["p3"]["name_ja"] == rows["p4"]["name_ja"] == "旧群山税関"
+
+
+def test_every_translated_chrome_string_follows_todays_english():
+    """Review 2026-10-14: the Simplified Chinese strings had been translated before two English words changed (the map
+    credit 'OpenStreetMap' → 'Kakao Map', the headings without a full stop), and the build printed the old ones. Every
+    'chrome.<key>' entry of a version's strings.json keeps the English it was translated from ('en'); it must be the
+    English the pages use today (pipeline/intl_text.py), so a changed source is re-translated before it ships."""
+    import json
+    from pipeline import intl_text as IT
+    src = {**IT.EN, **getattr(IT, "INTL_ONLY", {}), **getattr(IT, "INTL_SOURCE", {})}
+    for f in (ROOT / "data" / "gunsan").glob("*/strings.json"):
+        for k, v in json.loads(f.read_text("utf-8")).items():
+            if not k.startswith("chrome.") or not isinstance(v, dict):
+                continue
+            key, _, form = k[len("chrome."):].partition(".")
+            want = src.get(key)
+            if isinstance(want, dict):
+                want = want.get(form)
+            assert want is None or v.get("en") == want, (f.parent.name, k, v.get("en"), want)

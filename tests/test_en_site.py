@@ -74,3 +74,33 @@ def test_slugs_and_sentences():
     assert sentences_en("It is Registered Cultural Heritage No. 64. Dr. Lee built it. Open daily.") == \
         ["It is Registered Cultural Heritage No. 64.", "Dr. Lee built it.", "Open daily."]
     assert not HANGUL.search(en_slug("동국사 Dongguksa Temple"))
+
+
+def _filter_bar(html: str) -> dict:
+    """The list page's filter bar: {key: [(value, label, n)]}, the check box, the view switch and the rows' keys."""
+    bar = re.search(r'<div class="filters" data-filters hidden>.*?<div class="ledger" data-ledger>', html, re.S)
+    assert bar, "no filter bar"
+    bar = bar.group(0)
+    chips = {}
+    for k, v, lab, n in re.findall(r'<button type="button" data-f="(\w+)" data-v="([^"]*)" aria-pressed="[^"]*">([^<]*?)\s*(?:<span class="tn">(\d+)</span>)?</button>', bar):
+        chips.setdefault(k, []).append((html_unescape(v), lab.strip(), int(n or 0)))
+    check = re.search(r'<input type="checkbox" data-f="check" value="(\w+)"> ([^<]*?) <span class="tn">(\d+)</span>', bar)
+    rows = re.findall(r'<li class="rec"[^>]*>', html)
+    return {"chips": chips, "check": check.groups() if check else None, "views": re.findall(r'data-view="(\w+)"', bar),
+            "rows": rows, "result": re.search(r'<span data-result data-forms="([^"]*)" data-of="([^"]*)">', bar)}
+
+
+def html_unescape(s: str) -> str:
+    import html as H
+    return H.unescape(s)
+
+
+# ------------------------------------------------------------------ 예약하기 (pipeline/booking.py, ui.book)
+BOOK_RX = re.compile(r'<div class="book[^"]*" data-block="booking">.*?</div>', re.S)
+BOOK_A = re.compile(r'<a [^>]*data-track="booking_click"[^>]*>')
+
+
+def _with(out: Path, code: str, needle: str, subs=("places", "food", "stays", "guides", "courses")) -> list[str]:
+    """The pages of a version (ko: the root) under subs whose HTML contains needle."""
+    base = out if code == "ko" else out / code
+    return [t for s in subs for f in sorted((base / s).glob("*/index.html")) if needle in (t := f.read_text("utf-8"))]

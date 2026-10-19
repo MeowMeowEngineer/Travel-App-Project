@@ -24,7 +24,7 @@ def test_map_and_kakao_sdk_load_only_where_coordinates_exist(tmp_path):
     # map provider: Kakao Maps (owner decision 2026-10-14) — the box names the SDK (key from site.json), the page
     # credits '지도: 카카오맵'; a page without coordinates has no box and never names the SDK
     data, places = sample_copy(tmp_path)
-    places[0]["geo"] = {"lat": 35.98, "lng": 126.72, "source": "test"}
+    places[0]["geo"] = {"lat": 35.98, "lng": 126.72, "source": "TourAPI"}
     save(data, places)
     out = tmp_path / "out"
     build(data, out, "preview")
@@ -47,6 +47,13 @@ def test_lists_filter_without_js_and_skip_duplicates(tmp_path):
     build(data, out, "preview")
     listing = (out / "places" / "index.html").read_text("utf-8")
     assert "data-filters hidden" in listing          # filters appear only when site.js runs
+    # a mouse cannot swipe the type chips' sideways row (its scrollbar is hidden): with a fine pointer they wrap, every
+    # one in view (operator 2026-10-18 on /food/); touch keeps the one row
+    from pipeline.build import site_css
+    css = site_css()
+    rule = css[css.index("@media (hover: hover) and (pointer: fine)"):]
+    rule = rule[:rule.index("}}") + 2]
+    assert ".f-row{flex-wrap:wrap;overflow-x:visible" in rule.replace(" ", "") and "mask-image:none" in rule.replace(" ", "")
     assert 'data-group="' in listing and 'data-area="' in listing
     assert (out / "stays" / "index.html").exists() and (out / "food" / "index.html").exists()
     assert not (out / "places" / "dup-1").exists()

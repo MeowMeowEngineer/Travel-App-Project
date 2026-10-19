@@ -4,6 +4,7 @@ near the screen), only published items, and the place page's block."""
 import json
 import re
 import shutil
+from html.parser import HTMLParser
 from pathlib import Path
 
 from pipeline.build import build
@@ -59,6 +60,111 @@ def test_abroad_page_and_place_block(tmp_path):
     assert "/abroad/" in (out / "sitemap.xml").read_text("utf-8")
     errors, _, _ = validate(data, out, "sample")
     assert errors == [], errors[:5]
+
+
+class WallScan(HTMLParser):
+    """The /abroad/ SNS section: its list, and for each post card its service, its address, the text and the links a
+    reader gets without JS (nothing inside [data-js-only]) and every link's visible text."""
+
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+    def __init__(self):
+        super().__init__()
+        self.stack = []          # (tag, in_section, js_only)
+        self.walls = []          # the class / data-wall of each list in the section
+        self.cards = []
+        self.link = None
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        sec, js = self.stack[-1][1:] if self.stack else (False, False)
+        sec = sec or a.get("id") == "ab-sns"
+        js = js or "data-js-only" in a
+        if sec and tag == "ul":
+            self.walls.append((a.get("class"), "data-wall" in a))
+        if sec and tag == "li" and "data-embed" in a:
+            self.cards.append({"kind": a["data-embed"], "url": a.get("data-url"), "text": "", "links": [], "all_links": []})
+        if sec and tag == "a" and self.cards:
+            self.link = {"href": a.get("href"), "text": "", "js_only": js}
+        if tag not in self.VOID:
+            self.stack.append((tag, sec, js))
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.link is not None:
+            self.cards[-1]["all_links"].append(self.link)
+            if not self.link["js_only"]:
+                self.cards[-1]["links"].append(self.link)
+            self.link = None
+        if self.stack and tag not in self.VOID:
+            self.stack.pop()
+
+    def handle_data(self, data):
+        if self.stack and self.stack[-1][1] and self.cards:
+            if not self.stack[-1][2]:
+                self.cards[-1]["text"] += data
+            if self.link is not None:
+                self.link["text"] += data
+
+
+def test_sns_wall_one_card_per_post_with_note_and_link_without_js(tmp_path):
+    """owner 2026-10-14 ('바둑판식'): the posts are one list ([data-wall], the tiles of the grid) with one card per published
+    post in order; without JS each card still has our note and a link to the original named by the service, and no
+    link anywhere shows a post's address as its text (the embed's own quote included — site.js names it too)."""
+    data = abroad_data(tmp_path)
+    raw = json.loads((data / "abroad.json").read_text("utf-8"))
+    raw["items"].append({"id": "p3", "kind": "post", "platform": "x", "url": "https://x.com/someone/status/123",
+                         "author": "someone", "date": "2026-09-01", "note": "철길마을 사진을 올린 일본어 게시물입니다.",
+                         "place_slugs": ["gyeongam-railroad-village"], "status": "published"})
+    (data / "abroad.json").write_text(json.dumps(raw, ensure_ascii=False), "utf-8")
+    out = tmp_path / "out"
+    build(data, out, "sample")
+    scan = WallScan()
+    scan.feed((out / "abroad" / "index.html").read_text("utf-8"))
+    assert scan.walls == [("ab-wall", True)]                        # one list: the wall
+    assert [(c["kind"], c["url"]) for c in scan.cards] == [
+        ("instagram", "https://www.instagram.com/p/EXAMPLE1/"), ("x", "https://x.com/someone/status/123")]
+    notes = {"instagram": "철길마을 교복 사진 게시물입니다.", "x": "철길마을 사진을 올린 일본어 게시물입니다."}
+    labels = {"instagram": "Instagram", "x": "X"}
+    for c in scan.cards:
+        assert notes[c["kind"]] in c["text"]                        # our note, without JS
+        orig = [ln for ln in c["links"] if ln["href"] == c["url"]]
+        assert len(orig) == 1 and orig[0]["text"].startswith(f"{labels[c['kind']]}에서 보기")
+        assert "/places/gyeongam-railroad-village/" in {ln["href"] for ln in c["links"]}   # its place as a chip
+        assert c["url"] not in c["text"] and "://" not in c["text"]   # no address as text in the card
+        for ln in c["all_links"]:
+            assert "://" not in ln["text"] and "www." not in ln["text"], ln
+    js = (ROOT / "templates" / "assets" / "site.js").read_text("utf-8")
+    assert "a.textContent = url" not in js                          # the quote handed to the service is not the address
+
+
+def test_home_sns_row_links_each_post_to_its_card(tmp_path):
+    """owner 2026-10-14 ('SNS 게시물이 … 너무 구석에'): the home has a 'SNS에서 본 …' row — the published posts newest first,
+    each our note under the service · account, each a link to its own card on /abroad/ (whose id is there), the count
+    in the 'all' link, and no service's script or embed on the home. /abroad/ puts the wall right under its head."""
+    data = abroad_data(tmp_path)
+    raw = json.loads((data / "abroad.json").read_text("utf-8"))
+    raw["items"].append({"id": "p3", "kind": "post", "platform": "x", "url": "https://x.com/someone/status/123",
+                         "author": "someone", "date": "2026-09-01", "note": "철길마을 사진을 올린 일본어 게시물입니다.",
+                         "place_slugs": [], "status": "published"})
+    raw["items"].append({"id": "p4", "kind": "post", "platform": "x", "url": "https://x.com/draft/status/9",
+                         "date": "2026-10-09", "note": "아직 승인 전 게시물입니다.", "place_slugs": [], "status": "draft"})
+    (data / "abroad.json").write_text(json.dumps(raw, ensure_ascii=False), "utf-8")
+    out = tmp_path / "out"
+    build(data, out, "sample")
+    home = (out / "index.html").read_text("utf-8")
+    row = re.search(r'<ul class="hsns">(.*?)</ul>', home, re.S)
+    assert row, "no SNS row on the home"
+    hrefs = re.findall(r'<a class="hsns-c" href="([^"]+)"', row.group(1))
+    assert hrefs == ["/abroad/#p1", "/abroad/#p3"]               # 2026-10 before 2026-09-01; no draft, no article
+    assert "철길마을 교복 사진 게시물입니다." in row.group(1) and "<b>X</b> · someone" in row.group(1)
+    assert "아직 승인 전" not in home
+    assert 'href="/abroad/#ab-sns"' in home and "SNS 게시물 2개 모두" in home
+    low = home.lower()
+    assert "platform.twitter.com" not in low and "instagram.com/embed" not in low and "x.com/" not in low
+    page = (out / "abroad" / "index.html").read_text("utf-8")
+    for h in hrefs:
+        assert f'id="{h.split("#")[1]}"' in page
+    assert page.index('id="ab-sns"') < page.index('class="wrap ab-wrap"')   # the wall comes first
 
 
 def test_no_abroad_page_without_items(tmp_path):

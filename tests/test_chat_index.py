@@ -26,7 +26,8 @@ LETTERS = ("P ", "G ", "C ", "E ", "A ", "V ", "T ", "S ")
 
 def _state(data: Path, mode: str = "production") -> State:
     S = State(data, mode)
-    S.en = en_site.load(S, data)
+    S.intl = en_site.load_all(S, data)   # as pipeline.build does: every version, English first
+    S.en = S.intl.sites.get("en")
     return S
 
 

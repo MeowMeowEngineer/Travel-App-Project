@@ -4,19 +4,24 @@
 // search ranking, and the security checks (docs/handover/chatbot.md '보안': the origin allow-list, the rate limits —
 // what they count and what each refusal tells the browser —, data blocks checked against an independent list of
 // delimiter spellings, odd tool input, bodies no check foresaw). tests/test_chat_node.py runs this file from pytest
-// (with CHAT_KB_DIR = knowledge exported from the real data, for the ranking checks on real pages).
+// (with CHAT_KB_DIR = knowledge exported from the real data, for the ranking checks on real pages). At the end: the
+// browser's pure planQuery (templates/assets/chat.js, read from between its marks) — a question's trip conditions as
+// the course planner's URL parameters.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
-import { Knowledge, QUERY_CHARS, loadKnowledge, tokens } from "../../chatbot/knowledge.js";
-import { EFFORT, MODEL, NO_THINKING_NOTE, TOOLS, buildSystem as buildSystemFor, continueText as continueTextFor, dataBlock,
-  neutralise, questionLang, rules, seoulNow } from "../../chatbot/prompt.js";
+import { Knowledge, NAMES_CHARS, QUERY_CHARS, loadKnowledge, tokens } from "../../chatbot/knowledge.js";
+import { EFFORT, LANG_NAME, MODEL, TOOLS, answerLangName, buildSystem as buildSystemFor, chooseLang,
+  continueFor as continueForSite, continueText as continueTextFor, dataBlock, detectLang, errorText, languageReminder,
+  languageRetryNote, lastCallNote, neutralise, noThinkingNote, questionLang, requestedLang, rules, seoulNow,
+  wrongLanguage } from "../../chatbot/prompt.js";
 import { LIMITS, allowedOrigins as allowedOriginsFor, cleanRequest as cleanRequestFor, clientIp, clientKey,
-  createHandler as createHandlerFor, createLimiter, normLang, priorAnswer as priorAnswerFor, trimOverlap }
-  from "../../chatbot/server.js";
+  createHandler as createHandlerFor, createLimiter, hangulShare, normLang, priorAnswer as priorAnswerFor, totalsOff,
+  trimOverlap, validFees, validPlan } from "../../chatbot/server.js";
 import { loadSite, siteFrom } from "../../chatbot/site.js";
 
 // The test site: a Gunsan-shaped fixture (the knowledge below is the sample's kind of data). The assistant reads its
@@ -31,7 +36,8 @@ const SITE_CFG = siteFrom({ url: SITE, name: "군산 여행의 모든 것", orig
     ru: "Кунсан" } });
 const RULES = rules(SITE_CFG);
 const buildSystem = (catalog, opts) => buildSystemFor(catalog, { ...opts, site: SITE_CFG });
-const continueText = (tail, lang) => continueTextFor(tail, lang, SITE_CFG);
+const continueText = (tail, lang, writeIn = "") => continueTextFor(tail, lang, writeIn, SITE_CFG);
+const continueFor = (tail, ql) => continueForSite(tail, ql, SITE_CFG);
 const allowedOrigins = (env) => allowedOriginsFor(env, SITE_CFG);
 const cleanRequest = (body) => cleanRequestFor(body, SITE_CFG);
 const priorAnswer = (text) => priorAnswerFor(text, SITE);
@@ -52,17 +58,19 @@ function indexOf(docs) {
 
 const DOCS = {
   "/places/선유도/": { t: "선유도", k: "place", e: "/en/places/seonyudo-island/",
+    l: { en: "/en/places/seonyudo-island/", de: "/de/places/seonyudo-island/" }, n: { en: "Seonyudo Island", de: "Insel Seonyudo" },
     x: "선유도 — 관광지 · 섬 (English: Seonyudo Island)\n요약: 고군산군도의 섬으로 다리로 이어져 차로 들어갑니다.\n- 주차: 가능 — 한국관광공사 TourAPI, 확인 2026-10-08\n가까운 버스 정류장: 선유도 99번" },
   "/places/월명공원/": { t: "월명공원", k: "place", e: "/en/places/wolmyeong-park/",
     x: "월명공원 — 관광지 · 공원 (English: Wolmyeong Park)\n- 이용시간: 09:00~18:00 — 군산시 문화관광\n- 이용시간(다른 출처 값): 상시 개방 — 한국관광공사 TourAPI → 출처마다 값이 달라 방문 전 전화 확인" },
   "/places/복성루/": { t: "복성루", k: "place", x: "복성루 — 음식점 · 중식\n- 대표 메뉴: 짬뽕, 물짜장 — 군산시 문화관광\n- 쉬는 날: 매주 일요일" },
   "/places/이성당/": { t: "이성당", k: "place", e: "/en/places/lee-sung-dang/", x: "이성당 — 음식점 · 빵집\n- 대표 메뉴: 단팥빵, 야채빵" },
   "/guides/군산-가는-법-교통/": { t: "서울·인천공항·익산역에서 군산 가는 법과 시내버스로 근대역사박물관·선유도 가는 법", k: "guide",
-    e: "/en/guides/how-to-get-to-gunsan/", x: "서울에서 군산 가는 법 — 가이드\n요약: 선유도는 99번 버스로 갑니다." },
+    e: "/en/guides/how-to-get-to-gunsan/", l: { en: "/en/guides/how-to-get-to-gunsan/", de: "/de/guides/how-to-get-to-gunsan/" },
+    n: { de: "Anreise nach Gunsan" }, x: "서울에서 군산 가는 법 — 가이드\n요약: 선유도는 99번 버스로 갑니다." },
   "/guides/군산-가는-법-교통/#h-b2": { t: "군산 가는 법 — 시내버스로 선유도 가는 법", k: "section", e: "/en/guides/how-to-get-to-gunsan/",
     x: "시내버스로 선유도 가는 법\n99번 버스가 선유도까지 갑니다." },
   "video:abc123": { t: "선유도 여행 브이로그", k: "video", u: "/videos/섬-바다/", x: "선유도 여행 브이로그 — YouTube 영상\n주소: https://www.youtube.com/watch?v=abc123" },
-  "/about/": { t: "소개·출처", k: "page", e: "/en/about/", x: "군산 여행의 모든 것 — 소개·출처" },
+  "/about/": { t: "소개·출처", k: "page", e: "/en/about/", x: "군산각 — 소개·출처" },
 };
 const KB_DATA = { catalog: "# Site catalog (test)\nP /places/선유도/ | 선유도 (Seonyudo Island) | 섬 | 옥도면·고군산 | 시간 상시 개방",
   docs: { v: 1, site: SITE, docs: DOCS, alias: { "/en/places/seonyudo-island/": "/places/선유도/", "/en/places/wolmyeong-park/": "/places/월명공원/",
@@ -375,7 +383,12 @@ test("questionLang: the language a question is written in — the one a request 
   assert.equal(questionLang("Can I take bus 99 from 선유도 back to the city?", "ko"), "en");   // a Korean name in English
   assert.equal(questionLang("Ist das Museum am Montag geöffnet?", "ko"), "de");
   assert.equal(questionLang("¿Está abierto el lunes?", "ko"), "es");
-  assert.equal(questionLang("Is it open on Monday?", "fr"), "fr");   // Latin letters: the interface language says which
+  // Latin letters: the question's own words say which; the interface language only when they do not
+  assert.equal(questionLang("Is it open on Monday?", "fr"), "en");
+  assert.equal(questionLang("Is it open on Mondays? And is parking free?", "de"), "en");   // English on the German pages
+  assert.equal(questionLang("Wann hat das Museum geöffnet und was kostet der Eintritt?", "en"), "de");
+  assert.equal(questionLang("Seonyudo?", "fr"), "fr");
+  assert.equal(questionLang("Gunsan Seonyudo", "ko"), "en");
   assert.equal(questionLang("", "ja"), "ja");
   // Japanese in kanji alone on the Japanese interface; French and Spanish told by their accents on any interface
   assert.equal(questionLang("群山二泊三日旅行日程", "ja"), "ja");
@@ -392,15 +405,153 @@ test("questionLang: the language a question is written in — the one a request 
   assert.equal(continueText("x", "xx"), continueText("x", "en"));
   assert.match(continueText("x", "ja"), /^（続き）[\s\S]*群山/);
   assert.match(continueText("x", "ru"), /Кунсан/);
-  // a continue request carries the language of the question it continues, not of the interface
+  // a continue request carries the language of the question it continues, not of the interface — ordered into it only
+  // when sure of it ('Plan my Monday' has one English word: the rest in the cut answer's language)
   const r = cleanRequest({ messages: [{ role: "user", content: "Plan my Monday" }, { role: "assistant", content: "- 10:00 |" }],
     lang: "ko", continue: true });
   assert.equal(r.language, "en");
-  assert.equal(r.messages.at(-1).content, continueText("- 10:00 |", "en"));
+  assert.equal(r.messages.at(-1).content, continueText("- 10:00 |", "en", "the language the cut answer is written in"));
+  const sure = cleanRequest({ messages: [{ role: "user", content: "Is the museum open on Monday?" },
+    { role: "assistant", content: "- 10:00 |" }], lang: "ko", continue: true });
+  assert.equal(sure.messages.at(-1).content, continueText("- 10:00 |", "en"));
   const k = cleanRequest({ messages: [{ role: "user", content: "일정 짜줘" }, { role: "assistant", content: "- 10:00 |" }],
     lang: "en", continue: true });
   assert.equal(k.language, "ko");
   assert.match(k.messages.at(-1).content, /^\(이어 쓰기\) /);
+});
+
+// the external evaluation's questions (QA 2026-10-15) asked on the Korean pages
+const C03 = "我从中国来，不会韩语。2026年10月19日星期一，从群山站去仙游岛当天往返，坐哪几路公交？最后一班返回是几点？请给乘车站的韩文名和需要确认的地方。";
+const C04 = "我們兩位大人帶一名5歲孩子，星期一下雨，想在群山玩半天。近代歷史博物館可以進去嗎？請推薦確定開門的室內景點和兒童票價。";
+const C09 = "Tôi muốn đi Gunsan trong một ngày từ Seoul mà không thuê xe. Tôi nên đi từ bến xe nào, mất bao lâu, mua vé ở đâu và cần kiểm tra chuyến cuối về Seoul thế nào?";
+const C10 = "ฉันจะไปเที่ยวกุนซานวันที่ 17–18 ตุลาคม 2026 มีเทศกาลอะไรที่ยังจัดอยู่จริงบ้าง? กรุณาบอกวัน เวลา สถานที่ ค่าเข้า และลิงก์แหล่งข้อมูล อย่าแนะนำงานที่จบแล้ว";
+const C11 = "Saya wisatawan Muslim. Adakah restoran bersertifikat halal dan tempat salat di Gunsan? Tolong bedakan sertifikasi halal, tanpa babi, dan makanan laut; jangan menganggap semuanya halal.";
+const C12 = "أنا سائح أزور غونسان ليوم واحد دون سيارة. أحتاج مطعماً حلالاً مع دليل على الشهادة ومكاناً للصلاة. إن لم تتوفر معلومات مؤكدة، قل ذلك بوضوح وقدّم وسيلة للتحقق.";
+const FA = "آیا موزه دوشنبه باز است؟";
+
+test("detectLang: a short Korean question with a Latin acronym, brand or name stays Korean", () => {
+  for (const q of ["KTX 시간", "KTX 몇시", "Starbucks 있어요?", "Wi-Fi 되나요?", "Gunsan 맛집", "Lotte Mall Gunsan 주차 가능한가요?"]) {
+    assert.deepEqual(detectLang(q, "ko"), { code: "ko", site: "ko", dir: "", sure: false }, q);
+  }
+  // real words of another language still decide; on a Latin-script interface the Hangul must outweigh the Latin
+  assert.deepEqual(detectLang("Can I take bus 99 from 선유도?", "ko"), { code: "en", site: "en", dir: "", sure: true });
+  assert.equal(detectLang("선유도 bus please", "ko").code, "en");
+  assert.equal(detectLang("Wie komme ich nach 선유도?", "ko").code, "de");
+  assert.equal(detectLang("군산 hotel", "en").code, "en");
+  assert.equal(detectLang("Gunsan Seonyudo", "ko").code, "en");
+});
+
+test("questionLang: languages the site has no version of are never named as one of its languages; Traditional Chinese", () => {
+  for (const q of [C09, "Bảo tàng có mở cửa vào thứ Hai không?", C10, C11, "Apakah museum buka hari Senin?", C12,
+    "هل المتحف مفتوح يوم الاثنين؟", FA, "Il museo è aperto lunedì?", "Il museo è aperto il lunedì? Quanto costa l'ingresso?",
+    "O museu abre na segunda-feira? Quanto custa a entrada?", "Müze pazartesi günü açık mı? Giriş ücreti ne kadar?",
+    "Czy muzeum jest otwarte w poniedziałek?", "האם המוזיאון פתוח ביום שני?", "क्या संग्रहालय सोमवार को खुला है?"]) {
+    for (const ui of ["ko", "en", "fr"]) assert.equal(questionLang(q, ui), "", `${ui}: ${q}`);
+  }
+  // Traditional or Simplified by the characters only one of them writes, on any interface
+  assert.equal(questionLang(C04, "ko"), "zh-Hant");
+  assert.equal(questionLang("博物館星期一開門嗎？", "ko"), "zh-Hant");
+  assert.equal(questionLang(C03, "ko"), "zh-Hans");
+  assert.equal(questionLang(C03, "zh-Hant"), "zh-Hans");
+  assert.equal(questionLang("近代歴史博物館 料金", "ja"), "ja");   // the Japanese interface keeps kanji-only Japanese
+  // what detectLang says: the code, the site language links and names use, the direction, and whether to name it
+  assert.deepEqual(detectLang(C09), { code: "vi", site: "en", dir: "", sure: true });
+  assert.deepEqual(detectLang(C10), { code: "th", site: "en", dir: "", sure: true });
+  assert.deepEqual(detectLang(C11), { code: "id", site: "en", dir: "", sure: true });
+  assert.deepEqual(detectLang(C12), { code: "ar", site: "en", dir: "rtl", sure: true });
+  assert.deepEqual(detectLang(FA), { code: "fa", site: "en", dir: "rtl", sure: false });   // Persian, never 'Arabic'
+  assert.deepEqual(detectLang("האם המוזיאון פתוח ביום שני?"), { code: "he", site: "en", dir: "rtl", sure: true });
+  assert.deepEqual(detectLang(C04), { code: "zh-Hant", site: "zh-Hant", dir: "", sure: true });
+  assert.deepEqual(detectLang(C03), { code: "zh-Hans", site: "zh-Hans", dir: "", sure: true });
+  assert.deepEqual(detectLang("群山二泊三日旅行日程", "ko"), { code: "zh-Hans", site: "zh-Hans", dir: "", sure: false });
+  assert.notEqual(detectLang("Il museo è aperto lunedì?").code, "fr");   // accents alone never make it French
+  assert.deepEqual(detectLang("Seonyudo?", "fr"), { code: "fr", site: "fr", dir: "", sure: false });
+  assert.deepEqual(detectLang("월요일에 열어요?", "de"), { code: "ko", site: "ko", dir: "", sure: true });
+  // four words or more with no sign of any language: unknown — answered in the question's own language, links in English
+  assert.deepEqual(detectLang("Bukas ba ang museo sa Lunes?", "ko"), { code: "", site: "en", dir: "", sure: false });
+  assert.equal(detectLang("Bukas ba ang museo sa Lunes?", "de").site, "de");
+  for (const code of ["vi", "th", "id", "ar", "fa", "he", "it", "pt", "tr", "pl", "nl"]) assert.ok(LANG_NAME[code], code);
+});
+
+test("buildSystem: names the answer's language only when it is sure; stop names, bus numbers, addresses", () => {
+  const now = new Date("2026-10-15T02:00:00Z");
+  const ctx = (q, lang = "ko") => buildSystem("cat", { now, lang, answer: detectLang(q, lang) })[1].text;
+  // Arabic: named, links and names in English; never told it is Korean
+  const ar = ctx(C12);
+  assert.match(ar, /The user's last message is written in Arabic \(العربية\): write the whole answer in Arabic/);
+  assert.match(ar, /this site has no pages in that language, so the names it gives are English \('name in en'/);
+  assert.doesNotMatch(ar, /Korean \(한국어\)/);
+  // Traditional Chinese, not Simplified (C04)
+  assert.match(ctx(C04), /written in Traditional Chinese \(繁體中文\)/);
+  assert.match(ctx(C04), /'name in zh-Hant'/);
+  // no question without Hangul is told it is written in Korean; an unsure one gets the fallback sentence
+  for (const q of [C09, C10, C11, C12, FA, "Bukas ba ang museo sa Lunes?", "Seonyudo?"]) {
+    assert.doesNotMatch(ctx(q), /written in Korean/, q);
+  }
+  const unsure = ctx(FA);
+  assert.match(unsure, /Answer in the language of the user's last message, not the interface language; if it shows no language \(only a name or a number\), answer in English\./);
+  assert.doesNotMatch(unsure, /is written in/);
+  assert.match(ctx("Seonyudo?", "fr"), /if it shows no language \(only a name or a number\), answer in French \(français\)\./);
+  // stop names, bus numbers and terms in the answer's language (C03); addresses as the data writes them (C09)
+  const zh = ctx(C03);
+  for (const words of ["99路 / bus 99, never 99번", "中央市场（중앙시장）", "never a bare Korean word inside a sentence",
+    "never a Chinese-character reading of the Korean", "the city transport page", "street addresses as the data writes them",
+    "never add words a name does not have (no National / Nationales / 国立"]) {
+    assert.ok(zh.includes(words), words);
+  }
+  for (const q of [C09, "Is it open on Monday?", "Bukas ba ang museo sa Lunes?"]) assert.match(ctx(q), /except after a place or stop name, and street addresses as the data writes them/);
+  // a Korean answer gets only the language line
+  const ko = ctx("월요일에 열어요?", "en");
+  assert.match(ko, /written in Korean \(한국어\)/);
+  assert.doesNotMatch(ko, /99路|Names:/);
+  // the cached part is the same whatever the question's language
+  assert.equal(buildSystem("cat", { now, lang: "ko", answer: detectLang(C12) })[0].text,
+    buildSystem("cat", { now, lang: "en", answer: detectLang("월요일에 열어요?") })[0].text);
+});
+
+test("language note after tool results: named when sure, neutral when not, none for Korean; a continue names the language", async () => {
+  assert.match(languageReminder(detectLang(C03)), /^\(Site note, not from the reader: write the rest of the answer in Simplified Chinese \(简体中文\) — translate every Korean term/);
+  const neutral = languageReminder(detectLang(FA));
+  assert.match(neutral, /in the language of the reader's last question \(if it shows none: English\)/);
+  assert.doesNotMatch(neutral, /is written in|Persian|Arabic/);
+  // a zh-Hans question with one search_site round: the tool results first, then the note, in the same user turn
+  const s = setup([toolRound([["search_site", { query: "선유도 버스" }]]), textRound("99路公交。")]);
+  await events(await s.handle(post(ask(C03, "ko", "/"))));
+  const turn = s.client.calls[1].params.messages.at(-1).content;
+  assert.deepEqual(turn.map((b) => b.type), ["tool_result", "text"]);
+  assert.match(turn[1].text, /Simplified Chinese \(简体中文\)/);
+  assert.equal(s.logs[0].qlang, "zh-Hans");
+  assert.equal(typeof s.logs[0].hangul, "number");
+  // an unsure question: the neutral note; a Korean question: no note at all
+  const u = setup([toolRound([["get_pages", { ids: ["/places/선유도/"] }]]), textRound("x")]);
+  await events(await u.handle(post(ask("Bukas ba ang museo sa Lunes?", "ko", "/"))));
+  const ut = u.client.calls[1].params.messages.at(-1).content;
+  assert.equal(ut.at(-1).type, "text");
+  assert.doesNotMatch(ut.at(-1).text, /is written in|Tagalog/);
+  assert.match(ut.at(-1).text, /the language of the reader's last question \(if it shows none: English\)/);
+  const k = setup([toolRound([["get_pages", { ids: ["/places/선유도/"] }]]), textRound("선유도는 …")]);
+  await events(await k.handle(post(ask("선유도 가는 법", "en", "/"))));
+  assert.ok(k.client.calls[1].params.messages.at(-1).content.every((b) => b.type === "tool_result"));
+  assert.equal(k.logs[0].hangul, undefined);
+  // a request to go on with an Arabic answer: the English request, naming Arabic
+  const r = cleanRequest({ messages: [{ role: "user", content: C12 }, { role: "assistant", content: "- 10:00 |" }], lang: "ko",
+    continue: true });
+  assert.match(r.messages.at(-1).content, /^\(continue\) [\s\S]* Write it in Arabic \(العربية\)\. It ended with:\n«- 10:00 \|»$/);
+  assert.equal(r.language, "en");
+  // the share of Hangul outside brackets and link targets (log numbers only)
+  assert.equal(hangulShare("飞鹰港（비응항）[선유도](/places/선유도/)"), 0);
+  assert.equal(hangulShare("到선유도站"), 0.6);
+});
+
+test("meta event: the answer's direction, its site language, and its language when sure", async () => {
+  const first = async (q, lang = "ko") => {
+    const s = setup([textRound("x")]);
+    return (await events(await s.handle(post(ask(q, lang, "/")))))[0];
+  };
+  assert.deepEqual(await first(C12), { type: "meta", dir: "rtl", site: "en", lang: "ar" });
+  assert.deepEqual(await first(FA), { type: "meta", dir: "rtl", site: "en" });   // not sure: no lang
+  assert.deepEqual(await first("월요일에 열어요?"), { type: "meta", dir: "", site: "ko", lang: "ko" });
+  assert.deepEqual(await first(C04), { type: "meta", dir: "", site: "zh-Hant", lang: "zh-Hant" });
 });
 
 test("trimOverlap: the rest of a cut answer joins it without writing its end again", () => {
@@ -466,7 +617,9 @@ test("a call that only thought (max_tokens, no text, no tool call) is asked once
   assert.equal(logs[0].rescue, true);
   // the answer-only note goes to the uncached context; the cached rules + catalog stay byte for byte
   assert.equal(b.system[0].text, a.system[0].text);
-  assert.ok(b.system[1].text.endsWith(`\n${NO_THINKING_NOTE}`) && !a.system[1].text.includes(NO_THINKING_NOTE));
+  const noThinking = noThinkingNote(detectLang(QUESTION));
+  assert.ok(b.system[1].text.endsWith(`\n${noThinking}`) && !a.system[1].text.includes(noThinking));
+  assert.match(noThinking, /in Korean \(한국어\)/);
   // after a tool round: the earlier turn goes back without its thinking block, the tool call and its result stay
   const t = setup([toolRound([["get_pages", { ids: ["/places/선유도/"] }]]), thinkingOnly, textRound("답")]);
   assert.equal((await events(await t.handle(post(ask())))).at(-1).type, "done");
@@ -517,7 +670,37 @@ test("rules: corrections only on new evidence, exact source addresses, dates by 
     "이동 확인이 필요한 후보 일정", "a straight-line distance is not a route", "Give fees per person and the total",
     "어린이 요금 적용 시 7,000원", "plans the reader stopped", "A one-sentence question gets one or two sentences",
     "answer them from the page /about/",
+    // the Korean words of the rules are those of a Korean answer (QA 2026-10-15 C03: a Chinese answer took them over)
+    "in a Korean answer 출처 확인일", "in a Korean answer 평일, 토·일·공휴일", "in a Korean answer 시행일",
+    "its labels in the answer's language — in a Korean answer \"- 10:00–11:00 | 장소",
+    "(in a Korean answer \"이동 확인이 필요한 후보 일정\")", "e.g. in a Korean answer \"어린이 요금 적용 시 7,000원\"",
+    "In any other language use that language's words for them, never the Korean ones",
+    "the pages in the language of your answer (else English)",
+    // street addresses as the data writes them (C09: 'Seo-gu, Sinbanpo-daero 190')
+    "Street addresses: give them as the data writes them, in Korean", "never romanise or translate an address yourself",
+    // a holiday's date is not answered from the regular closed-day rule (C15)
+    "is the regular rule, not the answer for one date",
+    "Never conclude open or closed for that date from the regular rule or from finding no notice",
+    // budgets: the sum written out, time and money apart (C17)
+    "Write each total as its sum", "Time and budget are separate checks",
+    // yes or no only with the reader's own conditions (C19, J15): one sentence, not two that repeat each other
+    "Start with yes or no only when the site's data answers the question with the reader's own conditions",
+    "the first sentence says the site does not say whether that works — never \"yes\"",
+    // no single businesses as examples of a missing kind of data (C11); the confirm page still linked
+    "do not name single businesses as examples of what fits or does not fit",
+    "still link the page where the data says to confirm",
+    // no narration of the model's own searching (C01, C17)
+    "Do not describe your own searching or reading",
+    // emergencies first, from the site's own catalog line (C16, C21)
+    "Emergencies come first", "S /about/#emergency", "no first-aid or medical advice", "answer at once without calling a tool",
+    "Write nothing before calling a tool (rule 14 excepted)",
   ]) assert.ok(RULES.includes(words), words);
+  // the rules name no emergency number (they are site data: the catalog line), no fee from the evaluation's own answer
+  assert.doesNotMatch(RULES, /\b119\b|\b112\b|\b1330\b/);
+  assert.ok(!RULES.includes("22,000") && !RULES.includes("25,200"));
+  // one sentence each: the yes/no rule and the address rule are not repeated in other words
+  assert.equal(RULES.split("Start with yes or no").length, 2);
+  assert.equal(RULES.split("Street addresses").length, 2);
   assert.match(TOOLS.find((t) => t.name === "get_pages").description, /the exact address the value came from/);
 });
 
@@ -614,6 +797,11 @@ test("request shape: model, effort medium, strict eager tools, cached rules+cata
   assert.match(a.system[1].text, /2026-10-13 \(Tuesday, 화요일\) 14:05 KST/);
   assert.match(a.system[1].text, /\/places\/선유도\/ — 선유도/);
   assert.match(b.system[1].text, /Interface language: en/);
+  // the answer's language named for the model: an English question asked on the German pages is answered in English
+  const sys = buildSystem("cat", { now: new Date("2026-10-15T02:00:00Z"), lang: "de", answer: detectLang("Is it open on Monday?", "de") })[1].text;
+  assert.match(sys, /Interface language: de\. The user's last message is written in English: write the whole answer in English/);
+  assert.match(buildSystem("cat", { now: new Date("2026-10-15T02:00:00Z"), lang: "de", answer: detectLang("月曜日は開いていますか", "de") })[1].text,
+    /Japanese \(日本語\)/);
   assert.equal(a.messages.at(-1).content, "첫 질문");
 });
 
@@ -687,6 +875,23 @@ test("client disconnect aborts the model call and sends nothing more", async () 
   assert.equal(logs.at(-1).status, "client_gone");
 });
 
+test("German reader: the German page and its German name, else the English page, else the Korean one", async () => {
+  const answer = `Bus 99. [선유도](/places/선유도/) [Weg](/guides/군산-가는-법-교통/#h-b2) [Wolmyeong-Park](/places/월명공원/) ` +
+    `[복성루](/places/복성루/) [Insel](/en/places/seonyudo-island/)`;
+  const { handle } = setup([textRound(answer)]);
+  const evs = await events(await handle(post(ask("Wie komme ich nach Seonyudo?", "de"))));
+  const done = evs.at(-1);
+  assert.equal(done.fix["/places/선유도/"], `${SITE}/de/places/seonyudo-island/`);
+  assert.equal(done.fix["/guides/군산-가는-법-교통/#h-b2"], `${SITE}/de/guides/how-to-get-to-gunsan/#h-b2`);   // its guide's twin
+  assert.equal(done.fix["/places/월명공원/"], `${SITE}/en/places/wolmyeong-park/`);   // no German page: the English one
+  assert.equal(done.fix["/places/복성루/"], `${SITE}${encodeURI("/places/복성루/")}`);
+  assert.equal(done.fix["/en/places/seonyudo-island/"], `${SITE}/de/places/seonyudo-island/`);   // an English path too
+  const title = (u) => done.links.find((l) => l.url === u)?.title;
+  assert.equal(title(`${SITE}/de/places/seonyudo-island/`), "Insel Seonyudo");   // the Korean link text → the German name
+  assert.equal(title(`${SITE}/de/guides/how-to-get-to-gunsan/#h-b2`), "Weg");   // the answer's own words stay
+  assert.equal(title(`${SITE}/en/places/wolmyeong-park/`), "Wolmyeong-Park");
+});
+
 test("English reader: links to pages with an English version open the English page", async () => {
   const answer = `Take bus 99. [Seonyudo Island](/places/선유도/) [Bokseongnu](/places/복성루/)`;
   const { handle } = setup([textRound(answer)]);
@@ -695,6 +900,256 @@ test("English reader: links to pages with an English version open the English pa
   assert.equal(done.fix["/places/선유도/"], `${SITE}/en/places/seonyudo-island/`);
   assert.equal(done.fix["/places/복성루/"], `${SITE}${encodeURI("/places/복성루/")}`);   // no English page: the Korean one
   assert.equal(done.links[0].title, "Seonyudo Island");
+});
+
+test("links follow the answer's language, not the interface's: an English answer on the Korean pages opens English pages", async () => {
+  const answer = `Take bus 99. [선유도](/places/선유도/) [Bokseongnu](/places/복성루/) [How](/guides/군산-가는-법-교통/)`;
+  let s = setup([textRound(answer)]);
+  let done = (await events(await s.handle(post(ask("How do I get to Seonyudo?", "ko"))))).at(-1);
+  assert.equal(done.fix["/places/선유도/"], `${SITE}/en/places/seonyudo-island/`);
+  assert.equal(done.links.find((l) => l.url.endsWith("/en/places/seonyudo-island/")).title, "Seonyudo Island");
+  assert.equal(done.fix["/places/복성루/"], `${SITE}${encodeURI("/places/복성루/")}`);   // no English page: the Korean one
+  // an Arabic answer: no Arabic version — the English pages, with their English names for Korean labels
+  s = setup([textRound(`الحافلة 99. [선유도](/places/선유도/)`)]);
+  done = (await events(await s.handle(post(ask(C12, "ko"))))).at(-1);
+  assert.equal(done.fix["/places/선유도/"], `${SITE}/en/places/seonyudo-island/`);
+  assert.equal(done.links[0].title, "Seonyudo Island");
+  // a German answer on the Korean pages: the German page; a Korean answer on the German pages: the Korean page
+  s = setup([textRound(`Bus 99. [선유도](/places/선유도/)`)]);
+  done = (await events(await s.handle(post(ask("Wie komme ich nach Seonyudo?", "ko"))))).at(-1);
+  assert.equal(done.fix["/places/선유도/"], `${SITE}/de/places/seonyudo-island/`);
+  assert.equal(done.links[0].title, "Insel Seonyudo");
+  s = setup([textRound(`99번 버스로 갑니다. [Insel](/places/선유도/)`)]);
+  done = (await events(await s.handle(post(ask("선유도 가는 법 알려 줘", "de"))))).at(-1);
+  assert.equal(done.fix["/places/선유도/"], `${SITE}${encodeURI("/places/선유도/")}`);
+  assert.equal(done.links[0].title, "선유도");
+  // a version without its own name for a page: the English name of the page it opens
+  const k = kb();
+  assert.equal(k.nameFor("/places/선유도/", "ja"), "Seonyudo Island");
+  assert.equal(k.nameFor("/places/선유도/", "ko"), "");
+});
+
+test("names in the answer's language for the places a page's Korean text mentions", () => {
+  const docs = { ...DOCS, "/places/이성당/": { ...DOCS["/places/이성당/"], n: { en: "Lee Sung Dang" } }, "/guides/섬/": { t: "섬 여행", k: "guide",
+    x: `섬 여행 — 가이드\n선유도에는 99번 버스로 갑니다. 이성당과 복성루는 시내에 있습니다.\n${"긴 본문. ".repeat(200)}` } };
+  const k = new Knowledge({ catalog: "", docs: { ...KB_DATA.docs, docs }, index: indexOf(docs) });
+  const de = k.pagesText(["/guides/섬/"], { nameLang: "de" }).text;
+  assert.match(de, /\nNames of these places on this site in de: 선유도 = Insel Seonyudo; 이성당 = [^\n]*$/);
+  assert.match(k.pagesText(["/guides/섬/"], { nameLang: "en" }).text, /이성당 = Lee Sung Dang|선유도 = Seonyudo Island/);
+  for (const nl of ["ko", ""]) assert.doesNotMatch(k.pagesText(["/guides/섬/"], { nameLang: nl }).text, /Names of these places/);
+  // the page's own name is in its own line, not repeated; the line stays within its room, also on a small budget
+  assert.doesNotMatch(k.pagesText(["/places/선유도/", "/guides/섬/"], { nameLang: "de" }).text, /Names of[^\n]*선유도 =/);
+  const small = k.pagesText(["/guides/섬/"], { nameLang: "de", budget: 1000 }).text;
+  assert.match(small, /Names of these places on this site in de: 선유도 = Insel Seonyudo/);
+  assert.ok(small.length <= 1000 + 60, small.length);
+  const line = (t) => t.split("\n").find((l) => l.startsWith("Names of")) || "";
+  assert.ok(line(de).length <= NAMES_CHARS);
+  // search results: the names their lines mention
+  assert.match(k.searchText("선유도 버스", { nameLang: "de" }), /\nNames of these places on this site in de: [^\n]*이성당 = Lee Sung Dang/);
+  assert.doesNotMatch(k.searchText("선유도 버스", { nameLang: "de" }), /Names of[^\n]*선유도 =/);   // a hit names itself
+});
+
+test("last call: the model is told to answer now, and the log says which limit", async () => {
+  // the round cap
+  const rounds = Array.from({ length: LIMITS.toolRounds }, (_, i) => toolRound([["search_site", { query: `선유도 ${i}` }]]));
+  rounds.push(textRound("여기까지 찾은 내용입니다."));
+  let s = setup(rounds);
+  await events(await s.handle(post(ask())));
+  const note = lastCallNote(detectLang(QUESTION));
+  const sys = s.client.calls.map((c) => c.params.system);
+  assert.ok(sys.at(-1)[1].text.endsWith(`\n${note}`));
+  assert.ok(sys.slice(0, -1).every((x) => !x[1].text.includes(note)));
+  assert.ok(sys.every((x) => x[0].text === sys[0][0].text));   // the cached part byte for byte
+  assert.equal(s.logs[0].forced, "rounds");
+  // the question's output: 2,000 tokens a call leaves too little for another tool round at the third call
+  const heavy = (round) => ({ ...round, message: { ...round.message, usage: { ...usage, output_tokens: 2000 } } });
+  s = setup([heavy(toolRound([["search_site", { query: "선유도" }]])), heavy(toolRound([["get_pages", { ids: ["/places/선유도/"] }]])),
+    textRound("답")]);
+  await events(await s.handle(post(ask())));
+  const third = s.client.calls[2].params;
+  assert.deepEqual(third.tool_choice, { type: "none" });
+  assert.ok(third.system[1].text.endsWith(`\n${note}`));
+  assert.equal(s.logs[0].forced, "output");
+  // an answer in the first call: nothing forced
+  s = setup([textRound("답")]);
+  await events(await s.handle(post(ask())));
+  assert.equal(s.logs[0].forced, undefined);
+});
+
+// the external evaluation of 2026-10-18: a Korean question got, from a forced last call, an English answer that began
+// "I can't finish a full timed plan, because my lookups ran out before I could check…"
+const EVAL_Q = "2026년 10월 19일 월요일에 초등학생 아이와 차 없이 군산 당일치기로 가려고 해요. 점심 포함 코스를 짜 주세요.";
+const LEAK = "I can't finish a full timed plan, because my lookups ran out before I could check every stop.";
+const BACKSTAGE = /Never mention your own lookups or searches, the pages you read or did not read, your tools or rounds, a limit on how much you may write, or your time or reading running out/;
+
+test("every note names the answer's language and forbids any word about lookups, tools, rounds or limits", async () => {
+  const ko = chooseLang(EVAL_Q);
+  // the forced last call's uncached context: the request's context names Korean, and so does the note after it
+  const rounds = Array.from({ length: LIMITS.toolRounds }, (_, i) => toolRound([["search_site", { query: `선유도 ${i}` }]]));
+  rounds.push(textRound("10월 19일(월)은 차 없이 다닐 수 있는 후보 일정만 짤 수 있습니다."));
+  const s = setup(rounds);
+  await events(await s.handle(post(ask(EVAL_Q, "ko", "/"))));
+  const last = s.client.calls.at(-1).params;
+  assert.deepEqual(last.tool_choice, { type: "none" });
+  assert.match(last.system[1].text, /write the whole answer in Korean \(한국어\)/);
+  const forced = last.system[1].text.slice(last.system[1].text.lastIndexOf("\n") + 1);
+  assert.equal(forced, lastCallNote(ko));
+  assert.match(forced, /^Answer now, in Korean \(한국어\), /);
+  assert.match(forced, BACKSTAGE);
+  assert.match(forced, /never say you could not load, read, check or finish something/);
+  assert.match(forced, /say, for the reader, what the site has and what it lacks, the conclusion first/);
+  assert.doesNotMatch(forced, /reading limit|used up|ran out of|No more pages can be read/);
+  // the same in another language, sure or not
+  assert.match(lastCallNote(detectLang("仙游岛怎么去？请告诉我公交车。")), /^Answer now, in Simplified Chinese \(简体中文\), /);
+  assert.match(lastCallNote(detectLang("Seonyudo?", "fr")),
+    /^Answer now, in the language of the reader's last question \(if it shows none: French \(français\)\), /);
+  // every other note: the answer's language and the same prohibition
+  const ja = detectLang("仙遊島への行き方を教えてください");
+  for (const [name, text] of [["noThinkingNote", noThinkingNote(ko)], ["languageRetryNote", languageRetryNote(ko)],
+    ["languageReminder", languageReminder(ja)], ["continueFor (another language)", continueFor("끝", detectLang("ما هي ساعات العمل؟"))],
+    ["lastCallNote", lastCallNote(ko)]]) {
+    assert.match(text, BACKSTAGE, name);
+    // only the answer's own making: 'time' only as its time running out, 'limit' only on how much it may write — bus
+    // times, parking time limits and age limits are what answers are about
+    assert.deepEqual(text.match(/\btimes?\b[^,.:]*/g), ["time or reading running out"], name);
+    assert.deepEqual(text.match(/\blimits?\b[^,]*/g), ["limit on how much you may write"], name);
+  }
+  assert.match(noThinkingNote(ko), /in Korean \(한국어\)/);
+  assert.match(languageRetryNote(ko), /not written in Korean \(한국어\)\. Write the whole answer in Korean \(한국어\)/);
+  assert.match(languageReminder(ja), /in Japanese \(日本語\)/);
+  assert.equal(answerLangName(ko), "Korean (한국어)");
+  // the request to go on, in each of the nine languages: that language named, in it, with the same prohibition
+  // (the answer's own lookups, a limit on how much it may write, its time or reading running out — not limits or time
+  // in general)
+  const own = { ko: /나머지도 한국어로 쓰세요\. 답을 만들며 찾아본 과정[^«]*쓸 수 있는 분량의 한도[^«]*답을 쓸 시간이나 읽을 거리가 떨어졌다[^«]*결론부터/,
+    en: /Write the rest in English\. Never mention your own lookups[^«]*a limit on how much you may write, or your time or reading running out/,
+    ja: /続きも日本語で書いてください。回答のために調べた過程[^«]*書ける分量の上限[^«]*回答の時間や読める量が尽きた/,
+    "zh-Hans": /接下来的部分也用简体中文写。不要提你为回答而查找的过程[^«]*能写的篇幅上限[^«]*你回答的时间或可读的内容用完了/,
+    "zh-Hant": /接下來的部分也用繁體中文寫。不要提你為回答而查找的過程[^«]*能寫的篇幅上限[^«]*你回答的時間或可讀的內容用完了/,
+    de: /Schreibe den Rest auf Deutsch\. Erwähne nicht deine eigenen Suchen[^«]*wie viel du schreiben darfst[^«]*dass dir Zeit oder Lesestoff ausgegangen ist/,
+    fr: /Écris la suite en français\. Ne mentionne ni tes propres recherches[^«]*ce que tu peux écrire[^«]*que ton temps ou ta lecture s'est épuisé/,
+    es: /Escribe el resto en español\. No menciones tus propias búsquedas[^«]*lo que puedes escribir[^«]*que se te acabó el tiempo o la lectura/,
+    ru: /Пиши продолжение по-русски\. Не упоминай свои поиски[^«]*сколько ты можешь написать[^«]*у тебя кончилось время/ };
+  const general = { en: /\blimits\b|anything running out/, de: /Grenzen\b|nichts, das aufgebraucht/, fr: /\blimites\b|rien d'épuisé/,
+    es: /\blímites\b|nada que se haya agotado/, ru: /лимиты|что-то закончилось/, ko: /무엇이 다 떨어졌다/, ja: /何かが尽きた/,
+    "zh-Hans": /什么用完了/, "zh-Hant": /什麼用完了/ };
+  for (const [lang, rx] of Object.entries(own)) {
+    const t = continueText("끝부분", lang);
+    assert.match(t, rx, lang);
+    assert.doesNotMatch(t, general[lang], lang);
+    assert.ok(t.endsWith("\n«끝부분»"), lang);
+  }
+  // the rest the server asks for itself carries it too: in Korean for the evaluation's question
+  assert.match(continueFor("끝", ko), /^\(이어 쓰기\) [\s\S]*나머지도 한국어로 쓰세요\.[\s\S]*끊긴 곳:\n«끝»$/);
+});
+
+test("a request to go on names a language only when sure of it: an unsure question on /fr/ is not ordered into French", async () => {
+  const fr = chooseLang("Seonyudo?", [], "fr");
+  assert.deepEqual([fr.code, fr.site, fr.sure], ["fr", "fr", false]);
+  const t = continueFor("- 10:00 |", fr);
+  assert.match(t, /^\(continue\) [\s\S]* Write it in the language the cut answer is written in\. It ended with:\n«- 10:00 \|»$/);
+  assert.doesNotMatch(t, /French|français|Écris la suite/);
+  assert.match(t, BACKSTAGE);
+  // the same through the server: the reader's '이어서 보기' after that question, on the French pages
+  const s = setup([textRound("suite")]);
+  await events(await s.handle(post({ messages: [{ role: "user", content: "Seonyudo?" }, { role: "assistant", content: "- 10:00 |" }],
+    lang: "fr", page: "/fr/", continue: true })));
+  assert.equal(s.client.calls[0].params.messages.at(-1).content, t);
+  // sure of it: the request in that language, naming it; a language the site has no version of: the English request
+  // naming it
+  assert.match(continueFor("x", chooseLang("Le musée est-il ouvert le lundi ?", [], "fr")), /^\(suite\) [\s\S]*Écris la suite en français\./);
+  assert.match(continueFor("x", chooseLang("ما هي ساعات العمل؟", [], "fr")), /Write it in Arabic \(العربية\)\./);
+  assert.match(continueFor("x", undefined), /Write it in the language the cut answer is written in\./);
+});
+
+test("the language gate holds every call's first text: a forced last call that starts in English is asked again", async () => {
+  // the evaluation's case: tool rounds up to the cap, then the forced last call writes the leak, in English
+  const rounds = Array.from({ length: LIMITS.toolRounds }, (_, i) => toolRound([["search_site", { query: `군산 ${i}` }]]));
+  const ok = "10월 19일(월)에 차 없이 다닐 수 있는 후보 일정입니다. 이동 확인이 필요한 후보 일정이니 지도 앱으로 확인하세요.";
+  const shown = (evs) => evs.filter((e) => e.type === "text").map((e) => e.delta).join("");
+  let s = setup([...rounds, textRound(LEAK), textRound(ok)]);
+  assert.equal(shown(await events(await s.handle(post(ask(EVAL_Q, "ko", "/"))))), ok);
+  assert.equal(s.client.calls.length, LIMITS.toolRounds + 2);
+  const retry = s.client.calls.at(-1).params;
+  assert.deepEqual(retry.tool_choice, { type: "none" });   // still the forced last call
+  assert.match(retry.system[1].text, /Your previous attempt at this answer was not written in Korean \(한국어\)/);
+  assert.ok(retry.system[1].text.endsWith(`\n${lastCallNote(chooseLang(EVAL_Q))}`));
+  assert.deepEqual([s.logs[0].lang_retry, s.logs[0].forced], [1, "rounds"]);
+  // … also after an earlier round wrote a line the reader has seen: the gate is per call, not per request
+  const said = "군산역 가까운 곳부터 살펴봅니다.";
+  const textAndTool = {
+    events: [{ type: "message_start", message: { usage } },
+      { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } },
+      { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: said } },
+      { type: "content_block_stop", index: 0 },
+      ...toolRound([["search_site", { query: "군산역" }]]).events.slice(1)],
+    message: { role: "assistant", content: [{ type: "text", text: said },
+      { type: "tool_use", id: "toolu_t", name: "search_site", input: { query: "군산역" } }], stop_reason: "tool_use", usage },
+  };
+  s = setup([textAndTool, ...rounds.slice(1), textRound(LEAK), textRound(ok)]);
+  assert.equal(shown(await events(await s.handle(post(ask(EVAL_Q, "ko", "/"))))), `${said}\n\n${ok}`);
+  assert.equal(s.logs[0].lang_retry, 1);
+  // once per question: after its retry, a later call is not held
+  s = setup([...rounds, textRound(LEAK), textRound(LEAK)]);
+  assert.equal(shown(await events(await s.handle(post(ask(EVAL_Q, "ko", "/"))))), LEAK);
+});
+
+test("the language gate holds a continuation too: the rest of a cut answer in another language is asked again", async () => {
+  const sized = (round, out) => ({ ...round, message: { ...round.message, usage: { ...usage, output_tokens: out } } });
+  const shown = (evs) => evs.filter((e) => e.type === "text").map((e) => e.delta).join("");
+  const partA = "10월 19일(월) 후보 일정입니다.\n\n- 10:00 | [선유도](/places/선유도/) | 그날 운영: 엶 | 요금: 무";
+  const english = "료 | travel: check in a map app\n- 13:00 | Wolmyeong Park | open that day | fee: free of charge for everyone, "
+    + "and the lunch stop near the station is open too, so the afternoon can go on from there as planned.";
+  const rest = "료 | 이동: 미확인\n- 13:00 | [월명공원](/places/월명공원/) | 그날 운영: 엶 | 요금: 무료";
+  // the rest this request asks for itself (the answering call stopped at max_tokens)
+  let s = setup([sized(textRound(partA, "max_tokens"), 4000), textRound(english), textRound(rest)]);
+  assert.equal(shown(await events(await s.handle(post(ask(EVAL_Q, "ko", "/"))))), `${partA}${rest}`);
+  assert.equal(s.client.calls.length, 3);
+  const again = s.client.calls[2].params;
+  assert.deepEqual([again.tool_choice, again.output_config], [{ type: "none" }, { effort: "low" }]);   // still the continuation
+  assert.match(again.messages.at(-1).content, /^\(이어 쓰기\) [\s\S]*나머지도 한국어로 쓰세요/);
+  assert.match(again.system[1].text, /not written in Korean \(한국어\)/);
+  assert.equal(s.logs[0].lang_retry, 1);
+  // a continue request from the browser
+  s = setup([textRound(english), textRound(rest)]);
+  const body = { messages: [{ role: "user", content: EVAL_Q }, { role: "assistant", content: partA }], lang: "ko", page: "/", continue: true };
+  assert.equal(shown(await events(await s.handle(post(body)))), rest);
+  assert.equal(s.client.calls.length, 2);
+  assert.equal(s.logs[0].lang_retry, 1);
+});
+
+test("error texts: nine languages, the answer's language in the stream, the page's for a refused body", async () => {
+  for (const lang of ["ko", "en", "ja", "zh-Hans", "zh-Hant", "de", "fr", "es", "ru"]) {
+    for (const code of ["not_configured", "rate_limited", "daily_limit", "too_long", "busy", "timeout", "refusal", "truncated",
+      "error", "unavailable", "empty", "too_large", "bad_request"]) {
+      const t = errorText(lang, code);
+      assert.ok(t && t.length > 3, `${lang} ${code}`);
+      if (lang !== "en") assert.notEqual(t, errorText("en", code), `${lang} ${code}`);
+    }
+  }
+  assert.equal(errorText("ko", "unavailable"), errorText("ko", "busy"));
+  assert.equal(errorText("xx", "busy"), errorText("en", "busy"));
+  // a refusal in the stream: in the answer's language (a Chinese question on the Korean pages), not the interface's
+  const s = setup([{ ...textRound(""), message: { role: "assistant", content: [], stop_reason: "refusal", usage } }]);
+  const evs = await events(await s.handle(post(ask("仙游岛怎么去？请告诉我公交车。", "ko", "/"))));
+  assert.deepEqual([evs.at(-1).code, evs.at(-1).message], ["refusal", errorText("zh-Hans", "refusal")]);
+  // a question over 800 characters: in the page's language
+  const long = await s.handle(post({ messages: [{ role: "user", content: "가".repeat(801) }], lang: "ja" }));
+  assert.equal(long.status, 413);
+  assert.deepEqual(await long.json(), { code: "too_long", message: errorText("ja", "too_long") });
+});
+
+test("emergency: the about page's section is a link, its numbers are calls", () => {
+  const docs = { ...DOCS, "/about/#emergency": { t: "긴급 연락처", k: "page", e: "/en/about/", h: "긴급 연락처",
+    x: "긴급 연락처\n- 119: 소방·구급차" } };
+  const k = new Knowledge({ catalog: "", docs: { ...KB_DATA.docs, docs }, index: indexOf(docs) });
+  const { fix, links } = k.fixLinks("Call [119](tel:119) or [112](tel:112), [1330](tel:1330), [+82-2-1330](tel:+82-2-1330). "
+    + "[Emergency](/about/#emergency) [x](tel:12)", "en");
+  for (const n of ["119", "112", "1330", "+82-2-1330"]) assert.equal(fix[`tel:${n}`], `tel:${n}`, n);
+  assert.equal(fix["tel:12"], null);
+  assert.equal(fix["/about/#emergency"], `${SITE}/en/about/#emergency`);
+  assert.deepEqual(links.map((l) => l.url), [`${SITE}/en/about/#emergency`]);
+  assert.equal(k.fixLinks("[긴급](/about/#emergency)", "ko").fix["/about/#emergency"], `${SITE}/about/#emergency`);
 });
 
 // ------------------------------------------------------------------ knowledge: loading, search, pages
@@ -741,7 +1196,7 @@ test("seoulNow: the date and weekday in Korea", () => {
   const sys = buildSystem("CAT", { now: new Date("2026-10-12T16:30:00Z"), page: "", lang: "ja" });
   assert.match(sys[0].text, /\n\n<site_data source="catalog">\nCAT\n<\/site_data>$/);   // the catalog closes the cached block
   assert.match(sys[1].text, /2026-10-13 \(Tuesday, 화요일\) 01:30 KST/);
-  assert.ok(TOOLS.length === 2);
+  assert.deepEqual(TOOLS.map((t) => t.name), ["search_site", "get_pages", "fee_total", "check_plan"]);
 });
 
 // ------------------------------------------------------------------ security (docs/handover/chatbot.md '보안')
@@ -1092,6 +1547,29 @@ test("fixLinks: only pages that exist, and outside addresses exactly as the data
   assert.deepEqual(Object.keys(JSON.parse(JSON.stringify(fix))).sort(), [...raws].sort());
 });
 
+test("fixLinks: an official booking page (docs.json book) opens the page the reader's version opens, as a booking card", () => {
+  const ferryKo = "https://island.theksa.co.kr/page/booking?lang=";
+  const ferryEn = "https://island.theksa.co.kr/page/booking?lang=en";
+  const forest = "https://www.foresttrip.go.kr/indvz/main.do?hmpgId=0301";
+  const airbnb = "https://airbnb.com/h/oblomov";
+  const docs = { ...KB_DATA.docs, ext: [...KB_DATA.docs.ext, ferryKo, ferryEn, forest, airbnb],
+    book: { [ferryKo]: { k: "ferry", p: { en: ferryEn, ja: ferryEn, de: ferryEn }, l: { [ferryKo]: "ko", [ferryEn]: "en" } },
+      [forest]: { k: "forest", p: {}, l: { [forest]: "ko" } } } };
+  const k = new Knowledge({ catalog: KB_DATA.catalog, docs, index: indexOf(DOCS) });
+  let r = k.fixLinks(`[예매](${ferryKo})`, "en");
+  assert.equal(r.fix[ferryKo], ferryEn);
+  assert.deepEqual(r.links, [{ title: "예매", url: ferryEn, ext: true, book: "ferry", hl: "en" }]);
+  r = k.fixLinks(`[ferry](${ferryEn}) [ferry again](${ferryKo})`, "ko");   // a Korean reader: the Korean page, once
+  assert.equal(r.fix[ferryEn], ferryKo);
+  assert.deepEqual(r.links, [{ title: "ferry", url: ferryKo, ext: true, book: "ferry", hl: "ko" }]);
+  r = k.fixLinks(`[Wald](${forest})`, "de");   // no German or English page: the Korean one
+  assert.deepEqual(r.links, [{ title: "Wald", url: forest, ext: true, book: "forest", hl: "ko" }]);
+  r = k.fixLinks(`[Oblomov](${airbnb})`, "en");   // in the data, not a booking page of 예약하기: a plain outside link
+  assert.deepEqual(r.links, [{ title: "Oblomov", url: airbnb, ext: true }]);
+  assert.ok(RULES.includes("link the official booking address the page's data lists under '예약하기'"));
+  assert.ok(RULES.includes("never link a booking or travel-agency site the data does not list under '예약하기'"));
+});
+
 test("search_site: long and regex-like queries are plain words — no error, no slowdown, read up to QUERY_CHARS", async () => {
   const k = kb();
   for (const q of ["(a+)+$", ".*", "[", "\\", "((((((((((", "^$|?*+{}", "a".repeat(100000), "가".repeat(100000),
@@ -1160,8 +1638,33 @@ test("real knowledge: every kind is there and searches find the right pages", { 
   assert.match(titles("비 오는 날 실내"), /비 오는 날/);
   assert.ok(k.search("짬뽕", { kind: "place" }).length >= 5);
   assert.ok(k.search("Gyeongam-dong Railroad Village")[0].title.includes("철길마을"));
+  // the page's name on the version in the answer's language goes with it, so the model need not translate the Korean one
+  assert.match(k.pagesText(["/places/선유도/"], { nameLang: "de" }).text, /^### 선유도 · name in de: Insel Seonyudo/m);
+  assert.doesNotMatch(k.pagesText(["/places/선유도/"], { nameLang: "ko" }).text, /name in/);
+  assert.match(k.describePage("/places/선유도/", "de"), /name in de: Insel Seonyudo/);
   const { links } = k.fixLinks("[월명공원](/places/월명공원/)", "en");
   assert.equal(links[0]?.url, `${SITE}/en/places/wolmyeong-park/`);
+  // the site search opens in the answer's language too (QA 2026-10-15: it stayed on the Korean /search/)
+  assert.equal(k.fixLinks("[site search](/search/)", "en").fix["/search/"], `${SITE}/en/search/`);
+  assert.equal(k.fixLinks("[検索](/search/)", "ja").fix["/search/"], `${SITE}/ja/search/`);
+  // the places a guide mentions in its Korean text, named in the answer's language (QA C06: 'Nationales Museum …')
+  const museum = k.docs["/places/근대역사박물관/"].n || {};
+  const wheel = k.pagesText(["/guides/군산-휠체어-여행/"], { nameLang: "de", budget: LIMITS.toolChars }).text;
+  assert.ok(wheel.includes(`근대역사박물관 (군산근대역사박물관) = ${museum.de || museum.en}`), wheel.slice(-600));
+  assert.ok(wheel.length <= LIMITS.toolChars, wheel.length);
+  assert.match(k.searchText("선유도 버스", { nameLang: "zh-Hans" }), /\nNames of these places on this site in zh-Hans: [^\n]*비응항 = /);
+  // an event series' card name in every version that lists it (X1)
+  const series = Object.values(k.docs).filter((d) => d.k === "event" && d.l);
+  assert.ok(series.length > 10 && series.every((d) => Object.keys(d.l).every((h) => d.n && d.n[h])), "event names");
+  // the emergency numbers (operator 2026-10-15): one short catalog line without addresses, the page's doc with its sources
+  const sos = k.catalog.split("\n").filter((l) => l.startsWith("S /about/#emergency |"));
+  assert.equal(sos.length, 1);
+  assert.ok(["119", "112", "1330"].every((n) => sos[0].includes(n)) && !sos[0].includes("http"), sos[0]);
+  const em = k.docs["/about/#emergency"].x;
+  assert.ok(em.includes("vcontsId=248145") && em.includes("vcontsId=140632") && em.includes("출처 확인 2026-10-15"), em);
+  assert.equal(k.search("응급 구급차")[0].key, "/about/#emergency");
+  const jaAbout = (k.docs["/about/"].l || {}).ja || k.docs["/about/"].e;   // the Japanese version's page (else English)
+  assert.equal(k.fixLinks("[x](/about/#emergency)", "ja").fix["/about/#emergency"], `${SITE}${jaAbout}#emergency`);
   // every page of the site: a long query of many different syllables stays fast, prototype names are no pages
   const many = Array.from({ length: 50000 }, (_, i) => String.fromCharCode(0xac00 + ((i * 7) % 11172))).join("");
   const t0 = performance.now();
@@ -1237,12 +1740,12 @@ test("the pinned SDK exposes what server.js calls", { skip: false }, async (t) =
 // ------------------------------------------------------------------ the site comes from the build (chatbot/site.js)
 test("site: public/chat/site.json names the site and the city; nothing city-specific is built in", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "chat-site-"));
-  assert.deepEqual(loadSite(dir), { url: "", name: "", city: {}, origins: [] });   // no file: no address, no city
+  assert.deepEqual(loadSite(dir), { url: "", name: "", city: {}, origins: [], hubs: {} });   // no file: no address, no city
   await writeFile(path.join(dir, "site.json"), JSON.stringify({ url: "https://travel.example.kr/", name: "테스트 여행",
     city: { ko: "테스트시", en: "Testcity", ru: "" }, origins: ["https://old.example.kr", "http://plain.example", "evil/x"] }));
   const site = loadSite(dir);
   assert.deepEqual(site, { url: "https://travel.example.kr", name: "테스트 여행", city: { ko: "테스트시", en: "Testcity" },
-    origins: ["https://old.example.kr"] });
+    origins: ["https://old.example.kr"], hubs: {} });
   const r = rules(site);
   assert.ok(r.startsWith("You are 테스트시 여행 도우미 (the Testcity travel helper), the assistant of the travel website "
     + "테스트 여행 (https://travel.example.kr)"), r.slice(0, 160));
@@ -1250,12 +1753,515 @@ test("site: public/chat/site.json names the site and the city; nothing city-spec
   for (const word of ["군산", "Gunsan", "gunsan", "群山", "Кунсан"]) {
     assert.ok(!rules({}).includes(word) && !r.includes(word), word);
     for (const lang of ["ko", "en", "ja", "zh-Hans", "zh-Hant", "de", "fr", "es", "ru"]) {
-      assert.ok(!continueTextFor("x", lang, site).includes(word) && !continueTextFor("x", lang, {}).includes(word), lang);
+      assert.ok(!continueTextFor("x", lang, "", site).includes(word) && !continueTextFor("x", lang, "", {}).includes(word), lang);
     }
   }
-  assert.match(continueTextFor("x", "en", site), /travel in Testcity/);
-  assert.match(continueTextFor("x", "ru", site), /Testcity/);              // no Russian name: the English one
+  assert.match(continueTextFor("x", "en", "", site), /travel in Testcity/);
+  assert.match(continueTextFor("x", "ru", "", site), /Testcity/);              // no Russian name: the English one
   assert.deepEqual([...allowedOriginsFor({}, site)], ["https://travel.example.kr", "https://old.example.kr"]);
   assert.deepEqual([...allowedOriginsFor({}, loadSite(path.join(dir, "none")))], []);
   assert.equal(priorAnswerFor("[a](https://travel.example.kr/places/%EA%B0%80/)", site.url), "[a](/places/가/)");
+});
+
+// ------------------------------------------------------------------ the answer's language (review 2026-10-17 L03 · L10)
+test("requestedLang: an output request in each language, never a name question, content or a request said the other way", () => {
+  for (const [q, want] of [
+    ["Please answer only in Korean: Does the Gunsan Modern History Museum close on Mondays?", "ko"],
+    ["日本語で、同じ博物館の大人の入場料を教えてください。", "ja"],
+    ["请用简体中文回答：从群山站乘公交到仙游岛，周二怎样返回群山站？", "zh-Hans"],
+    ["不要用英文，請用繁體中文回答：群山近代歷史博物館週一休館嗎？", "zh-Hant"],
+    ["Bitte antworte auf Deutsch: Ist der Eintritt für ein Kind kostenlos?", "de"],
+    ["En français : le stationnement est-il gratuit ?", "fr"],
+    ["Responde en español: ¿cuál es la hora de cierre en octubre?", "es"],
+    ["Ответь по-русски: открыт ли музей в понедельник?", "ru"],
+    ["Tell me the fee for one adult. Answer in English.", "en"],
+    ["영어로 답하지 말고 한국어로 답해줘", "ko"],
+    ["중국어로 알려줘", "zh-Hans"],
+    ["Korean only please", "ko"],
+  ]) assert.equal(requestedLang(q, "ko"), want, q);
+  for (const q of ["선유도는 영어로 뭐라고 해?", "Is there a menu in English?", "¿Hay menú en inglés?", "Gibt es eine Führung auf Englisch?",
+    "Есть ли меню на английском?", "Le guide parle-t-il en anglais ?", "英語で注文できますか", "可以用英文点菜吗",
+    "Do not answer in English", "Bitte antworte nicht auf Englisch", "2?"]) assert.equal(requestedLang(q, "ko"), "", q);
+  assert.equal(requestedLang("用中文回答", "zh-Hant"), "zh-Hant");   // Chinese with no script: the interface's
+});
+
+test("chooseLang: asked for → a lasting request → the question's own → the previous answer's for '2?' → the interface", () => {
+  const ja = [{ role: "user", content: "日本語で、同じ博物館の大人の入場料を教えてください。" },
+    { role: "assistant", content: "大人の入場料は、個別券が**2,000ウォン**、統合券（박물관 통합권）が**3,000ウォン**です。\n\n[群山近代歴史博物館](https://gunsan.webforai.kr/places/근대역사박물관/)" }];
+  assert.deepEqual(chooseLang("2?", ja, "ko"), { code: "ja", site: "ja", dir: "", sure: true, why: "previous" });
+  assert.equal(chooseLang("KTX 시간", ja, "ko").code, "ko");   // Hangul: Korean, not the previous answer's
+  assert.equal(chooseLang("2?", [], "ko").why, "interface");
+  assert.deepEqual(chooseLang("Please answer only in Korean: Does the museum close on Mondays?", ja, "ko"),
+    { code: "ko", site: "ko", dir: "", sure: true, why: "asked" });
+  const kept = [{ role: "user", content: "From now on answer only in English." }, { role: "assistant", content: "Sure." }];
+  assert.equal(chooseLang("월요일에 열어요?", kept, "ko").why, "standing");
+  assert.equal(chooseLang("월요일에 열어요?", ja, "ko").why, "question");
+  const once = [{ role: "user", content: "Answer in English: is it open?" }, { role: "assistant", content: "Yes." }];
+  assert.equal(chooseLang("월요일에 열어요?", once, "ko").code, "ko");   // a one-time request does not carry over
+  const ctx = (q, earlier) => buildSystem("cat", { now: new Date("2026-10-17T07:00:00Z"), lang: "ko", answer: chooseLang(q, earlier, "ko") })[1].text;
+  assert.match(ctx("Please answer only in Korean: open on Mondays?", []), /The user's last message asks for the answer in Korean \(한국어\): write the whole answer in Korean/);
+  assert.match(ctx("2?", ja), /shows no language of its own \(only a number, a name or a sign\); the previous answer was in Japanese \(日本語\): write the whole answer in Japanese/);
+  assert.ok(RULES.includes("ask one short question back"));
+  assert.ok(RULES.includes("the language the reader asked the answer to be in"));
+});
+
+test("the language asked for sets the meta event, the links and the cards (L10); '2?' keeps the previous answer's (L03)", async () => {
+  const answer = "네, 매주 월요일에 휴관합니다. [선유도](/places/선유도/)";
+  let s = setup([textRound(answer)]);
+  let evs = await events(await s.handle(post(ask("Please answer only in Korean: Is Seonyudo open on Mondays?", "ko"))));
+  assert.deepEqual(evs[0], { type: "meta", dir: "", site: "ko", lang: "ko" });
+  assert.equal(evs.at(-1).fix["/places/선유도/"], `${SITE}${encodeURI("/places/선유도/")}`);
+  assert.equal(s.logs[0].qlang, "ko");
+  s = setup([textRound("2,000ウォンは個別券です。[仙遊島](/places/선유도/)")]);
+  const msgs = [{ role: "user", content: "日本語で、仙遊島への行き方を教えてください。" }, { role: "assistant", content: "99番バスです。" },
+    { role: "user", content: "2?" }];
+  evs = await events(await s.handle(post({ messages: msgs, lang: "ko", page: "/" })));
+  assert.deepEqual(evs[0], { type: "meta", dir: "", site: "ja", lang: "ja" });
+  assert.match(s.client.calls[0].params.system[1].text, /the previous answer was in Japanese/);
+});
+
+// ------------------------------------------------------------------ fee_total and check_plan (review 2026-10-17 G01 · G02)
+const SRC = (what) => `군산시 문화관광 ${what} https://www.gunsan.go.kr/tour/x (출처 확인 2026-10-08)`;
+const PLACES4 = [{ path: "/places/근대역사박물관/", name: "근대역사박물관" }, { path: "/places/미술관/", name: "미술관" },
+  { path: "/places/건축관/", name: "건축관" }, { path: "/places/진포해양공원/", name: "진포해양공원" }];
+const TICKETS = [
+  // resident: the residents' price group as the sample city's tables head it (pipeline/tickets.py export)
+  { id: "museum-combined", name: "박물관 통합권", resident: "군산시민", places: PLACES4, src: SRC("박물관 표"),
+    prices: { 개인: { 성인: [3000, 2000], "청소년·군인": [2000, 1000], 어린이: [1000, 500] },
+      단체: { 성인: [2000, 1000], "청소년·군인": [1000, 500], 어린이: [500, 400] } }, rules: [] },
+  { id: "geumgang-combined", name: "금강권 통합권", resident: "군산시민", src: SRC("박물관 표"),
+    places: [...PLACES4, { path: "/places/채만식-문학관/", name: "채만식 문학관" }],
+    prices: { 개인: { 성인: [5000, 3000], "청소년·군인": [4000, 2000], 어린이: [3000, 1000] },
+      단체: { 성인: [3000, 2000], "청소년·군인": [2000, 1000], 어린이: [1000, 500] } },
+    rules: [{ kind: "age", category: "어린이", from: 7, to: 12, text: "어린이(7~12세)", src: SRC("체험관 표") },
+      { kind: "free", who: "6세 이하 유아", age_max: 6, src: SRC("기념관 표") },
+      { kind: "free", who: "65세 이상 어른", age_min: 65, src: SRC("기념관 표") },
+      { kind: "note", text: "단체할인은 20인 이상부터", src: SRC("기념관 표") }] },
+];
+const PLAN_DOCS = {
+  ...DOCS,
+  "/places/군산항1981/": { t: "군산항1981", k: "place", x: "군산항1981 — 관광지",
+    f: { g: [35.989023, 126.71779], b: ["01", "07"], c: [{ p: "한국관광공사", t: "매주 수요일, 1월 1일" }], h: [{ p: "한국관광공사 TourAPI", t: "09:00~20:00" }] } },
+  "/places/국립군산대학교-박물관/": { t: "국립군산대학교 박물관", k: "place", x: "국립군산대학교 박물관 — 관광지",
+    f: { g: [35.945516, 126.685134], b: ["99"], c: [{ p: "한국관광공사", t: "매주 토요일, 일요일, 공휴일" }], h: [{ p: "한국관광공사 TourAPI", t: "10:00~17:00" }] } },
+  "/places/근대역사박물관/": { t: "근대역사박물관", k: "place", x: "근대역사박물관 — 관광지",
+    f: { g: [35.99082, 126.712123], c: [{ p: "공식 홈페이지", t: "매주 월요일, 1월 1일" }],
+      h: [{ p: "박물관 홈페이지", t: "3월~10월 09:00~18:00(입장마감 17:30) / 11월~2월 09:00~17:00(입장마감 16:30)" }] } },
+  "/places/이성당/": { ...DOCS["/places/이성당/"], f: { g: [35.987044, 126.711168], c: [{ p: "한국관광공사", t: "연중무휴" }],
+    h: [{ p: "한국관광공사 TourAPI", t: "- 일요일~목요일 08:00~21:30- 금요일~토요일 08:00~22:00" }] } },
+  "/places/진포해양공원/": { t: "진포해양공원", k: "place", x: "진포해양공원 — 관광지",
+    f: { g: [35.99, 126.715], c: [{ p: "한국관광공사", t: "매주 월요일" }],
+      h: [{ p: "한국관광공사 TourAPI", t: "[하절기 (3월~10월)] 09:00~18:00[동절기 (11월~2월)] 09:00~17:00※ 입장은 종료 30분 전까지 가능" }] } },
+  "/places/건축관/": { t: "건축관", k: "place", x: "건축관 — 관광지",
+    f: { c: [{ p: "군산시", t: "매월 둘째·넷째 화요일" }], h: [{ p: "군산시", t: "동절기 09:00 - 17:00 하절기 09:00 - 18:00" }] } },
+};
+const planKb = () => new Knowledge({ catalog: KB_DATA.catalog, docs: { ...KB_DATA.docs, docs: PLAN_DOCS, tickets: TICKETS }, index: indexOf(PLAN_DOCS) });
+
+test("fee_total: one total per ticket, the table's own rules only, a person it has no rule for is 확인 필요", () => {
+  const k = planKb();
+  // the review's family: adult, 7 and 4 — the museum ticket's table gives no age or free rule
+  let r = k.feeTotal({ ticket: "박물관 통합권", people: [{ count: 1, category: "성인" }, { count: 1, age: 7, category: "어린이" }, { count: 1, age: 4 }] });
+  assert.equal(r.total, null);
+  assert.equal(r.known, 4000);
+  assert.match(r.text, /- 4살 1명: 확인 필요/);
+  assert.match(r.text, /확인된 사람만의 합계\(식\): 3,000 \+ 1,000 = 4,000원/);
+  assert.match(r.text, /7살을 '어린이'로 본 값/);
+  assert.match(r.text, /참고로 같은 시설을 포함하는 '금강권 통합권' 요금표의 규칙: 어린이\(7~12세\)/);
+  assert.doesNotMatch(r.text, /8,000/);
+  // the 금강권 table's rules: 7 is 어린이, 4 enters free
+  r = k.feeTotal({ ticket: "금강권통합권", people: [{ count: 1, category: "성인" }, { count: 1, age: 7 }, { count: 1, age: 4 }] });
+  assert.equal(r.total, 8000);
+  assert.match(r.text, /합계\(식\): 5,000 \+ 3,000 \+ 0 = 8,000원\. 답의 첫 문장·표·끝 어디서나 이 합계 8,000원 하나만 쓴다/);
+  assert.match(r.text, /- 4살 1명: 0원 \(무료입장 '6세 이하 유아'/);
+  // a category that contradicts the table's age; 군산시민 prices; group under 20 stays 개인
+  r = k.feeTotal({ ticket: "금강권 통합권", people: [{ count: 2, category: "성인" }, { count: 1, age: 13, category: "어린이" }], resident: true, group: true });
+  assert.equal(r.total, null);
+  assert.equal(r.known, 6000);
+  assert.match(r.text, /단체할인은 20인 이상 — 이 질문은 3명이라 개인 요금/);
+  assert.match(r.text, /질문의 구분 '어린이'와 요금표의 '어린이\(7~12세\)'가 맞지 않음/);
+  // items: the pages' prices, multiplied and added; an unknown ticket lists the tables there are
+  r = k.feeTotal({ items: [{ label: "테디베어박물관 성인", won: 9000, count: 2 }, { label: "어린이", won: 7000, count: 1 }] });
+  assert.equal(r.total, 25000);
+  assert.match(r.text, /18,000 \+ 7,000 = 25,000원/);
+  assert.match(k.feeTotal({ ticket: "자유이용권", people: [{ count: 1 }] }).text, /표가 있는 통합권: 박물관 통합권/);
+  // what a ticket opens is its places' page names (docs.json has no 'covers': a run of 군산시 문화관광's page)
+  r = k.feeTotal({ ticket: "박물관 통합권", people: [{ count: 1, category: "성인" }] });
+  assert.match(r.text, /^박물관 통합권\(4곳: 근대역사박물관 · 미술관 · 건축관 · 진포해양공원\) — 개인 요금, 군산시민 아님/);
+  assert.match(k.feeTotal({ ticket: "자유이용권", people: [{ count: 1 }] }).text,
+    /표가 있는 통합권: 박물관 통합권\(4곳: 근대역사박물관 · 미술관 · 건축관 · 진포해양공원\); 금강권 통합권\(5곳: 근대역사박물관 · 미술관 · 건축관 · 진포해양공원 · 채만식 문학관\)\./);
+  assert.doesNotMatch(r.text + k.feeTotal({ ticket: "x", people: [{ count: 1 }] }).text, /undefined|\+/);
+});
+
+test("fee_total by birth year (the museum's 관람안내 table of 2026): one category or 확인 필요, never a guess", () => {
+  const born = [["성인", 1962, 2007], ["청소년·군인", 2008, 2013], ["어린이", 2014, 2019]].map(([category, from, to]) =>
+    ({ kind: "born", category, from, to, text: `${from}년~ ${to}년생`, year: 2026, src: "박물관 홈페이지" }));
+  const tickets = TICKETS.map((t) => (t.id === "museum-combined"
+    ? { ...t, rules: [...born, { kind: "free", who: "6세 이하 유아", age_max: 6, src: "박물관 홈페이지" }] }
+    : { ...t, rules: [...born, ...t.rules] }));
+  const k = new Knowledge({ catalog: KB_DATA.catalog, docs: { ...KB_DATA.docs, docs: PLAN_DOCS, tickets }, index: indexOf(PLAN_DOCS) });
+  const in2026 = new Date("2026-10-17T03:00:00Z");
+  // the review's family now has a total: 3,000 + 1,000 + 0
+  let r = k.feeTotal({ ticket: "박물관 통합권", people: [{ count: 1, category: "성인" }, { count: 1, age: 7, category: "어린이" }, { count: 1, age: 4 }] }, in2026);
+  assert.equal(r.total, 4000);
+  assert.match(r.text, /- 어린이 7살 1명: 1,000원 × 1 = 1,000원 \(요금표 '어린이 2014년~ 2019년생' \(박물관 홈페이지\)\)/);
+  assert.doesNotMatch(r.text, /로 본 값|이 요금표에 없는 것: 연령 기준/);
+  // a category the birth years contradict; an age the birthday decides; the two sources of the 금강권 table agreeing
+  r = k.feeTotal({ ticket: "박물관 통합권", people: [{ count: 1, age: 7, category: "청소년" }] }, in2026);
+  assert.match(r.text, /질문의 구분 '청소년·군인'와 요금표의 '어린이 2014년~ 2019년생' \(박물관 홈페이지\)가 맞지 않음/);
+  r = k.feeTotal({ ticket: "금강권 통합권", people: [{ count: 1, age: 10 }, { count: 1, age: 12 }] }, in2026);
+  assert.equal(r.total, null);
+  assert.equal(r.known, 3000);
+  assert.match(r.text, /- 10살 1명: 3,000원 × 1 = 3,000원 \(요금표 '어린이\(7~12세\)'/);
+  assert.match(r.text, /- 12살 1명: 확인 필요 — 12살은 생일에 따라 2013년생\(청소년·군인\) 또는 2014년생\(어린이\)/);
+  // next year the 2026 table's birth years are not applied
+  r = k.feeTotal({ ticket: "박물관 통합권", people: [{ count: 1, age: 9 }] }, new Date("2027-01-04T03:00:00Z"));
+  assert.match(r.text, /- 9살 1명: 확인 필요 — 요금표의 구분은 2026년 표의 출생 연도 — 2027년 방문의 구분은 확인 필요/);
+});
+
+test("check_plan: that day's closed days, the season's and weekday's hours, last entry, and legs with no time left", () => {
+  const k = planKb();
+  // the review's G01: 군산항1981 until 16:00, then the university museum 5.7 km away from 16:00
+  let r = k.checkPlan({ date: "2026-10-19", stops: [{ page: "/places/군산항1981/", start: "14:30", end: "16:00" },
+    { page: "/places/국립군산대학교-박물관/", start: "16:00", end: "17:00" }] });
+  assert.equal(r.flags.length, 1);
+  assert.match(r.flags[0], /군산항1981 → 국립군산대학교 박물관: 직선 5\.7km인데 이동 시간을 두지 않음/);
+  assert.match(r.text, /두 곳 근처 정류장에 같은 노선 없음/);
+  // a Monday at the museum; a seasonal value read for October with its last entry; 30 minutes before closing
+  r = k.checkPlan({ date: "2026-10-19", stops: [{ page: "/places/근대역사박물관/", start: "17:40", end: "18:10" }] });
+  assert.match(r.flags.join("\n"), /정기 휴무\(공식 홈페이지 '매주 월요일, 1월 1일'\)/);
+  assert.match(r.flags.join("\n"), /시작 17:40이 입장·주문 마감 17:30보다 늦음/);
+  assert.match(r.flags.join("\n"), /끝 18:10이 닫는 시각 18:00보다 늦음/);
+  r = k.checkPlan({ date: "2026-11-17", stops: [{ page: "/places/진포해양공원/", start: "16:40", end: "17:00" }] });
+  assert.match(r.text, /\[동절기 \(11월~2월\)\] 09:00~17:00/);
+  assert.match(r.flags[0], /시작 16:40이 입장·주문 마감 16:30보다 늦음/);
+  // hours by weekday: Thursday 21:30, Friday 22:00
+  assert.equal(k.checkPlan({ date: "2026-10-22", stops: [{ page: "/places/이성당/", start: "21:00", end: "21:50" }] }).flags.length, 1);
+  assert.equal(k.checkPlan({ date: "2026-10-23", stops: [{ page: "/places/이성당/", start: "21:00", end: "21:50" }] }).flags.length, 0);
+  // the n-th weekday of the month; seasons with no months are not read as one time
+  r = k.checkPlan({ date: "2026-10-13", stops: [{ page: "/places/건축관/", start: "17:30", end: "18:00" }] });
+  assert.match(r.flags.join("\n"), /정기 휴무/);
+  assert.match(r.text, /계절 구분의 달이 이 값에 없음/);
+  assert.equal(k.checkPlan({ date: "2026-10-20", stops: [{ page: "/places/건축관/", start: "17:30", end: "18:00" }] }).flags.length, 0);
+  assert.match(k.checkPlan({ stops: [{ page: "/nowhere/", start: "10:00", end: "11:00" }] }).flags[0], /사이트의 장소 경로가 아니다/);
+});
+
+test("tool input checks: fee_total and check_plan refuse what they cannot use", () => {
+  assert.equal(validFees({}), null);
+  assert.equal(validFees({ ticket: "박물관 통합권", people: [{ count: 0 }] }), null);
+  assert.equal(validFees({ items: [{ label: "x", won: -1, count: 1 }] }), null);
+  assert.deepEqual(validFees({ ticket: " 박물관 통합권 ", people: [{ count: 1, age: 4 }] }),
+    { ticket: "박물관 통합권", people: [{ count: 1, age: 4, category: undefined }], resident: false, group: false, items: [] });
+  assert.equal(validPlan({ stops: [] }), null);
+  assert.equal(validPlan({ date: "19 Oct", stops: [{ page: "/places/x/", start: "10:00", end: "11:00" }] }), null);
+  assert.equal(validPlan({ stops: [{ page: "/places/x/", start: "10시", end: "11:00" }] }), null);
+  assert.equal(validPlan({ stops: Array(13).fill({ page: "/p/", start: "10:00", end: "11:00" }) }), null);
+});
+
+test("the tools in the answer loop: status lines, results to the model, and the log counts totals the answer wrote off fee_total's", async () => {
+  const s = setup([
+    toolRound([["fee_total", { ticket: "박물관 통합권", people: [{ count: 1, category: "성인" }, { count: 1, category: "어린이" }] }],
+      ["check_plan", { date: "2026-10-20", stops: [{ page: "/places/군산항1981/", start: "14:30", end: "16:00" },
+        { page: "/places/국립군산대학교-박물관/", start: "16:00", end: "17:00" }] }]]),
+    textRound("입장료 합계 4,000원입니다. 일정표 합계 5,000원."),
+  ], { knowledge: () => planKb() });
+  const evs = await events(await s.handle(post(ask("화요일 일정 짜줘", "ko", "/"))));
+  assert.deepEqual(evs.filter((e) => e.type === "status").map((e) => e.text), ["찾는 중…", "찾는 중…", "계산 중…", "일정 확인 중…"]);
+  const results = s.client.calls[1].params.messages.at(-1).content;
+  assert.match(results[0].content, /^<site_data source="fee_total">\n박물관 통합권/);
+  assert.match(results[0].content, /합계\(식\): 3,000 \+ 1,000 = 4,000원/);
+  assert.match(results[1].content, /^<site_data source="check_plan">/);
+  assert.match(results[1].content, /고칠 것 1건/);
+  assert.equal(s.logs[0].plan_flags, 1);
+  assert.equal(s.logs[0].totals_off, 1);
+  assert.equal(totalsOff("합계(식): 3,000 + 1,000 = 4,000원, 총 4,000원", [4000]), 0);
+  assert.equal(totalsOff("Total: 8,000 won", [4000]), 1);
+});
+
+test("language gate (해남각's, 2026-10-18): an answer that begins in the wrong language is asked again before the reader sees it", async () => {
+  const ko = "선유도 입장료는 따로 없습니다. 출처마다 값이 달라 방문 전 전화로 확인해야 합니다. 주차는 선유도 주차장을 이용합니다.";
+  assert.equal(wrongLanguage(ko, "zh-Hans"), true);
+  assert.equal(wrongLanguage("仙游岛不收门票。[선유도](/places/선유도/) 各来源的信息不同，请在出发前打电话确认。", "zh-Hans"), false);
+  assert.equal(wrongLanguage("The child fee is 3,000 won and the museum is closed on Mondays.", "ko"), true);
+  assert.equal(wrongLanguage("짧은 답", "en"), false);   // too short to tell
+  const en = "The museum is open from 09:00 to 18:00 and the last entry is one hour before closing time.";
+  assert.equal(wrongLanguage(en, "ja"), true);
+  assert.equal(wrongLanguage("博物館は9時から18時まで開いていて、入場は閉館1時間前までです。", "ja"), false);
+  const hans = "博物馆开放时间为九点到十八点，闭馆前一小时停止入场。儿童门票三千韩元，周一休馆，请在参观前打电话确认开放时间和票价。";
+  const hant = "博物館開放時間為九點到十八點，閉館前一小時停止入場。兒童門票三千韓元，週一休館，請在參觀前打電話確認開放時間和票價。";
+  assert.equal(wrongLanguage(hans, "zh-Hant"), true);
+  assert.equal(wrongLanguage(hant, "zh-Hant"), false);
+  assert.equal(wrongLanguage(en, "de"), true);
+  assert.equal(wrongLanguage(en, "en"), false);
+  const zh = "仙游岛要门票吗？请说明来源。";
+  const s = setup([textRound(ko), textRound("仙游岛不收门票，各来源的信息不同，请在出发前打电话确认开放情况。")]);
+  const ev = await events(await s.handle(post(ask(zh, "ko", "/"))));
+  const shown = ev.filter((e) => e.type === "text").map((e) => e.delta).join("");
+  assert.doesNotMatch(shown, /\p{Script=Hangul}/u);
+  assert.match(shown, /^仙游岛不收门票/);
+  assert.equal(s.client.calls.length, 2);
+  assert.doesNotMatch(s.client.calls[0].params.system[1].text, /previous attempt/);
+  assert.match(s.client.calls[1].params.system[1].text, /Your previous attempt at this answer was not written in Simplified Chinese/);
+  assert.equal(s.logs[0].lang_retry, 1);
+  // once only: a second wrong start is let through (the reader gets an answer)
+  const t = setup([textRound(ko), textRound(ko)]);
+  const ev2 = await events(await t.handle(post(ask(zh, "ko", "/"))));
+  assert.equal(t.client.calls.length, 2);
+  assert.match(ev2.filter((e) => e.type === "text").map((e) => e.delta).join(""), /^선유도 입장료/);
+  // a Korean question answered in Korean is never held back or asked again
+  const k = setup([textRound(ko)]);
+  await events(await k.handle(post(ask("선유도 입장료가 있나요?", "ko", "/"))));
+  assert.equal(k.client.calls.length, 1);
+  assert.equal(k.logs[0].lang_retry, undefined);
+});
+
+test("a lasting language request (해남각's, 2026-10-18): 'always' must stand by the request, and asking for the question's language ends it", () => {
+  const ko = (content) => ({ role: "user", content });
+  const ans = { role: "assistant", content: "The child fee is 3,000 won." };
+  // 'always' about the place, not the answer: this one answer in English, the next question in its own language
+  assert.equal(chooseLang("선유도 주차장은 다른 데로 바뀌나요?", [ko("월명공원은 항상 개방하나요? 영어로 답해줘"), ans]).code, "ko");
+  assert.equal(chooseLang("어린이 요금은?", [ko("앞으로 항상 영어로 답해줘"), ans]).code, "en");
+  // back to the question's language: in this message, or in an earlier one after the request
+  assert.equal(chooseLang("이제 질문한 언어로 답해줘. 어린이 요금은?", [ko("앞으로 항상 영어로 답해줘"), ans]).code, "ko");
+  assert.equal(chooseLang("어린이 요금은?", [ko("앞으로 항상 영어로 답해줘"), ans, ko("이제 질문한 언어로 답해줘"),
+    { role: "assistant", content: "네, 질문한 언어로 답하겠습니다." }]).code, "ko");
+  assert.equal(chooseLang("어린이 요금은?", [ko("이제 질문한 언어로 답해줘"), ans, ko("From now on answer in Japanese"), ans]).code, "ja");
+});
+
+// ------------------------------------------------------------------ the course planner's door (chat.js planQuery)
+const CHAT_JS = readFileSync(new URL("../../templates/assets/chat.js", import.meta.url), "utf8");
+const PQ = (() => {
+  const from = CHAT_JS.indexOf("/* plan-query: begin");
+  const to = CHAT_JS.indexOf("/* plan-query: end */");
+  assert.ok(from > 0 && to > from, "the marks around planQuery");
+  return new Function(`${CHAT_JS.slice(from, to)}\nreturn { planQuery, hubPatterns };`)();
+})();
+// the sample city's start and end points (site.json city.plan.hubs, the launcher's data-chat-hubs)
+const SAMPLE_HUBS = { station: "군산역", bus: "군산시외버스터미널", express: "군산고속버스터미널", airport: "군산공항" };
+const planQuery = (qs, today) => PQ.planQuery(qs, today, PQ.hubPatterns(SAMPLE_HUBS));
+// chat.js ask(): the conversation's questions, oldest first, the new one last, with the hubs the page names
+assert.match(CHAT_JS, /planQuery\(asked, seoulToday\(\), PLAN_HUBS\)/);
+const TODAY = "2026-10-18";   // a Sunday
+// the contract /plan/ reads (templates/assets/plan.js): each parameter, the values it may take — the day's start and
+// end exactly the options of the form's selects (templates/plan.html.j2: plan.js puts in a value only when the select
+// has it, so any other time would be dropped there without a word)
+const PLAN_HTML = readFileSync(new URL("../../templates/plan.html.j2", import.meta.url), "utf8");
+const formHours = (name) => {
+  const m = PLAN_HTML.match(new RegExp(`<select name="${name}">\\{% for h in range\\((\\d+), (\\d+)\\) %\\}`));
+  assert.ok(m, `the form's ${name} select`);
+  return Array.from({ length: +m[2] - +m[1] }, (_, i) => `${String(+m[1] + i).padStart(2, "0")}:00`);
+};
+const FORM_START = formHours("start"), FORM_END = formHours("end");
+assert.deepEqual([FORM_START[0], FORM_START.at(-1), FORM_END[0], FORM_END.at(-1)], ["07:00", "14:00", "15:00", "22:00"]);
+const PLAN_WORDS = { needs: "rain|stroller|wheelchair|parking|free|lesswalk",
+  prefs: "history|food|islands|nature|alleys|cafe|experience|night|photo" };
+const CONTRACT = { date: /^\d{4}-\d{2}-\d{2}$/, days: /^[123]$/, start: new RegExp(`^(?:${FORM_START.join("|")})$`),
+  end: new RegExp(`^(?:${FORM_END.join("|")})$`), move: /^(?:car|transit)$/,
+  with: /^(?:solo|couple|kids|parents)$/, adults: /^(?:[1-9]|10)$/, kids: /^(?:1[0-7]|\d)(?:,(?:1[0-7]|\d))*$/,
+  needs: new RegExp(`^(?:${PLAN_WORDS.needs})(?:,(?:${PLAN_WORDS.needs}))*$`),
+  prefs: new RegExp(`^(?:${PLAN_WORDS.prefs})(?:,(?:${PLAN_WORDS.prefs}))*$`),
+  from: /^(?:station|bus|express|airport)$/, to: /^(?:station|bus|express|airport)$/ };
+// what the conservative reader fills (review 2026-10-18, third round), in this order; the rest of the contract is the
+// reader's to choose on /plan/
+const READ_KEYS = ["date", "days", "start", "end", "move", "with", "kids", "needs", "from", "to"];
+// the planner's dates: today to 180 days on (plan.js dateIn.min, dateIn.max)
+const LAST_DAY = new Date(Date.parse(`${TODAY}T00:00:00Z`) + 180 * 86400000).toISOString().slice(0, 10);
+const inContract = (q, got) => {
+  const keys = [...new URLSearchParams(got).keys()];
+  assert.deepEqual(keys, READ_KEYS.filter((k) => keys.includes(k)), `${q}: keys ${keys}`);
+  for (const [k, v] of new URLSearchParams(got)) assert.match(v, CONTRACT[k], `${q} ${k}=${v}`);
+  const p = new URLSearchParams(got);
+  if (p.has("date")) assert.ok(p.get("date") >= TODAY && p.get("date") <= LAST_DAY, `${q}: date ${p.get("date")}`);
+  if (p.has("start") && p.has("end")) assert.ok(+p.get("end").slice(0, 2) - +p.get("start").slice(0, 2) >= 3, `${q}: ${got}`);
+};
+
+// Realistic Korean questions and exactly what each states; a field a question does not clearly state is absent.
+const PLAN_CASES = [
+  // the phrases the reviewers listed
+  ["자차 없이 아이와 당일치기", "days=1&move=transit&with=kids"],
+  ["아이 없이 부부 둘이 1박 2일", "days=2"],
+  ["휠체어 없이는 못 가요", ""],
+  // the third review: a deadline at the hub is the day's end; 걸리다 is no walking; 딸리다 is no daughter; 낮·저녁 hours
+  ["오후 5시까지 군산역에 도착해야 해요", "end=17:00&to=station"],
+  ["군산역으로 5시 반까지 돌아가야 해요", "to=station"],   // the hub is stated, a bare 5시 is not sure
+  ["군산역으로 오후 5시 반까지 돌아가야 해요", "end=17:00&to=station"],   // the form's end: on the hour, rounded down
+  ["오래 안 걸리는 코스로 짜 주세요", ""],
+  ["이동 시간이 덜 걸리는 곳 위주로", ""],
+  ["아이가 많이 못 걸어요", "with=kids&needs=lesswalk"],
+  ["덜 걸어도 되는 곳 위주로", "needs=lesswalk"],
+  ["체력이 딸려서 천천히 다니고 싶어요", ""],
+  ["주차장 딸리는 숙소가 있나요", ""],
+  ["딸이랑 둘이 가요", "with=kids"],
+  ["낮 11시에 군산역 도착해요", "start=11:00&from=station"],
+  ["저녁 12시에 군산역에서 출발해요", "to=station"],
+  ["어머니가 휠체어 없이는 못 다니셔서 1박 2일로 가요", "days=2"],
+  ["주차장 딸린 숙소", ""],
+  ["주차장이 딸려 있는 곳으로 1박 2일", "days=2"],
+  ["10월 19일이나 20일에 아이랑 가요", "with=kids"],
+  ["19일이나 20일 중에 가려고요", ""],
+  ["박물관은 5시까지 하나요?", ""],
+  ["오후 5시까지 하나요?", ""],
+  ["10월 19일 당일치기인데 근대역사박물관은 5시까지 하나요?", "date=2026-10-19&days=1"],
+  ["선유도 가는 버스는 몇 시에 있어요?", ""],
+  ["군산역에서 선유도 버스는 몇 시에 있어요?", ""],
+  ["서울에서 8시 출발해 11시 군산역 도착", "start=11:00&from=station"],
+  ["아침 9시 출발해서 저녁 6시 도착하는 당일치기", "days=1"],
+  ["10시 군산역 도착하면 뭐 하나요?", "start=10:00&from=station"],
+  ["토요일에 군산 가면 뭐 하나요?", ""],
+  ["딸내미랑 1박 2일", "days=2&with=kids"],
+  ["딸래미(7살)랑 둘이 가요", "with=kids&kids=7"],
+  // dates: one explicit date, real, today or later
+  [EVAL_Q, "date=2026-10-19&days=1&move=transit&with=kids"],
+  ["10월 19일(월) 당일치기", "date=2026-10-19&days=1"],
+  ["10월 19일 일요일 일정", ""],                                   // the 19th is a Monday
+  ["3월 1일에 갈 거예요", "date=2027-03-01"],                      // gone this year: next year's
+  ["2025년 10월 19일에 갔던 곳", ""],
+  ["2026-11-03 2박 3일", "date=2026-11-03&days=3"],
+  ["10월 19일부터 20일까지 1박 2일", "days=2"],
+  ["10월 19일, 1박 2일로 가요", "date=2026-10-19&days=2"],        // '2일' of 1박 2일 is no second date
+  ["10월 19일 또는 10월 24일", ""],
+  ["2026년 10월 19일, 10월 19일 월요일", "date=2026-10-19"],       // the same date twice
+  ["내일 월요일에 가요", ""],                                      // never a relative day or a weekday alone
+  // how many days
+  ["당일치기나 1박 2일", ""],
+  ["군산 당일 여행 코스", "days=1"],
+  ["3박 4일 일정", ""],
+  // car or not
+  ["렌터카 없이 다닐 수 있는 코스", "move=transit"],
+  ["대중교통으로 다니는 뚜벅이 여행", "move=transit"],
+  ["자가용으로 가요", "move=car"],
+  ["렌터카 빌려서 2박 3일", "days=3&move=car"],
+  ["대중교통 말고 자차로 가요", ""],
+  ["자차로 갈까요, 대중교통으로 갈까요?", ""],
+  ["차 없이는 못 가요", ""],
+  ["차 안에서 먹을 간식", ""],
+  ["운전을 못 해서 버스로 다녀요", ""],
+  // a child, and the ages written as N살·N세
+  ["아들 둘(8살, 5살)과 비 오는 날 갈 곳", "with=kids&kids=8,5&needs=rain"],
+  ["아이들은 빼고 어른끼리 가요", ""],
+  ["아이스크림 맛집", ""],
+  ["아기자기한 카페 투어", ""],
+  ["딸기 체험 농장 있나요?", ""],
+  ["8살 아이랑 가는데 5세 이하는 무료인가요?", "with=kids&kids=8"],
+  ["아이랑 군산 2박 3일 동안 뭐 하나요?", "days=3&with=kids"],    // '동안' is no '안'
+  ["19세기 건물이 있나요?", ""],
+  ["18개월 아기와 유모차 끌고 가요", "with=kids&needs=stroller"],
+  ["유아차 끌고 다닐 곳", "needs=stroller"],                          // a pram is no child said
+  // what the trip needs
+  ["아이와 함께, 유모차는 필요 없어요", "with=kids"],
+  ["유모차 없이 다닐 수 있는 곳, 비 오는 날", "needs=rain"],
+  ["비가 오지 않으면 바다 보러 가요", ""],
+  ["비 안 오면 선유도 가요", ""],
+  ["내일 비 오면 어디 가요?", "needs=rain"],
+  ["많이 못 걷는 부모님과 주차 편한 곳", "needs=parking,lesswalk"],
+  ["걷기 힘든 할머니와 휠체어 타고 갈 곳", "needs=wheelchair,lesswalk"],
+  ["은파호수공원 주차", ""],
+  // times: only one attached to a Gunsan hub's arrival (start) or departure (end)
+  ["3시 군산역 도착", "from=station"],                              // a bare 1–6: left out
+  ["오후 3시 군산역 도착", "from=station"],                         // a start the form does not offer (07–14시)
+  ["11시쯤 군산역에 도착해요", "start=11:00&from=station"],
+  ["10:30 군산역 도착", "start=11:00&from=station"],                 // the form's start: on the hour, rounded up
+  ["군산역에 9시 반 도착, 5시 기차 타고 돌아가요", "start=10:00&from=station"],
+  ["군산공항에서 저녁 7시 출발이에요", "end=19:00&to=airport"],
+  ["군산고속버스터미널 오전 10시 도착", "start=10:00&from=express"],
+  ["고속버스터미널에 9시 도착", ""],                                // not Gunsan's by name
+  ["군산시외버스터미널에 11시 도착해서 오후 2시 군산시외버스터미널 출발", "start=11:00&from=bus&to=bus"],   // an end before 15시
+  ["오후 1시 군산역 도착해서 군산역에서 오후 6시 출발해요", "start=13:00&end=18:00&from=station&to=station"],
+  ["10시 군산역 도착, 오후 12시 군산역 출발", "from=station&to=station"],   // under three hours: neither time
+  ["10시부터 18시까지 아이와", "with=kids"],
+  ["막차가 9시인가요?", ""],
+  ["숙소에서 9시 출발", ""],
+  ["용산역에서 8시 KTX 타고 와요", ""],
+  ["새벽 5시 군산역 도착", "from=station"],                         // before the planner's day
+  ["6시 군산역 출발", "to=station"],
+  ["밤 9시 군산역 출발", "end=21:00&to=station"],
+];
+
+test("planQuery: a table of realistic questions — only what each clearly states, in the planner's contract", () => {
+  assert.ok(PLAN_CASES.length >= 40);
+  const wrong = PLAN_CASES.filter(([q, want]) => planQuery(q, TODAY) !== want)
+    .map(([q, want]) => `${q} → ${planQuery(q, TODAY)} (want ${want})`);
+  assert.deepEqual(wrong, []);
+  for (const [q] of PLAN_CASES) inContract(q, planQuery(q, TODAY));
+});
+
+test("planQuery: the conversation's questions merge, the later one winning per key; a negated or unclear mention clears it", () => {
+  const first = "10월 19일 초등학생 아이와 당일치기";
+  const cases = [
+    [[first], "date=2026-10-19&days=1&with=kids"],
+    [[first, "차 없이 가면요?"], "date=2026-10-19&days=1&move=transit&with=kids"],
+    [[first + " 자가용으로", "10월 20일에 차 없이 가면요?"], "date=2026-10-20&days=1&move=transit&with=kids"],
+    [[first, "아니요, 1박 2일이요"], "date=2026-10-19&days=2&with=kids"],
+    [["10월 19일 8살 아이와 당일치기", "아이 없이 1박 2일로 바꿀게요"], "date=2026-10-19&days=2"],
+    [["8살 아이랑 비 오는 날 유모차 끌고 갈 곳", "유모차는 필요 없어요, 차 없이요"], "move=transit&with=kids&kids=8&needs=rain"],
+    [[first, "10월 19일이나 20일로 바뀔 수도 있어요"], "days=1&with=kids"],
+    [["오후 3시 군산역 도착", "3시 군산역 도착으로 바뀌었어요"], "from=station"],
+    // the window is checked on the merged times
+    [["11시 군산역 도착", "군산역에서 오후 1시 출발"], "from=station&to=station"],
+    [["11시 군산역 도착", "군산역에서 오후 5시 출발"], "start=11:00&end=17:00&from=station&to=station"],
+    // a question that states nothing gets no link, whatever came before
+    [[first, "선유도 가는 법"], ""],
+    [[first, "박물관은 5시까지 하나요?"], ""],
+  ];
+  for (const [qs, want] of cases) {
+    assert.equal(planQuery(qs, TODAY), want, qs.join(" / "));
+    inContract(qs.join(" / "), planQuery(qs, TODAY));
+  }
+});
+
+test("planQuery: only values the planner's form offers; a relative day clears the date, another way of moving the hubs", () => {
+  // review 2026-10-18, fourth round: '10:30 군산역 도착' handed start=10:30, which /plan/'s select does not have — the
+  // form kept 10:00 without a word. A start is rounded up to its hour, an end down (the day never begins before the
+  // reader is there nor ends after they leave); one the form does not offer is left out; a date past the planner's
+  // 180 days too
+  const single = [
+    ["오전 6시 반 군산역 도착", "start=07:00&from=station"],
+    ["오전 6시 군산역 도착", "from=station"],
+    ["오후 2시 군산역 도착", "start=14:00&from=station"],
+    ["오후 2시 반 군산역 도착", "from=station"],                       // 15:00 is no start of the form
+    ["밤 10시 반 군산역 출발", "end=22:00&to=station"],
+    ["밤 11시 군산역 출발", "to=station"],
+    ["오후 2시 50분 군산역 출발", "to=station"],                        // 14:00 is no end of the form
+    ["오전 10시 군산역 도착, 오후 3시 군산역 출발", "start=10:00&end=15:00&from=station&to=station"],
+    ["오후 1시 반 군산역 도착해서 오후 4시 반 군산역 출발", "from=station&to=station"],   // 14:00–16:00: under three hours
+    ["2027년 4월 16일 당일치기", "date=2027-04-16&days=1"],              // the planner's last day
+    ["2027년 4월 17일 당일치기", "days=1"],
+    ["5월 1일에 갈 거예요", ""],                                        // next year's 5월 1일: past the 180 days
+    // a relative day beside a written date is that date (UI review 2026-10-19: it cleared it); 내일로 is Korail's pass
+    ["내일(10월 19일) 당일치기", "date=2026-10-19&days=1"],
+    ["10월 31일 주말에 1박 2일", "date=2026-10-31&days=2"],
+    ["다음 주 토요일(10월 24일)에 가요", "date=2026-10-24"],
+    ["내일로 타고 10월 24일에 가요", "date=2026-10-24"],
+    ["내일로 패스로 당일치기", "days=1"],
+  ];
+  for (const [q, want] of single) {
+    assert.equal(planQuery(q, TODAY), want, q);
+    inContract(q, planQuery(q, TODAY));
+  }
+  const day = "10월 24일 아이와 당일치기", at = "오전 11시 군산역 도착, 차 없이 다녀요";
+  const merged = [
+    // a later relative day: the date said before is no longer the trip's
+    ...["내일 가면요?", "모레는요?", "글피는 어때요", "오늘 가도 되나요?", "이번 주말에 가면요?", "다음 주로 미룰게요",
+      "다음주말은요?", "다음 달에 갈게요", "주말에 가면 사람 많나요?"].map((q) => [[day, q], "days=1&with=kids"]),
+    [[day, "다음 주차 편한 곳 위주로"], "date=2026-10-24&days=1&with=kids&needs=parking"],   // 다음 주차 is no 다음 주
+    [[day, "10월 25일로 바꿀게요"], "date=2026-10-25&days=1&with=kids"],
+    // a later question that writes its date keeps it beside a relative word; 내일로 (the pass) clears nothing
+    [[day, "10월 31일 주말에 가면요?"], "date=2026-10-31&days=1&with=kids"],
+    [[day, "내일(10월 19일)로 당길게요"], "date=2026-10-19&days=1&with=kids"],
+    [[day, "내일로 타고 차 없이 가요"], "date=2026-10-24&days=1&move=transit&with=kids"],
+    [[day, "내일로로 가도 되나요? 아이가 8살이에요"], "date=2026-10-24&days=1&with=kids&kids=8"],
+    // the day moved to tomorrow is 내일, not the pass
+    ...["내일로 바꿀게요", "내일로 미뤄도 되나요?", "내일로 옮길게요"].map((q) => [[day, q], "days=1&with=kids"]),
+    // another way of moving: the hubs and times tied to the old one go; the same way, or a first one, keeps them
+    [[at, "자가용으로 갈게요"], "move=car"],
+    [[at, "렌터카 빌려서 군산역에서 오후 6시 출발"], "end=18:00&move=car&to=station"],
+    [[at, "차 없이 가요"], "start=11:00&move=transit&from=station"],
+    [[at, "아이랑 가요"], "start=11:00&move=transit&with=kids&from=station"],
+    [["오전 11시 군산역 도착", "자가용으로 다녀요"], "start=11:00&move=car&from=station"],
+    // a question that leaves the way of moving unclear clears it but changes nothing else (UI review 2026-10-19)
+    [[at, "차 없이 가거나 자가용으로 가요"], "start=11:00&from=station"],
+  ];
+  for (const [qs, want] of merged) {
+    assert.equal(planQuery(qs, TODAY), want, qs.join(" / "));
+    inContract(qs.join(" / "), planQuery(qs, TODAY));
+  }
 });

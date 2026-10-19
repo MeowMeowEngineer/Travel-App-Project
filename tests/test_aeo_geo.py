@@ -272,6 +272,17 @@ def test_opening_hours_only_from_strict_strings():
     assert "openingHoursSpecification" not in node and node["additionalProperty"][0]["value"] == "09:00–18:00"
 
 
+def test_no_amenity_when_sources_differ_on_stroller_rental():
+    """QA 2026-10-15 F02: a homepage's '대여 가능(…)' against TourAPI '없음' is no typed amenity either way."""
+    e = entity(babycarriage="대여 가능(예약 없이 박물관 안내소에서)", parking="가능")
+    e["fact_alternatives"] = {"babycarriage": [{"value": "없음", "provider": "한국관광공사 TourAPI"}]}
+    names = [f["name"] for f in jsonld.entity_node(e, SITE, "https://x", "https://x/p/", [], [])["amenityFeature"]]
+    assert names == ["주차"]
+    e["facts"]["babycarriage"] = "있음"   # even a plain yes/no main value stays untyped while another source differs
+    names = [f["name"] for f in jsonld.entity_node(e, SITE, "https://x", "https://x/p/", [], [])["amenityFeature"]]
+    assert names == ["주차"]
+
+
 def test_amenities_only_from_yes_no_values():
     node = jsonld.entity_node(entity(parking="가능", babycarriage="없음", pet="5층에 한하여 반려견 동반"),
                               SITE, "https://x", "https://x/p/", [], [])
@@ -323,6 +334,7 @@ def test_telephone_is_whole_and_international():
     assert tel("063-443-1981, 063-443-4819") == ["+82-63-443-1981", "+82-63-443-4819"]
     assert tel("0507-1302-6070") == "+82-507-1302-6070"
     assert tel("063-443-1981063-443-4819") is None
+    assert tel("1577-4050") == "1577-4050"   # a nationwide number has no +82 form (QA 2026-10-15 SRC-05a)
 
 
 # ---------------------------------------------------------------- P1-6 images
@@ -399,6 +411,37 @@ def test_about_says_how_pages_are_made_and_invents_no_profiles(tmp_path):
     build(data, out2, "sample")
     org = next(n for n in nodes(out2 / "index.html") if n["@type"] == "Organization")
     assert org["sameAs"] == ["https://blog.example.kr/aio2o"] and org["url"] == "https://aio2o.example.kr"
+
+
+def test_the_company_record_is_in_the_footer_the_about_page_and_the_publisher_node(tmp_path):
+    # operator 2026-10-17 (the CEO's mail): the company's official record, as site.json operator gives it
+    op = {"name": "에이아이오투오", "legal_name": "주식회사 에이아이오투오", "name_en": "AIO2O", "ceo": "안성민",
+          "business_no": "620-87-00810", "corporate_no": "140111-0070330", "founded": "2017-08-16",
+          "head_office": "대구광역시 북구 옥산로 111", "head_office_postal": "41593", "lab": "경기도 성남시 수정구 금토로 32",
+          "tel": "070-4260-8310", "email": "contact@o2o.kr", "contact": "shyun@o2o.kr"}
+    data = data_with(tmp_path, site={"operator": op})
+    out = tmp_path / "s"
+    build(data, out, "sample")
+    home = (out / "index.html").read_text("utf-8")
+    assert "대표이사 안성민" in home and "사업자등록번호 620-87-00810" in home and "본사 (41593) 대구광역시 북구 옥산로 111" in home
+    for v in ("법인등록번호 140111-0070330", "설립 2017년 8월 16일", "연구소 경기도 성남시 수정구 금토로 32", "이메일", "contact@o2o.kr"):
+        assert v in home, v   # the footer carries the whole record (operator 2026-10-17: '최대한 정보를 풍부하게')
+    assert 'href="tel:07042608310"' in home and 'href="/about/#company"' in home
+    assert "Copyright © 주식회사 에이아이오투오" in home
+    about = scan_file(out / "about/index.html").body
+    for v in ("법인등록번호", "140111-0070330", "2017년 8월 16일", "(41593) 대구광역시 북구 옥산로 111", "연구소", "contact@o2o.kr"):
+        assert v in about, v
+    org = next(n for n in nodes(out / "index.html") if n["@type"] == "Organization")
+    # the node carries what the footer prints (validate: every value on the page); the founding date is printed in
+    # words, so it stays off the node
+    assert org["legalName"] == "주식회사 에이아이오투오" and org["taxID"] == "620-87-00810" and org["email"] == "contact@o2o.kr"
+    assert org["address"]["postalCode"] == "41593" and org["telephone"] == "+82-70-4260-8310"
+    assert "foundingDate" not in org
+    assert not validate(data, out, "sample")[0]
+    # without a business number the footer keeps its one operator line (the sample's own site.json)
+    out2 = tmp_path / "s2"
+    build(SAMPLE, out2, "sample")
+    assert "foot-biz" not in (out2 / "index.html").read_text("utf-8")
 
 
 # ---------------------------------------------------------------- P1-12 production URL gate

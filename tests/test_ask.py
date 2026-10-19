@@ -82,7 +82,7 @@ def test_the_card_can_leave_out_its_second_search_button_and_still_searches_with
     macro = make_env().get_template("_ask.html.j2").module.card
     html = str(macro("ko", "군산", [], search_alt=False))
     assert '사이트 검색' not in html and 'formaction' not in html and 'data-ask-search' not in html
-    assert '<form class="ask-box" action="/search/" method="get" data-ask-form="search">' in html
+    assert '<form class="ask-box" action="/search/" method="get" data-ask-form="search" data-empty="' in html
     assert 'ask-jsonly' not in html
 
 
@@ -100,12 +100,35 @@ def test_the_card_speaks_nine_languages_and_its_button_keeps_both_labels():
         assert 'data-ask-log hidden data-fail="' in html and 'data-fail=""' not in html, lang
         if lang != "ko":
             assert not re.search(r"[가-힣]", html), lang                        # no Hangul outside the Korean card
-            assert 'ask-jsonly' in html and 'action=' not in html and "data-ask-form>" in html, lang
+            assert 'ask-jsonly' in html and 'action=' not in html and "data-ask-form data-empty=" in html, lang
         if lang not in ("ko", "en"):
             assert '<a href="/en/about/#chatbot" hreflang="en">' in html, lang   # the help page is English
             assert "What would you like to know" not in html, lang              # its own words, not the English
     assert "Que voulez-vous savoir sur Gunsan ?" in str(macro("fr", "Gunsan", []))
     assert 'What would you like to know about Gunsan?' in str(macro("xx", "Gunsan", []))   # any other: English
+
+
+def test_without_js_the_starters_are_links_and_the_card_says_so():
+    """The external evaluation of 2026-10-18 read the home's '#' tags as links to guides, while the floating panel's
+    chips ask. Without JS they are exactly that — links to the pages that answer them — and a line shown only without
+    JS (.hk-nojs) says so, in every language; with JS site.js makes each one a button that asks (role=button: a click,
+    Enter or Space), as the panel's chips do (tests/test_ask_browser.py). The first paint carries no role."""
+    mod = make_env().get_template("_ask.html.j2").module
+    ko = str(mod.box([{"q": "선유도 가는 법", "href": "/guides/a/"}], "군산"))
+    nojs = ko.split('<p class="hk-nojs">', 1)[1].split("</p>")[0]
+    assert "사이트 검색" in nojs and "예시 질문은 답이 실린 페이지로 연결합니다" in nojs
+    assert "role=" not in ko[ko.index('class="hk-pills"'):]
+    lines = []
+    for lang in LANGS:
+        html = str(mod.box_intl(lang, [{"q": "Q", "href": "/x/"}], "Gunsan"))
+        line = re.search(r'<p class="hk-nojs">([^<]+)</p>', html).group(1)
+        assert html.index('class="hk-nojs"') < html.index('class="hk-pills"') and "role=" not in html, lang
+        if lang != "ko":
+            assert not re.search(r"[가-힣]", line), lang
+        lines.append(line)
+        assert 'class="hk-nojs"' not in str(mod.box_intl(lang, [], "Gunsan")), lang   # no starters, no line
+    assert len(set(lines)) == len(LANGS)
+    assert "html.js .hk-nojs { display: none; }" in (ROOT / "templates" / "assets" / "css" / "46-home-open.css").read_text("utf-8")
 
 
 def _sample(tmp_path, starters=None, places=True):
@@ -130,7 +153,7 @@ def test_the_korean_card_is_the_assistant_only_and_searches_without_js():
     wrong. No machine-like wording (docs/handover 2026-10-14: not 'AI 여행 도우미', not '무엇이든 물어보세요')."""
     mod = make_env().get_template("_ask.html.j2").module
     html = str(mod.box([{"q": "선유도 가는 법", "href": "/guides/a/"}, {"q": "이번 달 행사·축제", "href": "/events/"}], "군산"))
-    assert '<form class="hk-box" action="/search/" method="get" data-ask-form="search">' in html
+    assert '<form class="hk-box" action="/search/" method="get" data-ask-form="search" data-empty="질문을 먼저 적어 주세요">' in html
     assert 'role="search"' not in html and "formaction" not in html and "data-ask-search" not in html
     assert re.findall(r"<button[^>]*>", html) == ['<button type="submit" class="ask-go hk-go" data-ask-go>']
     assert '<span class="ask-go-l">물어보기</span><span class="ask-go-l ask-go-s">멈추기</span>' in html
@@ -142,7 +165,16 @@ def test_the_korean_card_is_the_assistant_only_and_searches_without_js():
     assert '<p class="hk-nojs">' in html and "사이트 검색" in html.split('<p class="hk-nojs">', 1)[1].split("</p>")[0]
     assert '<a class="hk-pill" href="/guides/a/" data-ask="선유도 가는 법">선유도 가는 법</a>' in html
     assert '<a class="hk-pill" href="/events/" data-ask="이번 달 행사·축제">' in html
-    assert "대화는 저장하지 않습니다" in html and 'href="/about/#chatbot"' in html
+    # what happens to a conversation, as it is (operator 2026-10-18, 해남각's wording): kept in this tab only, the
+    # questions sent to Anthropic — never a bare '저장하지 않습니다'
+    assert "대화는 이 탭에만 임시 보관됩니다" in html and 'href="/about/#chatbot"' in html
+    assert "대화는 저장하지 않습니다" not in html
+    chat_js = (ROOT / "templates" / "assets" / "chat.js").read_text("utf-8")
+    feet = re.findall(r'foot: "([^"]*)"', chat_js)
+    assert len(feet) == 9 and all("Anthropic" in f for f in feet), feet
+    ask = (ROOT / "templates" / "_ask.html.j2").read_text("utf-8")
+    assert ask.count("'terms': ") + ask.count("'terms': \"") >= 9 and ask.count("Anthropic") >= 9
+    assert "not stored" not in ask and "保存されません" not in ask and "不会被保存" not in ask
     if icons.mascot("mascot-hello"):                 # the mascot is optional (pipeline/icons.py; ported 2026-10-19)
         assert 'class="hk-mascot"' in html and 'alt=""' in html and "/assets/mascot/mascot-hello-96.avif 1x" in html
     else:                                            # no mascot yet: the head is the heading alone, nothing to load

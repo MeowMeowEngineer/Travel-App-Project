@@ -133,6 +133,8 @@ def test_no_key_the_panel_rests_with_the_site_search(browser, site, width, heigh
     assert page.locator(".chat-hello").is_hidden() and page.locator(".chat-foot").is_hidden()
     search = page.locator("#chat-s")
     assert search.is_visible() and search.get_attribute("placeholder") == "장소·메뉴·동 이름"
+    # measured once the panel's slide-in is over (a box read mid-animation sits on a fractional offset)
+    page.wait_for_function("() => document.querySelector('#chat').getAnimations().every(a => a.playState !== 'running')")
     box = page.locator(".chat-off-go").bounding_box()
     assert box["height"] >= 44                                                  # a 44px target
     focused = page.evaluate("document.activeElement.id")
