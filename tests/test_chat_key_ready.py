@@ -71,6 +71,10 @@ def test_the_build_writes_this_site_s_knowledge_with_sources_and_no_other_city(b
     assert "- 이용시간: [테스트] 이용시간 값 — 한국관광공사 TourAPI\n" in beach
     assert "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI\n" in beach
     assert "\n날짜: 출처 확인 2026-10-19 · " in beach and "(출처 확인 2026-10-19)" not in beach
+    # ... and that line says it is for the question about dates only (QA 2026-10-19 second round, QA-35: the
+    # assistant still wrote '(출처: 한국관광공사 TourAPI, 출처 확인 2026-10-19)' in 3 of 6 answers)
+    assert re.search(r"^날짜: 출처 확인 2026-10-19 · 페이지 검수 전\(검수일 없음\) — 이용자가 확인 날짜·최신 여부를 물을 때만 "
+                     r"답에 씀\(출처 표기에도 붙이지 않음\)$", beach, re.M), beach
     assert "사이트에 없는 값(확인 필요): 쉬는 날·요금·전화" in beach
     about = docs["docs"]["/about/"]["x"]
     assert "Claude Haiku 5.5" in about and "대화를 저장하지 않고" in about and "인천각" in about
@@ -137,6 +141,8 @@ out.on = { status: r.status, body: await r.json() };
 out.events = await sseEvents(await ask(on));
 out.made = made;
 out.system = client.calls[0].params.system[0].text.slice(0, 200);
+out.rules = client.calls[0].params.system[0].text.split("\n\n<site_data")[0];
+out.context = client.calls[0].params.system[1].text;
 out.search = client.calls[1].params.messages.at(-1).content[0].content;
 out.read = client.calls[2].params.messages.at(-1).content[0].content;
 console.log(JSON.stringify(out));
@@ -163,6 +169,12 @@ def test_the_function_answers_from_the_built_knowledge_once_a_key_is_set(built):
                                     f"website 인천각 ({SITE})")
     assert "/places/test-beach-a/" in out["search"].split("\n")[1]              # search_site found the built page first
     assert "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI" in out["read"] and "날짜: 출처 확인 2026-10-19" in out["read"]
+    # what the model reads keeps the check date for the question about it (QA-35) and writes Korean in Hangul (QA-76):
+    # the page's date line, rule 11 with its example, rule 4 and the Korean question's context
+    assert "날짜: 출처 확인 2026-10-19 · 페이지 검수 전(검수일 없음) — 이용자가 확인 날짜·최신 여부를 물을 때만 답에 씀" in out["read"]
+    assert "never \"(출처: 한국관광공사 TourAPI, 출처 확인 2026-10-19)\"" in out["rules"]
+    assert "A Korean answer is written in Hangul: never Hanja" in out["rules"]
+    assert out["context"].endswith("Write it in Hangul: no Hanja outside a name the data writes with them (rule 4).")
     done = out["events"][-1]
     assert done["type"] == "done"
     assert done["links"] == [{"title": "[테스트] 가상 해변 A", "url": f"{SITE}/places/test-beach-a/", "ext": False}]

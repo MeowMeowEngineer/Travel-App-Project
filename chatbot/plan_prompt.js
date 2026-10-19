@@ -160,7 +160,7 @@ export function buildPlanSystem(catalog, now) {
   const t = seoulNow(now);
   return [
     { type: "text", text: `${planRules()}\n\n${dataBlock("catalog", catalog)}`, cache_control: { type: "ephemeral" } },
-    { type: "text", text: `Now in Korea: ${t.date} (${WEEK[t.weekday]}요일) ${t.time} KST. Write every word of the plan in Korean.` },
+    { type: "text", text: `Now in Korea: ${t.date} (${WEEK[t.weekday]}요일) ${t.time} KST. Write every word of the plan in Korean, in Hangul: no Hanja (Chinese characters) outside a name the page writes with them.` },
   ];
 }
 
