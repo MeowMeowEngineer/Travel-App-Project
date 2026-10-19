@@ -26,6 +26,9 @@ sync_api = pytest.importorskip("playwright.sync_api")
 
 ROOT = Path(__file__).resolve().parent.parent
 INCHEON = ROOT / "data" / "incheon"
+# the files a collection or a writer adds to data/incheon (TourAPI writes places·events): left out of a copy that
+# stands for this site's configuration before collection
+RECORDS = ("places.json", "events.json", "courses.json", "guides.json", "themes.json", "videos.json")
 TINY = Path(__file__).resolve().parent / "fixtures" / "incheon_tiny"
 SITE = "https://incheon.example.com"
 API = {"get": "off", "post": "off", "gets": 0, "posts": []}
@@ -80,7 +83,8 @@ def site(tmp_path_factory):
     data.mkdir()
     for src in (INCHEON, TINY):
         for f in src.glob("*.json"):
-            shutil.copy(f, data / f.name)
+            if src is TINY or f.name not in RECORDS:
+                shutil.copy(f, data / f.name)
     out = tmp / "out"
     build(data, out, "preview")
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Site, directory=str(out)))

@@ -18,7 +18,7 @@ import tempfile
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from pipeline.build import build
+from pipeline.build import EMPTY_HINT, build
 from pipeline.validate import validate, write_report
 
 
@@ -119,7 +119,12 @@ def run(data: Path, out: Path, report_dir: Path):
                     unlink(reference, "place_slug", f"{filename}:{entry.get('slug', entry.get('id', ''))}/{field}")
             _write_json(path, entries)
             report[filename.removesuffix(".json") + "_retained"] = len(entries)
-        report["build"] = build(staged, out, "preview")
+        # no place selected: say why in terms of the real data folder (never the temporary copy's path)
+        empty = (EMPTY_HINT.format(places=data / "places.json", data=data) if not originals else
+                 f"선별 0곳 — {data / 'places.json'}의 장소 {len(originals)}곳 가운데 요약과 주소 외 실용 정보가 함께 있는 "
+                 "곳이 없습니다. 요약을 먼저 쓰세요(CLAUDE.md 3절 5항, 쓴 뒤 python tools/content_check.py --data "
+                 f"{data}).")
+        report["build"] = build(staged, out, "preview", empty_hint=empty)
         errors, warnings, stats = validate(staged, out, "preview")
         report.update(qa={"errors": errors, "warnings": warnings, "stats": stats},
                       status="built_with_qa_errors" if errors else "built")

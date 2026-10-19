@@ -16,6 +16,10 @@ What is checked
   only when the fee row reads 무료, amenityFeature/petsAllowed only when the 주차·유모차 대여·반려동물 동반 row
   holds the matching Y/N value
 - the source text is shown verbatim only when its licence allows it, never otherwise
+- our sentences (place summary · FAQ · 자세히, guide and course text) share no stretch of 15 or more characters with
+  a stored source text — a place's TourAPI overview or original, a guide's or course's places' texts — once names and
+  fact values are taken out (pipeline/content_check.py; tools/content_check.py adds the number, source and wording
+  checks a writer runs before approval)
 - canonical, title/description length, internal links, robots.txt, sitemap.xml, llms.txt
 - every stored fact is shown whole in its own row of the facts block (<dd data-key>, else the <dd> under its
   label): the whole textutil.display_value(raw) verbatim, every word and symbol in order (textutil.value_shown),
@@ -74,6 +78,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 from . import art, ask, en_site, present
+from .content_check import copy_issues, guide_issues
 from . import locales as LC
 from .build import HL_VIEWER, LISTS, MODES, State, fact_row, index_counts, load_abroad
 from .jsonld import AMENITY_VALUES, amenity_value
@@ -1166,6 +1171,9 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
                 probe = squash_ws(text)[:30]
                 if probe and probe in p.plain:
                     E(where, f"이용조건 미확인({orig.get('license')}) 원문이 페이지에 노출됨")
+        # our sentences never copy a stored source text (TourAPI overview, the original) for 15+ characters
+        for issue in copy_issues(e):
+            E(where, f"원문 베끼기(CLAUDE.md 3절 3항) — {issue}")
 
         geo, mid = e.get("geo") or {}, e.get("map_ids") or {}
         links = build_links(e["name"], geo.get("lat"), geo.get("lng"), S.site.get("region", ""),
@@ -1208,6 +1216,11 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
                 W(g["title"], f"가이드가 비공개/없는 장소를 참조: {it['place_slug']}")
         if strict and not (g.get("reviewed_at") or g.get("approved_at")):
             E(g["title"], "published 가이드에 reviewed_at·approved_at 없음")
+    # guide and course text: no 15+ character stretch of its own original or of a place it points to (CLAUDE.md 3.3)
+    places_by_slug = {x.get("slug"): x for x in S.entities_all if not x.get("duplicate_of")}
+    for g in [*S.guides, *S.courses]:
+        for issue in guide_issues(g, places_by_slug, copy_only=True):
+            E(g.get("title") or g.get("name") or g.get("slug", ""), f"원문 베끼기(CLAUDE.md 3절 3항) — {issue}")
 
     # Event leaf pages (CLAUDE.md 3.2): every value that differs between sources is shown with the confirm line,
     # and the programme list is on the page.

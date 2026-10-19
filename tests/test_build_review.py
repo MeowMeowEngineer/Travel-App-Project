@@ -38,7 +38,7 @@ def test_curated_preview_preserves_source_and_excludes_unwritten_places_with_saf
     actual_build = build_review.build
     captured = {}
 
-    def inspect_build(staged, out, mode):
+    def inspect_build(staged, out, mode, **kw):
         assert not (staged / "source_documents.json").exists()
         assert (staged / "site.json").read_bytes() == before["site.json"]
         captured["places"] = json.loads((staged / "places.json").read_text("utf-8"))
@@ -46,7 +46,7 @@ def test_curated_preview_preserves_source_and_excludes_unwritten_places_with_saf
         assert captured["courses"][0]["stops"][-1] == {"name": "중복 경유지", "note": "기존 경유 메모"}
         assert captured["places"][0]["nearby"][-1] == {"name": "작성할 장소", "kind": "attraction"}
         assert mode == "preview"
-        return actual_build(staged, out, mode)
+        return actual_build(staged, out, mode, **kw)
 
     monkeypatch.setattr(build_review, "build", inspect_build)
     out = tmp_path / "out"
@@ -128,3 +128,25 @@ def test_missing_reference_name_fails_before_building(tmp_path):
     with pytest.raises(ValueError, match="unresolved reference"):
         build_review.run(data, tmp_path / "out", tmp_path / "reports")
     assert not (tmp_path / "out").exists()
+
+
+def test_no_written_summary_says_so_and_approval_points_to_the_review_build(tmp_path, capsys):
+    """Right after a collection no place has a summary: the curated build says '선별 0곳' about the real data folder
+    (not the temporary copy it builds from, not 'collect again'), and the approval step without a selection file
+    names that build instead of failing with a traceback."""
+    from tools import approve_publication
+    data, places, _ = setup(tmp_path)
+    for p in places:
+        p["summary"] = ""
+    (data / "places.json").write_text(json.dumps(places, ensure_ascii=False), "utf-8")
+    for name in ("courses.json", "guides.json"):
+        (data / name).write_text("[]", "utf-8")
+    report = build_review.run(data, tmp_path / "out", tmp_path / "reports")
+    err = capsys.readouterr().err
+    assert report["selected"] == [] and "선별 0곳" in err and str(data.resolve() / "places.json") in err
+    assert "site-review-" not in err and "collect.py" not in err
+    missing = tmp_path / "reports" / "none.json"
+    code = approve_publication.main(["--data", str(data), "--date", "2026-10-19", "--selection", str(missing)])
+    out = capsys.readouterr()
+    assert code == 2 and "tools/build_review.py" in out.err and "Traceback" not in out.out + out.err
+    assert json.loads((data / "places.json").read_text("utf-8")) == places   # nothing changed

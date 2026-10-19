@@ -3,6 +3,7 @@ Gunsan data: 빈해원's TourAPI hours, 근대역사박물관's fee table, '가�
 stops of the 2박 3일 course and menu search."""
 import json
 import re
+import shutil
 import struct
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from tools.image_sizes import image_size
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "gunsan"
+SAMPLE = ROOT / "data" / "sample"
 
 
 @pytest.fixture(scope="module")
@@ -65,6 +67,31 @@ def test_display_value_normalises_presentation_only():
 # ------------------------------------------------------------------ 근대역사박물관: fees and seasons
 # ------------------------------------------------------------------ '가능요금 (무료)'
 # ------------------------------------------------------------------ phones
+def test_contested_phone_is_never_the_call_number(tmp_path):
+    """CLAUDE.md 3절 2항 for phones, on a data/sample place with a made-up second number: when sources give the phone
+    differently, neither is the page's call number (no settled phone for the status line, the list cell or the flag
+    line's call link); the facts row shows both, equally."""
+    data = tmp_path / "data"
+    shutil.copytree(SAMPLE, data)
+    places = json.loads((data / "places.json").read_text("utf-8"))
+    e = next(x for x in places if x["slug"] == "gyeongam-railroad-village")
+    e["facts"]["infocenter"] = "000-0000-0001"
+    assert present.settled_phone(e) == ("000-0000-0001", "00000000001")
+    e["fact_alternatives"] = {**(e.get("fact_alternatives") or {}),
+                              "infocenter": [{"value": "000-0000-0002", "provider": "[테스트] 다른 출처",
+                                              "checked_at": "2026-10-19"}]}
+    assert present.settled_phone(e) == ("", "")
+    assert not [x for x in present.status_items(e, full=True) if x["key"] == "tel"]
+    assert present.cell({**e, "_path": "/places/x/"}, "tel")["text"] == "출처마다 다름"
+    (data / "places.json").write_text(json.dumps(places, ensure_ascii=False), "utf-8")
+    out = tmp_path / "out"
+    build(data, out, "sample")
+    html = (out / "places" / e["slug"] / "index.html").read_text("utf-8")
+    one, two = html.count('href="tel:00000000001"'), html.count('href="tel:00000000002"')
+    assert one == two >= 1                                  # both numbers, the same way; neither picked
+    assert "방문 전 전화 확인" in html
+
+
 # ------------------------------------------------------------------ courses
 # ------------------------------------------------------------------ search
 # ------------------------------------------------------------------ status line, stays, regions, home

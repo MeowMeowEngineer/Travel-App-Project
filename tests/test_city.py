@@ -1,11 +1,13 @@
 """The city is configuration (pipeline/city.py, data/<region>/site.json): the Incheon config with a clearly fake tiny
-dataset (tests/fixtures/incheon_tiny — never data/incheon) builds and validates with no trace of the sample city in
-any output file; the empty data/incheon builds an empty-state preview and stops a production build with the
+dataset (tests/fixtures/incheon_tiny — never data/incheon's collected records) builds and validates with no trace of
+the sample city in any output file; the config before collection (no records) builds an honest empty-state preview —
+no picture but the menu's own icons, no link to a page that has no data — and stops a production build with the
 collection hint; the 권역 rule is the configured district rule, and the map page prints the rule that assigned the
-places."""
+places; the city's tourism site (site.json `source`) is credited as '원문 출처' only when a built record cites it."""
 import json
 import re
 import shutil
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,9 @@ from pipeline.validate import validate
 
 ROOT = Path(__file__).resolve().parent.parent
 INCHEON = ROOT / "data" / "incheon"
+# the files a collection or a writer adds to data/incheon (TourAPI writes places·events): left out of a copy that
+# stands for this site's configuration before collection
+RECORDS = ("places.json", "events.json", "courses.json", "guides.json", "themes.json", "videos.json")
 TINY = Path(__file__).resolve().parent / "fixtures" / "incheon_tiny"
 # the sample city's names in every script the engine has used: none may reach an Incheon page, script or data file
 FOREIGN = re.compile(r"군산|gunsan|Gunsan|GUNSAN|群山|Кунсан|선유도|Seonyudo|고군산")
@@ -27,11 +32,39 @@ def _incheon_data(tmp_path: Path, with_fixture: bool) -> Path:
     data = tmp_path / "data"
     data.mkdir()
     for f in INCHEON.glob("*.json"):
-        shutil.copy(f, data / f.name)
+        if f.name not in RECORDS:
+            shutil.copy(f, data / f.name)
     if with_fixture:
         for f in TINY.glob("*.json"):
             shutil.copy(f, data / f.name)
     return data
+
+
+class _Scan(HTMLParser):
+    """images (src, alt) outside the assistant's launcher, chrome (the launcher's own), every link."""
+
+    def __init__(self):
+        super().__init__()
+        self.images, self.chrome, self.links, self.in_fab = [], [], [], False
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == "button" and "chat-fab" in (a.get("class") or "").split():
+            self.in_fab = True
+        if tag == "img":
+            (self.chrome if self.in_fab else self.images).append((a.get("src") or "", a.get("alt")))
+        if tag == "a":
+            self.links.append(a.get("href") or "")
+
+    def handle_endtag(self, tag):
+        if tag == "button":
+            self.in_fab = False
+
+
+def _scan(page: Path) -> _Scan:
+    s = _Scan()
+    s.feed(page.read_text("utf-8"))
+    return s
 
 
 def _foreign_hits(out: Path) -> list[str]:
@@ -127,5 +160,49 @@ def test_incheon_before_collection_preview_is_empty_state_and_production_stops(t
     assert errors == [], errors[:5]
     assert _foreign_hits(out) == []
     assert "여행지 안내를 준비하고 있습니다" in (out / "index.html").read_text("utf-8")
+    # nothing dresses the empty data up (CLAUDE.md 4): no photo, no illustration — only the menu's own 3D icons,
+    # which sit beside their links with or without data; the launcher's face, if any, is decorative site furniture
+    pages = sorted(out.rglob("*.html"))
+    assert pages
+    for page in pages:
+        s = _scan(page)
+        assert [src for src, _ in s.images if not src.startswith("/assets/icons/")] == [], page
+        assert all(src.startswith("/assets/") and alt == "" for src, alt in s.chrome), page
+        # every way on goes to a page that exists: no guide, course, event, map or search page without data
+        for href in s.links:
+            path = href.split("#")[0].split("?")[0]
+            assert not path.startswith(("/guides/", "/courses/", "/events/", "/map/", "/search/")), (page, href)
+            if path.startswith("/") and not path.startswith("//"):
+                target = out / path.lstrip("/")
+                assert (target / "index.html").exists() or target.is_file(), (page, href)
+    assert "/places/" in _scan(out / "index.html").links
     with pytest.raises(NoPlacesError, match="tools/collect.py --data"):
         build(data, tmp_path / "prod", "production")
+
+
+def test_the_city_tourism_site_is_credited_only_when_a_record_cites_it(tmp_path):
+    """TourAPI-only data names 한국관광공사 TourAPI, not the city's tourism site, as its source (footer, /about/,
+    llms.txt, the assistant's knowledge); the city's site stays an official link. A record citing that site brings
+    the '원문 출처' line back."""
+    data = _incheon_data(tmp_path, with_fixture=True)
+    site = json.loads((data / "site.json").read_text("utf-8"))
+    name, url = site["source"]["name"], site["source"]["url"]
+    out = tmp_path / "tourapi-only"
+    build(data, out, "preview")
+    home, about = (out / "index.html").read_text("utf-8"), (out / "about" / "index.html").read_text("utf-8")
+    llms, docs = (out / "llms.txt").read_text("utf-8"), (out / "chat" / "docs.json").read_text("utf-8")
+    for text in (home, about, llms, docs):
+        assert "원문 출처" not in text
+    assert "관광 정보·사진: 한국관광공사 TourAPI" in home and "관광 정보·사진: 한국관광공사 TourAPI" in llms
+    assert "<dt>정보 출처</dt><dd>한국관광공사 TourAPI</dd>" in about and "정보 출처: 한국관광공사 TourAPI" in docs
+    place = (out / "places" / "test-beach-a" / "index.html").read_text("utf-8")
+    assert f"{name} 원문이 없어" not in place
+    places = json.loads((data / "places.json").read_text("utf-8"))
+    places[0]["official"] = {**(places[0].get("official") or {}), "source_url": url.rstrip("/") + "/test-page"}
+    (data / "places.json").write_text(json.dumps(places, ensure_ascii=False), "utf-8")
+    cited = tmp_path / "cited"
+    build(data, cited, "preview")
+    assert f'원문 출처: <a href="{url}"' in (cited / "index.html").read_text("utf-8")
+    assert f"원문 출처: {name} ({url})." in (cited / "llms.txt").read_text("utf-8")
+    assert f"<dt>원문 출처</dt><dd><a href=\"{url}\"" in (cited / "about" / "index.html").read_text("utf-8")
+    assert f"원문 출처: {name} {url}." in (cited / "chat" / "docs.json").read_text("utf-8")

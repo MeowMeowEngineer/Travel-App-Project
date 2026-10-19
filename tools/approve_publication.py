@@ -9,6 +9,7 @@
 - reviewed_at(사람 검수일)은 건드리지 않는다. approved_at은 '운영자가 공개를 승인한 날'이며 화면에 검수일로 보이지 않는다.
   색인은 그래도 색인 기준(유형별 필수 정보 2개 이상·요약 규칙)을 통과한 장소만 된다(pipeline/schema.index_status).
 - 2026-10-08 운영자 결정(site.json publication)으로 만든 도구다. 새로 들어온 레코드는 draft로 남으므로, 다음 공개 때 다시 실행한다.
+- 선별 목록은 tools/build_review.py가 쓴다. 없으면 그 명령을 알려 주고 종료 코드 2로 멈춘다(아무것도 바꾸지 않음).
 """
 from __future__ import annotations
 
@@ -34,6 +35,11 @@ def main(argv=None) -> int:
     ap.add_argument("--apply", action="store_true")
     a = ap.parse_args(argv)
 
+    if not a.selection.exists():   # the curated preview has not been built yet (it writes the selection)
+        print(f"중단: 공개 선별 목록 {a.selection}이 없습니다. 요약을 쓴 뒤 공개 선별 미리보기를 먼저 만드세요: "
+              f"python tools/build_review.py --data {a.data} --out dist-review --report-dir reports "
+              "(요약과 주소 외 실용 정보가 있는 장소를 골라 이 파일을 씁니다).", file=sys.stderr)
+        return 2
     selected = {x["id"] for x in json.loads(a.selection.read_text("utf-8"))["selected"]}
     hold = set(a.hold)
     counts = {}

@@ -15,8 +15,11 @@
 | 1 | TourAPI 키 넣기 | `cp .env.example .env` 후 `TOURAPI_KEY=` 뒤에 키, 또는 `export TOURAPI_KEY=…` |
 | 2–3 | 진단 + 수집(한 명령) | `python tools/collect.py --data data/incheon` — 상한에 걸려 멈추면(종료 코드 3) 같은 명령을 다시 |
 | 4 | 미리보기 빌드·검증 | `python -m pipeline.build --data data/incheon --out dist-preview --mode preview` → `python -m pipeline.validate --data data/incheon --out dist-preview --mode preview` |
-| 5 | 공개 빌드·검증 | `python tools/build_public.py --data data/incheon --out public` |
-| 6 | Vercel 배포 + 챗봇 키 | Vercel 환경 변수 `ANTHROPIC_API_KEY` → 재배포(`public/`을 커밋해 `main`에 push) → `curl https://<도메인>/api/chat/`이 `{"ready":true}` |
+| 5 | 요약 쓰기 + 문장 검사 | 장소마다 `summary`(필요하면 `faq`)를 `data/incheon/places.json`에 쓴다 → `python tools/content_check.py --data data/incheon`(걸리면 고쳐 쓴다) |
+| 6 | 공개 선별 미리보기 | `python tools/build_review.py --data data/incheon --out dist-review --report-dir reports` |
+| 7 | 운영자 공개 승인(사람) | `python tools/approve_publication.py --data data/incheon --date <날짜>`(미리 보기) → 운영자가 정하면 같은 명령에 `--apply` |
+| 8 | 공개 설정(사람) + 공개 빌드·검증 | `site.json`의 `site_url`·`ga4_id`(또는 `launch_exceptions.ga4_id`)·`operator.contact`를 채운 뒤 `python tools/build_public.py --data data/incheon --out public` |
+| 9 | Vercel 배포 + 챗봇 키 | Vercel 환경 변수 `ANTHROPIC_API_KEY` → 재배포(`public/`을 커밋해 `main`에 push) → `curl https://<도메인>/api/chat/`이 `{"ready":true}` |
 
 1. **TourAPI 키**: 공공데이터포털의 '한국관광공사_국문 관광정보 서비스_GW' 일반 인증키(Encoding·Decoding 어느 쪽이든 된다). `.env`는 커밋되지 않습니다(`.gitignore`). 키 값을 문서·코드·커밋 메시지에 쓰지 않습니다.
 2. **진단**(`tools/collect.py`의 1단계, 따로: `python tools/tourapi_doctor.py --data data/incheon`): 키·네트워크·서비스 버전 문제를 한 번에 가리고, `site.json` `region_full`('인천광역시')의 법정동 시도 코드와 그 아래 구·군 코드를 TourAPI(ldongCode2)에서 받아 보여 줍니다(옛 지역코드 areaCode2는 참고). 코드는 저장하지 않고 수집할 때마다 같은 목록을 받아 씁니다(응답은 캐시). `site.json` `districts`와 이름이 다르면 '확인' 줄이 나옵니다. 키가 없으면 곧바로 멈추고 어디에 넣는지 알려 주며, 공급자 오류 메시지는 그대로 보이고 키 문자열만 가려집니다.
@@ -31,9 +34,16 @@
 - 장소 상세: 2N + N₁ (detailCommon2·detailIntro2, 관광지·레포츠는 detailInfo2 하나 더) — `--gallery`면 장소당 +1
 - 합계 T ≈ 5 + 2 + 6D + ⌈F/100⌉ + 2F + 2N + N₁, 실행 횟수 ≈ ⌈T / 900⌉(하루 한 번)
 4. **미리보기**: `python -m http.server -d dist-preview 8000` 으로 열어 봅니다. 미리보기는 draft까지 보이고 전부 noindex입니다. 수집 전(장소 0곳)에도 미리보기는 빈 상태 사이트로 만들어지고(안내 문구 출력), 공개 빌드는 '수집 전' 안내와 함께 멈춥니다.
-5. **공개 빌드**: 공개(published) 레코드만, 색인 기준 미달 페이지는 noindex·sitemap 제외. 검증 오류가 있으면 종료 코드 1이고 배포하지 않습니다. 도메인(`site_url`)이 자리표시(`https://incheon.example.com`)인 동안은 production 검증이 막습니다 — 운영자가 도메인을 정해야 공개할 수 있습니다. 새 레코드는 draft로 들어오며, 공개는 운영자 승인(`python tools/approve_publication.py --data data/incheon --date <날짜> --apply`) 또는 검수 시트 반영(`tools/apply_review.py`)으로만 됩니다.
-6. **Vercel**: 저장소를 Vercel 프로젝트에 연결합니다(Framework Preset: Other — 설정은 `vercel.json`: 빌드 명령 없음, 출력 `public/`, 설치 `npm ci --omit=dev`). Settings → Environment Variables에 `ANTHROPIC_API_KEY`(Production·Preview)를 넣고 재배포합니다(아래 '사이트 도우미'). 키가 없으면 `/api/chat/`은 503 `not_configured`로 답하고, 화면의 도우미는 'AI 도우미 준비 중'과 사이트 검색을 보이며 나머지 사이트는 그대로입니다.
-7. **도메인을 정한 뒤**(사람): `data/incheon/site.json`의 `site_url`, 카카오 개발자 콘솔에 그 도메인을 등록한 지도 JavaScript 키(`kakao_js_key`, 공개 키), 서치콘솔(구글·빙·네이버) 인증 토큰, GA4·GTM, IndexNow 키.
+5. **요약 쓰기와 문장 검사**: 수집한 장소는 `summary`가 비어 있고(draft) 요약이 생겨야 공개 선별·색인 대상이 됩니다. 요약은 그 장소의 사실(`facts`·값별 출처)만으로 답부터 쓰고(CLAUDE.md 3절 5항), FAQ는 데이터로 답할 수 있는 것만 존댓말 질문으로 씁니다(6항). TourAPI overview(`tourapi.overview`)는 사실 확인용이며 문장을 옮기지 않습니다. 쓴 뒤 `python tools/content_check.py --data data/incheon`이 원문 베끼기(overview·원문과 15자 이상 연속 일치, 이름·사실 값 제외), 숫자 대조(사실·출처 글에 없는 숫자), FAQ 출처 대조, 출처 해설체·'확인 필요'·근거 없는 수식어, FAQ 존댓말·장소 간 같은 질문을 봅니다. 하나라도 걸리면 종료 코드 1 — 문장을 고쳐 씁니다. 원문 베끼기는 빌드 검증(`pipeline.validate`)도 모든 페이지에서 오류로 잡습니다.
+6. **공개 선별 미리보기**(`tools/build_review.py`): 요약과 주소 외 실용 정보가 함께 있는 장소(코스·가이드가 가리키는 곳 포함)만 골라 noindex 미리보기를 만들고, 고른 목록을 `reports/review_build_selection.json`에 씁니다. 선별은 검수·공개 승인이 아닙니다(status를 바꾸지 않음). 요약이 하나도 없으면 '선별 0곳'이라고 알립니다.
+7. **운영자 공개 승인**(사람, `tools/approve_publication.py`): 6단계의 선별 목록에 든 장소와 가이드·코스·행사를 `status: published`로 바꾸고 `approved_at`(승인한 날)을 남깁니다. `--apply` 없이는 미리 보기만 합니다. 선별 목록이 없으면 6단계를 먼저 하라고 알리고 멈춥니다. 검수 시트(`tools/make_review_sheet.py` → `tools/apply_review.py`)는 공개 경로가 아닙니다: 시트에는 `tier: full` 장소와 가이드·코스·행사만 오르고(수집한 장소는 모두 `tier: basic`), OK로 표시한 행을 `status: reviewed`·`reviewed_at`(검수일)으로만 바꿉니다 — published 전환은 하지 않습니다.
+8. **공개 설정과 공개 빌드**: 공개 빌드는 공개(published) 레코드만, 색인 기준 미달 페이지는 noindex·sitemap 제외로 만듭니다. production 검증은 아래 세 값이 비어 있거나 자리표시인 동안 오류(종료 코드 1)를 내며, 그동안 `public/`은 배포할 수 없습니다. 세 값 모두 운영자가 정합니다(CLAUDE.md 3절 7항·6절).
+   - `site_url`: 최종 https 주소. 지금은 자리표시 `https://incheon.example.com`입니다.
+   - `ga4_id`: GA4 측정 ID. 운영자가 GA4를 공개 뒤에 달기로 정했다면 `site.json`에 `"launch_exceptions": {"ga4_id": "<운영자 사유>"}`를 두면 경고로 바뀝니다.
+   - `operator.contact`: 정정 요청을 받을 연락처.
+   
+   그 밖에 카카오 지도 JavaScript 키(`kakao_js_key`, 공개 키 — 그 도메인을 카카오 개발자 콘솔에 등록), 서치콘솔(구글·빙·네이버) 인증 토큰, GTM, IndexNow 키는 검증을 막지 않지만 공개 전에 넣습니다. 비어 있는 값과 할 일은 `python tools/launch_check.py --data data/incheon --stdout`이 보여 줍니다.
+9. **Vercel**: 저장소를 Vercel 프로젝트에 연결합니다(Framework Preset: Other — 설정은 `vercel.json`: 빌드 명령 없음, 출력 `public/`, 설치 `npm ci --omit=dev`). Settings → Environment Variables에 `ANTHROPIC_API_KEY`(Production·Preview)를 넣고 재배포합니다(아래 '사이트 도우미'). 키가 없으면 `/api/chat/`은 503 `not_configured`로 답하고, 화면의 도우미는 'AI 도우미 준비 중'과 사이트 검색을 보이며 나머지 사이트는 그대로입니다.
 
 ### 도시 설정(`data/incheon/site.json`)
 - **지역**: `region` '인천', `locality` '인천광역시', `districts` 지금 구·군 11곳(2026-07-01 행정체제 개편 뒤), `districts_former` 옛 이름(중구·동구·서구 — 주소·TourAPI가 옛 이름을 쓸 수 있어 둘 다 읽는다).
@@ -64,7 +74,7 @@ curl -s http://127.0.0.1:8787/api/chat/         # {"ready":true}
 1. Vercel 프로젝트 → Settings → Environment Variables → Add: Key `ANTHROPIC_API_KEY`, Value에 키, Environments는 Production(미리보기 배포에서도 쓰려면 Preview도) → Save.
 2. 환경 변수는 새 배포부터 적용됩니다: Deployments → 최신 배포 → ⋯ → Redeploy(또는 `main`에 push).
 3. 확인: `curl -s https://<도메인>/api/chat/` → `{"ready":true}`. 사이트에서 '물어보기'로 한 번 물어 답과 페이지 링크가 오는지 봅니다. 키를 넣기 전에 열어 둔 탭은 '준비 중'을 최대 5분 기억하므로 새 탭에서 확인합니다.
-4. 허용 출처: `site.json` `site_url`, 이 배포의 Vercel 주소(시스템 변수 `VERCEL_URL`·`VERCEL_BRANCH_URL`·`VERCEL_PROJECT_PRODUCTION_URL` — 따로 켤 것 없음), `city.chat.origins`(예: 사용자 도메인을 붙인 뒤에도 쓰는 `<프로젝트>-<팀>.vercel.app` 별칭). 도메인을 정하기 전에도 `*.vercel.app` 배포 주소에서 바로 시험할 수 있습니다.
+4. 허용 출처: `site.json` `site_url`, 이 배포의 Vercel 주소(시스템 변수 `VERCEL_URL`·`VERCEL_BRANCH_URL`·`VERCEL_PROJECT_PRODUCTION_URL` — 따로 켤 것 없음), `city.chat.origins`(예: 사용자 도메인을 붙인 뒤에도 쓰는 `<프로젝트>-<팀>.vercel.app` 별칭). 도메인을 정하기 전에도 `*.vercel.app` 배포 주소에서 바로 시험할 수 있습니다. 단 배포할 `public/`은 공개 빌드가 만들며, 공개 빌드는 위 8단계의 세 값(`site_url`·`ga4_id` 또는 `launch_exceptions.ga4_id`·`operator.contact`)이 채워져야 검증을 통과합니다.
 5. 운영자 안전 설정: Anthropic Console의 사용 한도(spend limit), Vercel Firewall의 `/api/chat/` 요청 수 제한 규칙. 함수도 인스턴스마다 IP당 분·일 한도와 전체 분·일 한도를 둡니다(`LIMITS`).
 6. 문제 확인: Vercel → Logs에 요청마다 JSON 한 줄(`evt: chat`, 상태·도구 이름·토큰 수 — 질문·답·주소·키는 남기지 않음). 키가 틀리거나 폐기되면 `status: unavailable`, `api_status: 401`, `hint: check ANTHROPIC_API_KEY`가 남고, 화면에는 "지금은 답을 만들 수 없습니다"가 나옵니다.
 
@@ -74,9 +84,12 @@ python -m pytest                                   # 파이썬 시험(Node가 �
 npm test                                           # 챗봇 서버 시험만(node --test tests/js/)
 python -m pipeline.build --data data/sample --out dist-sample --mode sample && python -m pipeline.validate --data data/sample --out dist-sample --mode sample
 python tools/quality_report.py --data data/incheon --out public       # 정보 채움률(전화·이용시간·주차·사진·좌표)
+python tools/content_check.py --data data/incheon                   # 우리가 쓴 요약·FAQ 검사(원문 베끼기·숫자·출처·표현)
+python tools/build_review.py --data data/incheon --out dist-review --report-dir reports   # 공개 선별 미리보기(noindex)
+python tools/approve_publication.py --data data/incheon --date <날짜>   # 운영자 공개 승인 미리 보기(사람이 정하면 --apply)
 python tools/launch_check.py --data data/incheon --stdout             # 공개 전 점검표
-python tools/make_review_sheet.py --data data/incheon --out reports/review.csv   # 검수 시트(사람이 OK 표시)
-python tools/apply_review.py --sheet reports/review.csv --data data/incheon      # 반영 미리 보기(기본 dry-run)
+python tools/make_review_sheet.py --data data/incheon --out reports/review.csv   # 검수 시트(tier=full 장소·가이드·코스·행사, 사람이 OK 표시)
+python tools/apply_review.py --sheet reports/review.csv --data data/incheon      # OK 행을 reviewed·검수일로(기본 dry-run, 공개 전환은 안 함)
 python tools/perf_check.py --out public                              # 모바일 속도(Playwright 필요)
 ```
 - 챗봇을 로컬에서 실제 키로 시험: `npm run chat:dev`(위 '사이트 도우미'). 대화는 저장하지 않습니다.

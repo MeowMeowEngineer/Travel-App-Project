@@ -18,6 +18,9 @@ from pipeline.build import build
 
 ROOT = Path(__file__).resolve().parent.parent
 INCHEON = ROOT / "data" / "incheon"
+# the files a collection or a writer adds to data/incheon (TourAPI writes places·events): left out of a copy that
+# stands for this site's configuration before collection
+RECORDS = ("places.json", "events.json", "courses.json", "guides.json", "themes.json", "videos.json")
 TINY = Path(__file__).resolve().parent / "fixtures" / "incheon_tiny"
 SITE = "https://incheon.example.com"
 NODE = shutil.which("node")
@@ -30,7 +33,8 @@ def _data(tmp_path: Path, fixture: bool = True) -> Path:
     data = tmp_path / "data"
     data.mkdir()
     for f in INCHEON.glob("*.json"):
-        shutil.copy(f, data / f.name)
+        if f.name not in RECORDS:
+            shutil.copy(f, data / f.name)
     if fixture:
         for f in TINY.glob("*.json"):
             shutil.copy(f, data / f.name)

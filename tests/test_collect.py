@@ -21,6 +21,9 @@ from tools import collect
 from tools import tourapi_doctor as doctor
 
 ROOT = Path(__file__).resolve().parent.parent
+# the files a collection or a writer adds to data/incheon (TourAPI writes places·events): left out of a copy that
+# stands for this site's configuration before collection
+RECORDS = ("places.json", "events.json", "courses.json", "guides.json", "themes.json", "videos.json")
 FAKE_KEY = "TEST-ONLY-fake+key/=0123456789"          # not a real key; has + / = so its encoded forms differ
 TODAY = dt.date.today()
 D = lambda days: (TODAY + dt.timedelta(days=days)).strftime("%Y%m%d")
@@ -134,7 +137,8 @@ def region(tmp_path, monkeypatch):
     data = tmp_path / "data" / "incheon"
     data.mkdir(parents=True)
     for f in (ROOT / "data" / "incheon").glob("*.json"):
-        shutil.copy(f, data / f.name)
+        if f.name not in RECORDS:
+            shutil.copy(f, data / f.name)
     site = json.loads((data / "site.json").read_text("utf-8"))
     site["tourapi"]["min_interval"] = 0
     (data / "site.json").write_text(json.dumps(site, ensure_ascii=False, indent=1), "utf-8")
@@ -231,14 +235,17 @@ def test_cap_stops_the_run_and_the_same_command_resumes_from_the_cache(region, m
     api = FakeTourAPI()
     monkeypatch.setattr("urllib.request.urlopen", api)
     monkeypatch.setenv("TOURAPI_KEY", FAKE_KEY)
-    code, out, err = _run(["--data", str(region), "--max-calls", "34"], capsys)
+    args = ["--data", str(region), "--max-calls", "34", "--events-from", D(-30)]
+    code, out, err = _run(args, capsys)
     assert code == 3, err
     assert "멈춤:" in out and "이어 받기" in out and "python tools/collect.py --data" in out
+    resume = next(line for line in out.splitlines() if "이어 받기" in line)
+    assert f"--events-from {D(-30)}" in resume                         # the same question, so the cache answers it
     first = len(api.calls)
     added = len(json.loads((region / "places.json").read_text("utf-8")))
     assert 0 < added < 5
     estimate = int(re.search(r"남은 호출\(캐시에 없는 응답\): 약 (\d+)회", out).group(1))
-    code, out, err = _run(["--data", str(region), "--max-calls", "34"], capsys)
+    code, out, err = _run(args, capsys)
     assert code == 0, err
     assert len(json.loads((region / "places.json").read_text("utf-8"))) == 5
     second = api.calls[first:]

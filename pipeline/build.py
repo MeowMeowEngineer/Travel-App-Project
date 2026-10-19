@@ -393,6 +393,43 @@ def index_note(e: dict) -> str:
     return "색인 제외 예정: " + " · ".join(parts)
 
 
+def source_cited(source: dict, entities: list, courses: list, guides: list, events: list) -> bool:
+    """True when a built record names site.json `source` as where a text or a value came from: its name in a
+    provider / source name, or a source address on its host (an original text, a fact's source, an FAQ or '자세히'
+    source, a course's original, a guide's source, an event's source). Data collected only from TourAPI never names
+    it, so the footer, /about/, llms.txt and the assistant then credit TourAPI alone (the city's tourism site stays a
+    link among site.json official_links)."""
+    name = squash_ws(source.get("name"))
+    host = city._host(str(source.get("url") or ""))
+
+    def hit(label=None, url=None) -> bool:
+        if name and name in squash_ws(str(label or "")):
+            return True
+        h = city._host(str(url or ""))
+        return bool(host and h and (h == host or h.endswith("." + host)))
+
+    def entry(x) -> bool:
+        return isinstance(x, dict) and (hit(x.get("provider"), x.get("url")) or hit(x.get("source_name"), x.get("source_url"))
+                                        or hit(x.get("name"), x.get("url")))
+
+    for e in entities:
+        if entry(e.get("original")) or entry(e.get("facts_source")) \
+                or hit(None, (e.get("official") or {}).get("source_url")) \
+                or any(entry(s) for s in (e.get("fact_sources") or {}).values()) \
+                or any(entry(a) for alts in (e.get("fact_alternatives") or {}).values() for a in alts or []) \
+                or any(hit(f.get("source"), f.get("source")) for f in [*(e.get("faq") or []), *(e.get("details") or [])]
+                       if isinstance(f, dict)):
+            return True
+    if any(entry(c.get("original")) for c in courses):
+        return True
+    for g in guides:
+        if any(entry(s) for s in g.get("sources") or []) \
+                or any(hit(x.get("source"), x.get("source")) for x in [*(g.get("body") or []), *(g.get("faq") or [])]
+                       if isinstance(x, dict)):
+            return True
+    return any(entry(ev) or any(entry(a) for a in ev.get("also_sources") or []) for ev in events)
+
+
 class State:
     def __init__(self, data_dir: Path, mode: str):
         self.mode = mode
@@ -521,6 +558,10 @@ class State:
                 for src in [e.get("facts_source"), *(e.get("fact_sources") or {}).values(),
                             *(a for alts in (e.get("fact_alternatives") or {}).values() for a in alts or [])])
             or any(i.get("source") == "TourAPI" for i in e["_images"]) for e in self.entities)
+        # The site.json `source` (the city's official tourism site) is named as '원문 출처' (footer, /about/, llms.txt,
+        # the assistant's knowledge) only when a built record really cites it; a TourAPI-only region names TourAPI alone
+        self.source_used = source_cited(self.site.get("source") or {}, self.entities, self.courses, self.guides,
+                                        self.events)
         self.pages: list[tuple[str, str]] = []  # (path, lastmod) — the sitemap
         self.stats = {"entities": len(self.entities),
                       "excluded_entities": sum(1 for x in self.entities_all if x not in self.entities
@@ -570,7 +611,8 @@ class State:
                 "banner": self.cfg["banner"], "mode": self.mode, "has_events": bool(self.events),
                 "has_guides": bool(self.guides), "has_courses": bool(self.courses), "build_date": self.today,
                 "list_nav": [(k, v["path"], v["title"]) for k, v in LISTS.items() if self.lists[k] or k == "attraction"],
-                "tourapi_used": self.tourapi_used, "has_map": bool(self.entities), "has_videos": bool(self.videos),
+                "tourapi_used": self.tourapi_used, "source_used": self.source_used,
+                "has_map": bool(self.entities), "has_videos": bool(self.videos),
                 "has_search": bool(self.entities), "has_abroad": bool(self.abroad or self.abroad_videos),
                 "art_slots": art.for_lang(self.art, "ko"), **self.common_vm,
                 **present.page_chrome(page_kind, bool(self.courses))}
@@ -836,11 +878,11 @@ def _src_note(src: dict) -> str:
 def llms_txt(S: State) -> tuple[str, str]:
     """llms.txt (links) and llms-full.txt (facts). In production, pages below the index criteria are left out."""
     site, src = S.site, S.site["source"]
-    credits = f"원문 출처: {src['name']} ({src['url']})."
-    if S.tourapi_used:
-        credits += " 관광 정보·사진: 한국관광공사 TourAPI."
+    # name the city's tourism site as a source only when a built record cites it (State.source_used)
+    credits = " ".join([*([f"원문 출처: {src['name']} ({src['url']})."] if S.source_used else []),
+                        *(["관광 정보·사진: 한국관광공사 TourAPI."] if S.tourapi_used else [])])
     head = [f"# {site['site_name']}", "", f"> {site.get('description', '')} {site.get('disclaimer', '')}".strip(), "",
-            f"{credits} 방문 정보마다 출처를 적었습니다. 운영: {(site.get('operator') or {}).get('name', '')}.", ""]
+            f"{credits} 방문 정보마다 출처를 적었습니다. 운영: {(site.get('operator') or {}).get('name', '')}.".lstrip(), ""]
     short = list(head)
     if S.guides:
         hubs = sorted(h[0] for h in (list_hub(k) for k in LISTS) if h)  # 맛집·숙소·가볼만한 곳 허브 가이드 먼저
@@ -1171,10 +1213,12 @@ class NoPlacesError(RuntimeError):
     """A production build of a region with no collected places (EMPTY_HINT)."""
 
 
-def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
+def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str | None = None) -> dict:
+    """empty_hint: what to print instead of EMPTY_HINT when there are no places (a caller that builds a temporary copy,
+    e.g. tools/build_review.py, names the real data folder and the step that is missing)."""
     S = State(data_dir, mode)
     if not S.entities_all:
-        hint = EMPTY_HINT.format(places=Path(data_dir) / "places.json", data=data_dir)
+        hint = empty_hint or EMPTY_HINT.format(places=Path(data_dir) / "places.json", data=data_dir)
         if mode == "production":
             raise NoPlacesError(hint)
         print(f"안내: {hint} 지금은 빈 상태 사이트를 만듭니다.", file=sys.stderr)
@@ -1436,7 +1480,7 @@ def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
     lastmod = latest(*(x.get("_page_date") for x in S.entities + S.guides + S.courses),
                      *(e.get("checked_at") for e in S.events))
     page = _simple_page(S, path, f"소개·출처 안내 | {S.site['site_name']}",
-                        "이 사이트가 무엇인지, 원문 출처와 이용조건, 사진, 운영 주체, 정정 요청 방법을 안내합니다.", crumbs)
+                        "이 사이트가 무엇인지, 출처와 이용조건, 사진, 운영 주체, 정정 요청 방법을 안내합니다.", crumbs)
     license_counts = {}
     for e in S.entities:
         code = (e.get("original") or {}).get("license") or "UNKNOWN"

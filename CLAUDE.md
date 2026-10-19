@@ -35,7 +35,8 @@
 3. **시 공식 관광 사이트의 원문·사진은 게재하지 않는다**(확인 전 기본값).
    - 인천투어(https://itour.incheon.go.kr/) 하단: "COPYRIGHT(c) 2018 Incheon Metropolitan City. ALL RIGHTS RESERVED.", 첫 화면에 공공누리 표시 없음(2026-10-19 확인).
    - `site.json` `city.official`(이름·짧은 이름·주소 도메인)이 출처 줄과 링크 판단에 쓰인다.
-   - 원문은 링크로만 건다. 설명은 우리 문장으로 쓴다(원문과 15자 이상 연속 일치 금지).
+   - `site.json` `source`(인천투어)는 빌드한 레코드가 실제로 그 이름이나 주소를 출처로 달 때만 바닥글·/about/·llms.txt·사이트 도우미에 '원문 출처'로 나온다(`pipeline/build.py` `source_cited`). TourAPI로만 모은 동안은 '한국관광공사 TourAPI'만 출처로 적고, 인천투어는 `official_links`의 공식 안내 링크로만 둔다.
+   - 원문은 링크로만 건다. 설명은 우리 문장으로 쓴다(원문과 15자 이상 연속 일치 금지 — TourAPI overview도 같다. `tools/content_check.py`와 빌드 검증이 잡는다).
    - 표의 값(시간·요금·메뉴)은 값 그대로 써도 된다.
    - 페이지에 공공누리 표시가 따로 있으면 그 유형을 확인한 뒤 따른다(6절).
 4. **TourAPI 이미지**
@@ -97,11 +98,11 @@
 - **접근성**: 대비 4.5:1, 터치 영역 44px, 보이는 포커스, 이미지 alt.
 
 ## 6. 사람이 정할 것 — 결정하지 말고 선택지와 권장안으로 보고
-- **도메인**(`site_url`): 지금은 자리표시 `https://incheon.example.com`(production 검증이 막는다). 처음부터 최종 주소로 정한다(권장: 회사 하위 주소). 공개 뒤에는 바꾸지 않는다.
+- **도메인**(`site_url`): 지금은 자리표시 `https://incheon.example.com`(production 검증이 막는다). 처음부터 최종 주소로 정한다(권장: 회사 하위 주소). 공개 뒤에는 바꾸지 않는다. production 검증은 `ga4_id`(또는 운영자 사유를 적은 `launch_exceptions.ga4_id`)와 `operator.contact`가 비어 있어도 막는다 — 공개 빌드에는 세 값이 모두 필요하다.
 - **사이트 이름**: '인천 여행의 모든 것'은 가칭이다. 도메인과 같은 이름으로 읽히게 확정한다. 운영 표기(에이아이오투오)도 확인한다.
-- **GA4·GTM**(도시별 별도 속성), **검색엔진 인증 토큰**(구글·빙·네이버), IndexNow 키(공개 직전).
+- **GA4·GTM**(도시별 별도 속성; `ga4_id`가 비어 있으면 production 검증이 막는다 — GA4를 공개 뒤에 달기로 정하면 `site.json` `launch_exceptions.ga4_id`에 사유), **검색엔진 인증 토큰**(구글·빙·네이버), IndexNow 키(공개 직전).
 - **공개**: 공개 범위·시점, 검수(검수 시트), 운영자 공개 승인.
-- **정정 요청 연락처**(`operator.contact`), 편집 책임자 표기.
+- **정정 요청 연락처**(`operator.contact`, 비어 있으면 production 검증이 막는다), 편집 책임자 표기.
 - **페이지 주소 형식**: 한글 슬러그 / 영문 슬러그 — 공개 전에 정한다.
 - **범위**: 구·군 11곳 전체 / 권역부터(`tools/tourapi_bulk.py --districts`).
 - **구·군 이름**: 2026-07-01 「인천광역시 제물포구ㆍ영종구 및 검단구 설치 등에 관한 법률」 시행(국가법령정보센터 확인)으로 중구·동구가 폐지되고 제물포구·영종구·검단구가 생겼다. 서구의 새 이름 '서해구'는 위키백과로만 확인했다 — 확인 필요. 영종구 법정동 8개(권역 규칙)도 위키백과에서 옮겼다 — 행정표준코드로 확인.
@@ -124,6 +125,8 @@ python tools/tourapi_doctor.py --data data/incheon                   # 연결·�
 python tools/tourapi_bulk.py --data data/incheon --details --add-new --events --max-calls 900   # 수집만(collect.py가 부르는 것)
 python -m pipeline.build --data data/incheon --out dist-preview --mode preview
 python -m pipeline.validate --data data/incheon --out dist-preview --mode preview
+python tools/content_check.py --data data/incheon                     # 우리가 쓴 요약·FAQ 검사(원문 베끼기·숫자·출처·표현)
+python tools/build_review.py --data data/incheon --out dist-review --report-dir reports   # 공개 선별 미리보기(승인 전)
 python tools/build_public.py --data data/incheon --out public          # 공개 빌드 + 검증(production)
 python -m pipeline.build --data data/sample --out dist-sample --mode sample && python -m pipeline.validate --data data/sample --out dist-sample --mode sample
 python tools/quality_report.py --data data/incheon --out public

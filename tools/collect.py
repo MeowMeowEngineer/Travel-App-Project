@@ -126,11 +126,13 @@ def next_commands(data: str, today: str, stopped: bool, max_calls: int, extra: s
         f"python -m pipeline.validate --data {data} --out dist-preview --mode preview",
         "   열어 보기: python -m http.server -d dist-preview 8000   (draft까지 보이고 전부 noindex)",
         "2. 요약 쓰기(CLAUDE.md 3절 5항): 새 장소는 요약이 비어 있다 — 요약이 생겨야 공개 선별·색인 대상이 된다.",
+        f"   쓴 뒤 문장 검사: python tools/content_check.py --data {data}   (원문 베끼기·숫자·출처·표현 — 걸리면 고쳐 쓴다)",
         f"3. 공개 선별 미리보기: python tools/build_review.py --data {data} --out dist-review --report-dir reports",
         f"4. 운영자 공개 승인(사람): python tools/approve_publication.py --data {data} --date {today}   "
         "← 미리 보기, 운영자가 정하면 --apply",
         f"5. 공개 빌드·검증: python tools/build_public.py --data {data} --out public   "
-        "(site_url이 자리표시인 동안은 검증이 막는다 — 도메인은 운영자가 정한다)",
+        "(site.json의 site_url·ga4_id(또는 launch_exceptions.ga4_id에 운영자 사유)·operator.contact가 채워져야 "
+        "검증을 통과한다 — 모두 운영자가 정한다)",
     ]
     return lines
 
@@ -241,7 +243,9 @@ def main(argv: list[str] | None = None) -> int:
 
     summary = data_summary(a.data, today)
     lines = summary_lines(stats, summary, used, a.max_calls)
-    extra = (f" --districts {a.districts}" if only else "") + (" --gallery" if a.gallery else "")
+    # the resume command repeats every option that shapes what is asked (the cache keys): districts, events date, gallery
+    extra = (f" --districts {a.districts}" if only else "") + (f" --events-from {a.events_from}" if a.events_from else "") \
+        + (" --gallery" if a.gallery else "")
     steps = next_commands(str(a.data).replace(os.sep, "/"), today, bool(stats.get("stopped")), a.max_calls, extra)
     say("== 3. 결과 ==")
     for line in lines:

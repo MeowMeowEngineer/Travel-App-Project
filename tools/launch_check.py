@@ -10,7 +10,7 @@
   operator.contact는 임시 값으로 두고 한 번 더 빌드·검증한다. 검수를 마치고 공개하면 나올 오류를 미리 보여 준다.
 - 색인 준비도는 pipeline.schema.index_status를 쓰되 '검수일 없음' 사유는 빼고 본다(검수는 사람의 단계).
 - 같은 데이터·설정이면 같은 파일이 나온다(날짜·시각·임시 경로를 넣지 않는다).
-- 공개·설정 값·status·reviewed_at은 사람이 정한다(CLAUDE.md 3절 5항·9절). 이 도구는 할 일만 적는다.
+- 공개·설정 값·status·reviewed_at·approved_at은 사람이 정한다(CLAUDE.md 3절 7항·6절). 이 도구는 할 일만 적는다.
 """
 from __future__ import annotations
 
@@ -49,13 +49,16 @@ ACTIONS = (
     (r"^site_url", "`site.json`의 `site_url`에 최종 https 주소를 넣는다. 도메인 또는 서브도메인으로 정한다"
                    "(네이버는 하위 폴더를 등록하지 않음). 공개 후에는 바꾸지 않는다."),
     (r"^ga4_id", "GA4 속성을 만들고 측정 ID(G-…)를 `ga4_id`에 넣는다. 맞춤 측정기준 place_id·link_provider·"
-                 "page_kind를 등록하고 실시간 보고서에서 페이지뷰를 확인한다."),
+                 "page_kind를 등록하고 실시간 보고서에서 페이지뷰를 확인한다. 운영자가 GA4를 공개 뒤에 달기로 정했다면 "
+                 "`launch_exceptions.ga4_id`에 그 사유를 적는다(검증이 경고로 바뀐다)."),
     (r"^operator\.contact", "정정 요청을 받을 연락처(이메일 등)를 `operator.contact`에 넣는다. 회사 소개 주소가 있으면 "
                             "`operator.url`도 넣는다(Organization 구조화 데이터는 이 값만 쓴다)."),
     (r"절대 주소 \d+건이 site_url", "따로 고칠 것 없음: `site_url`을 넣고 production을 다시 빌드하면 canonical·og·sitemap·"
                                   "robots·llms·JSON-LD 주소가 모두 그 도메인으로 바뀐다. 다시 빌드한 뒤에도 남으면 개발 쪽에 넘긴다."),
-    (r"reviewed_at", "검수 시트(`python tools/make_review_sheet.py`)에 OK를 적고 `python tools/apply_review.py --sheet … "
-                     "--apply`로 검수일을 기록한다. published 전환은 그다음 사람이 한다."),
+    (r"reviewed_at", "운영자 공개 승인(`python tools/build_review.py …`로 공개 선별 → `python tools/approve_publication.py "
+                     "--date <날짜> --apply`)이 approved_at을 남긴다. 사람 검수일(reviewed_at)은 검수 시트(`python "
+                     "tools/make_review_sheet.py` → `python tools/apply_review.py --sheet … --apply`, tier=full 장소·가이드·"
+                     "코스·행사만)로 남긴다."),
     (r"실용 정보 없음", "이 장소는 published로 바꾸지 않는다. 공개하려면 TourAPI·공식 페이지에서 주소 외 방문 정보"
                        "(이용시간·쉬는 날·요금·주차·문의)를 하나 이상 채운다."),
     (r"블록 내용 부족|필수 블록 없음", "해당 장소의 요약·방문 정보·FAQ 등 빈 블록을 채운 뒤 공개한다."),
@@ -351,8 +354,8 @@ def render(data: Path, prod: dict, reh: dict, R: dict, targets: list[dict], ques
     pending = owner_rows(O)
     L = ["# 공개 전 점검표", "",
          "> `python tools/launch_check.py`가 만든 파일이다. 직접 고치지 말고 다시 실행한다. 같은 데이터·설정이면 같은 내용이 나온다.",
-         "> 근거: `docs/handover/aeo_geo_spec.md` 5절, `docs/03_prelaunch_checklist.md`. 공개·설정 값·status·reviewed_at은 사람이 정한다"
-         "(CLAUDE.md 3절 5항·9절).", "",
+         "> 근거: CLAUDE.md 3절 7·8항(공개·색인 기준)과 6절(사람이 정할 것), README '키만 넣으면 사이트가 나오기까지'. "
+         "공개·설정 값·status·reviewed_at·approved_at은 사람이 정한다.", "",
          "## 요약", "",
          f"- production 검증 오류 {len(prod['errors'])}건 → 사람이 할 일 {len(groups)}가지(1절), 검증에는 안 걸리지만 비어 있는 공개 설정 "
          f"{len(missing_settings)}개",
@@ -372,9 +375,10 @@ def render(data: Path, prod: dict, reh: dict, R: dict, targets: list[dict], ques
     L += error_table(groups, R)
     L += ["", "### 검증에는 안 걸리지만 공개 전에 넣을 값", "", "| 항목 | 지금 | 할 일 |", "|---|---|---|"]
     L += [f"| `{k}` | {v} | {_cell(a)} |" for k, v, a in settings]
-    L.append(f"| 공개 대상 | " + " · ".join(f"{k} {v}" for k, v in pub.items()) + " | 검수 시트(`python tools/make_review_sheet.py`) → "
-             "OK 판정 → `python tools/apply_review.py --sheet … --apply`(status=reviewed·검수일) → 사람이 질문 대상부터 "
-             "status=published로 바꾼다. |")
+    L.append(f"| 공개 대상 | " + " · ".join(f"{k} {v}" for k, v in pub.items()) + " | 요약 쓰기 → `python tools/content_check.py` "
+             "→ 공개 선별 `python tools/build_review.py …` → 운영자 공개 승인 `python tools/approve_publication.py --date <날짜> "
+             "--apply`(status=published·approved_at). 검수 시트(`make_review_sheet.py` → `apply_review.py`)는 reviewed·검수일만 "
+             "남긴다. |")
     L += ["", "### 리허설: 검수를 마치고 전부 공개하면 나올 오류", "",
           "데이터의 임시 사본에서 모든 장소·가이드·코스·행사를 published·검수일 있음으로, `site_url`·`ga4_id`·`operator.contact`는 "
           "임시 값으로 두고 다시 빌드·검증했다. 원본은 바꾸지 않았다.", ""]
@@ -415,7 +419,7 @@ def render(data: Path, prod: dict, reh: dict, R: dict, targets: list[dict], ques
                   "도메인을 정한 뒤 절대 URL을 적는다):", ""]
         L += [f"- {q['id'].strip()}: {_cell((q.get('related_pages') or '').strip() or '-')}" for q in none]
 
-    L += ["", "## 3. 공개할 때 사람이 할 일 (aeo_geo_spec 5절)", ""] + launch_items(O, R, reh)
+    L += ["", "## 3. 공개할 때 사람이 할 일", ""] + launch_items(O, R, reh)
     L += ["", "## 4. 사람이 정할 것 (결정 대기)", "", "| 항목 | 지금 | 선택지 · 권장 |", "|---|---|---|"]
     L += [f"| {_cell(a)} | {_cell(b)} | {_cell(c)} |" for a, b, c in pending]
     return "\n".join(L) + "\n"
@@ -456,9 +460,12 @@ def launch_items(O: dict, R: dict, reh: dict) -> list[str]:
         f"- [ ] **IndexNow(배포 후마다)**: `indexnow_key` {_filled(site.get('indexnow_key'))}. production을 빌드·배포하고 "
         "`https://<도메인>/<키>.txt`가 열리는지 본 뒤 `python tools/indexnow.py --out <prod> --send`. 응답 코드를 측정 기록에 남긴다"
         "(빙·네이버·얀덱스 등에 전달, 구글은 아님).",
-        f"- [ ] **검수 → 공개 전환**: 지금 published {pub_total}건. `python tools/make_review_sheet.py --data data/incheon --out "
-        "docs/handover/review_round3.csv` → 판정 칸에 OK/수정 → `python tools/apply_review.py --sheet docs/handover/review_round3.csv "
-        "--apply`(status=reviewed·reviewed_at) → 질문 대상 페이지부터 사람이 status=published. 2절의 '미달' 페이지는 내용을 채운 뒤에.",
+        f"- [ ] **요약 → 선별 → 공개 승인**: 지금 published {pub_total}건. 요약·FAQ를 쓰고 `python tools/content_check.py "
+        "--data data/incheon`(원문 베끼기·숫자·출처·표현) → `python tools/build_review.py --data data/incheon --out dist-review "
+        "--report-dir reports`(공개 선별, noindex) → 운영자가 정하면 `python tools/approve_publication.py --data data/incheon "
+        "--date <날짜> --apply`(status=published·approved_at). 2절의 '미달' 페이지는 내용을 채운 뒤에. 사람 검수일을 남기려면 "
+        "검수 시트(`python tools/make_review_sheet.py --data data/incheon --out reports/review.csv` → `python tools/apply_review.py "
+        "--sheet reports/review.csv --apply`, tier=full 장소·가이드·코스·행사만, status=reviewed·reviewed_at).",
         "- [ ] **주 1회 갱신**: `python tools/refresh.py`(TourAPI 캐시 우선 → 공식 확인값 → `public/` → `reports/quality_latest.md`, "
         "push·배포 없음). 행사 월별 묶음과 색인 판정이 빌드 시점 기준이므로 측정 기간에는 매주, 행사·사실이 바뀔 때마다 다시 빌드하고 "
         "배포 후 IndexNow를 보낸다. 응답을 새로 받으려면 `--fresh`.",
@@ -476,8 +483,8 @@ def owner_rows(O: dict) -> list[tuple[str, str, str]]:
          "WebforAI / Web4AI 중 하나. 회사가 앞으로 쓸 표기로 정하고 `brand`·`site_name`을 함께 맞춘다."),
         ("운영 주체 표시", f"`operator.name`={op.get('name', '')} · url {_filled(op.get('url'))} · contact {_filled(op.get('contact'))}",
          "정정 요청 연락처는 공개 전 필수(1절). url·sameAs는 회사 공식 채널이 있을 때만."),
-        ("TourAPI 텍스트(overview) 게재", f"{O['overview']}곳에 사실 확인용으로만 저장, 화면에 싣지 않음(`docs/rights.md`)",
-         "싣지 않음 / 이용허락범위 확인 후 싣기. 권장: 싣지 않음 — 답변 인용은 출처를 단 우리 문장과 사실표로 충분하다(aeo_geo_spec 5절 10)."),
+        ("TourAPI 텍스트(overview) 게재", f"{O['overview']}곳에 사실 확인용으로만 저장, 화면에 싣지 않음(CLAUDE.md 3절 4항)",
+         "싣지 않음 / 이용허락범위 확인 후 싣기. 권장: 싣지 않음 — 답변 인용은 출처를 단 우리 문장과 사실표로 충분하다."),
         ("3유형(KOGL-3) 사진을 og:image로", f"1유형 사진이 없어 3유형이 대표 이미지가 되는 장소 {len(t3)}곳"
          + (f"(예: {', '.join(t3[:5])})" if t3 else ""),
          "허용(지금 동작, 플랫폼이 미리보기를 자를 수 있음) / 3유형만 있으면 og:image 없음. 변경 금지 조건 때문에 정하기 전까지 1유형 우선."),

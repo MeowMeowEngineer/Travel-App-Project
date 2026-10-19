@@ -903,8 +903,8 @@ class Knowledge:
             ("/search/", "검색: 장소 이름·다른 이름·대표 메뉴·동 이름·코스·가이드·행사 이름으로 찾는다", ""),
             ("/videos/", f"영상 {len(S.videos)}편, 주제별 (공식 채널 표시, 누를 때만 YouTube 불러옴)", ""),
             ("/abroad/", f"해외에서 본 {region}: 외신·해외 매체 기사 {len(S.abroad)}건과 외국어 영상 {len(S.abroad_videos)}편", ""),
-            ("/about/", f"소개·출처: 운영 {op.get('name', '')}, 공식 사이트 아님(독립 운영), 원문 출처 {site.get('source', {}).get('name', '')}"
-                        f"·한국관광공사 TourAPI, {f'정정 요청 {contact}, ' if contact else ''}사이트 안내 챗봇 설명 /about/#chatbot", ""),
+            ("/about/", f"소개·출처: 운영 {op.get('name', '')}, 공식 사이트 아님(독립 운영), 출처 {self.source_names()}, "
+                        f"{f'정정 요청 {contact}, ' if contact else ''}사이트 안내 챗봇 설명 /about/#chatbot", ""),
         ]
         out = []
         for path, line, extra in pages:
@@ -918,6 +918,12 @@ class Knowledge:
         self.about_doc()
         return out
 
+    def source_names(self) -> str:
+        """The sources the built pages cite: the city's tourism site only when a record cites it (State.source_used)."""
+        S = self.S
+        names = [*([(S.site.get("source") or {}).get("name", "")] if S.source_used else []), "한국관광공사 TourAPI"]
+        return "·".join(n for n in names if n)
+
     def about_doc(self) -> None:
         S = self.S
         site = S.site
@@ -929,7 +935,9 @@ class Knowledge:
              + (f", 편집 책임 {site['editor']['name']}" if (site.get("editor") or {}).get("name") else "")
              + (f", 정정 요청 {op['contact']}" if op.get("contact") else ""),
              f"공식 제휴: {site.get('affiliation') or '없음 — 지자체·기관의 공식 사이트가 아니다'}",
-             f"원문 출처: {src.get('name', '')} {src.get('url', '')}. 장소의 실용 정보(이용시간·요금 등)는 값마다 출처를 적고, "
+             (f"원문 출처: {src.get('name', '')} {src.get('url', '')}. " if S.source_used else
+              f"정보 출처: {self.source_names()}. ")
+             + "장소의 실용 정보(이용시간·요금 등)는 값마다 출처를 적고, "
              "출처끼리 값이 다르면 둘 다 싣는다. 출처에 없는 항목은 '확인 필요'로 표시한다.",
              "사진: 한국관광공사 TourAPI의 공공누리 제1·3유형만, 출처와 함께. 제3유형은 자르거나 보정하지 않는다.",
              "거리: 코스·가이드·주변 목록의 거리는 모두 좌표 사이의 직선거리다.",
