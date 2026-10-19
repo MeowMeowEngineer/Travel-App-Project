@@ -27,15 +27,21 @@
        {guide: [...], route: bool}                numbered places (id: the place, gs:focus), joined only when route is true
        {list: [{lat, lng, name, url, id, kind, r}]}   a list page's places (id = the row's id: row ↔ marker); only the
                                                   places the list's filter keeps (window.GSFilter / gs:filter), framed
-                                                  on them; each marker a link named by the place (quiet beside the
-                                                  shown list, in the tab order where the list is hidden: phones' 지도)
-       {all: [...same...], anchor_pts: [{name, n, geo}]}   the map page: 권역 labels, '먼 섬' edge control
+                                                  on their main body (body(): a group a sea away is left to a
+                                                  '지도 밖 n곳도 보기' control that frames them all); beside the shown
+                                                  list in the box's part in the window, framed again as the page
+                                                  scrolls more of it in (until the reader moves the map); each marker a
+                                                  link named by the place (quiet beside the shown list, in the tab
+                                                  order where the list is hidden: phones' 지도)
+       {all: [...same...], anchor_pts: [{name, n, geo}]}   the map page: 권역 labels, '먼 섬' edge control; a chosen 권역
+                                                  (gs:region) framed on its main body as a list's filter
        {anchors: [{lat, lng, name, n, url, place}]}  the home: the 권역 anchors labelled with their counts, each a
                                                   link to its region on /map/ (present.home_vm region_map)
      Every box gets data-lenis-prevent (wheel and touch on the map stay the map's).
 
    ZOOM: Kakao levels (1 = street, 14 = the whole country; one level is twice the scale; level 3 ≈ 1 m per pixel, a
-   web-map zoom z ≈ level 20 − z): street-level stops 4, a place 5.
+   web-map zoom z ≈ level 20 − z): street-level stops 4, a place 5. The zoom buttons and keys zoom on the middle of the
+   part of the box in the window (setLevel's anchor), not on the middle of a box partly below it.
 
    API: window.GSMaps (registry: {el, map (the kakao.maps.Map), g (the adapter below), markers, data, frame, line,
    progress, lls, activeN, paint, showHome, showAround, whenIdle, progressTo}): a numbered map marks stop activeN .on
@@ -120,18 +126,87 @@
     var q = function (a, x) { return a[Math.min(a.length - 1, Math.max(0, Math.round((a.length - 1) * x)))]; };
     return [[q(la, f), q(ln, f)], [q(la, 1 - f), q(ln, 1 - f)]];
   }
+  // a selection's main body: its places joined by steps of at most GAP_M (the groups that hold a quarter of them or
+  // more; all of them when there are fewer than 8, or when those groups hold less than half). A group a sea away is
+  // left to the '지도 밖' control (rest) — robust() cannot leave it: 백령도·대청도 are 15% of 옹진 섬, 160 km from
+  // 영흥도, and robust(pts, 0.08) kept them (QA 2026-10-19 QA-41: 옹진 섬 opened at 64 km on a phone, 32 km at 1440).
+  // In every other 권역 the widest gap between a group of places and the rest is 7 km (a few stray coordinates
+  // thousands of km off aside); 옹진's island groups lie 25–80 km apart.
+  var GAP_M = 20000;
+  function body(lls) {
+    var n = lls.length;
+    if (n < 8) return lls;
+    var lat = lls.map(function (a) { return a[0]; }).sort(function (a, b) { return a - b; })[n >> 1];
+    var kx = 111320 * Math.cos(lat * Math.PI / 180), xy = lls.map(function (a) { return [a[1] * kx, a[0] * 111320]; });
+    var up = lls.map(function (a, i) { return i; }), cell = {};
+    var find = function (i) { while (up[i] !== i) { up[i] = up[up[i]]; i = up[i]; } return i; };
+    xy.forEach(function (p, i) { // grid cells GAP_M wide: a point meets only the points in its own and the 8 cells round it
+      var cx = Math.floor(p[0] / GAP_M), cy = Math.floor(p[1] / GAP_M);
+      for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) (cell[(cx + dx) + "," + (cy + dy)] || []).forEach(function (j) {
+        var ex = xy[j][0] - p[0], ey = xy[j][1] - p[1];
+        if (ex * ex + ey * ey <= GAP_M * GAP_M) up[find(i)] = find(j);
+      });
+      (cell[cx + "," + cy] = cell[cx + "," + cy] || []).push(i);
+    });
+    var size = {};
+    lls.forEach(function (a, i) { var k = find(i); size[k] = (size[k] || 0) + 1; });
+    var keep = lls.filter(function (a, i) { return size[find(i)] * 4 >= n; });
+    return keep.length * 2 >= n ? keep : lls;
+  }
   // a tall sticky map whose lower part is below the window at first view: frame the points in the visible part
   function hiddenBelow(el) {
     var r = el.getBoundingClientRect(), vh = win.innerHeight;
     return r.top < vh && r.bottom > vh ? Math.min(r.height - 160, r.bottom - vh) : 0;
   }
-  function visibleView(g, b, pad, minLv) {
+  // b framed in the box less its lower hb px (the part below the window); top: a larger top padding
+  function frameIn(g, b, pad, minLv, hb, top) {
     if (b.length === 1) return { c: b[0], lv: 5 };
-    var hb = Math.max(0, hiddenBelow(g.el));
-    return g.fitView(b, [pad, pad, pad + hb, pad], minLv || 2);
+    return g.fitView(b, [Math.max(pad, top || 0), pad, pad + hb, pad], minLv);
   }
+  function visibleView(g, b, pad, minLv) { return frameIn(g, b, pad, minLv || 2, Math.max(0, hiddenBelow(g.el))); }
   function fitVisible(g, b, pad, minLv) { var v = visibleView(g, b, pad, minLv); g.view(v.c, v.lv, false); }
   function visible(el) { return el.offsetParent !== null && el.getBoundingClientRect().height > 0; }
+  // the places of lls outside view v's part above hb (container pixels worked out on the plane: no map needed)
+  function outside(g, v, lls, hb) {
+    var sz = g.size(), c = g.project(v.c, v.lv);
+    return lls.filter(function (a) {
+      var p = g.project(a, v.lv), x = p.x - c.x + sz.x / 2, y = p.y - c.y + sz.y / 2;
+      return x < 0 || y < 0 || x > sz.x || y > sz.y - hb;
+    }).length;
+  }
+  // a selection (a list's filter, a 권역 on /map/) framed on its main body (all of it once the '지도 밖' control has
+  // been pressed: r.wide, until the selection changes)
+  function selView(r, sel, pad, minLv, hb) {
+    var key = sel.join(";");
+    if (key !== r.selKey) { r.selKey = key; r.wide = false; }
+    var b = r.wide ? sel : body(sel), v = frameIn(r.g, b, pad, minLv, hb), n = b.length < sel.length ? outside(r.g, v, sel, hb) : 0;
+    if (n && n * 10 >= sel.length) { // the control's row (top right, 44px) kept clear of the markers
+      v = frameIn(r.g, b, pad, minLv, hb, 64);
+      n = outside(r.g, v, sel, hb);
+    }
+    rest(r, n, sel.length);
+    return v;
+  }
+  // '지도 밖 n곳도 보기' (top right, the far-ctl look): the places the main body leaves out of the view, when they are a
+  // tenth of the selection or more (a stray coordinate or two stay one zoom-out away, as before); a press frames them
+  // all. Hidden otherwise
+  function rest(r, n, of) {
+    if (!n || n * 10 < of) { if (r.restBtn) r.restBtn.hidden = true; return; }
+    if (!r.restBtn) {
+      var b = r.restBtn = doc.createElement("button");
+      b.type = "button";
+      b.className = "far-ctl map-all map-rest";
+      b.addEventListener("click", function () {
+        r.wide = true;
+        b.hidden = true;
+        if (r.data.list) { var v = listView(r); r.g.view(v.c, v.lv, true); } else if (lastRegion) applyRegion(r, lastRegion);
+      });
+      r.g.ctl.tr.appendChild(b);
+    }
+    r.restBtn.textContent = (W.rest || (EN ? "Show the {n} off the map" : "지도 밖 {n}곳도 보기")).replace("{n}", n);
+    r.restBtn.hidden = false;
+  }
+  function besideList() { return Array.prototype.some.call(doc.querySelectorAll("[data-ledger]"), visible); }
   // a list map's filter (site.js keeps the list's shown row ids in window.GSFilter and sends gs:filter): the kept
   // points ({keep: {id: 1}, lls}), or null when every point is kept (the map then shows its whole frame)
   function picked(list, ids) {
@@ -141,15 +216,17 @@
     list.forEach(function (p) { if (keep[idOf(p)]) lls.push([p.lat, p.lng]); });
     return lls.length === list.length ? null : { keep: keep, lls: lls };
   }
-  // the view of a list map: the filtered places with coordinates (all of them, nothing trimmed), else the whole frame.
-  // Where the list is not shown (phones' 지도), framed in the whole box — not only its part on the first screen: the
-  // zoom buttons zoom on the box's middle (QA 2026-10-19 QA-40: the markers sat in the top of the box and two zoom-ins
-  // left none in view)
+  // the view of a list map: the filtered places with coordinates — their main body (selView), else the whole frame.
+  // Where the list is not shown (phones' 지도), framed in the whole box; beside the shown list (desktop: a sticky box
+  // whose lower part may be below the window) in its part in the window — r.hb, framed again when the page scrolls
+  // more of it in or out (listRefit); the zoom buttons zoom on the middle of that part (g.seen). QA 2026-10-19 QA-40:
+  // the markers sat in the top third of the box once it was all in view, and two zoom-ins on the box's middle, below
+  // the window, left none in view
   function listView(r) {
-    var s = r.picked, b = s && s.lls.length ? s.lls : r.frame, pad = s && s.lls.length ? 36 : 28, minLv = s && s.lls.length ? 5 : 2;
-    var alone = !Array.prototype.some.call(doc.querySelectorAll("[data-ledger]"), visible);
-    if (alone) return b.length === 1 ? { c: b[0], lv: 5 } : r.g.fitView(b, [pad, pad, pad, pad], minLv);
-    return visibleView(r.g, b, pad, minLv);
+    var s = r.picked, hb = r.hb = besideList() ? Math.max(0, hiddenBelow(r.g.el)) : 0;
+    if (s && s.lls.length) return selView(r, s.lls, 36, 5, hb);
+    rest(r, 0);
+    return frameIn(r.g, r.frame, 28, 2, hb);
   }
   // beside a shown list a list map's markers are quiet (out of the tab order, hidden from screen readers: the rows
   // are the same links); where the list is not shown (phones' 지도 view) they are named links in the tab order. The
@@ -229,6 +306,7 @@
       g.on = function (type, fn) { K.event.addListener(k, type, fn); return function () { K.event.removeListener(k, type, fn); }; };
       g.view = function (c, lv, fly) {
         lv = clampLv(lv);
+        g.moved = false;
         if (!fly || reduce) { k.setLevel(lv); k.setCenter(LL(c)); return; }
         if (lv === k.getLevel()) { k.panTo(LL(c)); return; }
         k.setCenter(LL(c));
@@ -252,7 +330,26 @@
         l.setMap(k);
         return l;
       };
-      var zoom = function (d) { var lv = clampLv(k.getLevel() + d); if (lv !== k.getLevel()) k.setLevel(lv, { animate: !reduce }); };
+      // the middle of the part of the box in the window (null when the box is all in it): the buttons and keys zoom on
+      // it, so what the reader sees stays in view (QA 2026-10-19 QA-40: a sticky list map with its lower half below
+      // the window zoomed on the box's middle, out of sight — two zoom-ins left no marker in view)
+      g.seen = function () {
+        var r = box.getBoundingClientRect(), t = Math.max(r.top, 0), b = Math.min(r.bottom, win.innerHeight);
+        return b <= t || (t === r.top && b === r.bottom) ? null : g.ll(pt(r.width / 2, (t + b) / 2 - r.top));
+      };
+      // the reader moved the map (a drag, a double click, the zoom buttons, the keys) since the page last framed it
+      // (g.view): a list map is then not framed again on its own (listRefit)
+      g.moved = false;
+      var moved = function () { g.moved = true; };
+      g.on("dragstart", moved);
+      g.on("dblclick", moved);
+      var zoom = function (d) {
+        var lv = clampLv(k.getLevel() + d), a = g.seen(), o = { animate: !reduce };
+        if (lv === k.getLevel()) return;
+        moved();
+        if (a) o.anchor = LL(a);
+        k.setLevel(lv, o);
+      };
       zin.addEventListener("click", function () { zoom(-1); });
       zout.addEventListener("click", function () { zoom(1); });
       var zstate = function () { zin.disabled = k.getLevel() <= MINLV; zout.disabled = k.getLevel() >= MAXLV; };
@@ -261,7 +358,7 @@
       box.addEventListener("keydown", function (e) {
         if (e.target !== box || e.altKey || e.ctrlKey || e.metaKey) return;
         var d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-        if (d) k.panBy(d[0] * 96, d[1] * 96);
+        if (d) { moved(); k.panBy(d[0] * 96, d[1] * 96); }
         else if (e.key === "+" || e.key === "=") zoom(-1);
         else if (e.key === "-" || e.key === "_") zoom(1);
         else return;
@@ -832,9 +929,9 @@
       if (ok) { if (!r.g.shown(mk)) mk.setMap(r.map); pts.push([p.lat, p.lng]); } else if (r.g.shown(mk)) mk.setMap(null);
     });
     r.sel = det.region;
-    // the 권역's middle: its far islands stay on the map, one zoom-out away (QA 2026-10-19 QA-41: 옹진 opened at 64 km)
-    if (det.region && pts.length) r.g.fit(robust(pts, 0.08), [36, 36, 36, 36], 5, true);
-    else if (!det.region) r.g.fit(r.frame, [28, 28, 28, 28], 2, true);
+    // the 권역's main body: a group of islands a sea away is left to the '지도 밖' control (body(), QA 2026-10-19 QA-41)
+    if (det.region && pts.length) { var v = selView(r, pts, 36, 5, 0); r.g.view(v.c, v.lv, true); }
+    else { rest(r, 0); if (!det.region) r.g.fit(r.frame, [28, 28, 28, 28], 2, true); }
     if (r.drawRegions) r.drawRegions(det.region);
   }
   doc.addEventListener("gs:region", function (e) { lastRegion = e.detail; maps.forEach(function (r) { applyRegion(r, e.detail); }); });
@@ -858,6 +955,23 @@
   doc.addEventListener("gs:focus", function (e) { lastFocus = (e.detail && e.detail.ids) || []; maps.forEach(function (r) { applyFocus(r, lastFocus); }); });
   doc.addEventListener("gs:mapready", function (e) { if (lastFocus && lastFocus.length) applyFocus(e.detail, lastFocus); });
   win.addEventListener("resize", function () { maps.forEach(listQuiet); }); // the list shows or hides beside the map at 1024px
+  // listRefit: a list map beside its list was framed in its part in the window (listView, r.hb); once the page has
+  // scrolled more of the box in (the sticky box all in view), its places are framed again in what is seen now — unless
+  // the reader has moved the map since (g.moved). QA 2026-10-19 QA-40: framed while the box's lower half was below the
+  // window, the markers stayed in its top third once the box was all in view
+  var refitT = 0;
+  win.addEventListener("scroll", function () {
+    clearTimeout(refitT);
+    refitT = setTimeout(function () {
+      maps.forEach(function (r) {
+        if (!r.data.list || r.hb == null || r.g.moved || !visible(r.el) || r.el.getBoundingClientRect().top < 0) return;
+        var hb = besideList() ? Math.max(0, hiddenBelow(r.el)) : 0;
+        if (r.hb - hb < 48) return;   // more of it in view (scrolled back out, it keeps its frame: the zoom anchor)
+        var v = listView(r);
+        r.g.view(v.c, v.lv, true);
+      });
+    }, 200);
+  }, { passive: true });
   win.GSMapsReady = function (fn) { maps.forEach(fn); doc.addEventListener("gs:mapready", function (e) { fn(e.detail); }); };
   // a map box a script adds later (the course planner's day map, plan.js): built at once, the SDK after 'load'
   win.GSMapStart = function (el) { el.setAttribute("data-lenis-prevent", ""); start(el); };

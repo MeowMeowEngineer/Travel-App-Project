@@ -35,5 +35,6 @@
   .route-row .btn-go { grid-column: 1 / -1; }
   .route-co .route-row { grid-template-columns: 1.6fr 1fr; }
   .route-co .route-row .btn-go { grid-column: auto; }
+  /* the place page's nearby groups: their heading rows keep it free too (css/71-nearby.css, QA 2026-10-19 QA-63) */
 }
 @media print { .qm { display: none; } }

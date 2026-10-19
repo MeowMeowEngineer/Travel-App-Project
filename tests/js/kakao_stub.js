@@ -13,7 +13,11 @@
   Map.prototype.getCenter = function () { return this.c; };
   Map.prototype.setCenter = function (c) { this.c = c; };
   Map.prototype.getLevel = function () { return this.lv; };
-  Map.prototype.setLevel = function (lv) { this.lv = lv; };
+  // Kakao keeps options.anchor at its pixel: the centre moves along the line from it by the change of scale
+  Map.prototype.setLevel = function (lv, o) {
+    if (o && o.anchor) { var f = Math.pow(2, lv - this.lv), a = o.anchor, c = this.c; this.c = new LatLng(a.a + (c.a - a.a) * f, a.b + (c.b - a.b) * f); }
+    this.lv = lv;
+  };
   Map.prototype.panTo = function (c) { this.c = c; };
   Map.prototype.panBy = function () {};
   Map.prototype.relayout = function () {};

@@ -65,6 +65,10 @@ a.seg-nm:hover { color: var(--link); }
 .nb-gh .h-sub { margin: 0; }
 .nb-map { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; font-weight: 700; color: var(--sea-deep); text-decoration: none; }
 .nb-map:hover { text-decoration: underline; }
+/* below 1024px the 'AI 챗봇' launcher holds the bottom right (css/49-chat.css): '지도에서 보기' at the end of its heading
+   row sat two thirds under it whenever the row passed (QA 2026-10-19 QA-63). It follows the heading, and the row's end
+   keeps the launcher's column free — the route row's 72px (css/46-quick.css) less the group's 16px padding */
+@media (max-width: 1023px) { .nb-gh { justify-content: flex-start; padding-right: 56px; } }
 .nr-list { display: grid; gap: 8px; }
 .nr { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; min-height: 72px; padding: 8px 12px 8px 8px; border: 1px solid var(--hair); border-radius: 16px; background: #fff; }
 .nr:hover { border-color: var(--g2); }
