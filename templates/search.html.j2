@@ -15,8 +15,10 @@
 {#- an address with a query (the header's search, the assistant's fallback): the 가나다 directory stays out of the first
     paint — search.js shows the results, or the directory again when the reader asks for it or the index does not load
     (QA 2026-10-19 QA-06: the whole list painted first, then went: CLS 0.36 and every font file); should search.js not
-    start within 8 s, the directory comes back. Without JS it shows. -#}
-{% block head %}<script>(function(h){if(/[?&]q=[^&]/.test(location.search)){h.classList.add('has-q');setTimeout(function(){if(!window.gsSearchOn)h.classList.remove('has-q')},8000)}})(document.documentElement)</script>{% endblock %}
+    start within 8 s, the directory comes back. Without JS it shows. With a query the index starts loading at once
+    (a preload search.js's fetch takes up), not when search.js has come: the results are the page's largest text (a
+    long query painted them at 2.5 s on a slow phone). -#}
+{% block head %}<script>(function(h){if(/[?&]q=[^&]/.test(location.search)){h.classList.add('has-q');var l=document.createElement('link');l.rel='preload';l.as='fetch';l.crossOrigin='anonymous';l.href='/search/index.json';document.head.appendChild(l);setTimeout(function(){if(!window.gsSearchOn)h.classList.remove('has-q')},8000)}})(document.documentElement)</script>{% endblock %}
 {% block main_class %}{% endblock %}
 {% block bodyclass %}pg-search{% endblock %}
 {% block content %}

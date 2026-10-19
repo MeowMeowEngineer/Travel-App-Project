@@ -831,6 +831,8 @@ a.mk-a:not([tabindex="-1"]):not(.mk-li)::before { content: ""; position: absolut
 .res-why { flex-basis: 100%; font-size: 14px; color: var(--ink-2); }
 .res-st { display: flex; flex-wrap: wrap; gap: 0 12px; flex-basis: 100%; font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .res-none { color: var(--ink-2); font-size: 16px; }
+/* past the first 80 rows: '80곳 더 보기' (QA 2026-10-19 QA-70) */
+.res-more { margin-top: 20px; }
 /* nothing found (QA 2026-10-15 F08): the names it may have meant, the diet note, then the help — list links, the AI
    chat, the whole directory on request; every target 44px */
 .res-sug { margin-top: 10px; font-size: 16px; color: var(--ink-2); }
@@ -863,8 +865,10 @@ html.has-q [data-directory] { display: none; }   /* search.html.j2: a query in t
 html.has-q #main-content { min-height: 100vh; min-height: 100svh; }
 .dir-ini { font: 700 28px/1.3 var(--font); padding-bottom: 6px; letter-spacing: -.03em; }
 .dir-ini .tn { font: 700 15px var(--font); color: var(--ink-3); margin-left: 6px; }
-.dir-list { columns: 4 13em; column-gap: var(--g); margin-top: 6px; }
-.dir-list li { position: relative; break-inside: avoid; display: flex; flex-direction: column; padding: 7px 0; border-top: 1px solid var(--hair); min-height: 44px; }
+/* the names in rows of up to four (a grid, not columns: a row skipped off screen and drawn later changes its own row's
+   height only, never which column the others are in — 60-motion.css skips them one by one) */
+.dir-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(13em, calc((100% - 3 * var(--g)) / 4)), 1fr)); column-gap: var(--g); margin-top: 6px; }
+.dir-list li { position: relative; display: flex; flex-direction: column; padding: 7px 0; border-top: 1px solid var(--hair); min-height: 44px; }
 .dir-list a { color: var(--ink); text-decoration: none; font-size: 16px; line-height: 1.4; }
 .dir-list a::after { content: ""; position: absolute; inset: 0; }
 .dir-list a:hover { color: var(--link); }

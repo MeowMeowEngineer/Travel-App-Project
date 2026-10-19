@@ -616,7 +616,8 @@ MAP_KEYS = {
 # word (the site has no such data: it says so and names no place), ask / all ({n} places) / browse in the help below.
 # Evaluation 2026-10-18: scope — the line under the box (what the search finds; travel questions go to the AI chat,
 # named as on the chat's launcher, templates/_chat.html.j2); related — the heading of the guides that match a part of
-# a query nothing matches whole; syn — before the words a query word was also searched as (present.SEARCH_CONCEPTS).
+# a query nothing matches whole; syn — before the words a query word was also searched as (present.SEARCH_CONCEPTS);
+# more — the button under the first 80 rows that shows {n} more (QA 2026-10-19 QA-70).
 SEARCH_WORDS = {
     "en": {"bar": "Search places, dishes, areas", "go": "Search", "close": "Close search", "open": "Search",
            "label": "Place name, dish, area, course, guide or event", "ph": "Name, dish or area",
@@ -627,7 +628,7 @@ SEARCH_WORDS = {
            "sug": "Did you mean: ", "ask": "Ask the AI chat",
            "all": "Show every place ({n})", "browse": "Browse the lists",
            "scope": "Finds places by name, dish or area, and guides; ask the AI chat your travel questions.",
-           "related": "Related guides", "syn": "Also searched: ",
+           "related": "Related guides", "syn": "Also searched: ", "more": "Show {n} more",
            "diet": "This site has no halal, vegetarian, vegan or allergy information on its restaurants. Ask the"
                    " restaurant before you go; when the site has its phone number, it is on the restaurant's page."},
     "ja": {"bar": "場所・料理・地域を検索", "go": "検索", "close": "検索を閉じる", "open": "検索",
@@ -639,7 +640,7 @@ SEARCH_WORDS = {
            "sug": "もしかして：", "ask": "AIチャットに聞く",
            "all": "すべての場所を表示（{n}か所）", "browse": "一覧から探す",
            "scope": "場所の名前・料理・地域・ガイドを探せます。旅行の質問はAIチャットへどうぞ。",
-           "related": "関連ガイド", "syn": "あわせて検索：",
+           "related": "関連ガイド", "syn": "あわせて検索：", "more": "さらに{n}件を表示",
            "diet": "このサイトには飲食店のハラール・ベジタリアン・ヴィーガン・アレルギーの情報がありません。"
                    "訪れる前にお店に直接確認してください。電話番号がわかる場合は、そのお店のページに載っています。"},
     "zh-hans": {"bar": "搜索地点、菜品、地区", "go": "搜索", "close": "关闭搜索", "open": "搜索",
@@ -651,7 +652,7 @@ SEARCH_WORDS = {
                 "sug": "您是不是要找：", "ask": "询问AI助手",
                 "all": "显示全部地点（{n}个）", "browse": "按列表查找",
                 "scope": "按名称、菜品、地区查找地点和指南；旅行问题请问AI助手。",
-                "related": "相关指南", "syn": "同时搜索：",
+                "related": "相关指南", "syn": "同时搜索：", "more": "再显示{n}条",
                 "diet": "本网站没有餐厅的清真、素食或过敏原信息。前往前请直接向餐厅确认；本网站有餐厅电话时，可在该餐厅的页面上找到。"},
     "zh-hant": {"bar": "搜尋地點、菜色、地區", "go": "搜尋", "close": "關閉搜尋", "open": "搜尋",
                 "label": "地點名稱、菜色、地區，或路線、指南、活動名稱", "ph": "名稱、菜色或地區",
@@ -662,7 +663,7 @@ SEARCH_WORDS = {
                 "sug": "您是不是要找：", "ask": "詢問AI助手",
                 "all": "顯示全部地點（{n}處）", "browse": "依列表查找",
                 "scope": "依名稱、菜色、地區查找地點和指南；旅行問題請問AI助手。",
-                "related": "相關指南", "syn": "同時搜尋：",
+                "related": "相關指南", "syn": "同時搜尋：", "more": "再顯示{n}筆",
                 "diet": "本網站沒有餐廳的清真、素食或過敏原資訊。前往前請直接向餐廳確認；本網站有餐廳電話時，可在該餐廳的頁面上找到。"},
     "de": {"bar": "Orte, Gerichte, Viertel suchen", "go": "Suchen", "close": "Suche schließen", "open": "Suche",
            "label": "Ortsname, Gericht, Viertel, Route, Ratgeber oder Veranstaltung", "ph": "Name, Gericht oder Viertel",
@@ -673,7 +674,7 @@ SEARCH_WORDS = {
            "sug": "Meinten Sie: ", "ask": "Den KI-Chat fragen",
            "all": "Alle Orte zeigen ({n})", "browse": "In den Listen suchen",
            "scope": "Findet Orte nach Name, Gericht oder Viertel und Ratgeber; Reisefragen beantwortet der KI-Chat.",
-           "related": "Passende Ratgeber", "syn": "Auch gesucht: ",
+           "related": "Passende Ratgeber", "syn": "Auch gesucht: ", "more": "{n} weitere zeigen",
            "diet": "Diese Website hat zu ihren Restaurants keine Angaben zu halal, vegetarisch, vegan oder Allergenen."
                    " Fragen Sie vor dem Besuch im Restaurant nach; hat die Website seine Telefonnummer, steht sie"
                    " auf der Seite des Restaurants."},
@@ -689,7 +690,7 @@ SEARCH_WORDS = {
            "all": "Afficher tous les lieux ({n})", "browse": "Parcourir les listes",
            "scope": "Trouve les lieux par nom, plat ou quartier, et les guides ; posez vos questions de voyage"
                     " au chat IA.",
-           "related": "Guides liés", "syn": "Recherché aussi : ",
+           "related": "Guides liés", "syn": "Recherché aussi : ", "more": "Afficher {n} de plus",
            "diet": "Ce site n’a aucune information halal, végétarienne, végane ou sur les allergènes pour ses restaurants."
                    " Renseignez-vous auprès du restaurant avant d’y aller ; quand le site a son numéro de téléphone,"
                    " il figure sur la page du restaurant."},
@@ -703,7 +704,7 @@ SEARCH_WORDS = {
            "sug": "Quizá quiso decir: ", "ask": "Preguntar al chat IA",
            "all": "Ver todos los lugares ({n})", "browse": "Buscar en las listas",
            "scope": "Busca lugares por nombre, plato o barrio, y guías; haga sus preguntas de viaje al chat IA.",
-           "related": "Guías relacionadas", "syn": "También se buscó: ",
+           "related": "Guías relacionadas", "syn": "También se buscó: ", "more": "Mostrar {n} más",
            "diet": "Este sitio no tiene información halal, vegetariana, vegana ni sobre alérgenos de sus restaurantes."
                    " Consulte al restaurante antes de ir; cuando el sitio tiene su teléfono, figura en la página"
                    " del restaurante."},
@@ -718,7 +719,7 @@ SEARCH_WORDS = {
            "all": "Показать все места ({n})", "browse": "Искать по спискам",
            "scope": "Ищет места по названию, блюду или району, а также путеводители; вопросы о поездке"
                     " задайте ИИ-чату.",
-           "related": "Связанные путеводители", "syn": "Также искали: ",
+           "related": "Связанные путеводители", "syn": "Также искали: ", "more": "Показать ещё {n}",
            "diet": "На этом сайте нет сведений о халяльной, вегетарианской или веганской еде и об аллергенах в"
                    " ресторанах. Уточните в ресторане перед визитом; если на сайте есть его телефон, он указан"
                    " на странице ресторана."},

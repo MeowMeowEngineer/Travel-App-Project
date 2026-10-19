@@ -413,7 +413,7 @@
 <p class="kicker">{% for lab, href in items %}{% if href %}<a href="{{ href }}">{{ lab }}</a>{% else %}<span>{{ lab }}</span>{% endif %}{% endfor %}</p>
 {%- endmacro %}
 {% macro crumbs(items) -%}
-{% if items %}<nav class="crumbs" aria-label="현재 위치">{% for name, url in items %}{% if not loop.last %}<a href="{{ url }}">{{ name }}</a><span aria-hidden="true">›</span>{% else %}<span aria-current="page">{{ name }}</span>{% endif %}{% endfor %}</nav>{% endif %}
+{% if items %}<nav class="crumbs" aria-label="현재 위치">{% for name, url in items %}{% if not loop.last %}<a href="{{ url }}">{{ name }}</a><span class="crumb-sep" aria-hidden="true"></span>{% else %}<span aria-current="page">{{ name }}</span>{% endif %}{% endfor %}</nav>{% endif %}
 {%- endmacro %}
 
 {#- abar(purposes, ev, hid): the home answer bar, inside the first screen at 390 and 1440 — a GET form to /search/
