@@ -274,6 +274,24 @@ def settled_phone(e: dict) -> tuple[str, str]:
 NUM_RUN = re.compile(r"(\d+(?:[-–]\d+)+)")
 
 
+TIME_UNIT = re.compile(r"\d{1,2}:\d{2}(?:–\d{1,2}:\d{2})?")
+
+
+def time_units(text: str | None) -> Markup:
+    """A line with times: each time or time range in one no-wrap piece ('17:00', '10:00–18:00'), with a break allowed
+    before a bracket that follows a word and right after a time a word follows outside brackets — so
+    '10:00–18:00(17:00입장마감)' breaks as '10:00–18:00 / (17:00입장마감)', the bracket kept whole, and never inside a
+    time. The body's keep-all leaves no break in that run, and its overflow-wrap broke it anywhere ('17:' /
+    '00입장마감', QA 2026-10-19 QA-75). Text unchanged (<wbr> adds none)."""
+    def unit(m):
+        before, after = m.string[:m.start()], m.string[m.end():m.end() + 1]
+        inside = before.count("(") > before.count(")")
+        return f'<span class="nw">{m.group(0)}</span>' + (
+            "<wbr>" if not inside and re.match(r"[0-9A-Za-z가-힣]", after) else "")
+    html = TIME_UNIT.sub(unit, str(escape(text or "")))
+    return Markup(re.sub(r"(?<=\S)\((?=[^()]*\))", "<wbr>(", html))
+
+
 def nowrap_numbers(text: str | None) -> Markup:
     """House numbers like '12-1' never break across lines."""
     text = str(text or "")
@@ -375,6 +393,20 @@ def is_open_value(text: str | None) -> bool:
             or (t.endswith("무휴") and not DAY_WORDS.search(t)))
 
 
+# a closed-day value that names a closure — a word of closing (휴무·휴관·휴일·쉼·닫), a day (요일, 평일·주말, 공휴일, 명절·
+# 설·추석, 당일·연휴), a date or a frequency (매주·매월·격주·n째 주·월 2회) outside its open words ('- 전망대 (연중무휴)-
+# 홍보관 (1월 1일 / 설날·추석 당일)' is one) — and so shows in closed red; the source's other words in that field ('점포
+# 별로 상이함', '전화 문의 후 방문 요망', '홈페이지 참조', a bare time) are not (QA 2026-10-19 QA-73: '점포 별로 상이함'
+# in closed red on the nearby rows, the tiles and the list cells, as '연중무휴' was before QA-31)
+CLOSURE = re.compile(r"휴|쉼|쉬|닫|[월화수목금토일]\s*요일|평일|주말|공휴일|국경일|명절|설날|(?<![가-힣])설(?![가-힣])|추석|"
+                     r"당일|매주|매월|매달|격주|째\s*주|\d+\s*월\s*\d+\s*일|월\s*\d+\s*회|[월화수목금토일]\s*[,·~/]\s*[월화수목금토일]")
+
+
+def is_closure(text: str | None) -> bool:
+    t = squash_ws(text)
+    return bool(t) and not is_open_value(t) and bool(CLOSURE.search(OPENISH.sub(" ", t)))
+
+
 def timetable(raw: str | None):
     """Conservative parse of hours text into rows. Every segment must be understood, otherwise None and the
     caller prints the whole display text (P1-7). Rows keep every source word in source order and add no
@@ -414,7 +446,7 @@ def timetable(raw: str | None):
             if CLOSED_HINT.search(seg) and not re.search(TIME, seg):
                 m = CLOSED_LABEL_RX.match(seg)
                 label, value = (squash_ws(m.group("label")), squash_ws(m.group("value"))) if m else ("", seg)
-                shut = not is_open_value(value)
+                shut = is_closure(value)
                 rows.append({"group": "", "label": label, "kind": "closed" if shut else "open", "closed": shut,
                              "value": value, "note": ""})
                 continue
@@ -565,7 +597,7 @@ def value_view(key: str, raw, place: str = "") -> dict:
             v.update(tt=tt, wide=True)
         v["html"] = Markup("<br>").join(mark_closed(x) for x in text.split("\n"))
     elif key == "restdate":
-        v["closed"] = not is_open_value(text)
+        v["closed"] = is_closure(text)
     elif key in ("usefee", "parkingfee", "discount"):
         grid = fee_grid(raw_s) if key == "usefee" else None
         fees = None if grid or squash_ws(raw_s) in ("무료", "없음") else fee_table(raw_s)
@@ -888,7 +920,7 @@ def status_items(e: dict, full: bool = False) -> list[dict]:
                 _, c1 = split_closed(raw)
                 if c1 and all(split_closed(a["value"])[1] == c1 for a in alts) and len(c1) <= CLOSED_MAX:
                     word = _closed_word(c1, kind)
-                    add(k + "-closed", word, not is_open_value(c1), src_key=k)
+                    add(k + "-closed", word, is_closure(c1), src_key=k)
                     text = "영업시간 출처마다 다름"
                     out.append({"key": k + "-c", "text": text, "html": escape(text), "closed": False,
                                 "cls": "st-flag", "href": facts_href})
@@ -904,21 +936,18 @@ def status_items(e: dict, full: bool = False) -> list[dict]:
             if not multi and len(text) <= CLOSED_MAX and closed:
                 add(k, dash_times(hours))
                 add(k + "-closed", _closed_word(closed, kind),
-                    not is_open_value(closed), src_key=k)
+                    is_closure(closed), src_key=k)
             elif not multi and len(text) <= STATUS_MAX:
                 add(k, text, html=mark_closed(text))
             elif closed and len(closed) <= CLOSED_MAX:
                 add(k + "-closed", _closed_word(closed, kind),
-                    not is_open_value(closed), src_key=k)
+                    is_closure(closed), src_key=k)
             continue
         if k == "restdate":
             text = squash_ws(raw)
             if multi or len(text) > CLOSED_MAX:
                 continue
-            if is_open_value(text):
-                add(k, _closed_word(text, kind))
-            else:
-                add(k, _closed_word(text, kind), True)
+            add(k, _closed_word(text, kind), is_closure(text))
             continue
         text = parking_text(raw) if k == "parking" else dash_times(squash_ws(raw))
         if multi or len(text) > STATUS_MAX + (8 if k == "parking" else 0):
@@ -972,7 +1001,6 @@ BASE_WORDS = ("영업시간", "이용시간", "운영시간", "관람시간")
 BASE_LABEL = {"usetime": "이용시간", "usetime_restdate": "영업시간", "openperiod": "운영 기간"}
 OPEN_HOURS = re.compile(r"(상시\s*개방|상시|24\s*시간|일출|일몰|예약제)")
 FIRST_ADULT = re.compile(r"성인[^\d]{0,16}?([\d,]+원)")
-FIRST_PRICE = re.compile(r"([가-힣][가-힣·]*)\s*:?\s*([\d,]+원)")
 
 
 def clean_lines(raw) -> list[str]:
@@ -989,8 +1017,8 @@ def clean_lines(raw) -> list[str]:
 
 
 def is_closed_word(text: str | None) -> bool:
-    t = squash_ws(text)
-    return bool(t) and not OPENISH.search(t) and not is_open_value(t)
+    """A brief closed-day value that shows in closed red: is_closure."""
+    return is_closure(text)
 
 
 def _b(main="", sub="", more=False, closed=False) -> dict:
@@ -1163,6 +1191,102 @@ def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
     return None, ", ".join(closed)
 
 
+# The hours of one weekday (QA 2026-10-19 QA-67: a course stop on a Saturday showed '평일 11:30–23:00 · 금요일
+# 12:00–24:00' as that day's hours, and checkPlan read the 평일 range for it). A value whose every line is under a
+# weekday label — a '[평일]' / '[토요일]' / '[일요일~금요일]' group with its items, or a line that starts with one
+# ('- 평일 09:00~22:00', '- 목요일~일요일 10:00~19:00') — gives each weekday the most specific group that names it
+# ('[금요일]' over '[평일]' on a Friday), in the source's words; lines after the last labelled line ('- 마지막 주문
+# 19:30') hold for every group. '공휴일'·'휴일' in a label are no weekday. A facility or season group ('[일반자료실]',
+# '[하절기]'), a line with hours before any label, or a label the code does not read: None (the value is shown whole).
+WEEKDAYS = "일월화수목금토"   # index = JavaScript getDay(), as chatbot/knowledge.js checkPlan reads a date
+DAY_SET_WORDS = {"평일": {1, 2, 3, 4, 5}, "주중": {1, 2, 3, 4, 5}, "주말": {0, 6}}
+HOLIDAY_WORDS = ("공휴일", "법정공휴일", "휴일", "국경일")
+
+
+def weekday_set(label: str | None) -> set | None:
+    """The weekdays a label names ({0..6}, 0 = 일요일): '평일', '주말', '토요일', '토·일요일', '월요일~토요일', '일요일~금요일'
+    (around the week), '금요일/주말/공휴일', '평일 / 일요일', '주말(금/토/일/공휴일)' (the bracket's own days); set() for a
+    label of holidays only; None when any word of it is not a day."""
+    t = squash_ws(label).strip(" :：-")
+    if not t:
+        return None
+    m = re.fullmatch(r"(평일|주중|주말)\s*\(([^()]+)\)", t)
+    if m:
+        return weekday_set(m.group(2))
+    out: set = set()
+    for p in re.split(r"\s*(?:및|,|·|/|、|&|\s)\s*", t):
+        p = p.strip()
+        if not p:
+            continue
+        if p in DAY_SET_WORDS:
+            out |= DAY_SET_WORDS[p]
+            continue
+        if p in HOLIDAY_WORDS:
+            continue
+        r = re.fullmatch(r"([월화수목금토일])(?:요일)?\s*[~\-–]\s*([월화수목금토일])(?:요일)?", p)
+        if r:
+            a, b = WEEKDAYS.index(r.group(1)), WEEKDAYS.index(r.group(2))
+            out |= {(a + i) % 7 for i in range((b - a) % 7 + 1)}
+            continue
+        r = re.fullmatch(r"([월화수목금토일])(?:요일)?", p)
+        if r:
+            out.add(WEEKDAYS.index(r.group(1)))
+            continue
+        return None
+    return out
+
+
+def day_hours(raw) -> list[str] | None:
+    """Seven texts, Sunday first (WEEKDAYS): the hours that weekday's group gives — '토요일 12:00–24:00 · 마지막 주문
+    23:30' — or '' for a day no group names; None unless every line of the value is under a weekday label (above)."""
+    lines = clean_lines(raw)
+    groups: list[dict] = []
+    cur = None          # the '[group]' the next items belong to
+    tail: list[str] = []  # lines after a labelled line: every group's when no labelled line follows them
+    for line in lines:
+        m = re.fullmatch(r"\[([^\[\]]+)\]", line)
+        if m:
+            days = weekday_set(m.group(1))
+            if days is None:
+                return None
+            if tail:
+                groups[-1]["items"] += tail
+                tail = []
+            cur = {"days": days, "label": squash_ws(m.group(1)), "items": []}
+            groups.append(cur)
+            continue
+        x = squash_ws(re.sub(r"^[-•]\s*", "", line))
+        if not x:
+            continue
+        lab = re.match(r"^(?P<label>[^\d:：()]+?(?:\([^()]*\))?)\s*[:：]?\s*(?=\d)", x)
+        days = weekday_set(lab.group("label")) if lab else None
+        if days is not None:
+            if tail:
+                groups[-1]["items"] += tail
+                tail = []
+            groups.append({"days": days, "label": squash_ws(lab.group("label")), "items": [x[lab.end():].strip()]})
+            cur = None
+            continue
+        if cur is not None:
+            cur["items"].append(x)
+        elif groups:
+            tail.append(x)
+        else:
+            return None   # hours before any weekday label: the value is not by weekday
+    if not any(g["days"] for g in groups):
+        return None
+    texts = [squash_ws(f"{g['label']} " + " · ".join(dash_times(i) for i in g["items"] + tail if i)) for g in groups]
+    out = []
+    for d in range(7):
+        named = [(len(g["days"]), i) for i, g in enumerate(groups) if d in g["days"]]
+        if not named:
+            out.append("")
+            continue
+        least = min(n for n, _ in named)
+        out.append(" · ".join(texts[i] for n, i in named if n == least))
+    return out
+
+
 def split_outside_brackets(text: str, sep: str) -> list[str]:
     """re.split(sep, text) at the matches that are not inside round or square brackets."""
     depth, at = 0, []
@@ -1232,10 +1356,33 @@ def brief_fee(raw) -> dict | None:
     m = FIRST_ADULT.search(text)
     if m:
         return _b(f"성인 {m.group(1)}", "", True)
-    m = FIRST_PRICE.search(text)
-    if m:
-        return _b(f"{m.group(1)} {m.group(2)}", "", True)
+    row, group = first_price_row(lines)
+    if row:
+        return _b(row, group if group and not VISITOR_GROUP.search(group) else "", True)
     return _b(text)
+
+
+# a price in a fee value: its amount (a range '50,000원~80,000원' or an open end '40,000원~' whole), never a number
+# that is part of the row's label ('5㎏', '1잔', '2인승')
+PRICE_AT = re.compile(r"(?<![\d,])\d[\d,]*\s*원(?:\s*~\s*(?:\d[\d,]*\s*원)?)?")
+
+
+def first_price_row(lines: list[str]) -> tuple[str, str]:
+    """(the value's first price with every word before it on its line — from the line's start, its list mark left out:
+    '중학생 이상 6,000원', '5㎏ 이하 55,000원', '2인승 25,000원', '대인(14세 이상) 28,000원' —, the '[group]' it is under);
+    ('', '') when no line holds a price. A row's label is never cut to its last word (QA 2026-10-19 QA-68: the fee
+    tile read '이상 6,000원' for '중학생 이상 6,000원', '이하 55,000원' for '5㎏ 이하 55,000원')."""
+    group = ""
+    for line in lines:
+        m = re.fullmatch(r"\[([^\]]+)\]", line)
+        if m:
+            group = squash_ws(m.group(1))
+            continue
+        m = PRICE_AT.search(line)
+        if m:
+            label = line[:m.start()].strip().lstrip("-•").strip(" :")
+            return squash_ws(f"{label} {m.group(0)}"), group
+    return "", ""
 
 
 # A place a combined ticket also opens (data/<region>/tickets.json, pipeline/tickets.py; operator-forwarded evaluation
@@ -2726,7 +2873,7 @@ def cell(e: dict, key: str) -> dict:
             return {"html": more, "text": "", "missing": False, "more": True}
         html = Markup("<br>").join(escape(x) for x in lines)
         if closed:
-            cl = Markup('<span class="closed">') + escape(closed) + Markup("</span>") if not is_open_value(closed) else escape(closed)
+            cl = Markup('<span class="closed">') + escape(closed) + Markup("</span>") if is_closure(closed) else escape(closed)
             html = html + (Markup("<br>") if lines else Markup("")) + cl
         return {"html": html, "text": " ".join(lines + [closed]).strip(), "missing": False}
     if ASK_WORDS.match(str(raw)):
@@ -2736,7 +2883,7 @@ def cell(e: dict, key: str) -> dict:
         return {"html": more, "text": "", "missing": False, "more": True}
     text = " ".join(lines)
     if key == "restdate":
-        html = Markup('<span class="closed">') + escape(text) + Markup("</span>") if not is_open_value(text) else escape(text)
+        html = Markup('<span class="closed">') + escape(text) + Markup("</span>") if is_closure(text) else escape(text)
     elif key == "usetime_restdate":
         html = Markup("<br>").join(mark_closed(x) for x in lines)
     else:
@@ -3918,10 +4065,10 @@ def event_vm(S, sr: dict) -> dict:
     slots = [tile("기간", "period", Markup(f'<time datetime="{escape(start)}">{escape(row["range"] or row["period_text"])}</time>'))]
     if ev.get("playtime"):
         # only each time range stays unbroken ('11:00–11:30'): the whole value in one .nw ran a 121-character
-        # timetable 1,000px past a phone's screen and over the next tiles (UI review 2026-10-19, P1-1)
+        # timetable 1,000px past a phone's screen and over the next tiles (UI review 2026-10-19, P1-1); every time
+        # too, with a break allowed around it (time_units — QA 2026-10-19 QA-75: '17:' / '00입장마감')
         slots.append(tile("시간", "playtime", Markup("<br>").join(
-            Markup(re.sub(r"(\d{1,2}:\d{2}–\d{1,2}:\d{2})", r'<span class="nw">\1</span>', str(escape(x))))
-            for x in restore_lines(dash_times(ev["playtime"])))))
+            time_units(x) for x in restore_lines(dash_times(ev["playtime"])))))
     if ev.get("fee"):
         slots.append(tile("요금", "fee", escape(squash_ws(ev["fee"]))))
     if place_short:
@@ -4420,7 +4567,10 @@ def search_index(S) -> list[dict]:
             row["g"] = " · ".join(d["label"] for d in ds)
         # a closed day says so in words: the page marks it in red, a result row is text (QA 2026-10-19 QA-08: '09:00–17:00 ·
         # 매주 토요일~일요일 / …' read like opening days)
-        st = [f"쉬는 날 {x['text']}" if x.get("closed") and not CLOSED_SAID.search(x["text"]) else x["text"]
+        # — any closed-day item but an open one: '쉬는 날 점포 별로 상이함' too, which the page does not mark red (QA-73)
+        st = [f"쉬는 날 {x['text']}" if (x.get("closed") or (x["key"] in ("restdate", "usetime_restdate-closed")
+                                                            and not is_open_value(x["text"])))
+              and not CLOSED_SAID.search(x["text"]) else x["text"]
               for x in status_items(e) if x.get("cls") != "st-missing"][:3]
         if e.get("_alias_of") is not None:   # a second page for one building says so in the result (pipeline/relations.py)
             st.insert(0, LC.NEAR_WORDS["ko"]["same_building"].format(name=e["_alias_of"]["name"]))
@@ -4543,8 +4693,8 @@ KIND_PIC = {"bed": "kind-stay", "bowl": "kind-food", "museum": "kind-museum", "s
 def plan_places(S) -> dict:
     """{path: {n name, k kind, t type, a area, r 권역, ic its kind's picture ID, img? {u, w, h, alt, t KOGL type, s/sw the
     provider's small copy},
-    h hours, c closed days (cx 1: a real closure), f fee, m menu, p parking, ci check-in, g [lat, lng]}} for every
-    published place — each
+    h hours (hd: by weekday, Sunday first, when the value gives them so — day_hours), c closed days (cx 1: a real
+    closure), f fee, m menu, p parking, ci check-in, g [lat, lng]}} for every published place — each
     value as the place's first screen shows it (key_facts 'hero'; both sources where they differ)."""
     out = {}
     for e in S.entities:
@@ -4571,6 +4721,14 @@ def plan_places(S) -> dict:
             v = val(slot)
             if v:
                 row[key] = v
+        # hd: that weekday's hours where the value gives hours by weekday (day_hours; Sunday first) — the course card
+        # shows the trip day's group, not the first two lines (QA 2026-10-19 QA-67); a value two sources give
+        # differently keeps h (both)
+        hs = slots.get("hours") or {}
+        if row.get("h") and not hs.get("vals") and hs.get("src_key"):
+            hd = day_hours((e.get("facts") or {}).get(hs["src_key"]))
+            if hd:
+                row["hd"] = hd
         # cx: the closed days are a real closure ('연중무휴' is not: QA 2026-10-19 QA-31 — it showed in closed red)
         cs = slots.get("closed") or {}
         if row.get("c") and (cs.get("closed") or any(x.get("closed") for x in cs.get("vals") or [])):

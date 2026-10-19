@@ -56,7 +56,8 @@ from .schema import (BUSINESS_KINDS, DEFAULT_ALLOWED_LICENSES, FACT_ALIASES, FAC
 from . import present
 from . import locales as LC
 from .textutil import (area_from_address, display_address, display_value, drop_dead_links, first_sentence, josa,
-                       link_url, normalize_name, road_from_address, slugify, squash_ws, url_key, url_shown, web_url)
+                       link_url, normalize_name, road_from_address, slugify, squash_ws, url_key, url_shown, value_line,
+                       web_url)
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / "templates"
@@ -791,12 +792,13 @@ def full_stop(text: str | None) -> str:
 
 
 def settled_facts(rows: list[dict]):
-    """(row, value as the page shows it) for each row whose value no other source contradicts ('also' values — a second
-    dish — do not contradict) and is at most FACT_VALUE_MAX characters."""
+    """(row, value as the page shows it, its lines joined with ' · ' — textutil.value_line) for each row whose value no
+    other source contradicts ('also' values — a second dish — do not contradict) and is at most FACT_VALUE_MAX
+    characters."""
     for r in rows:
         if not r["value"] or any(not a["also"] for a in r["alternatives"]):
             continue
-        value = squash_ws(display_value(r["key"], r["value"])).rstrip(".")
+        value = value_line(r["key"], r["value"]).rstrip(".")
         if value and len(value) <= FACT_VALUE_MAX:
             yield r, value
 

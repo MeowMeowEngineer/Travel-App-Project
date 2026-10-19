@@ -415,9 +415,12 @@ def dash_times(text: str | None) -> str:
 
 def restore_lines(raw: str | None) -> list[str]:
     """Line breaks that TourAPI text lost: before '[group]' and after it, before a glued '- item', before
-    '※ note'. Presentation only — no character is dropped except the joining whitespace."""
+    '※ note'. Presentation only — no character is dropped except the joining whitespace. A '[group]' after a space
+    in the middle of a line starts its own line too ('- 입장 마감 17:00 [동절기] - 10:00~17:00': the winter group was
+    read as the end of the summer one, QA 2026-10-19 QA-67)."""
     s = str(raw or "").replace("\r", "")
     s = re.sub(r"(?<=\S)\[", "\n[", s)
+    s = re.sub(r"(?<=\S)[ \t]+\[(?=[^\[\]\n]{1,20}\])", "\n[", s)
     s = re.sub(r"\]\s*(?=\S)", "]\n", s)
     s = re.sub(r"(?<=[^\s\-~])-\s(?=\S)", "\n- ", s)
     s = re.sub(r"(?<=\S)\s*※", "\n※", s)
@@ -463,6 +466,27 @@ def display_value(key: str, raw) -> str:
     if key == "parking":
         return tidy_punct(dash_times(parking_text(text)))
     return "\n".join(tidy_punct(dash_times(x)) for x in restore_lines(text))
+
+
+def value_line(key: str, raw) -> str:
+    """One stored value on one line, as a description says it: display_value's lines without their list marks, joined
+    with ' · ', a '[group]' line before its first item without the brackets ('- 11:00–19:00\\n- 마지막 주문 18:45' ->
+    '11:00–19:00 · 마지막 주문 18:45'; '[평일]\\n- 11:30–23:00' -> '평일 11:30–23:00'). Squashed lines read '이용시간: -
+    11:00–19:00 - 마지막 주문 …' (QA 2026-10-19 QA-69). Never shortens a value."""
+    out, head = [], ""
+    for x in display_value(key, raw).split("\n"):
+        x = squash_ws(re.sub(r"^\s*[-•]\s+", "", x))
+        if not x:
+            continue
+        m = re.fullmatch(r"\[([^\[\]]+)\]", x)
+        if m:
+            head = f"{head} {m.group(1)}".strip()
+            continue
+        out.append(f"{head} {x}" if head else x)
+        head = ""
+    if head:
+        out.append(head)
+    return " · ".join(out)
 
 
 def tidy_punct(text: str) -> str:

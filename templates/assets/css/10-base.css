@@ -86,6 +86,13 @@ a.xl { text-decoration: underline; text-decoration-thickness: 1px; text-underlin
 .prose p + p, .prose table + p, .prose p + table { margin-top: 14px; }
 @media (max-width: 760px) { .kicker { font-size: 14px; } }
 
+/* the kind and area links over a page's name (.kicker) and a key-fact tile's '외 ↓': a 44px hit area at every width,
+   a fine pointer's too, from an invisible layer — the line keeps its size (QA 2026-10-19 QA-74: 32px high and 28×28
+   at 1440) */
+.kicker a, a.kf-more { position: relative; }
+.kicker a::after, a.kf-more::after {
+  content: ""; position: absolute; z-index: 1; top: 50%; left: 50%; width: max(100%, 44px); height: 44px; transform: translate(-50%, -50%); }
+
 /* touch widths: small links that stand on their own (a number in the key line, a fact, a card value, a ledger cell,
    a source in the notes, a credit, a crumb) get a 44px hit area from an invisible layer; the line keeps its size.
    Links inside running text are left as they are. */
