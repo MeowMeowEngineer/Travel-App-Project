@@ -23,6 +23,7 @@
 - 키를 받으면: `python tools/collect.py --data data/incheon` 한 명령(키 확인 → 진단 → 목록·좌표·사진 → 행사(오늘부터) → 상세 → TourAPI에만 있는 장소 → 요약·남은 호출·다음 명령). 호출 예산 식은 `README.md` 'TourAPI 호출 예산'.
 - 군산 실데이터(`data/gunsan`)·군산 그림·군산 문서에 기대던 테스트와 군산 측정 질문 도구는 옮기지 않았다: `tests/excluded_gunsan_tests.txt`. 인천 데이터가 생기면 같은 성질의 시험을 인천 데이터로 다시 쓴다. 엔진 시험의 고정 데이터는 `data/sample/`(군산 모양의 가짜 샘플)과 `tests/fixtures/incheon_tiny/`(인천 설정용 가짜 장소 5곳)다.
 - 마스코트는 없다(군산 마스코트는 '군산 사이트 전용'). 엔진은 마스코트 없이 동작한다(`pipeline/icons.py` `mascot()`).
+- **엔진 재동기화(2026-10-19)**: 이식 기준(군산 `85d7151`, 10-14) 뒤 군산각 엔진 변경을 도시 중립 형태로 들여왔다 — AI 코스 만들기(`/plan/`, `api/plan.js`, `chatbot/planner.js`·`plan_*.js`), 검색 개선(질문 낱말·관련 가이드·코스 만들기 연결), 목록 필터 칩 개수와 0건에서 돌아가는 길, 장소 관계(`pipeline/relations.py`)·통합권(`tickets.py`·`fee_table.py`)·예약하기(`booking.py`)·시설 공지(`notices.py`), 챗봇 개선(답 언어, 코스 만들기로 넘기기 planQuery, fee_total·check_plan, 긴급 연락처), 홈·핵심 정보, 운영사 정보 바닥글, 9개 언어 엔진, 검증기. 들여온 기능에 딸려 온 도시 값은 `site.json` `city` 블록으로 옮겼다(아래 키, `pipeline/city.py` 설명): `plan`(코스 만들기 출발·도착 hubs, 섬 권역), `course_move`('차 없이 다니기' 가이드·섬 노선·시간표 가이드), `geo_bounds`·`geo_default_points`(좌표 검증), `official_web`(본문에 적힌 공식 사이트), `resident_label`(요금표의 '○○시민', 기본 지역 이름+시민), `brand_em`, `intl.<code>.course_sources`. 예약 서비스 이름 가운데 도시 것은 `booking.json` `services.<key>.names`. 인천 값은 아직 비어 있고 그 블록은 빠진다(코스 만들기는 출발·도착 선택 없이, 섬 취향은 이름에 '섬'이 든 권역으로). 옮기지 않은 것: 군산 그림·마스코트·브랜드 파일, 군산 전용 도구(`brand_kit.py`·`museum_notices.py`·`official_coords.py`), 군산 실데이터 시험(`tests/excluded_gunsan_tests.txt`).
 
 ## 3. 지켜야 할 규칙
 1. **사실은 출처 데이터에서만** 가져온다: TourAPI(한국관광공사), 인천광역시·인천관광공사 공식 관광 사이트, 해당 시설 공식 홈페이지.
@@ -77,7 +78,7 @@
   - alt는 '일러스트'로 시작한다. 소개 페이지(/about/)에 '이 사이트의 일러스트는 생성형 AI로 그렸다'고 한 번 적는다.
   - 장소 사진 자리·썸네일과 구조화 데이터(ImageObject·장소 og:image)에는 쓰지 않는다.
   - 'AI 생성 이미지' 표기는 하지 않는다(`pipeline/art.py`·validate가 검사).
-- 군산 사이트의 일러스트·사진·마스코트는 군산을 그렸거나 군산 전용이라 쓰지 않는다. 옮긴 그림은 도시와 무관한 3D 아이콘 28장(`templates/assets/icons/`)·브랜드(운영사 로고)·글꼴뿐이다.
+- 군산 사이트의 일러스트·사진·마스코트는 군산을 그렸거나 군산 전용이라 쓰지 않는다. 옮긴 그림은 도시와 무관한 3D 아이콘 44장(`templates/assets/icons/`: 처음 28장, 2026-10-19 재동기화 때 코스 만들기·사진 없는 관광지용 16장)·브랜드(운영사 로고)·글꼴뿐이다.
 - 첫 화면 내용을 스크립트로 숨겼다가 보여 주지 않는다. 연출은 첫 화면 아래 요소에만 쓴다.
 - '멈추고 보고'를 남발하지 않는다. 6절 항목만 사람에게 넘기고, 나머지는 판단해서 진행한다.
 - `public/`을 직접 고치지 않는다. 빌드로만 갱신한다.
@@ -111,6 +112,7 @@
 - **카카오 지도 JavaScript 키**: 새 도메인을 카카오 개발자 콘솔에 등록하고 키를 보낸다.
 - `publish_rules`·`crawler_policy`: 군산 값을 기본으로 옮겼다. 인천용으로 확인한다.
 - 마스코트·일러스트를 새로 만들지, 영어·다국어판을 할지(권장: 한국어만 먼저).
+- **코스 만들기 출발·도착 장소**(`city.plan.hubs`: 역·터미널·공항 이름 — 비어 있으면 선택이 없다), **섬 권역**(`city.plan.island_regions`), **좌표 범위**(`city.geo_bounds`, 비어 있으면 범위 검사 없음), **긴급 연락처 절**(`site.json` `emergency`: 군산은 한국관광공사 VisitKorea 119·112·1330 — 인천판은 운영자 확인 뒤), **운영사 공식 정보**(`operator.business_no` 등이 있으면 바닥글·/about/#company에 나온다), **사이트 심볼**(`brand_symbol`, 인천각 심볼 파일은 `templates/assets/brand/`에 있다).
 - 저장소 공개 여부와 원본 데이터(`data/raw`) 위치.
 
 ## 7. 명령어
@@ -148,5 +150,7 @@ python tools/perf_check.py --out public                               # Playwrig
 | `templates/` | 화면(Jinja2)·CSS·JS·글꼴·3D 아이콘 |
 | `tools/` | TourAPI 진단·수집, 공개 빌드, 검수 시트·반영, 품질·성능·공개 전 점검 |
 | `chatbot/`, `api/chat.js` | 사이트 도우미(Vercel 함수). 사이트 주소·이름·도시 이름은 빌드가 쓴 `public/chat/site.json`에서 읽는다(`chatbot/site.js`) |
+| `api/plan.js`, `chatbot/planner.js`·`plan_*.js`, `templates/plan.html.j2`·`assets/plan.js` | AI 코스 만들기(`/plan/`, 같은 키 `ANTHROPIC_API_KEY`, vercel.json `api/plan.js`). 출발·도착 이름은 `public/chat/site.json` `hubs`(= `city.plan.hubs`) |
+| `pipeline/relations.py`·`tickets.py`·`fee_table.py`·`booking.py`·`notices.py` | 장소 관계(part_of)·통합권·요금표 읽기·예약하기·시설 공지(각각 `data/<도시>/` 파일이 있을 때만) |
 | `tests/` | pytest + `tests/js/`(node --test). 고정 데이터 `data/sample/`·`tests/fixtures/incheon_tiny/`. 옮기지 않은 군산 전용 시험: `tests/excluded_gunsan_tests.txt` |
 | `docs/02_page_standard.md` | 데이터 표준 |

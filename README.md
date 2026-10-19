@@ -78,6 +78,10 @@ curl -s http://127.0.0.1:8787/api/chat/         # {"ready":true}
 5. 운영자 안전 설정: Anthropic Console의 사용 한도(spend limit), Vercel Firewall의 `/api/chat/` 요청 수 제한 규칙. 함수도 인스턴스마다 IP당 분·일 한도와 전체 분·일 한도를 둡니다(`LIMITS`).
 6. 문제 확인: Vercel → Logs에 요청마다 JSON 한 줄(`evt: chat`, 상태·도구 이름·토큰 수 — 질문·답·주소·키는 남기지 않음). 키가 틀리거나 폐기되면 `status: unavailable`, `api_status: 401`, `hint: check ANTHROPIC_API_KEY`가 남고, 화면에는 "지금은 답을 만들 수 없습니다"가 나옵니다.
 
+## AI 코스 만들기(/plan/)
+- 조건(날짜·시간·이동 수단·동행·취향·필요한 것·입장료 예산)을 고르면 모델이 이 사이트 장소로 일정을 짜고, 코드가 휴무·운영시간·입장 마감·구간 여유·입장료를 데이터로 다시 검사해 보여 줍니다(`chatbot/planner.js`, `api/plan.js`). 키는 사이트 도우미와 같은 `ANTHROPIC_API_KEY`이고, 키가 없으면 `/api/plan/`이 503 `not_configured`로 답합니다. Vercel 설정은 `vercel.json` `functions."api/plan.js"`(최대 60초, `public/chat/**` 포함).
+- 장소가 있으면 빌드가 `/plan/`과 `/plan/places.json`을 만들고 머리말·홈에 입구를 답니다. 코스·가이드가 없어도 동작하고(대신 '가볼만한 곳'으로 안내), 출발·도착 장소는 `site.json` `city.plan.hubs`(이름만)가 있을 때만 고를 수 있습니다. 인천은 아직 비어 있습니다(운영자 결정).
+
 ## 명령어
 ```bash
 python -m pytest                                   # 파이썬 시험(Node가 있으면 챗봇 서버 시험도 함께)
@@ -91,6 +95,9 @@ python tools/launch_check.py --data data/incheon --stdout             # 공개 �
 python tools/make_review_sheet.py --data data/incheon --out reports/review.csv   # 검수 시트(tier=full 장소·가이드·코스·행사, 사람이 OK 표시)
 python tools/apply_review.py --sheet reports/review.csv --data data/incheon      # OK 행을 reviewed·검수일로(기본 dry-run, 공개 전환은 안 함)
 python tools/perf_check.py --out public                              # 모바일 속도(Playwright 필요)
+python tools/link_check.py --data data/incheon                       # 홈페이지·예약 주소 점검(한국 네트워크에서 한 달에 한 번, --apply면 dead_links.json에 후보)
+python tools/tourapi_bulk.py --data data/incheon --nearby-only       # 저장된 좌표로 주변 장소만 다시 계산(호출 없음)
+python tools/tourapi_bulk.py --data data/incheon --barrier-free --max-calls 600   # 무장애 여행 정보(KorWithService2, 별도 활용신청)를 공개 장소에 병합
 ```
 - 챗봇을 로컬에서 실제 키로 시험: `npm run chat:dev`(위 '사이트 도우미'). 대화는 저장하지 않습니다.
 - 브라우저 시험(`tests/test_*_browser.py`)은 Playwright와 Chromium이 있을 때만 돕니다.
