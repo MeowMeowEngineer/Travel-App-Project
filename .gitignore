@@ -20,8 +20,10 @@ data/*/places.json.bak
 # api/chat.js의 npm 패키지 — Vercel이 package-lock.json으로 설치한다(npm ci)
 node_modules/
 
-# 그림 원본(운영자가 넣는 곳) — 원본은 커밋하지 않고 tools/*_media.py가 만든 파생본만 templates/assets/에 커밋한다
-incoming/ai-images/*
-incoming/mascot/*
-incoming/icons/*
+# 그림 원본(운영자가 넣는 곳) — 원본은 커밋하지 않고 tools/*_media.py가 만든 파생본만 templates/assets/에 커밋한다.
+# incoming/ 아래 모든 폴더(ai-images·mascot·icons·brand·metadata, 납품 zip이 새로 만드는 폴더도)와 incoming/에 바로 둔
+# 파일을 막는다 — 로고 래스터(brand)와 생성 기록(metadata)이 이 저장소 밖의 설정(.git/info/exclude)으로만 빠져 있었다
+incoming/*
+!incoming/*/
+incoming/*/*
 !incoming/*/README.md

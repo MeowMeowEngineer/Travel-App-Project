@@ -15,7 +15,9 @@
     <div>
       <p class="eyebrow">행사·축제</p>
       <h1 id="h-list" class="h-list">{{ site.region }} 행사·축제 일정</h1>
-      <p class="list-lede">진행·예정 <span class="tn">{{ EV.ranked|length }}</span>건 · 지난 회차 <span class="tn">{{ EV.past|length + EV.past_undated|length }}</span>건 · 해마다 열리는 행사 <span class="tn">{{ EV.annual|length }}</span>건</p>
+      {#- a part with nothing in it is left out ('지난 회차 0건 · 해마다 열리는 행사 0건': UI review 2026-10-19, P2-6) -#}
+      {% set n_past = EV.past|length + EV.past_undated|length %}
+      <p class="list-lede">진행·예정 <span class="tn">{{ EV.ranked|length }}</span>건{% if n_past %} · 지난 회차 <span class="tn">{{ n_past }}</span>건{% endif %}{% if EV.annual %} · 해마다 열리는 행사 <span class="tn">{{ EV.annual|length }}</span>건{% endif %}</p>
     </div>
   </div>
 </section>

@@ -390,6 +390,29 @@
   var goBox = form.querySelector(".trp-go");
   var prob = h("div", { class: "trp-prob", role: "alert", hidden: true });
   goBox.parentNode.insertBefore(prob, goBox);   // above the button's bar (on phones that bar stays at the screen's foot)
+  // phones: while the bar is held at the screen's foot (its own place still below the screen) it slides down to show
+  // only the button — the summary and the short notice back in view when the bar comes to rest at the form's end —
+  // and the chat button steps aside while the bar is on the screen (plan.css .is-stuck, .plan-bar-on; UI review
+  // 2026-10-19, P3-7: bar + header took 25% of a 390 screen and the chat button covered the notice). The mark ends
+  // the last step above the bar (inside it, so the form's grid gets no extra gap). Whether the bar is on the screen is
+  // read from the form, its sticky box (the bar shows while any of the form does), never from the bar itself: the bar
+  // only moves by a transform, so nothing it does feeds back into either answer (no flicker, no layout shift).
+  var goMark = h("div", { class: "trp-go-mark", "aria-hidden": "true" });
+  if (prob.previousElementSibling) prob.previousElementSibling.appendChild(goMark);
+  else goBox.parentNode.insertBefore(goMark, prob);
+  if ("IntersectionObserver" in win) {
+    var markBelow = false, barSeen = false;   // held = its place below the screen while the bar is on it
+    var barIO = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.target === goMark) markBelow = !e.isIntersecting && e.boundingClientRect.top > 0;
+        else barSeen = e.isIntersecting;   // the form
+      });
+      goBox.classList.toggle("is-stuck", markBelow && barSeen);
+      doc.documentElement.classList.toggle("plan-bar-on", barSeen);   // the chat button steps aside while the bar shows
+    });
+    barIO.observe(goMark);
+    barIO.observe(form);
+  }
   function hideProblems() { if (prob && !prob.hidden) { prob.hidden = true; prob.textContent = ""; } }
   var FOCUS = { date: function () { return dateIn; }, days: "days", move: "move", with: "with", prefs: "prefs", needs: "needs",
     adults: '[data-count="adults"] [data-step="1"]', seniors: '[data-count="seniors"] [data-step="1"]', kids: '[data-count="kids"] [data-step="1"]' };

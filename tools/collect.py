@@ -17,7 +17,11 @@
    tourapi.overview에 두고 화면에 내지 않는다.
    쓰는 파일: <data>/places.json, <data>/events.json, data/cache/tourapi/(응답 캐시, 커밋 안 함),
    reports/tourapi_bulk.md·.json, reports/collect.md·.json.
-4. 요약(장소·구·군·좌표·사진·방문 판단 정보 채움·행사·남은 호출)과 다음 명령(빌드·검증·공개 승인)을 출력한다.
+4. 사진 크기(tools/image_sizes.py): 화면에 싣는 사진(제1·3유형)과 한국관광공사가 함께 올린 작은 크기 파일의 가로·세로·
+   용량을 사진 주소에서 읽어 <data>/image_sizes.json에 쓴다(TourAPI 호출이 아니라 상한에 넣지 않는다; 기록한 사진은 다시
+   읽지 않는다). 빌드가 이 파일로 목록 썸네일에 작은 파일을 쓰고, 사진마다 크기를 적고, 장소 첫 화면에 썸네일 줄을 둔다.
+   --offline이면 건너뛴다.
+5. 요약(장소·구·군·좌표·사진·방문 판단 정보 채움·행사·사진 크기·남은 호출)과 다음 명령(빌드·검증·공개 승인)을 출력한다.
 
 호출 상한(--max-calls, 기본 900 — 공공데이터포털 개발계정 일일 한도 안)은 진단 호출을 포함한 이번 실행 전체의 실호출
 수다. 상한에 걸리면 받은 데까지 쓰고 멈춘다. 같은 명령을 다시 실행하면 캐시에 있는 응답은 호출 없이 쓰고 나머지를
@@ -41,6 +45,7 @@ if __package__ in (None, ""):
 from pipeline.enrich import load_dotenv
 from pipeline.schema import KIND_LABELS
 from pipeline.tourapi import TourAPIError, TourAPIStopError, normalize_key, redact
+from tools import image_sizes
 from tools import tourapi_bulk as bulk
 from tools import tourapi_doctor as doctor
 
@@ -241,16 +246,29 @@ def main(argv: list[str] | None = None) -> int:
         say(f"중단: {err}", err=True)
         return 1
 
+    sizes = None
+    if not a.offline and (a.data / "places.json").exists():
+        # the photo hosts, not TourAPI (no call against the cap); the file is its own cache, so only new photos are read
+        say("== 3. 사진 크기(tools/image_sizes.py) ==")
+        sizes = image_sizes.run(a.data, prober=image_sizes.probe)
+
     summary = data_summary(a.data, today)
     lines = summary_lines(stats, summary, used, a.max_calls)
+    if sizes:
+        missing = sizes["photos"] - sizes["originals_recorded"]
+        lines.append(f"- 사진 크기({a.data / 'image_sizes.json'}): 사진 {sizes['originals_recorded']}/{sizes['photos']}장 · "
+                     f"작은 크기 파일 {sizes['renditions_recorded']}장(없는 사진은 목록에서도 원본) · 이번에 읽은 주소 "
+                     f"{sizes['requests']}개, 못 읽음 {len(sizes['failed'])}"
+                     + (f" — 크기를 못 읽은 사진 {missing}장: python tools/image_sizes.py --data {a.data}로 다시" if missing else ""))
     # the resume command repeats every option that shapes what is asked (the cache keys): districts, events date, gallery
     extra = (f" --districts {a.districts}" if only else "") + (f" --events-from {a.events_from}" if a.events_from else "") \
         + (" --gallery" if a.gallery else "")
     steps = next_commands(str(a.data).replace(os.sep, "/"), today, bool(stats.get("stopped")), a.max_calls, extra)
-    say("== 3. 결과 ==")
+    say("== 4. 결과 ==")
     for line in lines:
         say(line)
-    say(f"- 쓴 파일: {a.data / 'places.json'}, {a.data / 'events.json'}, reports/tourapi_bulk.md, reports/collect.md")
+    say(f"- 쓴 파일: {a.data / 'places.json'}, {a.data / 'events.json'}" + (f", {a.data / 'image_sizes.json'}" if sizes else "")
+        + ", reports/tourapi_bulk.md, reports/collect.md")
     say("")
     say("== 다음 명령 ==")
     for line in steps:

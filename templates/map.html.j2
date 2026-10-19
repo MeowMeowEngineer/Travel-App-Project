@@ -15,8 +15,9 @@
 {% import "_filters.html.j2" as fb %}
 {% set kl = {'attraction': '관광지', 'stay': '숙소', 'food': '음식점', 'cafe': '카페·디저트', 'shopping': '쇼핑'} %}
 {% set mk = {'attraction': 'a', 'stay': 's', 'food': 'f', 'cafe': 'c', 'shopping': 'h'} %}
-{#- the kind toggles: 관광지·숙소·음식점 always (as before), 카페·디저트 and 쇼핑 when the build has such places -#}
-{% set kinds = ['attraction', 'stay', 'food'] + (['cafe'] if k_all.cafe else []) + (['shopping'] if k_all.shopping else []) %}
+{#- the kind toggles and each 권역's kind counts: only the kinds the build has places of — a site with no 숙소 or 음식점
+    yet showed '숙소 0 · 음식점 0' everywhere (UI review 2026-10-19, P2-6) -#}
+{% set kinds = (['attraction'] if k_all.attraction else []) + (['stay'] if k_all.stay else []) + (['food'] if k_all.food else []) + (['cafe'] if k_all.cafe else []) + (['shopping'] if k_all.shopping else []) %}
 {% block main_class %}{% endblock %}
 {% block bodyclass %}pg-map{% endblock %}
 {% block content %}
@@ -66,7 +67,7 @@
     <section class="region{% if not loop.first %} cv{% endif %}" id="{{ r.id }}" data-region-sec="{{ r.name }}" aria-labelledby="{{ r.id }}-h">{{ artm.strip((art_slots or {}).get('area.' ~ r.art) if r.art else none) }}
       <div class="region-head">
         <h2 id="{{ r.id }}-h">{{ r.name }} <span class="count tn" data-group-n>{{ r.members|length }}곳</span></h2>
-        <p class="region-k tn">관광지 {{ r.k.attraction or 0 }} · 숙소 {{ r.k.stay or 0 }} · 음식점 {{ r.k.food or 0 }}{% if k_all.cafe %} · 카페·디저트 {{ r.k.cafe or 0 }}{% endif %}{% if k_all.shopping %} · 쇼핑 {{ r.k.shopping or 0 }}{% endif %}{% if r.anchor %} · 기준점 <a href="{{ r.anchor.path }}">{{ r.anchor.place }}</a>{% endif %}</p>
+        <p class="region-k tn">{% for k in kinds %}{{ kl[k] }} {{ r.k[k] or 0 }}{% if not loop.last %} · {% endif %}{% endfor %}{% if r.anchor %} · 기준점 <a href="{{ r.anchor.path }}">{{ r.anchor.place }}</a>{% endif %}</p>
       </div>
       <div class="dongs">
         {% for d in r.dongs %}

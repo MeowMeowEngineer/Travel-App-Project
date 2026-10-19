@@ -64,7 +64,7 @@ RESTDATE = [  # (Korean, translation, code, the tile)
     ("매달 2, 4번째 화요일 (전화 문의)", "2nd and 4th Tuesday of every month (call for details)", "en",
      "2nd and 4th Tuesday of every month"),                                                           # the aside goes
     ("초원사진관(매주 첫째/셋째 월요일)", "Chowon Photo Studio (every first and third Monday)", "en",
-     "Chowon Photo Studio (every first and third Monday)"),        # the Korean tile writes '첫째, 셋째': still whole
+     "Chowon Photo Studio (every first and third Monday)"),        # the Korean tile keeps the bracket whole: still whole
 ]
 
 

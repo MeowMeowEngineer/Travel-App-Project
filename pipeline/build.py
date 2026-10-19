@@ -1821,15 +1821,23 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
     # includesAttraction names exactly the places the home shows as 대표 장소 (home.html.j2: h.featured, else the
     # first four of `featured`), so the structured data never names a place the page does not show
     shown = [c["e"] for c in h["featured"]] or featured[:4]
-    page = {"title": f"{S.site['site_name']} — {region} 관광지·맛집·숙소·코스·축제·영상",
+    # the title and description name only what the site has: a kind, the courses, the events or the videos with none
+    # are left out ('음식점 0곳, 숙소 0곳 … 영상 0편' on a site with only attractions: UI review 2026-10-19, P2-6)
+    has = {"courses": bool(S.courses), "events": bool(S.events), "videos": bool(S.videos)}
+    title_words = [w for k, w in (("attraction", "관광지"), ("food", "맛집"), ("cafe", "카페"), ("stay", "숙소"),
+                                  ("shopping", "쇼핑")) if S.lists[k]] \
+        + [w for k, w in (("courses", "코스"), ("events", "축제"), ("videos", "영상")) if has[k]]
+    counted = ", ".join(f"{w} {len(S.lists[k])}곳" for k, w in (
+        ("attraction", "관광지"), ("food", "음식점"), ("cafe", LISTS["cafe"]["title"]), ("shopping", LISTS["shopping"]["title"]),
+        ("stay", "숙소")) if S.lists[k]) or f"관광지 {len(S.lists['attraction'])}곳"
+    videos = [f"영상 {len(S.videos)}편"] if has["videos"] else []
+    long_bits = (["공식 코스"] if has["courses"] else []) + (["축제 일정"] if has["events"] else []) + videos
+    short_bits = ["·".join(w for k, w in (("courses", "코스"), ("events", "축제 일정")) if has[k])] + videos
+    tails = [f"이용시간·쉬는 날·요금·주차와 {josa(', '.join(b for b in bits if b), '을/를')} 모았습니다."
+             for bits in (long_bits, short_bits) if any(bits)] + ["이용시간·쉬는 날·요금·주차를 모았습니다."]
+    page = {"title": f"{S.site['site_name']} — {region} " + "·".join(title_words or ["관광지"]),
             # the counts the home shows, in one sentence: the longest wording within DESC_MAX
-            "description": first_fit(*(f"{region} 관광지 {len(S.lists['attraction'])}곳, 음식점 {len(S.lists['food'])}곳, "
-                                       + "".join(f"{LISTS[k]['title']} {len(S.lists[k])}곳, " for k in ("cafe", "shopping")
-                                                 if S.lists[k])
-                                       + f"숙소 {len(S.lists['stay'])}곳의 {tail}" for tail in (
-                                           f"이용시간·쉬는 날·요금·주차와 공식 코스, 축제 일정, 영상 {len(S.videos)}편을 모았습니다.",
-                                           f"이용시간·쉬는 날·요금·주차와 코스·축제 일정, 영상 {len(S.videos)}편을 모았습니다.",
-                                           "이용시간·쉬는 날·요금·주차를 모았습니다."))),
+            "description": first_fit(*(f"{region} {counted}의 {tail}" for tail in tails)),
             "canonical": S.site_url + "/", "crumbs": [],
             "image": hero[0]["img"]["url"] if hero else "",
             # FAQPage only where the FAQ is visible: home.html.j2 does not render site_faq (yet), so no FAQPage.

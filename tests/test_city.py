@@ -215,7 +215,8 @@ def test_incheon_brand_name_symbol_and_h1(tmp_path):
     build(data, out, "preview")
     home = (out / "index.html").read_text("utf-8")
     assert '<h1 id="h-home" class="op-h1 hk-h1">오늘, 인천 가는 각</h1>' in home
-    assert '<title>인천각 — 인천 관광지·맛집·숙소·코스·축제·영상</title>' in home
+    # the title names what the site has (UI review 2026-10-19, P2-6): the fixture's five kinds, no course, event or video
+    assert '<title>인천각 — 인천 관광지·맛집·카페·숙소·쇼핑</title>' in home
     assert '<meta property="og:site_name" content="인천각">' in home
     assert '"@type":"WebSite"' in home.replace(" ", "") and '"name":"인천각"' in home.replace(" ", "")
     mark = '<span class="wm-a">인천<span class="wm-em">각</span></span>'

@@ -30,7 +30,8 @@
 {% block head %}{% if p.hero_k1 %}{{ md.preload(p.hero_k1, '100vw') }}{% endif %}{% endblock %}
 {% block lnav %}
 {% set links = [('정보', '#h-facts')] %}
-{% if p.photos|length > 1 or p.hero_k3 %}{% set _ = links.append(('사진', '#h-photos')) %}{% endif %}
+{#- one KOGL-3 photo: its section holds only the phone copy (only-narrow), so no link may lead to it from 1024px -#}
+{% if p.photos|length > 1 %}{% set _ = links.append(('사진', '#h-photos')) %}{% endif %}
 {% set _ = links.append(('지도', '#h-map' if p.points else '#h-dir')) %}
 {% if has_near %}{% set _ = links.append(('주변', '#h-near')) %}{% endif %}
 {% if p.details %}{% set _ = links.append(('자세히', '#h-details')) %}{% endif %}
@@ -71,7 +72,7 @@
       <figure class="pv pv{{ lead.type }}">
         {% if p.hero_k1 %}<div class="pv-ph">{{ ui.img(p.hero_k1, '(min-width: 1024px) 560px, 100vw', true, 'pv-img vt-photo', false, true) }}</div>
         {% else %}<div class="pv-k3"{% if lead.w and lead.h %} style="--nw:{{ lead.w }}px;--ar:{{ lead.w }}/{{ lead.h }}"{% endif %}><img class="t3 vt-photo" src="{{ lead.url }}"{% if lead.w and lead.h %} width="{{ lead.w }}" height="{{ lead.h }}"{% endif %} alt="{{ lead.alt }}" loading="lazy" decoding="async" data-kogl="3"></div>{% endif %}
-        <figcaption class="pv-cap"><span class="pv-cr">{{ md.credit(lead) }}{% if p.photos|length > 1 or p.hero_k3 %} · {% endif %}</span>{% if p.photos|length > 1 or p.hero_k3 %}<a href="#h-photos">사진 {{ p.photos|length }}장</a>{% endif %}</figcaption>
+        <figcaption class="pv-cap"><span class="pv-cr">{{ md.credit(lead) }}{% if p.photos|length > 1 %} · {% endif %}</span>{% if p.photos|length > 1 %}<a href="#h-photos">사진 {{ p.photos|length }}장</a>{% endif %}</figcaption>
       </figure>
       {% endif %}
       {% if p.hero_k3 %}
@@ -99,7 +100,7 @@
     <div class="pl-main">
       {% if p.photos|length > 1 or p.hero_k3 %}
       {% set strip = p.photos[1:7] %}{# the lead photo is the opening (KOGL-1 every width, KOGL-3 from 1024px) #}
-      <section class="media" aria-labelledby="h-photos">
+      <section class="media{% if p.photos|length == 1 %} only-narrow{% endif %}" aria-labelledby="h-photos">
         <h2 id="h-photos" class="h-sec"><span class="nm">{{ nm }}</span> 사진 <span class="tn">{{ p.photos|length }}</span></h2>
         {% if p.hero_k3 %}{{ ui.figure(p.photos[0], nm, 1, p.photos|length, 'ph-lead only-narrow', false, '100vw') }}{% endif %}
         {% if strip %}

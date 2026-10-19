@@ -56,7 +56,9 @@
           '오늘, 인천 가는 각', the MZ '~하는 각?' the name 인천각 comes from), else what the site is ('<region> 여행의 모든
           것', the engine's first site's operator 2026-10-16); the name itself, site.site_name, is in the bar -#}
       <h1 id="h-home" class="op-h1 hk-h1">{{ h.h1 }}</h1>
-      <p class="ho-lede">관광지·음식점·{% if counts.cafe %}카페·{% endif %}숙소의 여는 시간과 요금, 가는 길을 한곳에 모았습니다.</p>
+      {#- the kinds the site has places of (a kind with none is not promised: UI review 2026-10-19, P2-6) -#}
+      {% set kw = [] %}{% for k, w in (('attraction', '관광지'), ('food', '음식점'), ('cafe', '카페'), ('stay', '숙소')) if counts.get(k) %}{% set _ = kw.append(w) %}{% endfor %}
+      <p class="ho-lede">{{ (kw or ['관광지'])|join('·') }}의 여는 시간과 요금, 가는 길을 한곳에 모았습니다.</p>
       {#- two named actions side by side (operator-forwarded evaluation 2026-10-18: one '공식 코스 보기' button and the
           header's course entry led to the city's courses while the AI planner came further down, so a first visitor
           could not tell the city's courses from a course made for them): '내 일정 만들기' (/plan/, the AI planner,
@@ -206,7 +208,7 @@
           {% for r in h.regions2 %}
           {#- the 권역's illustration (area.<art>, the /map/ strip's picture) at the row's start: lazy, decorative -#}
           {% set ra = (art_slots or {}).get('area.' ~ r.art) if r.art else none %}
-          <li><a href="/map/#{{ r.id }}"{% if ra %} class="has-art"{% endif %}>{% if ra %}{{ artm.figure(ra, 'ko', '(min-width: 761px) 120px, 88px', cls='rg-art', decorative=true) }}{% endif %}<span class="rg-name">{{ r.name }}</span><span class="rg-n"><b class="num tn">{{ r.n }}</b><small>곳</small></span><span class="rg-k tn">관광지 {{ r.k.attraction or 0 }} · 숙소 {{ r.k.stay or 0 }} · 음식점 {{ r.k.food or 0 }}{% if counts.cafe %} · 카페 {{ r.k.cafe or 0 }}{% endif %}{% if counts.shopping %} · 쇼핑 {{ r.k.shopping or 0 }}{% endif %}</span>{% if r.dongs %}<span class="rg-d">{{ r.dongs|join('·') }}</span>{% endif %}<span class="arr" aria-hidden="true">›</span></a></li>
+          <li><a href="/map/#{{ r.id }}"{% if ra %} class="has-art"{% endif %}>{% if ra %}{{ artm.figure(ra, 'ko', '(min-width: 761px) 120px, 88px', cls='rg-art', decorative=true) }}{% endif %}<span class="rg-name">{{ r.name }}</span><span class="rg-n"><b class="num tn">{{ r.n }}</b><small>곳</small></span><span class="rg-k tn">{% for k, w in (('attraction', '관광지'), ('stay', '숙소'), ('food', '음식점'), ('cafe', '카페'), ('shopping', '쇼핑')) if counts.get(k) %}{{ w }} {{ r.k[k] or 0 }}{% if not loop.last %} · {% endif %}{% endfor %}</span>{% if r.dongs %}<span class="rg-d">{{ r.dongs|join('·') }}</span>{% endif %}<span class="arr" aria-hidden="true">›</span></a></li>
           {% endfor %}
         </ol>
         {% if h.region_rule.method == 'nearest_anchor' %}<p class="rule-note">권역은 기준점 {{ h.region_map.anchors|length }}곳({% for a in h.region_map.anchors %}{{ a.place }}{% if not loop.last %}·{% endif %}{% endfor %}) 가운데 직선거리로 가장 가까운 곳으로 묶었습니다.</p>

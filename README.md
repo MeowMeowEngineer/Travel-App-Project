@@ -24,6 +24,7 @@
 1. **TourAPI 키**: 공공데이터포털의 '한국관광공사_국문 관광정보 서비스_GW' 일반 인증키(Encoding·Decoding 어느 쪽이든 된다). `.env`는 커밋되지 않습니다(`.gitignore`). 키 값을 문서·코드·커밋 메시지에 쓰지 않습니다.
 2. **진단**(`tools/collect.py`의 1단계, 따로: `python tools/tourapi_doctor.py --data data/incheon`): 키·네트워크·서비스 버전 문제를 한 번에 가리고, `site.json` `region_full`('인천광역시')의 법정동 시도 코드와 그 아래 구·군 코드를 TourAPI(ldongCode2)에서 받아 보여 줍니다(옛 지역코드 areaCode2는 참고). 코드는 저장하지 않고 수집할 때마다 같은 목록을 받아 씁니다(응답은 캐시). `site.json` `districts`와 이름이 다르면 '확인' 줄이 나옵니다. 키가 없으면 곧바로 멈추고 어디에 넣는지 알려 주며, 공급자 오류 메시지는 그대로 보이고 키 문자열만 가려집니다.
 3. **수집**(`tools/collect.py`의 2단계 = `tools/tourapi_bulk.py --details --add-new --events`): 인천광역시 아래 구·군을 TourAPI 법정동 코드 목록대로 모두 돌며(`site.json` `tourapi.scope` 'sido') 지역 목록(관광지·문화시설·레포츠·쇼핑·숙박·음식점, 모든 쪽) → 매칭·좌표·사진(공공누리 제1·3유형만, '출처: 한국관광공사') → 행사(searchFestival2, **오늘부터**, 시도 전체) → 상세(detailCommon2·detailIntro2, 관광지·레포츠는 detailInfo2도: 전화·이용시간·쉬는 날·요금·주차·체크인, 필드별 출처·확인일) → TourAPI에만 있는 장소(draft, 그 구·군을 `district`로). overview는 사실 확인용으로만 남기고 화면에 내지 않습니다. `places.json`이 없어도 시작합니다. 쓰는 파일: `data/incheon/places.json`·`events.json`, `data/cache/tourapi/`(커밋 안 함), `reports/collect.md`·`tourapi_bulk.md`. 끝에 장소·구·군·좌표·사진·방문 판단 정보 채움·행사·**남은 호출 수**와 다음 명령을 출력합니다. 구·군 일부만: `--districts 연수구,강화군`. 진행 중인 행사(오늘 전에 시작)도 받으려면 `--events-from YYYYMMDD`. 키 없이 캐시로만 다시 만들기: `--offline`.
+   - 끝으로 **사진 크기**(`tools/image_sizes.py`, TourAPI 호출이 아니라 상한에 넣지 않음): 싣는 사진과 한국관광공사가 함께 올린 작은 크기 파일(`…_image3_1`)의 가로·세로·용량을 읽어 `data/incheon/image_sizes.json`에 씁니다. 빌드는 이 파일로 목록 썸네일에 작은 파일을 쓰고(없으면 원본), 사진마다 크기를 적고(레이아웃 밀림 없음), 장소 첫 화면에 썸네일 줄을 둡니다. 기록한 사진은 다시 읽지 않습니다. 따로: `python tools/image_sizes.py --data data/incheon`.
 
 ### TourAPI 호출 예산
 실행당 상한 `--max-calls`(기본 900, 진단 포함)은 공공데이터포털 개발계정 일일 한도 안의 값입니다. 상한에 걸리면 받은 데까지 쓰고 종료 코드 3으로 멈추며, 같은 명령을 다시 실행하면 캐시에 있는 응답은 호출 없이 쓰고 나머지를 이어 받습니다. 첫 실행 뒤 출력되는 '목록 크기'와 '남은 호출'이 실제 수치입니다. 그 전에는 아래 식으로 어림합니다(D = TourAPI가 주는 구·군 수, N = 6개 유형 목록 항목 수, N₁ = 그중 관광지·레포츠, F = 오늘 이후 행사 수, n_dt = 구·군 d·유형 t의 항목 수).
@@ -98,6 +99,7 @@ python tools/make_review_sheet.py --data data/incheon --out reports/review.csv  
 python tools/apply_review.py --sheet reports/review.csv --data data/incheon      # OK 행을 reviewed·검수일로(기본 dry-run, 공개 전환은 안 함)
 python tools/perf_check.py --out public                              # 모바일 속도(Playwright 필요)
 python tools/link_check.py --data data/incheon                       # 홈페이지·예약 주소 점검(한국 네트워크에서 한 달에 한 번, --apply면 dead_links.json에 후보)
+python tools/image_sizes.py --data data/incheon                      # 사진 크기·작은 크기 파일 → image_sizes.json(collect.py가 끝에 부름)
 python tools/tourapi_bulk.py --data data/incheon --nearby-only       # 저장된 좌표로 주변 장소만 다시 계산(호출 없음)
 python tools/tourapi_bulk.py --data data/incheon --barrier-free --max-calls 600   # 무장애 여행 정보(KorWithService2, 별도 활용신청)를 공개 장소에 병합
 ```

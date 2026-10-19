@@ -1109,6 +1109,23 @@ def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
     return None, ", ".join(closed)
 
 
+def split_outside_brackets(text: str, sep: str) -> list[str]:
+    """re.split(sep, text) at the matches that are not inside round or square brackets."""
+    depth, at = 0, []
+    for ch in text:
+        at.append(depth)
+        if ch in "(（[":
+            depth += 1
+        elif ch in ")）]" and depth:
+            depth -= 1
+    parts, start = [], 0
+    for m in re.finditer(sep, text):
+        if m.end() > m.start() and not at[m.start()]:
+            parts.append(text[start:m.start()])
+            start = m.end()
+    return parts + [text[start:]]
+
+
 def brief_closed(text: str | None) -> dict | None:
     """A closed-day text: whole when short (or a sentence); else the weekly clause(s) as main, the rest as sub."""
     t = squash_ws(text).strip(" ,/")
@@ -1116,8 +1133,11 @@ def brief_closed(text: str | None) -> dict | None:
         return None
     if len(t) <= 18 or re.search(r"(며|고),", t) or t.endswith("다."):
         return _b(t, closed=is_closed_word(t))
-    clauses = [c.strip() for c in re.split(r"\s*[,/]\s*|\s+및\s+", t) if c.strip()]
-    weekly = [c for c in clauses if WEEKLY.search(c)]
+    # clauses split only outside brackets, and a clause is weekly by its own words, not its bracket: '설날·추석 당일(단,
+    # 공휴일이 월요일인 경우 다음날 휴관)' stays one clause (UI review 2026-10-19, P3-8: a list row read '… 다음날 휴관)'
+    # over '1월 1일, 설날·추석 당일(단')
+    clauses = [c.strip() for c in split_outside_brackets(t, r"\s*[,/]\s*|\s+및\s+") if c.strip()]
+    weekly = [c for c in clauses if WEEKLY.search(re.sub(r"[(（][^()（）]*[)）]", "", c))]
     main = ", ".join(weekly) if weekly else clauses[0]
     others = [c for c in clauses if c not in weekly] if weekly else clauses[1:]
     sub, more = ", ".join(others), False
@@ -3806,7 +3826,10 @@ def event_vm(S, sr: dict) -> dict:
         return {"label": label, "field": field, "html": html, "flag": False}
     slots = [tile("기간", "period", Markup(f'<time datetime="{escape(start)}">{escape(row["range"] or row["period_text"])}</time>'))]
     if ev.get("playtime"):
-        slots.append(tile("시간", "playtime", Markup(f'<span class="nw">{escape(dash_times(squash_ws(ev["playtime"])))}</span>')))
+        # only each time range stays unbroken ('11:00–11:30'): the whole value in one .nw ran a 121-character
+        # timetable 1,000px past a phone's screen and over the next tiles (UI review 2026-10-19, P1-1)
+        slots.append(tile("시간", "playtime", Markup(re.sub(r"(\d{1,2}:\d{2}–\d{1,2}:\d{2})", r'<span class="nw">\1</span>',
+                                                          str(escape(dash_times(squash_ws(ev["playtime"]))))))))
     if ev.get("fee"):
         slots.append(tile("요금", "fee", escape(squash_ws(ev["fee"]))))
     if place_short:

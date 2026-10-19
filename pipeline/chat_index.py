@@ -1105,12 +1105,14 @@ class Knowledge:
                   + f"숙소 {n.get('stay', 0)}곳, 가이드 {len(S.guides)}편·코스 {len(S.courses)}개·행사 {len(S.series)}개·영상 {len(S.videos)}편",
              _clean(site.get("description"))),
             ("/places/", f"관광지 목록 {n.get('attraction', 0)}곳 (유형·테마·지역으로 거르기, 지도)", ""),
-            ("/food/", f"음식점 목록 {n.get('food', 0)}곳 (대표 메뉴·영업시간·쉬는 날)", ""),
+            # a list page the build makes only when it has places (build.py: /places/ always): an empty one is no
+            # page to link (review 2026-10-19 — '/food/ 음식점 목록 0곳' sent the assistant to a 404)
+            *([("/food/", f"음식점 목록 {n['food']}곳 (대표 메뉴·영업시간·쉬는 날)", "")] if n.get("food") else []),
             *([("/cafes/", f"카페·디저트 목록 {n['cafe']}곳 (카페·찻집·제과점, 대표 메뉴·영업시간·쉬는 날)", "")]
               if n.get("cafe") else []),
             *([("/shopping/", f"쇼핑 목록 {n['shopping']}곳 (시장·상점, 영업시간·쉬는 날·주차)", "")]
               if n.get("shopping") else []),
-            ("/stays/", f"숙소 목록 {n.get('stay', 0)}곳 (체크인·체크아웃·주차·문의)", ""),
+            *([("/stays/", f"숙소 목록 {n['stay']}곳 (체크인·체크아웃·주차·문의)", "")] if n.get("stay") else []),
             ("/guides/", f"목적별 가이드 {len(S.guides)}편", ""),
             ("/courses/", f"여행 코스 {len(S.courses)}개 ({city.current().official['name']} 안내 코스)", ""),
             ("/events/", f"행사·축제 일정 {len(S.series)}개 (월별 기간·장소)", ""),

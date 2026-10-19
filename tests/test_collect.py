@@ -18,12 +18,13 @@ import pytest
 from pipeline.build import build
 from pipeline.validate import validate
 from tools import collect
+from tools import image_sizes
 from tools import tourapi_doctor as doctor
 
 ROOT = Path(__file__).resolve().parent.parent
 # the files a collection or a writer adds to data/incheon (TourAPI writes places·events): left out of a copy that
 # stands for this site's configuration before collection
-RECORDS = ("places.json", "events.json", "courses.json", "guides.json", "themes.json", "videos.json")
+RECORDS = ("places.json", "events.json", "courses.json", "guides.json", "themes.json", "videos.json", "image_sizes.json")
 FAKE_KEY = "TEST-ONLY-fake+key/=0123456789"          # not a real key; has + / = so its encoded forms differ
 TODAY = dt.date.today()
 D = lambda days: (TODAY + dt.timedelta(days=days)).strftime("%Y%m%d")
@@ -145,6 +146,9 @@ def region(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("TOURAPI_KEY", raising=False)
     monkeypatch.setattr(doctor, "tcp_check", lambda *a, **k: (True, "시험"))
+    # the photo-size step reads the photo hosts, not TourAPI: answered here (an original 940×627, no small rendition)
+    monkeypatch.setattr(image_sizes, "probe", lambda url: (url, None, "HTTPError: 404") if "_image3_1" in url
+                        else (url, [940, 627, 100000], ""))
     return data
 
 
@@ -205,6 +209,11 @@ def test_fake_incheon_collection_writes_sourced_data_and_builds(region, monkeypa
     assert "대표 사진 제1유형 1 · 제3유형 1; 제2·4유형·유형 없음은 받지 않음 2곳" in out
     assert "전화 4 · 이용시간 4 · 쉬는 날 3 · 요금 2 · 주차 5 · 체크인 1" in out
     assert "행사 1건(오늘 이후 진행 1건)" in out and "남은 호출(캐시에 없는 응답): 약 0회" in out
+    # the photo sizes the build reads (tools/image_sizes.py): every shown photo, read from the photo host, not TourAPI
+    sizes = json.loads((region / "image_sizes.json").read_text("utf-8"))
+    assert sizes == {i["url"]: [940, 627, 100000] for p in places.values() for i in p["images"]} and len(sizes) == 2
+    assert "사진 크기(" in out and "사진 2/2장 · 작은 크기 파일 0장" in out
+    assert not [op for op, _ in api.calls if "image" in op]
     assert "python -m pipeline.build --data data/incheon --out dist-preview --mode preview" in out
     assert "python tools/approve_publication.py --data data/incheon --date " + today in out
     assert (tmp_path / "reports" / "collect.md").exists() and (tmp_path / "reports" / "tourapi_bulk.md").exists()
