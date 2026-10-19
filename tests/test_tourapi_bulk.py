@@ -1,6 +1,6 @@
 import json
 
-from tools.tourapi_bulk import fill, match, name_key, road_key
+from tools.tourapi_bulk import _priority, fill, match, name_key, road_key
 
 
 def _index(items):
@@ -232,3 +232,18 @@ def test_nearby_skips_the_family_and_fills_the_slots(tmp_path, monkeypatch):
     assert tb.main(["--data", str(data), "--nearby-only"]) == 0
     got = {x["id"]: x for x in json.loads((data / "places.json").read_text("utf-8"))}
     assert [n["internal_slug"] for n in got["temple"]["nearby"]] == ["bank", "o0", "o1"]
+
+
+def test_detail_order_puts_shops_last_and_markets_first_among_them():
+    def place(name, kind, lcls="", **extra):
+        return {"name": name, "kind": kind, "tourapi": {"lclsSystm3": lcls}, **extra}
+    places = [
+        place("가 브랜드 매장", "shopping", "SH040300"),
+        place("나 식당", "food", "FD010100"),
+        place("다 전통시장", "shopping", "SH060200"),
+        place("라 관광지", "attraction", "VE030500"),
+        place("마 카페", "cafe", "FD050100"),
+        place("바 시장 (질문)", "shopping", "SH060200", question_ids=["Q1"]),
+    ]
+    assert [p["name"] for p in sorted(places, key=_priority)] == [
+        "바 시장 (질문)", "라 관광지", "나 식당", "마 카페", "다 전통시장", "가 브랜드 매장"]

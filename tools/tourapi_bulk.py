@@ -411,8 +411,13 @@ def run_nearby_only(data_dir: Path, today: str | None = None) -> dict:
 
 
 def _priority(p: dict) -> tuple:
-    """Detail calls go to the pages people read first: full tier, question places, attractions, the rest."""
-    return (p.get("tier") != "full", not p.get("question_ids"), p.get("kind") != "attraction", p.get("name", ""))
+    """Detail calls go to the pages people read first: full tier, question places, attractions, the rest, shops last
+    (owner decision 2026-10-19: most are brand stores in outlets and department stores) — markets, local-produce halls
+    and bookstores (NEARBY_SHOP_LCLS) first among the shops."""
+    shop = p.get("kind") == "shopping"
+    lcls = str((p.get("tourapi") or {}).get("lclsSystm3") or "")
+    return (p.get("tier") != "full", not p.get("question_ids"), shop, shop and not lcls.startswith(NEARBY_SHOP_LCLS),
+            p.get("kind") != "attraction", p.get("name", ""))
 
 
 def fetched_on(api, start: int, today: str) -> str:
@@ -425,7 +430,7 @@ def fetched_on(api, start: int, today: str) -> str:
 def unlisted(items: list[dict], places: list[dict], n: dict, region: str, overrides: dict, same: dict, skip: set,
              hold: set, different: set):
     """The list items of the place types (NEW_PLACE_TYPES) whose contentid is not in places.json yet, attractions
-    first. A contentid the overrides skip, hold or tie to a record of ours (same) is not given; one that may be a record
+    first, shops (38) last. A contentid the overrides skip, hold or tie to a record of ours (same) is not given; one that may be a record
     of ours (duplicate_candidates — unless the overrides say different) is held for a person. Skips and holds are
     counted in `n` (skipped, held_duplicate_candidates). A generator: a place added while it runs is a candidate for the
     items after it."""
@@ -433,7 +438,8 @@ def unlisted(items: list[dict], places: list[dict], n: dict, region: str, overri
     have = {str((p.get("tourapi") or {}).get("contentid")) for p in places if (p.get("tourapi") or {}).get("contentid")}
     todo = sorted((it for it in items if str(it.get("contenttypeid")) in NEW_PLACE_TYPES
                    and str(it["contentid"]) not in have and str(it["contentid"]) not in same),
-                  key=lambda it: (str(it.get("contenttypeid")) not in ("12", "14", "28"), it.get("title", "")))
+                  key=lambda it: (str(it.get("contenttypeid")) not in ("12", "14", "28"), str(it.get("contenttypeid")) == "38",
+                                  it.get("title", "")))
     for it in todo:
         cid = str(it["contentid"])
         if cid in skip:
