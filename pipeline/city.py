@@ -49,6 +49,8 @@ site.json keys read here
     resident_label     the residents' price group of the fee tables ('○○시민'); default: region + '시민'
     guide_pics         {guide id: [3D picture id, glyph, px]}: the small picture at the head of a guide (the mascot
                        with a suitcase on the getting-here guide …; templates/guide.html.j2); none: no picture
+    search_aliases     {'a short name': ['the name the data writes', …]}: the site search reads the short name as those
+                       names too ('인천공항' → 인천국제공항; present.search_form_data)
     event_kind_words   {kind: [words]}: words that pick an event card's picture (pipeline/art.py event_kind); a kind
                        the engine does not have becomes the city's own (its pictures events.kind.<kind>)
 """

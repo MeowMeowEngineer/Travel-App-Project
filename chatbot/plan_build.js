@@ -14,7 +14,7 @@ import { HUBS, NEEDS, titleCity, tripDates } from "./plan_prompt.js";
 import { planFees } from "./plan_fees.js";
 import {
   CAMP, HARD, KEEP_MIN, MEAL_KEEP, MEAL_MIN, STAY_NEAR, STOPS_MAX, SWAP_MIN, dateWords, dayInfo, eul, fitsHours, gOf, hardState, hhmm, hubLegs, iga, ro,
-  inBreak, isOutdoor, lastPoint, legFloor, stretchMax, marginOf, metres, mins, placesOf, regionOf,
+  inBreak, isOutdoor, lastPoint, legFloor, stretchMax, marginOf, metres, mins, placesOf, regionOf, stayRadii,
 } from "./plan_geo.js";
 import {
   HUB_MARGIN, IDLE, MEALS, PREF_TYPES, completeness, eatsElsewhere, hm, isCafe, isMeal, mealIn, needAt, prefFits, readerDay, span, spans,
@@ -487,7 +487,7 @@ function placeStay(ctx, stops) {
   if (!at) return null;
   const list = ctx.pool.stays.filter((x) => okStay(x.page)).map((x) => ({ x, m: metres(at, x.g) }))
     .sort((p, q) => p.x.camp - q.x.camp || p.m - q.m || (p.x.page < q.x.page ? -1 : 1));
-  for (const R of [STAY_NEAR, 10000, 20000, Infinity]) {
+  for (const R of stayRadii(kb.docs[last.page])) {   // never unlimited on an island (QA 2026-10-19 QA-09)
     for (const { x } of list.filter((y) => y.m <= R)) {
       const a = startOf(x.page);
       if (a !== null) return { page: x.page, name: x.doc.t, a, b: Math.min(a + 60, 23 * 60 + 59), role: "stay", why: "", by: "site" };
@@ -740,6 +740,11 @@ export function preflight(c, kb, now = new Date(), edit = null, opts = {}) {
 // a refusal's reasons build the trip again for each change they offer: no more than this many builds or this long
 // (round-5 verifier: up to a second of the server's time for one refusal); a change not checked is not offered
 const DIAG_RUNS = 24;
+const NOTE_MAX = 200;   // planner PLAN_LIMITS.noteChars: a fix's note stays a note the server takes
+const eun = (w) => (jongOf(w) ? "은" : "는");
+const jongOf = (w) => { const c = String(w).slice(-1).charCodeAt(0) - 0xac00; return c >= 0 && c < 11172 ? c % 28 : 0; };
+// the note leaves out every meal it is for (eatsElsewhere reads it as the planner will)
+const eatsAll = (note, kinds) => kinds.every((k) => eatsElsewhere(k, note));
 const DIAG_MS = 300;
 const BUDGET_MAX = 1000000;
 
@@ -849,10 +854,29 @@ function diagnose(c, kb, now, edit, built, trace, opts) {
   };
   const other = { needs: `${needWords} 조건을 빼도 짤 수 있어요.`, budget: "입장료 예산을 바꿔도 짤 수 있어요.", move: "자가용으로 바꿔도 짤 수 있어요.",
     days: "기간을 줄여도 짤 수 있어요.", start: "시작을 늦춰도 짤 수 있어요.", end: "끝을 당겨도 짤 수 있어요.",
-    from: "출발 역·터미널을 두지 않아도 짤 수 있어요.", to: "도착 역·터미널을 두지 않아도 짤 수 있어요." };
+    from: "출발 역·터미널을 두지 않아도 짤 수 있어요.", to: "도착 역·터미널을 두지 않아도 짤 수 있어요.",
+    note: "식사를 빼도 짤 수 있어요." };
   const problems = [];
+  // no restaurant the site can give for a meal that date (no 음식점 with hours yet — the daily collection fills them):
+  // the cause is the data, not the distance, and leaving the meal out is the first fix (QA 2026-10-19 QA-01: the
+  // default 10:00–18:00 was refused with '… 가까이에서 여는 음식점을 찾을 수 없어요' and only '시작을 12:00로')
+  if (missed && !pool.meals.length) {
+    const kindsOut = [...new Set(trace.filter((t) => t.why === "meal").map((t) => t.meal))];
+    const said = kindsOut.map((k) => MEALS[k].label).join("·");
+    const note = [c.note, `${said}${eun(said)} 빼 주세요`].filter(Boolean).join(" ");
+    const set = { note: [...note].slice(0, NOTE_MAX).join("") };
+    if (eatsAll(set.note, kindsOut) && passes(set)) groups.unshift({ field: "note", fixes: [fix(`${said} 빼고 짜기`, set)] });
+    if (groups.length && groups[0].field === "note") {
+      for (const g of groups) {
+        problems.push({ field: g.field, text: problems.length ? other[g.field]
+          : `${when}에는 음식점 이용시간 자료가 아직 없어 ${said}${eul(said)} 넣을 수 없어요.`, fixes: g.fixes });
+      }
+    }
+  }
   const kinds = [...new Set(groups.map((g) => kindOf(g.field)))];
-  if (kinds.length === 1) {
+  if (problems.length) {
+    // said above
+  } else if (kinds.length === 1) {
     for (const g of groups) problems.push({ field: g.field, text: problems.length ? other[g.field] : one[kinds[0]](), fixes: g.fixes });
   } else if (kinds.length > 1) {
     const places = kinds.filter((k) => clause[k]).map((k) => clause[k]());

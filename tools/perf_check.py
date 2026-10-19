@@ -6,17 +6,22 @@
     python tools/perf_check.py --out dist-preview --pages "/places/?type=박물관·전시" "/map/#r-<권역>"   # 필터 주소·앵커도
 
 - 필요: pip install playwright && python -m playwright install chromium
-- 로컬 정적 서버로 --out 폴더를 띄우고 측정한다. 압축(gzip·br)이 없는 로컬 서버라 전송량은 실제보다 크게 나온다.
-  기준선과 전/후 비교용이며, 공개 후에는 PageSpeed Insights 실측으로 다시 확인한다.
+- 로컬 정적 서버로 --out 폴더를 띄우고 측정한다. 서버는 Vercel처럼 글(HTML·CSS·JS·JSON·SVG)을 gzip으로 보낸다
+  (Vercel은 br도 쓴다 — 실제 전송량은 이보다 조금 작다). 기준선과 전/후 비교용이며, 공개 후에는 PageSpeed Insights
+  실측으로 다시 확인한다.
 - 목표(이 사이트 기준): 모바일 LCP ≤ 2.5초(느린 4G·CPU 4배 감속), CLS ≤ 0.1, 첫 화면 제목이 스크립트 때문에 숨지 않을 것.
 """
 from __future__ import annotations
 
 import argparse
+import functools
+import gzip
+import http.server
 import json
+import os
 import socket
-import subprocess
 import sys
+import threading
 import time
 import urllib.parse
 from pathlib import Path
@@ -49,16 +54,65 @@ PROBE = """() => new Promise(res => {
   }, 9000); })"""
 
 
-def serve(folder: Path, port: int) -> subprocess.Popen:
-    proc = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", str(folder)],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+# what Vercel sends compressed (QA 2026-10-19 QA-29: the plain http.server sent everything raw, so FCP = LCP and the
+# home measured 2.9 s, /places/ 3.7 s — a slower network than the site's own). Fonts, pictures and video are sent
+# as they are, as Vercel does.
+GZIP_TYPES = (".html", ".css", ".js", ".mjs", ".json", ".svg", ".txt", ".xml", ".webmanifest")
+
+
+class GzipHandler(http.server.SimpleHTTPRequestHandler):
+    """A static file server that gzips text files for a client that accepts it (Content-Encoding: gzip), each file
+    compressed once."""
+    cache: dict = {}
+
+    def log_message(self, *args):   # quiet
+        pass
+
+    def do_GET(self):
+        path = self.translate_path(self.path)
+        if os.path.isdir(path):
+            if not self.path.split("?", 1)[0].endswith("/"):
+                return super().do_GET()   # the redirect to the slash
+            path = os.path.join(path, "index.html")
+        if not (os.path.isfile(path) and path.endswith(GZIP_TYPES) and "gzip" in self.headers.get("Accept-Encoding", "")):
+            return super().do_GET()
+        key = (path, os.path.getmtime(path))
+        body = self.cache.get(key)
+        if body is None:
+            with open(path, "rb") as f:
+                body = self.cache[key] = gzip.compress(f.read(), 6)
+        self.send_response(200)
+        self.send_header("Content-Type", self.guess_type(path))
+        self.send_header("Content-Encoding", "gzip")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Vary", "Accept-Encoding")
+        self.end_headers()
+        self.wfile.write(body)
+
+
+class Server:
+    """The folder served on 127.0.0.1:port in a thread (terminate() stops it)."""
+
+    def __init__(self, folder: Path, port: int):
+        handler = functools.partial(GzipHandler, directory=str(folder))
+        self.httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), handler)
+        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.thread.start()
+
+    def terminate(self):
+        self.httpd.shutdown()
+        self.httpd.server_close()
+
+
+def serve(folder: Path, port: int) -> Server:
+    srv = Server(folder, port)
     for _ in range(100):
         try:
             socket.create_connection(("127.0.0.1", port), 0.2).close()
-            return proc
+            return srv
         except OSError:
             time.sleep(0.1)
-    proc.terminate()
+    srv.terminate()
     raise RuntimeError("로컬 서버를 띄우지 못했습니다")
 
 

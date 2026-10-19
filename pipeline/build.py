@@ -39,6 +39,7 @@ import re
 import shutil
 import sys
 from collections import Counter
+from difflib import SequenceMatcher
 from pathlib import Path
 from urllib.parse import quote
 
@@ -55,7 +56,7 @@ from .schema import (BUSINESS_KINDS, DEFAULT_ALLOWED_LICENSES, FACT_ALIASES, FAC
 from . import present
 from . import locales as LC
 from .textutil import (area_from_address, display_address, display_value, drop_dead_links, first_sentence, josa,
-                       link_url, normalize_name, road_from_address, slugify, squash_ws, url_key, web_url)
+                       link_url, normalize_name, road_from_address, slugify, squash_ws, url_key, url_shown, web_url)
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / "templates"
@@ -182,6 +183,7 @@ def make_env() -> Environment:
     env.filters["wordmark"] = present.wordmark        # the site name with its emphasised end (○○각 → 각, ○○gak → gak)
     # {{ raw|dv(key) }}: a stored value as the page shows it (textutil.display_value; JSON-LD and validate use it too)
     env.filters["dv"] = lambda raw, key: display_value(key, raw)
+    env.filters["url_shown"] = url_shown   # a URL in text: no scheme, a Korean domain as written
     env.filters["link_url"] = link_url  # a homepage/booking value's link target (validate checks the same URL)
     # shared markup (templates/_ui.html.j2): footnote superscripts — the visible number plus a hidden " — 출처 n", so
     # a fact <dd> reads "value — 출처 1" as text (validate's dt/dd pair parser splits on " — "); chapter notes (FAQ,
@@ -590,6 +592,9 @@ class State:
                                 and self.ent_by_slug[s["place_slug"]]["_images"]), None)
         self.guide_by_id = {g["id"]: g for g in self.guides}
         self.series = event_series(self.events, self)
+        for sr in self.series:
+            if not sr["place_slugs"]:
+                sr["place_slugs"] = event_venues(self, sr)
         for e in self.entities:
             e["_events"] = [sr for sr in self.series if e["slug"] in sr["place_slugs"]]
         # YouTube videos (data/<region>/videos.json, each checked through YouTube oEmbed): linked from places and
@@ -1205,6 +1210,49 @@ YEAR_PREFIX = re.compile(r"^20\d\d\s+")
 
 
 ALT_LABELS = {"period": "기간", "place_name": "장소", "address": "주소", "fee": "요금", "playtime": "시간", "tel": "문의"}
+
+
+VENUE_NEAR_M = 150      # an event's point and a place this near, whose names overlap, are one venue
+VENUE_SAME_M = 3000     # a place with exactly the event's place name, this near
+
+
+def _names_overlap(a: str, b: str) -> bool:
+    """'드림파크야생화단지' inside '수도권매립지드림파크야생화단지', '인천문화예술회관' and '인천종합문화예술회관' (a run of at least
+    70% of the shorter name, 4 letters or more)."""
+    if not a or not b:
+        return False
+    short, long_ = sorted((a, b), key=len)
+    if len(short) >= 3 and short in long_:
+        return True
+    m = SequenceMatcher(None, short, long_).find_longest_match(0, len(short), 0, len(long_))
+    return m.size >= max(4, 0.7 * len(short))
+
+
+def event_venues(S: State, sr: dict) -> list[str]:
+    """The place pages an event series without place_slugs is held at (QA 2026-10-19 QA-53: the event collector sets
+    none, so no event page said where it is held and no venue page listed its event): for each edition with a point
+    and a place name, the places with exactly that name within VENUE_SAME_M, else those within VENUE_NEAR_M whose name
+    overlaps it (_names_overlap) — nearest first, in the editions' order. Read from the data at build time only."""
+    out: list[str] = []
+    for x in sr["editions"]:
+        g = x.get("geo") or {}
+        raw = city.current().strip_prefix(x.get("place_name"))
+        name = normalize_name(re.sub(r"\([^)]*\)|\s*(?:일원|일대)$", "", raw or ""))
+        if g.get("lat") is None or g.get("lng") is None or not name:
+            continue
+        cands = []
+        for e in S.entities:
+            eg = e.get("_geo") or {}
+            if eg.get("lat") is None:
+                continue
+            m = haversine_m(float(g["lat"]), float(g["lng"]), float(eg["lat"]), float(eg["lng"]))
+            pn = normalize_name(e["name"])
+            if (pn == name and m <= VENUE_SAME_M) or (m <= VENUE_NEAR_M and _names_overlap(pn, name)):
+                cands.append((m, e["slug"]))
+        for _, slug in sorted(cands):
+            if slug not in out:
+                out.append(slug)
+    return out
 
 
 def event_series(events: list[dict], S: State) -> list[dict]:

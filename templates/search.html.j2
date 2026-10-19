@@ -12,6 +12,11 @@
     beside the title, and with nothing found the empty-result illustration (search.empty; without it the mascot with an
     empty basket). -#}
 {% set n_places = directory|sum(attribute='places', start=[])|length %}
+{#- an address with a query (the header's search, the assistant's fallback): the 가나다 directory stays out of the first
+    paint — search.js shows the results, or the directory again when the reader asks for it or the index does not load
+    (QA 2026-10-19 QA-06: the whole list painted first, then went: CLS 0.36 and every font file); should search.js not
+    start within 8 s, the directory comes back. Without JS it shows. -#}
+{% block head %}<script>(function(h){if(/[?&]q=[^&]/.test(location.search)){h.classList.add('has-q');setTimeout(function(){if(!window.gsSearchOn)h.classList.remove('has-q')},8000)}})(document.documentElement)</script>{% endblock %}
 {% block main_class %}{% endblock %}
 {% block bodyclass %}pg-search{% endblock %}
 {% block content %}
@@ -23,7 +28,7 @@
                       '장소 이름·메뉴·동네·가이드를 찾고, 여행 질문은 AI 챗봇에게 물어보세요.', search_data) }}
     <div class="results" data-results aria-live="polite"></div>
     <div class="res-help" data-none-help hidden>
-      <nav class="res-lists" aria-label="목록에서 찾기"><p class="res-help-l">목록에서 찾기</p><ul>{% for label, href in nav if href in ('/places/', '/food/', '/stays/', '/courses/', '/guides/', '/events/') %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}</ul></nav>
+      <nav class="res-lists" aria-label="목록에서 찾기"><p class="res-help-l">목록에서 찾기</p><ul>{% for label, href in nav if href in ('/places/', '/food/', '/cafes/', '/shopping/', '/stays/', '/courses/', '/guides/', '/events/') %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}</ul></nav>
       <div class="res-acts"><button type="button" class="btn" data-chat-open data-chat-q="">AI 챗봇에게 묻기</button><button type="button" class="btn btn-ol" data-show-all aria-controls="dir">가나다순 전체 장소 보기 ({{ n_places }}곳)</button></div>
     </div>
     {% set ea = (art_slots or {}).get('search.empty') %}
@@ -34,7 +39,7 @@
   <div class="ch-head"><h2 id="h-dir" tabindex="-1">가나다순 장소 <span class="count tn">{{ n_places }}곳</span></h2></div>
   <nav class="jump" aria-label="첫 글자로 이동">{% for g in directory %}<a href="#{{ g.id }}">{{ g.initial }}</a>{% endfor %}</nav>
   {% for g in directory %}
-  <section class="dir-g{% if not loop.first %} cv{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h">
+  <section class="dir-g{% if not loop.first %} cvk{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h"{% if not loop.first %} style="contain-intrinsic-size:auto {{ 60 + g.places|length * 30 }}px"{% endif %}>
     <h3 id="{{ g.id }}-h" class="dir-ini">{{ g.initial }} <span class="tn">{{ g.places|length }}</span></h3>
     <ul class="dir-list">{% for e in g.places %}<li><a href="{{ e._path }}">{{ e.name }}</a><span>{{ e.kind|kind_label }}{% if e._type %} · {{ e._type }}{% endif %}{% if e._area %} · {{ e._area }}{% endif %}</span></li>{% endfor %}</ul>
   </section>

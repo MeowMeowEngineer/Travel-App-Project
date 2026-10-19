@@ -22,6 +22,14 @@ export const metres = (a, b) => {
 };
 export const km = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${m}m`);
 export const STAY_NEAR = 5000;   // a stay the code adds for a night is within this straight-line distance of the day's last stop
+// island areas — the 권역 a page names: site.json city.plan.island_regions (docs.json f.isl), or a 권역 whose name says
+// 섬 —: two places farther apart than SEA_M may be across the sea, and the site has no ferries (QA 2026-10-19 QA-09: a
+// plan hopped between islands as if by road and put the night's stay on another island)
+export const SEA_M = 3000;
+export const onIsland = (doc) => !!doc && (((doc.f || {}).isl === 1) || /섬/u.test(regionOf(doc)));
+/** The straight lines a night's stay is looked for in after a day's last stop (doc: that stop's page), nearest first:
+ *  STAY_NEAR, then farther, without limit at the end — but on an island SEA_M first and never without limit. */
+export const stayRadii = (doc) => (onIsland(doc) ? [SEA_M, STAY_NEAR, 10000, 20000] : [STAY_NEAR, 10000, 20000, Infinity]);
 // a place the code puts in — for a stop closed that day, a missing meal, an empty stretch — is within this straight
 // line of the stop it goes next to: [without a car, by car]
 export const NEAR = { swap: [3000, 5000], meal: [1500, 5000], fill: [3000, 5000] };

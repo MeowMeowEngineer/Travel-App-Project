@@ -3,7 +3,7 @@
    has its own stylesheet (assets/plan.css). */
 .mast-plan { display: none; }
 @media (min-width: 1024px) {
-  .mast-plan { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px 0 9px; margin: 0 6px 0 2px; border-radius: var(--r-pill);
+  .mast-plan { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px 0 9px; margin: 0 6px 0 2px; border-radius: var(--r-pill);
     background: var(--tint); color: var(--sea-deep); font: 700 14px/1 var(--font); white-space: nowrap; text-decoration: none; }
   .mast-plan .icon { width: 16px; height: 16px; }
   .mast-plan:hover, .mast-plan[aria-current] { background: var(--sea); color: #fff; text-decoration: none; }

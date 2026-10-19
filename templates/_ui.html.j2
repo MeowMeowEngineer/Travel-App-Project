@@ -169,7 +169,7 @@
 {% macro kfv(s, more_href='', compact=false, place='') -%}
 {% if s.missing %}<span class="kf-na">확인 필요</span>{% if s.sub %}<span class="vh"> · </span><span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}
 {%- elif s.conflict %}{% for v in s.vals %}<span class="kf-alt"><span class="kf-main tn{% if v.closed %} closed{% endif %}">{{ v.main|nwt }}</span>{% if v.sub and not compact %} <span class="kf-sub tn">{{ v.sub|nwt }}</span>{% endif %}<span class="kf-src">{{ v.provider }}</span></span>{% endfor %}
-{%- else %}<span class="kf-main tn{% if s.closed %} closed{% endif %}">{% if s.key == 'tel' %}<a class="tel" href="tel:{{ s.tel }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.main }}</a>{% else %}{{ s.main|nwt }}{% endif %}</span>{% if s.sub %}<span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}{% if s.more %}{% if more_href %} <a class="kf-more" href="{{ more_href }}">외 ↓</a>{% else %} <span class="kf-more">외</span>{% endif %}{% endif %}
+{%- else %}<span class="kf-main tn{% if s.closed %} closed{% endif %}">{% if s.key == 'tel' %}<a class="tel" href="tel:{{ s.tel }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.main }}</a>{{ s.tel_tail or '' }}{% else %}{{ s.main|nwt }}{% endif %}</span>{% if s.sub %}<span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}{% if s.more %}{% if more_href %} <a class="kf-more" href="{{ more_href }}">외 ↓</a>{% else %} <span class="kf-more">외</span>{% endif %}{% endif %}
 {%- endif %}
 {%- endmacro %}
 
@@ -554,7 +554,9 @@
 {% if it.web %}<a class="rec-web" href="{{ it.web }}" rel="noopener" data-track="{{ 'stay_click' if kind == 'stay' else 'official_click' }}" data-place="{{ it.e.id }}">{{ it.web_text }}</a>{% endif %}
 {% if it.photo %}<img class="rec-th t{{ it.photo.type }}" src="{{ it.photo.url }}"{% if it.photo.w and it.photo.h %} width="{{ it.photo.w }}" height="{{ it.photo.h }}"{% endif %} alt="" loading="lazy" decoding="async" data-kogl="{{ it.photo.type }}">{% endif %}
 </div>
-<dl class="rec-cells">{% for c in it.slots %}<div class="c-{{ c.key }}{% if c.conflict %} is-conflict{% endif %}"><dt>{{ c.label }}</dt><dd>{{ kfv(c, '', false, it.e.id) }}</dd></div>{% endfor %}</dl>
+{#- a card with none of its values says so once (CLAUDE.md 3.1; QA 2026-10-19 QA-27: '확인 필요' four times a card) -#}
+{% if it.slots and not (it.slots|rejectattr('missing')|list) %}<p class="rec-need">확인 필요: {{ it.slots|map(attribute='label')|join('·') }}</p>
+{%- else %}<dl class="rec-cells">{% for c in it.slots %}<div class="c-{{ c.key }}{% if c.conflict %} is-conflict{% endif %}"><dt>{{ c.label }}</dt><dd>{{ kfv(c, '', false, it.e.id) }}</dd></div>{% endfor %}</dl>{% endif %}
 {% if it.slots|selectattr('conflict')|list %}<p class="rec-call">방문 전 전화 확인</p>{% endif %}
 </li>
 {%- endmacro %}

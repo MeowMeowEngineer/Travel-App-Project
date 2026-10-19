@@ -52,7 +52,11 @@ def test_every_page_has_one_launcher_and_nothing_else_of_the_chat(sample):
         else:                                                             # no mascot yet: the chat glyph, nothing to load
             assert '<span class="chat-fab-face"><span class="mascot-g" style="--mg:52px" aria-hidden="true"><svg' in fab, p
             assert "/assets/mascot/" not in html, p
-        assert html.index('class="chat-fab"') > html.rindex("</footer>"), p   # after the footer, the last thing in <body>
+        # right after the header, early in the tab order (QA 2026-10-19 QA-49: it was the last of 68 tab stops); the
+        # quick menu and the pictures stay after the footer
+        assert html.index("</header>") < html.index('class="chat-fab"') < html.index("<main"), p
+        if '<nav class="qm"' in html:
+            assert html.index('<nav class="qm"') > html.rindex("</footer>"), p
         assert "chat.js" not in html and "chat.css" not in html and "/api/chat" not in html
         assert html.count("<script src=") == 1
     assert (sample / "assets" / "chat.js").exists() and (sample / "assets" / "chat.css").exists()
@@ -89,7 +93,7 @@ def test_english_pages_render_the_english_launcher():
                         wordmark="All About Gunsan Travel", lang_link=None, tourapi_used=False,
                         t=en_site.UIText(en_site.EN, {}), loc=en_site.EN, langs=[])
     assert '<span class="chat-fab-l">AI chat</span>' in html and "챗봇" not in html
-    assert html.index('class="chat-fab"') > html.rindex("</footer>")
+    assert html.index("</header>") < html.index('class="chat-fab"') < html.index("<main")
 
 
 def test_about_pages_explain_the_assistant(sample):

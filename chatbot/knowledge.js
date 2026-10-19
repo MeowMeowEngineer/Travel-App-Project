@@ -871,10 +871,12 @@ export class Knowledge {
             checks.push(`그날은 공휴일(${holiday}) — 공휴일 운영은 사이트 자료에 없음, 그날 여는지 확인 필요`);
           }
         }
+        const unread = [];   // hours values with no time the check can read ('※ 시설별 상이하므로 홈페이지 참고')
         for (const h of todayHours ? [{ p: "날짜별 공지", t: "", r: todayHours }] : f.h || []) {
           const r = h.r || hoursFor(h.t);
           if (r.why) {
             notes.push(`이용시간 — ${h.p}: '${h.t}' (그날 시각을 하나로 읽지 않음: ${r.why} — 확인 필요)`);
+            unread.push(h.t);
             continue;
           }
           hours.push({ open: r.open, close: r.close, last: r.last });
@@ -889,6 +891,11 @@ export class Knowledge {
         if (!(f.h || []).length && !todayHours && f.kd !== "stay") {
           notes.push("이용시간: 사이트에 없음(확인 필요)");
           checks.push("이용시간이 사이트에 없음 — 그 시각에 여는지 확인 필요");
+        } else if (!hours.length && unread.length && f.kd !== "stay" && !unread.some((t) => /상시\s*(?:개방|이용)|24\s*시간/u.test(t))) {
+          // the site's own words on the hours, as written (QA 2026-10-19 QA-31: '시설별 상이 — 홈페이지 참고' was
+          // reported as '이용시간이 사이트에 없음')
+          const t = String(unread[0]).replace(/^※\s*/u, "");
+          checks.push(`이용시간은 '${t.length > 40 ? `${t.slice(0, 40)}…` : t}' — 그 시각에 여는지 확인 필요`);
         }
       }
       for (const c of checks) notes.push(`확인 필요: ${c}`);

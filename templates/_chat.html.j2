@@ -16,6 +16,10 @@
     pill with the few real actions — 검색, 지도, 행사 달력 (on a place page 길찾기, its own block), 맨 위로 (#main-content,
     the top of the page's content, without JS too) — 44px round targets with their names (aria-label + title, a tooltip on hover/focus);
     it comes after the footer in the reading order. Phones: only the launcher. -#}
+{#- base.html.j2 includes this twice (QA 2026-10-19 QA-49: the launcher was the last of 68 tab stops on a place
+    page): chat_part 'fab' right after the header — the launcher alone, early in the reading and tab order —, then
+    'rest' after the footer — the quick menu and the pictures. Without chat_part, everything at once. -#}
+{% set chat_part = chat_part if chat_part is defined else '' %}
 {% import "_mascot.html.j2" as mm %}
 {% set region_ko = site.region if site is defined and site and site.region else '' %}
 {% set chat_ui = {
@@ -30,7 +34,7 @@
   'ru': ('ИИ-чат', 'ИИ-чат — вопрос о поездке'),
 } %}
 {% set cl = chat_ui.get(lang) or chat_ui['en'] %}
-{% if lang == 'ko' and site is defined %}{% import "_ui.html.j2" as qui %}
+{% if lang == 'ko' and site is defined and chat_part != 'fab' %}{% import "_ui.html.j2" as qui %}
 {% set QM = [('search', '검색', '/search/') if has_search else none, ('map', '지도', '/map/') if has_map else none,
              ('route', '길찾기', ctxbtn[1]) if ctxbtn and ctxbtn[1] == '#h-dir' else (('calendar', '행사 달력', '/events/') if has_events else none),
              ('up', '맨 위로', '#main-content')] %}
@@ -42,13 +46,13 @@
 {% set chat_cfg = ((site.city or {}).chat or {}) if site is defined and site else {} %}
 {#- the planner's start and end points ({key: name}, site.json city.plan.hubs): planQuery reads a time said at one -#}
 {% set plan_hub_names = {} %}{% if site is defined and site %}{% for h in ((site.city or {}).plan or {}).hubs or [] %}{% if h.key and h.name %}{% set _ = plan_hub_names.update({h.key: h.name}) %}{% endif %}{% endfor %}{% endif %}
-<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}" data-chat-site="{{ site.site_url if site is defined and site else '' }}" data-chat-search="{{ '/search/' if has_search is defined and has_search else '' }}" data-chat-city="{{ (chat_cfg.names or {})|tojson|forceescape }}" data-chat-chips="{{ (chat_cfg.chips or {})|tojson|forceescape }}" data-chat-hubs="{{ plan_hub_names|tojson|forceescape }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>
+{% if chat_part != 'rest' %}<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}" data-chat-site="{{ site.site_url if site is defined and site else '' }}" data-chat-search="{{ '/search/' if has_search is defined and has_search else '' }}" data-chat-city="{{ (chat_cfg.names or {})|tojson|forceescape }}" data-chat-chips="{{ (chat_cfg.chips or {})|tojson|forceescape }}" data-chat-hubs="{{ plan_hub_names|tojson|forceescape }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>{% endif %}
 {#- the assistant's pictures, copied by assets/chat.js where it shows them (inside a <template> nothing loads until
     then): the first screen's illustration (chat.empty, in the page's language: art_slots is art.for_lang's — never on a
     place page, where AI art may not be at all, CLAUDE.md 4), the mascot thinking beside '답을 찾는 중…' and sorry
     beside an error. Only what this site has; nothing at all without them. -#}
-{% import "_art.html.j2" as artm %}
+{% if chat_part != 'fab' %}{% import "_art.html.j2" as artm %}
 {% set on_place = page_kind is defined and page_kind is string and page_kind.startswith('place-') %}
 {% set chat_art = (art_slots or {}).get('chat.empty') if art_slots is defined and not on_place else none %}
 {% set chat_think = mm.pic('mascot-think', 'small', 40, 'chat-mascot')|trim %}{% set chat_sorry = mm.pic('mascot-sorry', 'small', 48, 'chat-mascot')|trim %}
-{% if (chat_art and chat_art.alts.get(lang)) or chat_think or chat_sorry %}<template id="chat-art">{% if chat_art and chat_art.alts.get(lang) %}<div data-id="hello">{{ artm.figure(chat_art, lang, '(min-width: 600px) 400px, calc(100vw - 40px)', cls='chat-art', decorative=true) }}</div>{% endif %}{% if chat_think %}<span data-id="think">{{ chat_think }}</span>{% endif %}{% if chat_sorry %}<span data-id="sorry">{{ chat_sorry }}</span>{% endif %}</template>{% endif %}
+{% if (chat_art and chat_art.alts.get(lang)) or chat_think or chat_sorry %}<template id="chat-art">{% if chat_art and chat_art.alts.get(lang) %}<div data-id="hello">{{ artm.figure(chat_art, lang, '(min-width: 600px) 400px, calc(100vw - 40px)', cls='chat-art', decorative=true) }}</div>{% endif %}{% if chat_think %}<span data-id="think">{{ chat_think }}</span>{% endif %}{% if chat_sorry %}<span data-id="sorry">{{ chat_sorry }}</span>{% endif %}</template>{% endif %}{% endif %}

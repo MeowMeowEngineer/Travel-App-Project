@@ -30,6 +30,11 @@
    lays out the opening, the bento and the photo only (about −0.1 s LCP at 390, slow 4G, CPU ×4). */
 .cv, .pg-home .sec, .pg-home .gallery, .pg-home .story, .nums, .foot { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 html.cv-off .cv, html.cv-off .pg-home .sec, html.cv-off .pg-home .gallery, html.cv-off .pg-home .story, html.cv-off .nums, html.cv-off .foot { content-visibility: visible; }
+/* .cvk: the long name lists (list groups, /map/ 권역 sections, the search directory) stay skipped off screen after
+   'load' too — nothing on them is scroll-animated — so the font files for their names load only when they are
+   scrolled to (QA 2026-10-19 QA-28: 508–822 KB of fonts on /places/, /food/, /map/; the budget is 300 KB). The
+   section's estimated height is set inline (rows × a row's height). */
+.cvk { content-visibility: auto; contain-intrinsic-size: auto 1200px; }
 
 /* ---------------------------------------------------------------- reduced motion: final state, nothing moves */
 @media (prefers-reduced-motion: reduce) {

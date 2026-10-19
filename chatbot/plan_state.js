@@ -173,11 +173,16 @@ export const CUT = /빼(?!먹|놓(?:을|지)|\s*지\s*(?:마|말|않)|어|곡)|�
 // 저녁 the dinner (아침 neither); 식사·밥·끼니 are both only on their own — next to a meal word they are that meal's
 // ('저녁 식사는 따로' leaves the lunch in), and inside a word they are no meal ('비빔밥은 빼'). Only a form of leaving it
 // out counts: '빼먹지 말아', '빼지 마', '없이는 안 돼', '제외하지 마' want the meal.
-const SAID_OUT = new RegExp(String.raw`(?:((?:점심|저녁|아침)(?:\s*(?:과|와|이랑|하고|및|[,·])\s*(?:점심|저녁|아침))*)\s*(?:식사|밥|끼니)?|(?<!(?:점심|저녁|아침)[^.!?\n]{0,4})(?<![가-힣])(?:식사|밥|끼니))(?:(?!점심|저녁|아침)[^.!?\n]){0,8}?`
-  + String.raw`(?:${CUT.source}|없이(?!는?\s*(?:안|못))|안\s*먹|따로|제외(?!하지)|생략(?!하지))`, "gu");
+// QA 2026-10-19 QA-01: '점심은 알아서 먹을게요', '도시락 싸 가요', '점심 식당은 일정에서 빼 주세요' were not read — up to 20
+// characters between the meal and the word, and 알아서 먹·해결, 도시락, 챙겨 가·먹 (never '알아서 골라 주세요', '챙겨 주세요')
+const SAID_OUT = new RegExp(String.raw`(?:((?:점심|저녁|아침)(?:\s*(?:과|와|이랑|하고|및|[,·])\s*(?:점심|저녁|아침))*)\s*(?:식사|밥|끼니)?|(?<!(?:점심|저녁|아침)[^.!?\n]{0,4})(?<![가-힣])(?:식사|밥|끼니))(?:(?!점심|저녁|아침)[^.!?\n]){0,20}?`
+  + String.raw`(?:${CUT.source}|없이(?!는?\s*(?:안|못))|안\s*먹|따로|제외(?!하지)|생략(?!하지)|알아서\s*(?:먹|해결|사\s*먹)|도시락|챙겨\s*(?:가|갈|와|먹))`, "gu");
+// a lunch box with no meal named ('도시락 싸 가요'): the lunch (QA 2026-10-19 QA-01); '저녁 도시락' is SAID_OUT's
+const LUNCHBOX = /(?<!(?:저녁|아침)[^.!?\n]{0,6})도시락/u;
 export function eatsElsewhere(kind, ...texts) {
   const word = MEALS[kind].label;
-  return texts.some((t) => [...String(t || "").matchAll(SAID_OUT)].some((m) => (m[1] ? m[1].includes(word) : true)));
+  return texts.some((t) => [...String(t || "").matchAll(SAID_OUT)].some((m) => (m[1] ? m[1].includes(word) : true))
+    || (kind === "lunch" && LUNCHBOX.test(String(t || ""))));
 }
 
 export const hm = (t) => {

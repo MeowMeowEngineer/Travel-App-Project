@@ -41,7 +41,9 @@ const monthIn = (text, month) => {
 /** One group at one place, by the place's own table: {status, won?, basis} — status 'paid' | 'free' | 'unknown'. */
 function placePrice(fee, g, date) {
   if (!fee || (!fee.free && !fee.tab)) {
-    return { status: "unknown", basis: fee && fee.t ? `요금 값이 표가 아님('${fee.t.slice(0, 40)}')` : "사이트에 요금 정보 없음" };
+    // in the reader's words, never the code's (QA 2026-10-19 QA-30: '요금 값이 표가 아님('- 동물먹이주기 …')' showed)
+    return { status: "unknown", basis: fee && fee.t ? "요금이 사람별 요금표로 적혀 있지 않아 인원별로 셀 수 없음 — 장소 페이지의 요금 참고"
+      : "사이트에 요금 정보 없음" };
   }
   if (fee.free) return { status: "free", basis: `무료${fee.note ? ` (${fee.note})` : ""}` };
   const day = new Date(`${date}T12:00:00Z`);
@@ -64,7 +66,8 @@ function placePrice(fee, g, date) {
     if (freeOld) return { status: "free", basis: `무료 '${freeOld.w}'` };
     return { status: "unknown", basis: "65세 이상 요금(경로 할인·무료)이 요금표에 없음" };
   }
-  return { status: "paid", won: fee.tab["성인"], basis: `요금표 '성인'${fee.tl ? ` (${fee.tl})` : ""}` };
+  // the table's own word for the adult price ('일반', '어른'; pipeline/fee_table.py aw) — QA 2026-10-19 QA-30
+  return { status: "paid", won: fee.tab["성인"], basis: `요금표 '${fee.aw || "성인"}'${fee.tl ? ` (${fee.tl})` : ""}` };
 }
 
 /** One group with a combined ticket on `date`: the ticket's own prices (개인, 그 도시 시민 아님) and its own rules only. A
@@ -191,6 +194,9 @@ export function planFees(days, party, kb, limit = null) {
     }
   }
   out.conds = [...rules];
+  // the places with someone 확인 필요 — what the page's '요금 정보 없음 n곳' counts (QA 2026-10-19 QA-30: it counted
+  // person × place lines)
+  out.openPlaces = new Set(out.days.flatMap((d) => d.lines.filter((l) => l.status === "unknown").map((l) => l.path || l.what))).size;
   if (!visits) {
     out.state = "none";
   } else if (unknown) {

@@ -85,7 +85,7 @@
       thinking: "답을 찾는 중…", you: "질문", ai: "답", pages: "관련 페이지", newTab: "(새 창)",
       foot: "이름·전화번호 같은 개인정보는 쓰지 마세요. 대화는 이 탭에만 임시 보관되고, 질문은 답을 만들기 위해 Anthropic으로 전송됩니다.", search: "/search/", searchLabel: "사이트 검색으로 찾기",
       plan: "이 조건으로 AI 코스 만들기",
-      kinds: { place: "장소", guide: "가이드", course: "코스", event: "행사", video: "영상", abroad: "해외 기사", page: "페이지", book: "예약하기" },
+      kinds: { place: "장소", guide: "가이드", course: "코스", event: "행사", video: "영상", abroad: "해외 기사", page: "페이지", book: "예약하기", ext: "외부 링크" },
       err: { not_configured: "AI 도우미가 아직 준비 중입니다.", rate_limited: "질문이 너무 잦습니다. 1분 뒤 다시 물어보세요.",
         daily_limit: "하루에 물을 수 있는 질문 수를 넘었습니다. 내일 다시 물어보세요.",
         too_long: "질문은 800자까지 쓸 수 있습니다.", busy: "지금은 답을 만들 수 없습니다. 잠시 뒤 다시 시도해 주세요.",
@@ -104,7 +104,7 @@
       close: "Close", retry: "Try again", stopped: "Answer stopped.", cut: "The answer was cut off here.", more: "Continue",
       thinking: "Looking it up…", you: "You", ai: "Answer", pages: "Pages", newTab: "(new tab)",
       foot: "Don't type personal details such as names or phone numbers. Chats stay only in this tab, and questions are sent to Anthropic to be answered.", search: "", searchLabel: "",
-      kinds: { place: "Place", guide: "Guide", course: "Course", event: "Event", video: "Video", abroad: "Article", page: "Page", book: "Book" },
+      kinds: { place: "Place", guide: "Guide", course: "Course", event: "Event", video: "Video", abroad: "Article", page: "Page", book: "Book", ext: "External link" },
       err: { not_configured: "The AI helper is not set up yet.", rate_limited: "Too many questions. Please wait a minute.",
         daily_limit: "You have reached the daily number of questions. Please ask again tomorrow.",
         too_long: "A question can be up to 800 characters.", busy: "The assistant cannot answer right now. Please try again shortly.",
@@ -121,7 +121,7 @@
       retry: "もう一度", stopped: "回答を停止しました。", cut: "回答はここで途切れました。", more: "続きを表示", thinking: "調べています…", you: "質問",
       ai: "回答", pages: "関連ページ", newTab: "（新しいタブ）",
       foot: "名前や電話番号などの個人情報は入力しないでください。会話はこのタブにだけ一時保存され、質問は回答のためAnthropicに送信されます。",
-      kinds: { place: "スポット", guide: "ガイド", course: "コース", event: "イベント", video: "動画", abroad: "記事", page: "ページ", book: "予約する" },
+      kinds: { place: "スポット", guide: "ガイド", course: "コース", event: "イベント", video: "動画", abroad: "記事", page: "ページ", book: "予約する", ext: "外部リンク" },
       err: { not_configured: "アシスタントはまだ接続されていません。", rate_limited: "質問が多すぎます。1分ほどお待ちください。",
         daily_limit: "1日に質問できる回数を超えました。明日またお試しください。",
         too_long: "質問は800文字までです。", busy: "現在回答できません。しばらくしてからお試しください。",
@@ -136,7 +136,7 @@
       placeholder: ["关于{c}旅行，想问什么？", "关于旅行，想问什么？"], label: "问题", send: "发送", stop: "停止", newChat: "新对话", conv: "对话", close: "关闭",
       retry: "重试", stopped: "已停止回答。", cut: "回答在这里被截断。", more: "继续回答", thinking: "正在查找…", you: "提问", ai: "回答",
       pages: "相关页面", newTab: "（新标签页）", foot: "请勿输入姓名、电话号码等个人信息。对话只临时保存在此标签页，提问会发送给Anthropic以生成回答。",
-      kinds: { place: "景点", guide: "指南", course: "路线", event: "活动", video: "视频", abroad: "文章", page: "页面", book: "预订" },
+      kinds: { place: "景点", guide: "指南", course: "路线", event: "活动", video: "视频", abroad: "文章", page: "页面", book: "预订", ext: "外部链接" },
       err: { not_configured: "助手尚未连接。", rate_limited: "提问过于频繁，请一分钟后再试。",
         daily_limit: "已达到每天可提问的次数上限，请明天再问。", too_long: "问题最多800个字符。",
         busy: "现在无法回答，请稍后再试。", timeout: "回答时间过长，已停止。", refusal: "无法回答这个问题。",
@@ -150,7 +150,7 @@
       placeholder: ["關於{c}旅行，想問什麼？", "關於旅行，想問什麼？"], label: "問題", send: "傳送", stop: "停止", newChat: "新對話", conv: "對話", close: "關閉",
       retry: "重試", stopped: "已停止回答。", cut: "回答在這裡被截斷。", more: "繼續回答", thinking: "正在查找…", you: "提問", ai: "回答",
       pages: "相關頁面", newTab: "（新分頁）", foot: "請勿輸入姓名、電話號碼等個人資訊。對話只暫存在此分頁，提問會傳送給Anthropic以產生回答。",
-      kinds: { place: "景點", guide: "指南", course: "路線", event: "活動", video: "影片", abroad: "文章", page: "頁面", book: "預訂" },
+      kinds: { place: "景點", guide: "指南", course: "路線", event: "活動", video: "影片", abroad: "文章", page: "頁面", book: "預訂", ext: "外部連結" },
       err: { not_configured: "助手尚未連線。", rate_limited: "提問過於頻繁，請一分鐘後再試。",
         daily_limit: "已達到每天可提問的次數上限，請明天再問。", too_long: "問題最多800個字元。",
         busy: "現在無法回答，請稍後再試。", timeout: "回答時間過長，已停止。", refusal: "無法回答這個問題。",
@@ -165,7 +165,7 @@
       close: "Schließen", retry: "Erneut versuchen", stopped: "Antwort gestoppt.", cut: "Die Antwort wurde hier abgeschnitten.", more: "Weiterschreiben",
       thinking: "Suche …", you: "Frage", ai: "Antwort", pages: "Seiten", newTab: "(neuer Tab)",
       foot: "Bitte keine persönlichen Daten wie Namen oder Telefonnummern eingeben. Chats bleiben nur vorübergehend in diesem Tab, und Fragen werden zur Beantwortung an Anthropic gesendet.",
-      kinds: { place: "Ort", guide: "Ratgeber", course: "Route", event: "Veranstaltung", video: "Video", abroad: "Artikel", page: "Seite", book: "Buchen" },
+      kinds: { place: "Ort", guide: "Ratgeber", course: "Route", event: "Veranstaltung", video: "Video", abroad: "Artikel", page: "Seite", book: "Buchen", ext: "Externer Link" },
       err: { not_configured: "Der Assistent ist noch nicht verbunden.", rate_limited: "Zu viele Fragen. Bitte warten Sie eine Minute.",
         daily_limit: "Die Zahl der Fragen für heute ist erreicht. Bitte fragen Sie morgen wieder.",
         too_long: "Eine Frage darf höchstens 800 Zeichen haben.", busy: "Gerade ist keine Antwort möglich. Bitte später erneut versuchen.",
@@ -182,7 +182,7 @@
       close: "Fermer", retry: "Réessayer", stopped: "Réponse arrêtée.", cut: "La réponse a été coupée ici.", more: "Continuer", thinking: "Recherche…",
       you: "Question", ai: "Réponse", pages: "Pages", newTab: "(nouvel onglet)",
       foot: "N'indiquez pas de données personnelles (nom, téléphone). Les conversations restent seulement dans cet onglet, et les questions sont envoyées à Anthropic pour la réponse.",
-      kinds: { place: "Lieu", guide: "Guide", course: "Circuit", event: "Événement", video: "Vidéo", abroad: "Article", page: "Page", book: "Réserver" },
+      kinds: { place: "Lieu", guide: "Guide", course: "Circuit", event: "Événement", video: "Vidéo", abroad: "Article", page: "Page", book: "Réserver", ext: "Lien externe" },
       err: { not_configured: "L'assistant n'est pas encore connecté.", rate_limited: "Trop de questions. Patientez une minute.",
         daily_limit: "Vous avez atteint le nombre de questions pour aujourd'hui. Revenez demain.",
         too_long: "Une question compte au plus 800 caractères.", busy: "Impossible de répondre pour le moment. Réessayez plus tard.",
@@ -199,7 +199,7 @@
       close: "Cerrar", retry: "Reintentar", stopped: "Respuesta detenida.", cut: "La respuesta se cortó aquí.", more: "Continuar", thinking: "Buscando…",
       you: "Pregunta", ai: "Respuesta", pages: "Páginas", newTab: "(nueva pestaña)",
       foot: "No escriba datos personales como nombres o teléfonos. Las conversaciones solo quedan en esta pestaña, y las preguntas se envían a Anthropic para responder.",
-      kinds: { place: "Lugar", guide: "Guía", course: "Ruta", event: "Evento", video: "Vídeo", abroad: "Artículo", page: "Página", book: "Reservar" },
+      kinds: { place: "Lugar", guide: "Guía", course: "Ruta", event: "Evento", video: "Vídeo", abroad: "Artículo", page: "Página", book: "Reservar", ext: "Enlace externo" },
       err: { not_configured: "El asistente aún no está conectado.", rate_limited: "Demasiadas preguntas. Espere un minuto.",
         daily_limit: "Ha alcanzado el número de preguntas de hoy. Vuelva a preguntar mañana.",
         too_long: "Una pregunta puede tener hasta 800 caracteres.", busy: "Ahora no es posible responder. Inténtelo más tarde.",
@@ -216,7 +216,7 @@
       close: "Закрыть", retry: "Повторить", stopped: "Ответ остановлен.", cut: "Ответ оборвался здесь.", more: "Продолжить", thinking: "Ищу…",
       you: "Вопрос", ai: "Ответ", pages: "Страницы", newTab: "(новая вкладка)",
       foot: "Не вводите личные данные, например имя или телефон. Переписка временно хранится только в этой вкладке, а вопросы отправляются в Anthropic для ответа.",
-      kinds: { place: "Место", guide: "Гид", course: "Маршрут", event: "Событие", video: "Видео", abroad: "Статья", page: "Страница", book: "Забронировать" },
+      kinds: { place: "Место", guide: "Гид", course: "Маршрут", event: "Событие", video: "Видео", abroad: "Статья", page: "Страница", book: "Забронировать", ext: "Внешняя ссылка" },
       err: { not_configured: "Помощник ещё не подключён.", rate_limited: "Слишком много вопросов. Подождите минуту.",
         daily_limit: "Лимит вопросов на сегодня исчерпан. Спросите снова завтра.",
         too_long: "Вопрос — не длиннее 800 символов.", busy: "Сейчас ответить нельзя. Попробуйте позже.",
@@ -495,9 +495,9 @@
     if (l.ext && l.book) {   // an official booking page: '예약하기 · island.theksa.co.kr'
       try { return kinds.book + " · " + new URL(l.url).host.replace(/^www\./, ""); } catch (e) { return kinds.book; }
     }
-    if (l.ext) {
-      try { return new URL(l.url).host.replace(/^www\./, ""); } catch (e) { return kinds.page; }
-    }
+    // an outside page: '외부 링크' over its title (the domain when it has no other) — QA 2026-10-19 QA-36: the domain
+    // was both the kind and the title ('jeondeungsa.org jeondeungsa.org')
+    if (l.ext) return kinds.ext || kinds.page;
     var p = "/", u = null;
     try {
       u = new URL(l.url, win.location.href);

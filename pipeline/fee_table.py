@@ -6,7 +6,7 @@ the place's own fee value, read here into numbers once at build time and carried
 
     {"free": True, "note"?: "단, 여객선 비용 별도"}                         the value says entry is free
     {"tab": {"성인": 2000, "청소년·군인": 1000, "어린이": 500},            the table a visitor from outside the city
-     "tl": "개별권",                                                    pays one by one, and its heading
+     "tl": "개별권", "aw"?: "일반",                                     pays one by one, its heading, the adult price's word
      "fr": [{"w": "6세 이하 유아", "max": 6}, {"w": "65세 이상 경로", "min": 65}, {"w": "장애인"},
             {"w": "매주 수요일 문화가 있는 날", "wd": 3}],              who enters free as the value says it
      "ag": {"어린이": [7, 12]}}                                         a category's ages, when the value gives them
@@ -44,9 +44,10 @@ def _sections(text: str) -> list[tuple[str, str]]:
     return [(h, b) for h, b in out if _flat(b)]
 
 
-def _prices(body: str) -> dict[str, int]:
+def _prices(body: str, words: dict | None = None) -> dict[str, int]:
     """{category: price} for '- 성인 2,000원' lines (the first price after the category name; a price in brackets
-    right after it — the resident's — is not read)."""
+    right after it — the resident's — is not read). words, when given, gets each category's word as the table
+    writes it ('일반' for 성인)."""
     out: dict[str, int] = {}
     flat = _flat(body.split("※")[0])
     for raw, cat in CATS:
@@ -57,6 +58,8 @@ def _prices(body: str) -> dict[str, int]:
         m = re.search(re.escape(raw) + r"\s*(?:\([^)]{0,12}\))?\s*[:：]?\s*" + PRICE.pattern, flat)
         if m:
             out[cat] = int(m.group(1).replace(",", ""))
+            if words is not None:
+                words[cat] = raw
     # '청소년' alone when '청소년·군인' was read is the same price written again
     if "청소년" in out and "청소년·군인" in out and out["청소년"] == out["청소년·군인"]:
         del out["청소년"]
@@ -109,9 +112,12 @@ def parse(text: str) -> dict:
         if len(sections) == 1 and plain:
             chosen = plain[0]
     if chosen is not None:
-        tab = _prices(chosen[1])
+        words: dict = {}
+        tab = _prices(chosen[1], words)
         if "성인" in tab:   # a table without an adult price is not one this reader can be priced from
             out["tab"] = tab
+            if words.get("성인", "성인") != "성인":   # the table's own word ('일반'): the planner quotes it
+                out["aw"] = words["성인"]
             if chosen[0]:
                 out["tl"] = chosen[0]
     ages = {}

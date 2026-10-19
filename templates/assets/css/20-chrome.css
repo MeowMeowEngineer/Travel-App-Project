@@ -161,15 +161,15 @@ html.is-scrolled .mast::before { box-shadow: 0 1px 0 var(--hair), 0 8px 24px -18
    keeps its 52px, so the fixed area never grows (CLAUDE.md 7: ≤ 15% of the screen).
    Contrast: ink on white 16.27, placeholder ink-3 on g0 5.22, the white icon on sea 4.96, sea-deep icon on tint 7.13. */
 .hs { display: none; }
-.hs-f { display: flex; align-items: center; flex: 1; min-width: 0; height: 44px; padding: 0 3px 0 16px; box-sizing: border-box; border: 1.5px solid #7A93B8; border-radius: 999px; background: var(--g0); transition: border-color .2s var(--fb), box-shadow .2s var(--fb), background-color .2s var(--fb); }
+.hs-f { display: flex; align-items: center; flex: 1; min-width: 0; height: 48px; padding: 0 1px 0 16px; box-sizing: border-box; border: 1.5px solid #7A93B8; border-radius: 999px; background: var(--g0); transition: border-color .2s var(--fb), box-shadow .2s var(--fb), background-color .2s var(--fb); }
 .hs-f:hover { border-color: var(--sea); }
 .hs-f:focus-within { border-color: var(--sea); background: #fff; box-shadow: 0 0 0 3px var(--tint2), 0 0 0 5px var(--sea); }
-.hs input { flex: 1; min-width: 0; height: 40px; padding: 0; border: 0; border-radius: 0; background: transparent; font: 400 15px/1.2 var(--font); letter-spacing: -.01em; color: var(--ink); -webkit-appearance: none; appearance: none; }
+.hs input { flex: 1; min-width: 0; height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; font: 400 15px/1.2 var(--font); letter-spacing: -.01em; color: var(--ink); -webkit-appearance: none; appearance: none; }
 .hs input::placeholder { color: var(--ink-3); opacity: 1; }
 .hs input:focus { outline: none; }
 .hs input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 .hs-go, .hs-x { flex: none; display: inline-grid; place-items: center; padding: 0; border: 0; cursor: pointer; }
-.hs-go { width: 36px; height: 36px; border-radius: 50%; background: var(--sea); color: #fff; transition: background-color .2s var(--fb); }
+.hs-go { width: 44px; height: 44px; border-radius: 50%; background: var(--sea); color: #fff; transition: background-color .2s var(--fb); }
 .hs-go:hover { background: var(--sea-hi); }
 .hs-go .icon { width: 18px; height: 18px; stroke-width: 2.2; }
 .hs-x { width: 44px; height: 44px; border-radius: 50%; background: transparent; color: var(--ink-2); }
@@ -189,7 +189,7 @@ html.is-scrolled .mast::before { box-shadow: 0 1px 0 var(--hair), 0 8px 24px -18
   html.hs-open .mast-in > :not(.hs) { visibility: hidden; }
   .hs-f { padding-left: 16px; }
   .hs input { font-size: 16px; }   /* 16px: iOS does not zoom into the field */
-  .hs-go { width: 40px; height: 40px; }
+  .hs-go { width: 44px; height: 44px; }
 }
 @media (min-width: 1024px) {
   .mast-search { display: none; }

@@ -22,7 +22,7 @@ import {
 import {
   CAMP, CHECK_WORDS, FILL_MAX, FILL_MIN, HARD, KEEP_MIN, MEAL_MIN, STAY_NEAR, STOPS_MAX, SWAP_MIN, WEEK, codeFits, dateWords, dayInfo, eul, freeRank, gOf,
   hardState, hhmm, hubLegs as hubLegsOf, inBreak, isOutdoor, jong, keepOf, km, knownFees, lastPoint, legFloor, legMargin, marginOf, metres, mins, near,
-  nearestOpen, openWords, overBudget, placesOf, rainRank, ro, stretchMax,
+  nearestOpen, onIsland, openWords, overBudget, placesOf, rainRank, ro, SEA_M, stayRadii, stretchMax,
 } from "./plan_geo.js";
 import { buildDay, buildPlan, changed, codeText, planFlags, preflight, problemsOf, windowOf } from "./plan_build.js";
 import { MODEL, dataBlock, neutralise, seoulNow } from "./prompt.js";
@@ -131,6 +131,15 @@ export function validEdit(plan, request, c) {
 }
 
 const STAY_AFTER = 30;   // minutes between the day's last stop and the night's stay when the model's stay starts earlier
+
+// an edit that asks for less walking ('걷는 거 줄여줘', '덜 걷게', '걷기 적게') is the '걷기 적게' need (QA 2026-10-19 QA-10:
+// the edit kept every condition and the AI's note claimed '걷는 구간을 줄이고')
+const LESS_WALK = /걷(?:기|는|을)?\s*(?:거리|구간|거|것|양)?\s*(?:를|을|는|은|좀)?\s*(?:좀\s*)?(?:줄|적|덜)|덜\s*걷|적게\s*걷|걸음\s*(?:을|수)?\s*(?:좀\s*)?줄/u;
+/** The conditions an edit runs under: the plan's own, with the needs the request names in words (LESS_WALK). */
+export function withEditNeeds(c, edit) {
+  if (!edit || !LESS_WALK.test(edit.request) || c.needs.includes("lesswalk")) return c;
+  return { ...c, needs: [...c.needs, "lesswalk"] };
+}
 
 /** submit_plan's input checked against the conditions and the site: {plan, errors, salvaged, fixes} — errors (Korean,
  *  for the model) when a day, a page, a time or a field is not what it must be; the plan is trimmed to its bounds.
@@ -735,7 +744,7 @@ export function settle(plan, c, kb, edit = null, stats = {}) {
   const dayW = (i) => (many ? `${i + 1}일차 ` : "");
   stats.rounds = 0;
   stats.rebuilt = stats.rebuilt || 0;
-  out.push(...settleFit(plan, c, kb, dayW));
+  out.push(...settleFit(plan, c, kb, dayW, edit));
   for (let round = 0; round < 3; round += 1) {
     if (!planFlags(plan, c, kb, edit).list.length) break;
     stats.rounds += 1;
@@ -797,8 +806,9 @@ function rebuiltWords(was, after) {
 }
 
 /** settle 0: what the data says does not fit, said once — see settle. */
-function settleFit(plan, c, kb, dayW) {
+function settleFit(plan, c, kb, dayW, edit = null) {
   const out = [];
+  const asked = namedIn([c.note, edit && edit.request].filter(Boolean).join("\n"), kb);
   const hard = c.needs.filter((n) => HARD.includes(n));
   // the same kind as the stop (its type; a restaurant's cuisine, 카페): what a stop that may stay as it is becomes
   const same = (doc) => (x) => !kindOf(doc) || kindOf(x) === kindOf(doc);
@@ -816,6 +826,21 @@ function settleFit(plan, c, kb, dayW) {
     for (const s of d.stops.filter((x) => x.role === "stay").slice(1)) {
       d.stops.splice(d.stops.indexOf(s), 1);
       out.push(`${dayW(i)}밤 숙소 ${s.name}: 그날 묵을 곳이 이미 있어 일정에서 뺐습니다`);
+    }
+    // a place an earlier day already has, unless the reader named it: another place nearby, else out while the day
+    // keeps a stop (QA 2026-10-19 QA-09: day 2 repeated day 1's three places)
+    if (i > 0) {
+      const before = new Set(plan.days.slice(0, i).flatMap((x) => x.stops.filter((s) => s.role !== "stay").map((s) => s.page)));
+      for (let j = d.stops.length - 1; j >= 0; j -= 1) {
+        const s = d.stops[j];
+        if (s.role === "stay" || !before.has(s.page) || asked.has(s.page)) continue;
+        const said = swapIn(plan, d, j, c, kb, { why: "앞선 날에 이미 넣은 곳이라" });
+        if (said) out.push(`${dayW(i)}${said}`);
+        else if (d.stops.filter((x) => x.role !== "stay").length > 1) {
+          d.stops.splice(j, 1);
+          out.push(`${dayW(i)}${s.name}: 앞선 날에 이미 넣은 곳이라 일정에서 뺐습니다`);
+        }
+      }
     }
     // a role is what the place is (readSubmit's rule, for any stop that reached here otherwise)
     for (const s of d.stops) {
@@ -1117,7 +1142,7 @@ function settleStay(plan, d, x, c, kb) {
     const stays = placesOf(kb).filter((p) => p.doc.f.kd === "stay" && codeFits(c, p.doc.f, "stay"))
       .map((p) => ({ page: p.page, name: p.doc.t, m: metres(g, p.doc.f.g), camp: CAMP.test(p.doc.f.ty || "") }))
       .sort((p, q) => p.camp - q.camp || p.m - q.m || (p.name < q.name ? -1 : 1));
-    for (const R of [STAY_NEAR, 10000, 20000, Infinity]) {
+    for (const R of stayRadii(kb.docs[last.page])) {   // never unlimited on an island (QA 2026-10-19 QA-09)
       const y = stays.find((z) => z.m <= R && at(z.page) !== null);
       if (y) { pick = { ...y, how: `${gOf(kb, last.page) ? last.name : "그날 장소"}에서 가까운 숙소 ${y.name}(직선 ${km(y.m)})${eul(y.name)} 넣었습니다 — 객실·요금은 숙소에 확인` }; break; }
     }
@@ -1183,6 +1208,45 @@ const OUT_AFTER = new RegExp(String.raw`^[^.!?,。\u0001]{0,10}?(?:대신|${CUT.
 const OUT_BEFORE = /(?:휴관|휴무|쉬는\s*날)\s*(?:중)?인\s*$/u;
 // a place that went is masked as LOST and a mark of its own (a private-use character: the n-th place that went)
 const LOST_RUN = /\u0001[\uE000-\uF8FF](?:\s*(?:과|와|이랑|하고|및|[,·])\s*\u0001[\uE000-\uF8FF])*/gu;
+/** The places a text names by their name or another name (kb.placeNames, three letters or more, the longer name
+ *  first: '○○박물관' is never also '○○'): a Set of page keys. */
+export function namedIn(text, kb) {
+  const out = new Set();
+  const t = String(text || "");
+  if (!t) return out;
+  const taken = [];
+  for (const [n, k] of [...kb.placeNames].sort((a, b) => b[0].length - a[0].length)) {
+    if ([...n].length < 3 || !kb.docs[k] || kb.docs[k].k !== "place") continue;
+    let at = t.indexOf(n);
+    while (at > -1 && taken.some(([x, y]) => at < y && at + n.length > x)) at = t.indexOf(n, at + 1);
+    if (at < 0) continue;
+    taken.push([at, at + n.length]);
+    out.add(k);
+  }
+  return out;
+}
+
+/** For an edit: each place the request names that the changed plan does not have, with the reason the data gives —
+ *  closed on the trip's dates by its regular closed days — else that it could not go in ('요청: …', shown under
+ *  '바꾼 뒤 달라진 것'; QA 2026-10-19 QA-10: '가천박물관도 꼭 넣어 주세요' on a Saturday came back as '장소와 시각은
+ *  그대로예요'). */
+export function askedLines(plan, kb, asked) {
+  const now = new Set(plan.days.flatMap((d) => d.stops.map((s) => s.page)));
+  const out = [];
+  for (const k of asked) {
+    if (now.has(k) || !kb.docs[k]) continue;
+    const name = kb.docs[k].t;
+    const eun = jong(name) > 0 ? "은" : jong(name) === 0 ? "는" : "은(는)";
+    const dates = plan.days.map((d) => d.date);
+    const shut = dates.filter((date) => dayInfo(kb, date, k).state === "closed");
+    const wd = (date) => WEEK[new Date(`${date}T12:00:00Z`).getUTCDay()];
+    out.push(shut.length && shut.length === dates.length
+      ? `요청: ${name}${eun} ${dates.length > 1 ? `여행하는 날(${dates.map(wd).join("·")}) 모두` : `그날(${wd(dates[0])})`} 정기 휴무라 넣지 못했어요`
+      : `요청: ${name}${eun} 바꾼 일정에 넣지 못했어요${shut.length ? ` — ${shut.map((d) => `${wd(d)}요일`).join("·")}은 정기 휴무` : ""}`);
+  }
+  return out;
+}
+
 /** The model's words read against the plan the code made of them (outside evaluation 2026-10-18: after an edit took
  *  the lunch out, the title still promised it): a sentence of the summary or a note, or a stop's reason, that names a
  *  place the plan had (`had`: the pages of every plan the model handed over in the run, and on an edit the plan before
@@ -1193,7 +1257,7 @@ const LOST_RUN = /\u0001[\uE000-\uF8FF](?:\s*(?:과|와|이랑|하고|및|[,·])
  *  lunch or a dinner the plan lacks, becomes a plain one the code writes. The names are the site's own (each place's
  *  title and other names, kb.placeNames); the longer name is read first, a kept place's before a gone one's of the
  *  same length. Changes the plan in place; returns what it changed, in words for the reader. */
-export function align(plan, c, kb, had, { final = false } = {}) {
+export function align(plan, c, kb, had, { final = false, asked = new Set() } = {}) {
   const out = [];
   const now = new Set(plan.days.flatMap((d) => d.stops.map((s) => s.page)));
   // final (the last reading, after settle): a place of the site the words name that no plan of the run had (round-5
@@ -1201,8 +1265,10 @@ export function align(plan, c, kb, had, { final = false } = {}) {
   // sentence goes (the model cannot have left out what it never had) — names of three characters or more, so a word
   // is not read as one
   const words = [plan.title, plan.summary, ...plan.notes, ...plan.days.flatMap((d) => d.stops.map((s) => s.why))].join("\n");
-  const never = new Set(final ? kb.placeNames.filter(([n, k]) => [...n].length >= 3 && !now.has(k) && !had.has(k) && kb.docs[k] && words.includes(n)).map(([, k]) => k) : []);
-  const gone = [...new Set([...had, ...never].filter((k) => !now.has(k) && kb.docs[k]))];
+  // a place the reader asked for (asked: namedIn the edit request) is one the words may say is out — its sentence
+  // that says so stays (QA 2026-10-19 QA-10: '가천박물관은 토요일 휴관이라 …' was taken out and nothing said why)
+  const never = new Set(final ? kb.placeNames.filter(([n, k]) => [...n].length >= 3 && !now.has(k) && !had.has(k) && !asked.has(k) && kb.docs[k] && words.includes(n)).map(([, k]) => k) : []);
+  const gone = [...new Set([...had, ...never, ...asked].filter((k) => !now.has(k) && kb.docs[k]))];
   const names = (keys) => [...new Set([...[...keys].map((k) => kb.docs[k].t), ...kb.placeNames.filter(([, k]) => keys.has(k)).map(([n]) => n)])];
   const marks = [...names(new Set([...now].filter((k) => kb.docs[k]))).map((n) => [n, " "]),
     ...gone.flatMap((k, i) => names(new Set([k])).map((n) => [n, `${LOST}${String.fromCharCode(0xe000 + (i % 6400))}`]))]
@@ -1314,10 +1380,13 @@ export function tidyFixed(fixed, plan) {
 }
 
 /** Kakao Map directions between two points (the reader's map app works out the route and its time; pipeline/maplinks.py
- *  kakao_transit_url is the same address for 'traffic'): by car, on foot under 1.2 km for a reader without a car,
- *  else public transport. */
+ *  kakao_transit_url is the same address for 'traffic'): on foot under WALK_ANY whatever the way they move (QA
+ *  2026-10-19 QA-31: an 8 m leg got car directions), by car, on foot under 1.2 km for a reader without a car, else
+ *  public transport. */
+const WALK_ANY = 500;
 export function directionsUrl(a, b, move, m) {
-  const mode = move === "car" ? "car" : m !== null && m <= 1200 ? "walk" : "traffic";
+  const near = m !== null && m !== undefined;
+  const mode = near && m < WALK_ANY ? "walk" : move === "car" ? "car" : near && m <= 1200 ? "walk" : "traffic";
   const q = (s) => encodeURIComponent(s).replace(/%2C/gi, " ");
   return { mode, url: `https://map.kakao.com/link/by/${mode}/${q(a.name)},${a.lat},${a.lng}/${q(b.name)},${b.lat},${b.lng}` };
 }
@@ -1326,7 +1395,29 @@ export function directionsUrl(a, b, move, m) {
  *  swapped: one the site chose for a stop closed that day),
  *  each leg's distance, routes and directions link, the fee lines and total against the budget, what is still
  *  flagged, the completeness (plan_state.completeness) and what is left to fix by kind (todoOf). */
-export function finish(plan, check, c, now = new Date(), fixed = []) {
+/** The legs of a plan that may cross the sea (onIsland, longer than SEA_M in a straight line): {legs: Set of
+ *  'day|from', aware: [{k, t}]} — said, never routed: the site has no ferries (QA 2026-10-19 QA-09). */
+export function seaLegs(plan, kb) {
+  const legs = new Set(), aware = [];
+  const many = plan.days.length > 1;
+  plan.days.forEach((d, i) => {
+    for (let j = 0; j + 1 < d.stops.length; j += 1) {
+      const a = d.stops[j], b = d.stops[j + 1];
+      const da = kb.docs[a.page], db = kb.docs[b.page];
+      const ga = gOf(kb, a.page), gb = gOf(kb, b.page);
+      if (!ga || !gb || !(onIsland(da) || onIsland(db))) continue;
+      const m = metres(ga, gb);
+      if (m <= SEA_M) continue;
+      legs.add(`${i}|${j}`);
+      aware.push({ k: b.role === "stay" ? "stay" : "move", t: `${many ? `${i + 1}일차 ` : ""}${b.role === "stay" ? "밤 숙소 " : ""}`
+        + `${a.name} → ${b.name}(직선 ${km(m)}): 배로 건너야 할 수 있음 — 배편은 사이트에 없음` });
+    }
+  });
+  return { legs, aware };
+}
+
+export function finish(plan, check, c, now = new Date(), fixed = [], kb = null) {
+  const sea = kb ? seaLegs(plan, kb) : { legs: new Set(), aware: [] };
   const days = plan.days.map((d, i) => {
     const r = check.days[i];
     const dt = new Date(`${d.date}T12:00:00Z`);
@@ -1339,18 +1430,19 @@ export function finish(plan, check, c, now = new Date(), fixed = []) {
           ...(s.by === "site" ? { added: true } : s.by === "swap" ? { swapped: true } : {}) };
       }),
       legs: r.legs.map((l) => ({ from: l.from, to: l.to, m: l.m, gap: l.gap, routes: l.routes, flag: l.flag,
-        ...(l.a && l.b ? directionsUrl(l.a, l.b, c.move, l.m) : {}) })),
+        ...(l.a && l.b ? directionsUrl(l.a, l.b, c.move, l.m) : {}), ...(sea.legs.has(`${i}|${l.from}`) ? { sea: true } : {}) })),
       hubs: (check.hubs || []).filter((h) => (h.dir === "from" ? i === 0 : i === plan.days.length - 1)),
     };
   });
   const f = check.fees;
   const fees = { state: f.state, total: f.total, known: f.known, limit: f.limit, verdict: f.verdict, open: f.open,
+    openPlaces: f.openPlaces ?? null,
     conds: f.conds, days: f.days.map((d) => ({ date: d.date, lines: d.lines.map((l) => ({ what: l.what, who: l.who,
       count: l.count, status: l.status, won: l.won ?? null, sub: l.sub, basis: l.basis })) })) };
   // status 'ready' and flags [] for every plan the page gets (makePlan never sends one with flags: operator
   // 2026-10-18); todo stays for pages of the old payload, always empty
   return { v: 2, made: now.toISOString(), title: plan.title, summary: plan.summary, notes: plan.notes, conditions: c,
-    days, fees, needs: check.needs, checks: check.checks, aware: check.aware || [], flags: check.flags.map(readerFlag), fixed,
+    days, fees, needs: check.needs, checks: check.checks, aware: [...(check.aware || []), ...sea.aware], flags: check.flags.map(readerFlag), fixed,
     status: statusOf(check.flags), complete: check.complete, todo: [] };
 }
 
@@ -1423,12 +1515,13 @@ export async function makePlan({ client, kb, conditions, edit = null, send, sign
   // (settle), its words read against it again (align, trimText — a summary left empty is the code's), checked,
   // finished 'ready' — or, should anything still be flagged (preflight has shown a plan exists: never), not sent: an
   // error 'conditions' with the reasons. Returns {plan} or {error}.
+  const asked = edit ? namedIn(edit.request, kb) : new Set();   // the places the change asked for
   const conclude = (plan, fixed) => {
     const st = {};
     const settled = settle(plan, c, kb, edit, st);
     // the code's own plan: its one line alone (what was put right in the model's plan is of a plan not shown)
     if (st.codePlan) fixed.length = 0;
-    fixed.push(...settled, ...(st.codePlan ? [] : align(plan, c, kb, seen, { final: true })));
+    fixed.push(...settled, ...(st.codePlan ? [] : align(plan, c, kb, seen, { final: true, asked })));
     rec.settled = settled.length;
     rec.rebuilt = st.rebuilt || 0;
     if (st.codePlan) rec.code_plan = 1;
@@ -1442,6 +1535,7 @@ export async function makePlan({ client, kb, conditions, edit = null, send, sign
     rec.flags = check.flags.length;
     rec.text = check.text.length;
     fixed.splice(0, fixed.length, ...tidyFixed(fixed, plan));
+    if (edit) fixed.push(...askedLines(plan, kb, asked));
     if (check.flags.length) {
       rec.status_plan = "unmet";
       // an edit: the reader's plan stays on the page, with the words that the change could not be made
@@ -1449,7 +1543,7 @@ export async function makePlan({ client, kb, conditions, edit = null, send, sign
       const problems = preflight(c, kb, now);
       return { error: { type: "error", code: "conditions", message: planError("conditions"), problems: problems.length ? problems : problemsOf(check.list) } };
     }
-    const done = finish(plan, check, c, now, fixed);
+    const done = finish(plan, check, c, now, fixed, kb);
     rec.status_plan = done.status;
     return { plan: done };
   };
@@ -1601,7 +1695,7 @@ export function codePlan(c, kb, now, line) {
   const built = buildPlan(c, kb);
   if (!built.plan) return null;
   const check = verify(built.plan, c, kb);
-  return check.flags.length ? null : finish(built.plan, check, c, now, [line]);
+  return check.flags.length ? null : finish(built.plan, check, c, now, [line], kb);
 }
 
 // ------------------------------------------------------------------ the handler
@@ -1662,6 +1756,7 @@ export function createPlanHandler(deps = {}) {
       if (!body || typeof body !== "object") throw new HttpError(400, "bad_request");
       conditions = validConditions(body.conditions, now());
       edit = validEdit(body.plan, body.request, conditions);
+      conditions = withEditNeeds(conditions, edit);
     } catch (err) {
       const e = err instanceof HttpError ? err : new HttpError(400, "bad_request");
       done(e.code);

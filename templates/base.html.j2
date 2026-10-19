@@ -160,6 +160,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </header>
 {% endif %}
+{% with chat_part = 'fab' %}{% include "_chat.html.j2" %}{% endwith %}
 {{ ln }}
 <main id="main-content" tabindex="-1" class="{% block main_class %}wrap{% endblock %}">
 {% block content %}{% endblock %}
@@ -206,7 +207,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </footer>
 {% endif %}
-{% include "_chat.html.j2" %}
+{% with chat_part = 'rest' %}{% include "_chat.html.j2" %}{% endwith %}
 </body>
 </html>
 {% if false %}{% block lnav %}{% endblock %}{% block bodyclass %}{% endblock %}{% endif %}

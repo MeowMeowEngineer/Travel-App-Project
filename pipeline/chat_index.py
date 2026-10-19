@@ -39,7 +39,7 @@ from pathlib import Path
 from . import booking, city, fee_table, jsonld, present, relations, tickets
 from . import locales as LC
 from .schema import FACT_LABELS, FACT_ORDER, FIT_ORDER, KIND_LABELS, base_kind, designations
-from .textutil import display_address, first_sentence, squash_ws, web_text, web_url
+from .textutil import display_address, first_sentence, parking_text, squash_ws, web_text, web_url
 
 CHAT_DIR = "chat"
 VERSION = 1
@@ -125,13 +125,15 @@ def _period(ev: dict) -> str:
     return start
 
 
-def _src(src: dict | None, url: str = "") -> str:
+def _src(src: dict | None, url: str = "", day: str = "") -> str:
     """'○○박물관 홈페이지 https://… (출처 확인 2026-10-08)': the provider, the exact address the value came
-    from when the data has one, and the date this site last checked that source (출처 확인 — not a page review date)."""
+    from when the data has one, and the date this site last checked that source (출처 확인 — not a page review date).
+    day: the date the record's '날짜:' line gives — a value checked that day leaves its date to that line (QA 2026-10-19
+    QA-35: every fact line carried it, and the assistant repeated '(… 출처 확인 2026-10-19)' unasked)."""
     src = src or {}
     p = _clean(src.get("provider")) or "출처 미기재"
     d = _clean(src.get("checked_at"))
-    return p + (f" {url}" if url else "") + (f" (출처 확인 {d})" if d else "")
+    return p + (f" {url}" if url else "") + (f" (출처 확인 {d})" if d and d != day else "")
 
 
 def _fact_url(e: dict, src: dict | None) -> str:
@@ -278,7 +280,7 @@ def _slot_text(s: dict) -> str:
     """A key-fact slot as the first screen gives it, with a short label ('시간 09:00–18:00'); a conflict names
     both providers ('시간 두 출처 다름: ○○시 09:00–18:00 / 한국관광공사 상시 개방')."""
     def one(v):
-        t = _clean(v.get("main"))
+        t = _clean(v.get("main")) + _clean(v.get("tel_tail"))   # '032-453-7883~4' as the source writes it
         if v.get("sub"):
             t += f", {_clean(v['sub'])}"
         t = _cap(t, SLOT_MAX)
@@ -395,6 +397,12 @@ class Knowledge:
             texts = [x for x in texts if x["t"]]
             if texts:
                 out["h" if slot["key"] == "hours" else "c"] = texts
+        if "h" not in out:
+            # an hours value the first screen cannot brief ('※ 시설별 상이하므로 홈페이지 참고': no time in it) is still the
+            # site's word on the hours — never '이용시간이 사이트에 없음' (QA 2026-10-19 QA-31)
+            row = B.fact_row(e, "usetime")
+            if row and row["value"]:
+                out["h"] = [{"p": row["source"].get("provider", ""), "t": month_ranges(_clean(row["value"]))}]
         acc = present.access_vm(self.S, e) or {}
         routes = sorted({r for st in acc.get("stops") or [] for r in st.get("routes") or []})
         if routes:
@@ -496,6 +504,7 @@ class Knowledge:
             "them ('A(=B)': A is the name the guides use, B the place's page name). "
             "지정 = official designations the page lists. Everything else (all facts with sources, "
             "FAQ, nearby public parking and bus stops, guide text, event programmes) comes from get_pages.",
+            *self.official_line(),
             "",
         ]
         for kind in KIND_ORDER:
@@ -533,6 +542,16 @@ class Knowledge:
         self.lines = out
         self.keep_url(S.site.get("source", {}).get("url"), *(l.get("url") for l in S.site.get("official_links") or []))
         return self
+
+    def official_line(self) -> list[str]:
+        """The official places to confirm what the site lacks (site.json official_links: name, address, what it is) — one
+        catalog line, so an answer that says a value is not on the site can name where to check it when the page has no
+        phone or homepage (CLAUDE.md 3.11; QA 2026-10-19 QA-11: '터미널 또는 운항 회사에 직접 확인하세요' named none)."""
+        links = [x for x in self.S.site.get("official_links") or [] if x.get("name") and x.get("url")]
+        if not links:
+            return []
+        return ["# 공식 확인처 (official places to confirm a value the site lacks): " + "; ".join(
+            f"{_clean(x['name'])} {x['url']}" + (f" ({_clean(x['note'])})" if x.get("note") else "") for x in links)]
 
     def _list_path(self, kind: str) -> str:
         from .build import LISTS
@@ -590,24 +609,27 @@ class Knowledge:
             L.append("요약: " + _clean(e["summary"]))
         for d in e.get("details") or []:
             L.append(f"{_clean(d.get('heading'))}: {present.decaution(_clean(d.get('text')))}")
-        L.append("정보(값 — 출처, 그 값을 가져온 주소, 출처 확인일 = 이 사이트가 그 출처를 확인한 날):")
+        day = B.facts_checked_date(e)
+        L.append("정보(값 — 출처, 그 값을 가져온 주소, 출처 확인일 = 이 사이트가 그 출처를 확인한 날 — 아래 '날짜:' 줄의 날과"
+                 " 다를 때만 값 옆에):")
         tourapi = False
         for k in FACT_ORDER + FIT_ORDER:
             row = B.fact_row(e, k)
             if not row:
                 continue
             if row["value"]:
-                value = _clean(row["value"])
+                # parking as the page words it ('가능요금 (대형 8,000원 …)' → '가능, 요금 대형 8,000원 …'; QA 2026-10-19 QA-20)
+                value = _clean(parking_text(row["value"]) if k == "parking" else row["value"])
                 url = _fact_url(e, row["source"])
-                L.append(f"- {row['label']}: {value} — {_src(row['source'], url)}")
+                L.append(f"- {row['label']}: {value} — {_src(row['source'], url, day)}")
                 self.keep_url(url)
                 if k in ("homepage", "reservationurl"):
-                    self.keep_url(row["value"])
+                    self.keep_url(*str(row["value"]).split("\n"))
                 tourapi = tourapi or row["source"].get("provider") == "한국관광공사 TourAPI"
             for a in row["alternatives"]:
                 tag = "추가 값" if a["also"] else "다른 출처 값"
                 url = _fact_url(e, a)
-                line = f"- {row['label']}({tag}): {_clean(a['value'])} — {_src(a, url)}"
+                line = f"- {row['label']}({tag}): {_clean(a['value'])} — {_src(a, url, day)}"
                 self.keep_url(url)
                 tourapi = tourapi or a.get("provider") == "한국관광공사 TourAPI"
                 if not a["also"]:
@@ -621,7 +643,7 @@ class Knowledge:
         if tourapi and official.get("visitkorea_url"):
             L.append("한국관광공사 TourAPI 값은 API 자료다. 같은 콘텐츠의 공개 페이지: 대한민국 구석구석 "
                      f"{web_url(official['visitkorea_url'])}")
-        L.append(_dates(B.facts_checked_date(e), _clean(e.get("reviewed_at")), _clean(e.get("approved_at"))))
+        L.append(_dates(day, _clean(e.get("reviewed_at")), _clean(e.get("approved_at"))))
         kf = present.key_facts(e, "hero")
         if kf["missing"]:
             L.append("사이트에 없는 값(확인 필요): " + "·".join(kf["missing"]))
@@ -655,6 +677,11 @@ class Knowledge:
                 near.append(f"{t['name']} {t['_path']} 직선 {present.dist(n['distance_m'])}")
         if near:
             L.append("가까운 장소: " + "; ".join(near))
+        # the page's distances to the city's reference places (city.distance_anchors; QA 2026-10-19 QA-38: the page said
+        # '인천국제공항 직선 5.9km' and the assistant that the site had no distance)
+        anchors = present.anchor_rows(S, e)
+        if anchors:
+            L.append("기준 장소까지 직선거리: " + "; ".join(f"{a['name']} {a['path']} 직선 {a['d']}" for a in anchors))
         if e.get("_courses"):
             L.append("이 장소가 나오는 코스: " + "; ".join(f"{present.course_display(c['name'])} {c['_path']}" for c in e["_courses"]))
         if e.get("_guides"):
@@ -994,7 +1021,8 @@ class Knowledge:
         for x in sorted(sr["editions"], key=lambda x: (x.get("start_date") or "", x.get("name", "")), reverse=True):
             L.append(f"[{_clean(x.get('name'))}] 기간: {_period(x)}"
                      + (f" (원문 표기: {_clean(x.get('period_text'))})" if x.get("period_text") else ""))
-            for k, lab in (("place_name", "장소"), ("address", "주소"), ("playtime", "시간"), ("fee", "요금"), ("tel", "문의"),
+            for k, lab in (("place_name", "장소"), ("place_detail", "세부 장소"), ("address", "주소"), ("playtime", "시간"),
+                           ("fee", "요금"), ("tel", "문의"),
                            ("homepage", "누리집"), ("sponsor", "주최·주관")):
                 v = _clean(x.get(k))
                 if v:

@@ -21,7 +21,7 @@ from difflib import SequenceMatcher
 
 from pipeline.present import TIME_KEYS, time_set
 from pipeline.schema import TOURAPI_LICENSE_MAP, license_allowed
-from pipeline.textutil import extract_url, normalize_name, slugify, squash_ws, strip_html
+from pipeline.textutil import extract_url, extract_urls, first_line, normalize_name, slugify, squash_ws, strip_html
 from pipeline.schema import KIND_LABELS, base_kind
 from pipeline.tourapi import CLASS_FIELDS, CONTENT_TYPES, INTRO_FIELDS, kind_of
 
@@ -170,7 +170,9 @@ def tourapi_facts(common: dict, intro: dict, info: list[dict], ctype: str) -> di
     if "infocenter" not in facts and tel:
         name = clean(common.get("telname"))
         facts["infocenter"] = f"{name} {tel}".strip() if name and name not in tel else tel
-    homepage = extract_url(common.get("homepage"))
+    # every address the source gives, one a line (QA 2026-10-19 QA-21: '인천관광 https://…국가유산청 https://…' kept a
+    # broken first address and lost the second); the page links each, the official link is the first
+    homepage = "\n".join(extract_urls(common.get("homepage")))
     if homepage:
         facts["homepage"] = homepage
     addr = " ".join(x for x in (clean(common.get("addr1")), clean(common.get("addr2"))) if x)
@@ -372,7 +374,7 @@ def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: st
         "id": f"tourapi-{cid}", "name": name, "slug": slug, "kind": kind,
         "category": KIND_LABELS["cafe"] if kind == "cafe" else CONTENT_TYPES.get(ctype, ""), "themes": [],
         "tier": "basic", "status": "draft",
-        "official": {"homepage": facts["homepage"]} if facts.get("homepage") else {},
+        "official": {"homepage": first_line(facts["homepage"])} if facts.get("homepage") else {},
         "original": {}, "map_ids": {"naver_place_id": "", "google_place_id": ""}, "images": [],
         "facts": facts,
         "facts_source": {"provider": PROVIDER, "contentid": cid, "checked_at": today},
@@ -468,7 +470,7 @@ def complete_listed(place: dict, common: dict, today: str, allowed) -> list[str]
         done.append("kind")
     homepage = (place.get("facts") or {}).get("homepage")
     if homepage and not (place.get("official") or {}).get("homepage") and "official" not in locks:
-        place.setdefault("official", {})["homepage"] = homepage
+        place.setdefault("official", {})["homepage"] = first_line(homepage)
         done.append("official")
     if (place.get("geo") or {}).get("lat") is None and "geo" not in locks:
         try:
@@ -509,6 +511,9 @@ def duplicate_candidates(item: dict, places: list[dict], region: str) -> list[di
     return sorted(out, key=lambda c: (-c["same_road"], -c["ratio"]))[:3]
 
 
+PROGRAM_PLACE = re.compile(r"(?:^|\n)\s*-?\s*장소\s*[:：]\s*([^\n]+)")
+
+
 def festival_event(item: dict, intro: dict, common: dict, today: str) -> dict:
     iso = lambda d: f"{d[:4]}-{d[4:6]}-{d[6:8]}" if re.fullmatch(r"\d{8}", d or "") else ""
     cid = str(item["contentid"])
@@ -526,6 +531,12 @@ def festival_event(item: dict, intro: dict, common: dict, today: str) -> dict:
         value = clean(intro.get(field))
         if value:
             ev[key] = value
+    # where in the venue, as the programme says it ('- 장소 : 인천국제공항 제1여객터미널 출국장 면세구역'): the venue name alone
+    # hid that a boarding pass is needed (QA 2026-10-19 QA-12); each line as written, from the same detailIntro2
+    detail = list(dict.fromkeys(clean(m.group(1)) for m in PROGRAM_PLACE.finditer(str(intro.get("program") or ""))
+                                if clean(m.group(1))))
+    if detail:
+        ev["place_detail"] = "\n".join(detail)
     homepage = extract_url(common.get("homepage") or intro.get("eventhomepage"))
     if homepage:
         ev["homepage"] = homepage

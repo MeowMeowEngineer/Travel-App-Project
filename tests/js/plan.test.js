@@ -601,7 +601,11 @@ test("through the handler: the code's repairs come with the plan (fixed), no fix
   assert.equal(s.client.calls.length, 1);                      // nothing sent back
   assert.deepEqual(plan.flags, []);
   assert.notEqual(plan.status, "unmet");
-  assert.equal(plan.fixed.length, 3);                          // the museum, two nights
+  // the museum, two nights, and day 3's 은파호수공원, which day 2 already has (QA 2026-10-19 QA-09: no place twice
+  // unless the reader named it)
+  assert.equal(plan.fixed.length, 4);
+  assert.match(plan.fixed[3], /^3일차 은파호수공원: 앞선 날에 이미 넣은 곳이라 가까운 /);
+  assert.ok(!plan.days[2].stops.some((x) => x.name === "은파호수공원"));
   assert.ok(plan.days.slice(0, 2).every((d) => d.stops.at(-1).role === "stay"));
   assert.ok(!JSON.stringify(plan).includes("role stay") && !JSON.stringify(plan).includes("일정에서 뺀다"));
   assert.equal(s.logs[0].repaired, 3);

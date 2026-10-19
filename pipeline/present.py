@@ -38,9 +38,9 @@ WEEK = "월화수목금토일"
 LIST_PATH = {"attraction": "/places/", "stay": "/stays/", "food": "/food/", "cafe": "/cafes/", "shopping": "/shopping/"}
 # Main navigation (owner, 2026-10-08): 관광지 숙소 음식점 영상 코스 가이드 행사 지도 (+ 검색 in the masthead). Each item
 # shows only when its page is built (nav_items); 영상 sits in the first four so a 390px phone shows it. 카페·디저트
-# (operator 2026-10-19) follows 음식점; 쇼핑 has its list (/shopping/) without a menu item — the home's tiles lead to it.
+# (operator 2026-10-19) follows 음식점, then 쇼핑 (QA 2026-10-19 QA-49: its 585 places were in no menu).
 NAV = (("관광지", "/places/", "attraction"), ("숙소", "/stays/", "stay"), ("음식점", "/food/", "food"),
-       ("카페·디저트", "/cafes/", "cafe"),
+       ("카페·디저트", "/cafes/", "cafe"), ("쇼핑", "/shopping/", "shopping"),
        ("영상", "/videos/", "videos"), ("코스", "/courses/", "courses"), ("가이드", "/guides/", "guides"),
        ("행사", "/events/", "events"), ("지도", "/map/", "map"), ("해외에서 본 {region}", "/abroad/", "abroad"))
 
@@ -246,6 +246,22 @@ def first_phone(*values) -> tuple[str, str]:
     return "", ""
 
 
+PHONE_TAIL = re.compile(r"\s*[~～]\s*\d{1,4}(?![\d-])")
+
+
+def phone_tail(e: dict, number: str) -> str:
+    """What the source writes right after the call number: the range of its last digits ('032-453-7883~4' → '~4'),
+    shown after the link as the facts table shows it (QA 2026-10-19 QA-46: the first screen read only '…7883')."""
+    f = e.get("facts") or {}
+    for key in ("infocenter", "reservation"):
+        v = str(f.get(key) or "")
+        i = v.find(number) if number else -1
+        if i > -1:
+            m = PHONE_TAIL.match(v, i + len(number))
+            return squash_ws(m.group(0)) if m else ""
+    return ""
+
+
 def settled_phone(e: dict) -> tuple[str, str]:
     """The place's call number (문의, else 예약 안내) for a call button, a list cell or the status line — ('', '')
     when another source gives that field differently (CLAUDE.md 3.2: never pick one; the facts row shows both)."""
@@ -349,9 +365,14 @@ CLOSED_HINT = re.compile(r"(휴무|휴관|휴일|휴장|요일|명절|설날|추
 TIME_KEYS = ("usetime", "usetime_restdate", "openperiod")
 
 
+# a value that ends in 무휴 and names no day ('얀중무휴', the source's typo of 연중무휴 — QA 2026-10-19 QA-45) is open
+DAY_WORDS = re.compile(r"[월화수목금토일]\s*요일|\d|명절|설|추석|공휴일|평일|주말|당일|연휴|매주|매월|격주")
+
+
 def is_open_value(text: str | None) -> bool:
     t = squash_ws(text)
-    return any(t.startswith(w) for w in OPEN_WORDS) or t in ("없음", "무휴")
+    return (any(t.startswith(w) for w in OPEN_WORDS) or t in ("없음", "무휴")
+            or (t.endswith("무휴") and not DAY_WORDS.search(t)))
 
 
 def timetable(raw: str | None):
@@ -553,12 +574,16 @@ def value_view(key: str, raw, place: str = "") -> dict:
         elif fees:
             v.update(fees=fees, wide=True)
     elif key in ("homepage", "reservationurl"):
-        url = link_url(raw_s)
-        if url:
-            v["url"] = url
+        # one address a line: each its own link (QA 2026-10-19 QA-21 — the source's second address is kept)
+        lines = [x for x in raw_s.replace("\r", "").split("\n") if x.strip()]
+        shown = text.split("\n")
+        urls = [link_url(x) for x in lines]
+        if any(urls):
+            v["url"] = next(u for u in urls if u)
             pl = Markup(' data-place="{}"').format(place) if place else ""
-            v["html"] = Markup(f'<a href="{escape(url)}" rel="noopener" data-track="official_click"{pl}>'
-                               f'{escape(text)}</a>')
+            v["html"] = Markup("<br>").join(
+                Markup(f'<a href="{escape(u)}" rel="noopener" data-track="official_click"{pl}>{escape(t)}</a>') if u
+                else escape(t) for u, t in zip(urls, shown))
     elif key in ("infocenter", "reservation"):
         v["html"] = Markup("<br>").join(tel_markup(x, place) for x in text.split("\n"))
     elif key == "address":
@@ -793,12 +818,17 @@ CONTEST_LABEL = {"usetime": "이용시간", "restdate": "쉬는 날", "usefee": 
 STATUS_MAX, CLOSED_MAX = 24, 48
 
 
+# a closed-day text that already says it is closed: 휴관·휴무·휴업·휴장, 쉼, 쉬는 — not the 휴 of 연휴 or 공휴일 (QA
+# 2026-10-19 QA-08: '설·추석 명절 연휴', '주말 / 공휴일' got no label and read like opening days in search rows)
+CLOSED_SAID = re.compile(r"휴[관무업장]|쉼|쉬는")
+
+
 def _closed_word(text: str, kind: str) -> str:
     """'매주 월요일' -> '매주 월요일 휴관' (휴무 for food); text that already says so, or is a sentence, as is.
     An open value keeps what it answers: '휴무일 : 없음' split to '없음' reads '휴무일 없음', never a bare '없음'."""
     if is_open_value(text):
         return text if re.search(r"무휴|개방|휴", text) else f"휴무일 {text}"
-    if re.search(r"휴|쉼|쉬", text) or not re.search(r"(요일|[0-9]일|날|명절|연휴|설날|추석)\)?$", text):
+    if CLOSED_SAID.search(text) or not re.search(r"(요일|[0-9]일|날|명절|연휴|설날|추석)\)?$", text):
         return text
     return f"{text} {'휴무' if kind in FOOD_KINDS or kind == 'shopping' else '휴관'}"
 
@@ -865,7 +895,9 @@ def status_items(e: dict, full: bool = False) -> list[dict]:
                     continue
             flag(k)
             continue
-        multi = "\n" in str(raw).strip() and k != "parking"
+        # TourAPI's lists without line breaks ('- 입실 14:00- 퇴실 12:00', '무료※ 기획 전시는 유료…') are several lines
+        # too (QA 2026-10-19 QA-22: search rows showed the raw run)
+        multi = len(restore_lines(raw)) > 1 and k != "parking"
         if k == "usetime_restdate":
             hours, closed = split_closed(raw)
             text = dash_times(squash_ws(raw))
@@ -913,8 +945,10 @@ def status_items(e: dict, full: bool = False) -> list[dict]:
     if full:
         tel_text, tel = settled_phone(e)
         if tel:
-            out.append({"key": "tel", "text": tel_text, "closed": False, "cls": "st-tel", "href": f"tel:{tel}",
-                        "html": Markup(f'<a class="tel" href="tel:{tel}" data-track="tel_click">{escape(tel_text)}</a>')})
+            tail = phone_tail(e, tel_text)
+            out.append({"key": "tel", "text": tel_text + tail, "closed": False, "cls": "st-tel", "href": f"tel:{tel}",
+                        "html": Markup(f'<a class="tel" href="tel:{tel}" data-track="tel_click">{escape(tel_text)}</a>')
+                        + escape(tail)})
     return out
 
 
@@ -1029,6 +1063,22 @@ def last_entry_part(raw, base: str = "") -> str:
     return next((squash_ws(m.group(0)) for x in restore_lines(raw) for m in [LAST_RULE.search(x)] if m), "")
 
 
+def _unpaired(text: str) -> str:
+    """The text without the brackets a split left unpaired at its ends: '하절기 (3~10월)' keeps its ')' (QA 2026-10-19
+    QA-18: the hours tile read '하절기 (3~10월 09:30–17:30'), '(평일' and '주말)' lose theirs."""
+    t = text
+    for a, b in (("(", ")"), ("[", "]"), ("（", "）")):
+        while t.endswith(b) and t.count(b) > t.count(a):
+            t = t[:-1].rstrip(" :,-")
+        while t.startswith(a) and t.count(a) > t.count(b):
+            t = t[1:].lstrip(" :,-")
+        while t.startswith(b):
+            t = t[1:].lstrip(" :,-")
+        while t.endswith(a):
+            t = t[:-1].rstrip(" :,-")
+    return t
+
+
 def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
     lines = clean_lines(raw)
     if not lines:
@@ -1047,7 +1097,11 @@ def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
             found = list(RANGE_FIND.finditer(part))
             if not found:
                 if OPEN_HOURS.search(part) and not CLOSED_HINT.search(part.replace("휴무일", "")):
-                    other.append(part)
+                    if group:   # '[교통공원] 상시 개방' is that group's hours, in source order (QA 2026-10-19 QA-18)
+                        prim.append(f"{group} {squash_ws(part)}")
+                        cur = None
+                    else:
+                        other.append(part)
                 elif not re.search(TIME, part) and (CLOSED_HINT.search(part) or OPENISH.search(part)):
                     closed.append(_closed_part(part))
                 elif re.search(TIME, part) and SECONDARY.search(part):
@@ -1057,7 +1111,7 @@ def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
                 continue
             pos, cur = 0, None
             for k, m in enumerate(found):
-                cond = squash_ws(part[pos:m.start()]).strip(" :,-()[]")
+                cond = _unpaired(squash_ws(part[pos:m.start()]).strip(" :,-"))
                 if cond in BASE_WORDS or cond == base:
                     cond = ""
                 head = " ".join(x for x in ((group if not cond or k == 0 else ""), cond) if x)
@@ -1165,6 +1219,12 @@ def brief_fee(raw) -> dict | None:
     if fees:
         rows = [(g["label"], x) for g in fees["groups"] for x in g["rows"]]
         g0, r0 = rows[0]
+        if g0 and VISITOR_GROUP.search(g0):
+            # '[개인] 일반 3,000원 …': the visitor's own group says nothing next to its first price — its second price
+            # does (QA 2026-10-19 QA-19: the tile read '일반 3,000원 / 개인 / 외')
+            same = [x for g, x in rows if g == g0]
+            sub = f"{same[1]['who']} {same[1]['price']}".strip() if len(same) > 1 else ""
+            return _b(f"{r0['who']} {r0['price']}".strip(), sub, len(rows) > (2 if sub else 1))
         sub = g0 or (f"{rows[1][1]['who']} {rows[1][1]['price']}" if len(rows) > 1 else "")
         return _b(f"{r0['who']} {r0['price']}".strip(), sub, len(rows) > (1 if g0 else 2))
     if len(text) <= 28:
@@ -1287,8 +1347,12 @@ def brief_parking(raw) -> dict | None:
     for sep in (" 요금", " / ", ", "):
         if sep in t:
             a, b = t.split(sep, 1)
+            a = a.rstrip(" ,")   # '가능, 요금 …' (parking_text): the main part is '가능'
             b = (sep.strip(" /,") + " " + b).strip() if sep == " 요금" else b
-            return _b(a, b if len(b) <= 20 else "", len(b) > 20)
+            if len(b) > 20:   # '요금 대형 8,000원 / 소형 2,000원': its first part, the rest in the facts (외)
+                first = b.split(" / ", 1)[0]
+                return _b(a, first if first != b and len(first) <= 20 else "", True)
+            return _b(a, b, False)
     return _b(t)
 
 
@@ -1374,7 +1438,7 @@ def slot_value(e: dict, name: str) -> dict | None:
             key = "infocenter" if PHONE.search(str(f.get("infocenter") or "")) else "reservation"
             src = src_of(e, key)
             return {"key": "tel", "src_key": key, "label": label, "main": tel_text, "sub": "", "more": False,
-                    "closed": False, "conflict": False, "vals": [], "tel": tel,
+                    "closed": False, "conflict": False, "vals": [], "tel": tel, "tel_tail": phone_tail(e, tel_text),
                     "provider": slot_provider(src["provider"]), "date": src["checked_at"]}
         # sources give the number differently: both numbers with their providers, no call link picked
         for key in ("infocenter", "reservation"):
@@ -2444,6 +2508,19 @@ def relation_vm(S, e: dict) -> tuple[list[dict], list[dict]]:
     return lines, parts
 
 
+def anchor_rows(S, e: dict) -> list[dict]:
+    """The city's reference places (city.distance_anchors) nearest this place, by straight line, at most three:
+    [{name, path, m, d ('5.9km'), geo}] — what the place page prints and the assistant's knowledge repeats."""
+    anchors = []
+    if e.get("_geo"):
+        for a in getattr(S, "dist_anchors", None) or []:
+            if a is not e and a["_geo"]:
+                m = hav(e["_geo"], a["_geo"])
+                anchors.append({"name": a["name"], "path": a["_path"], "m": m, "d": dist(m), "geo": a["_geo"]})
+        anchors = sorted(anchors, key=lambda x: x["m"])[:3]
+    return anchors
+
+
 def place_vm(S, e: dict, ctx: dict) -> dict:
     """Everything the redesigned place page prints (built on entity_ctx; no template logic)."""
     kind = ctx["kind"]
@@ -2465,7 +2542,10 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
     more = fact_rows(e, [k for k in MORE if k not in shown] + rest_keys, notes, (tel_text, tel))
     fit = fact_rows(e, FIT, notes, (tel_text, tel))
     all_rows = practical + more + fit
-    missing = [m for m in ctx["missing"] if not (m == FACT_LABELS["parking"] and facts.get("parkingfee"))]
+    # the facts card names what is missing in the first screen's words (영업시간 for a restaurant, 전화 too) — QA
+    # 2026-10-19 QA-44: the two lists of one page differed
+    kf_hero = key_facts(e, "hero")
+    missing = kf_hero["missing"]
     rooms = squash_ws(facts.get("roomcount"))
     ask = []
     if kind == "stay" and (any(w in e["_type"] for w in SMALL_STAY) or (rooms.isdigit() and int(rooms) <= SMALL_STAY_ROOMS)):
@@ -2482,13 +2562,7 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
     scale = near_scale([r["m"] for r in near], (ctx["nearby_source"] or {}).get("radius_m"))
     for r in near:
         r["f"] = near_fill(r["m"], scale)
-    anchors = []
-    if e["_geo"]:
-        for a in getattr(S, "dist_anchors", None) or []:
-            if a is not e and a["_geo"]:
-                m = hav(e["_geo"], a["_geo"])
-                anchors.append({"name": a["name"], "path": a["_path"], "m": m, "d": dist(m), "geo": a["_geo"]})
-        anchors = sorted(anchors, key=lambda x: x["m"])[:3]
+    anchors = anchor_rows(S, e)
     place_points = None
     if e["_geo"]:
         place_points = {
@@ -2543,7 +2617,7 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
         # Apple first screen: the kind's five key facts as spec tiles (ui.kf / ui.kfnote), the lead photo by licence
         # (hero_k1: a KOGL-1 product shot, cropped 3:2; hero_k3: whole, desktop only — phones get thumbs, the
         # provider's small renditions, so a 400–660KB original never becomes the mobile LCP)
-        "kf": key_facts(e, "hero"), "hero_k1": lead if lead and lead["type"] == 1 else None,
+        "kf": kf_hero, "hero_k1": lead if lead and lead["type"] == 1 else None,
         "hero_k3": lead if lead and lead["type"] != 1 else None,
         "thumbs": [{"url": p["th"]["url"], "w": p["th"]["w"], "h": p["th"]["h"], "alt": p["alt"], "type": p["type"]}
                    for p in e["_photos"][:6] if p.get("th") and p["th"].get("w")],
@@ -3103,9 +3177,14 @@ def date_parts(r: dict) -> dict:
     return {"a": a, "b": b, "end_month": em[5:]}
 
 
+RUNNING_SOON = 7   # a running event that ends within this many days ranks before those starting later than a week
+
+
 def ranked_events(S) -> list[dict]:
     """Dated editions still to come or running on the build date (S.today), ranked: today, tomorrow, this week,
-    later; then the running ones by the day they end. Each row (event_row) gets chip (오늘 · 내일 시작 · n일 뒤 시작 ·
+    a running one that ends within RUNNING_SOON days, later; then the other running ones by the day they end (QA
+    2026-10-19 QA-13: a festival in its last days sat below events a month away and left the home's top three). Each
+    row (event_row) gets chip (오늘 · 내일 시작 · n일 뒤 시작 ·
     m월 d일 시작 · 진행 중 · m.d.까지, or 진행 중 · m월 중 끝남 when the source gives the end only as a month), rank, days
     (to the start; < 0 while running) and dp (date_parts). The site is rebuilt daily by the events command, so the
     chips stay true."""
@@ -3125,11 +3204,12 @@ def ranked_events(S) -> list[dict]:
         elif 1 < d <= 6:
             chip, rank = f"{d}일 뒤 시작", (2, d)
         elif d > 6:
-            chip, rank = f"{st.month}월 {st.day}일 시작", (3, d)
+            chip, rank = f"{st.month}월 {st.day}일 시작", (4, d)
         else:
             em = B.event_end_month(r["ev"])   # '~10월': the source gives no end day — never '10.31.까지'
             chip = f"진행 중 · {int(em[5:])}월 중 끝남" if em else f"진행 중 · {last.month}.{last.day}.까지"
-            rank = (4, (last - today).days)
+            left = (last - today).days
+            rank = (3 if left <= RUNNING_SOON and not em else 5, left)
         rows.append({**r, "chip": chip, "rank": rank, "days": d, "dp": date_parts(r)})
     rows.sort(key=lambda r: (r["rank"], r["start"]))
     return rows
@@ -3557,8 +3637,10 @@ def home_starts(S) -> list[dict]:
     region = S.site.get("region") or S.site.get("locality", "")
     want = FIRST_VISIT_TITLE.format(region=region)
     first = next((g for g in S.guides if squash_ws(g.get("title")).startswith(want)), None)
+    # the planner is the opening's first button whenever it is built (has_plan: the site has places), so it is no
+    # entry here (QA 2026-10-19 QA-50: '내 일정 만들기' and '내 조건으로 코스 만들기' both led to /plan/); the events instead
     rows = [(f"처음 가는 {region}", first["_path"] if first else "/guides/", "guide_click", bool(S.guides)),
-            ("내 조건으로 코스 만들기", "/plan/", "plan_cta", bool(S.entities)),
+            ("행사·축제 일정", "/events/", "", bool(S.events)),
             ("지도에서 찾기", "/map/", "", bool(S.entities))]
     return [{"label": label, "href": href, "track": track} for label, href, track, ok in rows if ok]
 
@@ -3594,7 +3676,10 @@ def event_row(ev: dict) -> dict:
             rng += f"–{int(ev['end_month'][5:])}월"
     last = (B.event_last_day(ev) if ev.get("start_date") else end) or ""
     place = city.current().strip_prefix(ev.get("place_name")).strip()
-    time, fee = dash_times(squash_ws(ev.get("playtime"))), squash_ws(ev.get("fee"))
+    # TourAPI's '- 제1여객터미널 11:00~11:30 / …- 제2여객터미널 …' run together: its lines, one after another (QA 2026-10-19
+    # QA-52)
+    time, fee = " · ".join(x.lstrip("- ").strip() for x in restore_lines(dash_times(ev.get("playtime") or ""))), \
+        squash_ws(ev.get("fee"))
     # a value another source gives differently is not picked in a one-line row (CLAUDE.md 3.2): the row reads
     # '<label> 출처마다 다름' and the event page shows both values with their sources
     contested_fields = sorted(f for f, vals in (ev.get("alternatives") or {}).items() if vals)
@@ -3745,13 +3830,16 @@ def event_vm(S, sr: dict) -> dict:
 
     period_html = ev_period(ev)
     add("기간", squash_ws(re.sub(r"<[^>]+>", "", str(period_html))), period_html, "period")
-    if ev.get("playtime"):
-        t = dash_times(squash_ws(ev["playtime"]))
-        add("시간", t, escape(t), "playtime")
+    if ev.get("playtime"):   # its lines as the source lists them (QA 2026-10-19 QA-52)
+        t = "\n".join(restore_lines(dash_times(ev["playtime"])))
+        add("시간", t, lines_html(t), "playtime")
     if ev.get("fee"):
         add("요금", squash_ws(ev["fee"]), escape(squash_ws(ev["fee"])), "fee")
     if ev.get("place_name"):
         add("장소", squash_ws(ev["place_name"]), escape(squash_ws(ev["place_name"])), "place_name")
+    if ev.get("place_detail"):   # the programme's '장소 : …' lines (QA 2026-10-19 QA-12: '출국장 면세구역' — a boarding pass)
+        t = "\n".join(restore_lines(ev["place_detail"]))
+        add("세부 장소", t, lines_html(t), "place_detail")
     if ev.get("address"):
         a = display_address(ev["address"])
         add("주소", a, nowrap_numbers(a), "address")
@@ -3778,7 +3866,10 @@ def event_vm(S, sr: dict) -> dict:
     last = B.event_last_day(ev) or start
     ndays = (dt.date.fromisoformat(last) - dt.date.fromisoformat(start)).days + 1
     bits = []
-    if ev.get("end_date") and "period" not in alts:
+    # 'N일 동안 열리는' only for a run of days: a programme of set days over months ('243일 동안' for one on some
+    # weekdays) says nothing true (QA 2026-10-19 QA-51)
+    weekdays = re.search(r"[월화수목금토일]\s*요일|평일|주말|매주|매월", squash_ws(ev.get("playtime")))
+    if ev.get("end_date") and "period" not in alts and ndays <= 31 and not weekdays:
         bits.append(f"{DAYS_KO.get(ndays, f'{ndays}일')} 동안 열리는 행사입니다." if ndays > 1 else "하루 열리는 행사입니다.")
     if ev.get("sponsor") and "sponsor" not in alts:
         bits.append(f"주최는 {squash_ws(ev['sponsor'])}입니다.")
@@ -3828,8 +3919,9 @@ def event_vm(S, sr: dict) -> dict:
     if ev.get("playtime"):
         # only each time range stays unbroken ('11:00–11:30'): the whole value in one .nw ran a 121-character
         # timetable 1,000px past a phone's screen and over the next tiles (UI review 2026-10-19, P1-1)
-        slots.append(tile("시간", "playtime", Markup(re.sub(r"(\d{1,2}:\d{2}–\d{1,2}:\d{2})", r'<span class="nw">\1</span>',
-                                                          str(escape(dash_times(squash_ws(ev["playtime"]))))))))
+        slots.append(tile("시간", "playtime", Markup("<br>").join(
+            Markup(re.sub(r"(\d{1,2}:\d{2}–\d{1,2}:\d{2})", r'<span class="nw">\1</span>', str(escape(x))))
+            for x in restore_lines(dash_times(ev["playtime"])))))
     if ev.get("fee"):
         slots.append(tile("요금", "fee", escape(squash_ws(ev["fee"]))))
     if place_short:
@@ -4236,13 +4328,16 @@ SEARCH_STRIP = re.compile(r"[\s·\-()（）\[\]|,]")   # what assets/search.js n
 # are no 아이, 버스, 가족). Built into every version's search page: the other versions' rows carry the Korean names
 # (o), so a Korean query finds there too.
 SEARCH_CONCEPTS = [
-    # travelling with children: a guide '아이와 함께 …' (label 가족여행), the places named 어린이…, a 어린이 dish
+    # travelling with children: a guide '아이와 함께 …', the places named 어린이…, a 어린이 dish — never a bare 가족 (QA
+    # 2026-10-19 QA-24: it found a cemetery, 인천가족공원 외국인묘지, and an office, …여성가족재단)
     {"say": ["아이랑", "아이와", "아이", "아이들", "아이들과", "아이들이랑", "애들", "애들이랑", "애들과", "어린이", "키즈",
              "가족", "가족여행", "유아", "아기랑"],
-     "find": ["아이와", "어린이", "가족"]},
-    # rain: a guide '비 오는 날 … 실내 관광지 …' (label 비 오는 날)
+     "find": ["아이와", "어린이"]},
+    # rain: a guide '비 오는 날 … 실내 관광지 …' (label 비 오는 날), and the indoor places by their type or name — 박물관·전시,
+    # 문화시설, …미술관, …과학관, …전시관 (QA 2026-10-19 QA-14: '비 오는 날' found 2 rows and none of the 28 museums); never a
+    # bare 전시 (작전시장)
     {"say": ["비 오는", "비 올 때", "비 오면", "비가 오면", "비가 오는", "비 와도", "우천", "우천시", "장마", "실내"],
-     "find": ["비 오는", "실내"]},
+     "find": ["비 오는", "실내", "박물관", "미술관", "과학관", "전시관", "박물관·전시", "문화시설"]},
     # no car: a guide '차 없이 …', the bus guides, a walking route ('걸어서', 도보 동선)
     {"say": ["차 없이", "뚜벅이", "대중교통", "버스", "시내버스", "자차 없이", "자가용 없이", "걸어서", "도보"],
      "find": ["차 없이", "시내버스", "시외버스", "고속버스", "걸어서", "도보"]},
@@ -4252,6 +4347,8 @@ SEARCH_CONCEPTS = [
      "find": ["음식점", "맛집", "식당", "먹거리"]},
     # coffee: a café guide, the cafés and the places with a coffee on the menu
     {"say": ["카페", "커피", "커피숍", "찻집"], "find": ["카페", "커피"]},
+    # one dish, two spellings (QA 2026-10-19 QA-25: '짜장면' and '자장면' never found each other's places)
+    {"say": ["짜장면", "자장면", "짜장"], "find": ["짜장", "자장면"]},
     # parking: the guides that list it (주차 in their titles), a public car park guide
     {"say": ["주차", "주차장", "차 댈 곳", "차 세울 곳", "파킹"], "find": ["주차"]},
     # night: a night-view guide (label '… 야경') and the courses that stop at a night view
@@ -4264,11 +4361,14 @@ SEARCH_CONCEPTS = [
 
 
 def search_form_data(region: str, planner: str = "") -> dict:
-    """The search form's data attributes for assets/search.js: concepts (SEARCH_CONCEPTS as JSON), region (the city's
-    names, space-separated: a query word that only names the city is no condition — every row is in it — so '<city>
-    짬뽕' finds the places with 짬뽕), planner (the AI course planner's path, Korean only: a query that plans a trip —
-    dates, 코스, 일정, 당일, 1박 — links to it)."""
-    out = {"concepts": json.dumps(SEARCH_CONCEPTS, ensure_ascii=False, separators=(",", ":")), "region": region}
+    """The search form's data attributes for assets/search.js: concepts (SEARCH_CONCEPTS as JSON, then the city's own
+    short names — site.json city.search_aliases {'said': ['the name the data writes', …]}: '인천공항' finds
+    인천국제공항 and its terminals, QA 2026-10-19 QA-25 —), region (the city's names, space-separated: a query word that
+    only names the city is no condition — every row is in it — so '<city> 짬뽕' finds the places with 짬뽕), planner
+    (the AI course planner's path, Korean only: a query that plans a trip — dates, 코스, 일정, 당일, 1박 — links to it)."""
+    aliases = [{"say": [str(k)], "find": [str(x) for x in v if str(x).strip()]}
+               for k, v in (city.current().get("search_aliases") or {}).items() if str(k).strip() and v]
+    out = {"concepts": json.dumps(SEARCH_CONCEPTS + aliases, ensure_ascii=False, separators=(",", ":")), "region": region}
     if planner:
         out["planner"] = planner
     return out
@@ -4306,9 +4406,10 @@ def search_index(S) -> list[dict]:
     en_series = {x["slug"]: x for x in (en.series if en else [])}
     out = []
     for e in S.entities:
-        # a café or shop without a finer type carries its kind as its type: '카페' and '쇼핑' find them
+        # a place without a finer type carries its kind as its type: '카페', '쇼핑', '음식점' and '관광지' find them (QA
+        # 2026-10-19 QA-04: '맛집' found only the places named …식당, '관광지' one place)
         row = {"n": e["name"], "a": " ".join(jsonld.alternate_names(e)), "k": e["kind"],
-               "t": e["_type"] or (KIND_LABELS[e["kind"]] if e["kind"] in ("cafe", "shopping") else ""),
+               "t": e["_type"] or KIND_LABELS.get(e["kind"], ""),
                "d": e["_area"] or e.get("_road") or "", "r": e["_region"], "p": e["_path"]}
         other_names(row, (e.get("_en") or {}).get("name") if en else "")
         m = menu_words(e)
@@ -4317,7 +4418,10 @@ def search_index(S) -> list[dict]:
         ds = designations(e)
         if ds:  # '모범음식점', the city's own list name find the places on those lists
             row["g"] = " · ".join(d["label"] for d in ds)
-        st = [x["text"] for x in status_items(e) if x.get("cls") != "st-missing"][:3]
+        # a closed day says so in words: the page marks it in red, a result row is text (QA 2026-10-19 QA-08: '09:00–17:00 ·
+        # 매주 토요일~일요일 / …' read like opening days)
+        st = [f"쉬는 날 {x['text']}" if x.get("closed") and not CLOSED_SAID.search(x["text"]) else x["text"]
+              for x in status_items(e) if x.get("cls") != "st-missing"][:3]
         if e.get("_alias_of") is not None:   # a second page for one building says so in the result (pipeline/relations.py)
             st.insert(0, LC.NEAR_WORDS["ko"]["same_building"].format(name=e["_alias_of"]["name"]))
         if st:
@@ -4387,7 +4491,7 @@ def video_groups_vm(groups: list[dict]) -> list[dict]:
 def nav_items(S) -> list[tuple[str, str]]:
     """[(label, href)] of NAV whose page this build writes (/places/ always; the others when they have data)."""
     built = {"attraction": True, "stay": bool(S.lists.get("stay")), "food": bool(S.lists.get("food")),
-             "cafe": bool(S.lists.get("cafe")),
+             "cafe": bool(S.lists.get("cafe")), "shopping": bool(S.lists.get("shopping")),
              "videos": bool(getattr(S, "videos", None)), "courses": bool(S.courses), "guides": bool(S.guides),
              "events": bool(S.events), "map": bool(S.entities), "abroad": bool(getattr(S, "abroad", None))}
     region = S.site.get("region") or S.site.get("locality", "")
@@ -4439,7 +4543,8 @@ KIND_PIC = {"bed": "kind-stay", "bowl": "kind-food", "museum": "kind-museum", "s
 def plan_places(S) -> dict:
     """{path: {n name, k kind, t type, a area, r 권역, ic its kind's picture ID, img? {u, w, h, alt, t KOGL type, s/sw the
     provider's small copy},
-    h hours, c closed days, f fee, m menu, p parking, ci check-in, g [lat, lng]}} for every published place — each
+    h hours, c closed days (cx 1: a real closure), f fee, m menu, p parking, ci check-in, g [lat, lng]}} for every
+    published place — each
     value as the place's first screen shows it (key_facts 'hero'; both sources where they differ)."""
     out = {}
     for e in S.entities:
@@ -4466,6 +4571,10 @@ def plan_places(S) -> dict:
             v = val(slot)
             if v:
                 row[key] = v
+        # cx: the closed days are a real closure ('연중무휴' is not: QA 2026-10-19 QA-31 — it showed in closed red)
+        cs = slots.get("closed") or {}
+        if row.get("c") and (cs.get("closed") or any(x.get("closed") for x in cs.get("vals") or [])):
+            row["cx"] = 1
         if isinstance(geo.get("lat"), (int, float)) and isinstance(geo.get("lng"), (int, float)):
             row["g"] = [round(geo["lat"], 6), round(geo["lng"], 6)]
         out[e["_path"]] = row
@@ -4525,6 +4634,8 @@ def plan_vm(S) -> dict:
             "hubs_json": json.dumps(dict(hubs), ensure_ascii=False, separators=(",", ":")),
             "quick_edits": PLAN_QUICK_EDITS,
             "n_places": len(S.entities), "n_courses": len(S.courses), "n_guides": len(S.guides),
+            # the places whose hours the site has (QA 2026-10-19 QA-33: the lede claimed every place's hours)
+            "n_hours": sum(1 for e in S.entities if any((e.get("facts") or {}).get(k) for k in ("usetime", "usetime_restdate"))),
             "region": S.site.get("region") or "",
             "mascots": {"work": pose("mascot-plan", "mascot-think"), "done": pose("mascot-plan-done", "mascot-hello"),
                         "rain": pose("mascot-plan-rain", "mascot-point"), "sorry": pose("mascot-sorry", "mascot-sorry")}}

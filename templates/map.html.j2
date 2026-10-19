@@ -63,17 +63,20 @@
     <div class="f-undo" data-map-undo data-one="{{ list_words.clear_one }}" data-kind-one="{v} 숨김 해제" hidden><button type="button" data-map-reset>{{ list_words.clear_all }}</button></div>
     <div id="map-top"></div>
     {% set seen = namespace(names=[]) %}
-    {% for r in regions %}
-    <section class="region{% if not loop.first %} cv{% endif %}" id="{{ r.id }}" data-region-sec="{{ r.name }}" aria-labelledby="{{ r.id }}-h">{{ artm.strip((art_slots or {}).get('area.' ~ r.art) if r.art else none) }}
+    {% for r in regions %}{% set rloop = loop %}
+    <section class="region{% if not loop.first %} cvk{% endif %}" id="{{ r.id }}" data-region-sec="{{ r.name }}" aria-labelledby="{{ r.id }}-h"{% if not loop.first %} style="contain-intrinsic-size:auto {{ 200 + r.members|length * 38 + r.dongs|length * 48 }}px"{% endif %}>{{ artm.strip((art_slots or {}).get('area.' ~ r.art) if r.art else none) }}
       <div class="region-head">
         <h2 id="{{ r.id }}-h">{{ r.name }} <span class="count tn" data-group-n>{{ r.members|length }}곳</span></h2>
-        <p class="region-k tn">{% for k in kinds %}{{ kl[k] }} {{ r.k[k] or 0 }}{% if not loop.last %} · {% endif %}{% endfor %}{% if r.anchor %} · 기준점 <a href="{{ r.anchor.path }}">{{ r.anchor.place }}</a>{% endif %}</p>
+        <p class="region-k tn">{% for k in kinds %}<span data-rk="{{ k }}">{{ kl[k] }} {{ r.k[k] or 0 }}</span>{% endfor %}{% if r.anchor %}<span class="rk-a">기준점 <a href="{{ r.anchor.path }}">{{ r.anchor.place }}</a></span>{% endif %}</p>
       </div>
       <div class="dongs">
         {% for d in r.dongs %}
         {# the round-2 anchor /map/#<읍·면·동> still lands on that 동's first group (a 동 can fall in two 권역) #}
         {% set old_id = d.name if (d.name not in seen.names and ' ' not in d.name) else '' %}{% if old_id %}{% set seen.names = seen.names + [d.name] %}{% endif %}
-        <section class="dong" aria-labelledby="{{ d.id }}"{% if old_id %} id="{{ old_id }}"{% endif %}>
+        {#- every group but the page's first is skipped off screen too: the first 권역 starts on the first screen, and
+            its 동 lists alone needed most of the font files (QA 2026-10-19 QA-28: /map/ 332 KB) -#}
+        {% set first_dong = rloop.first and loop.first %}
+        <section class="dong{% if not first_dong %} cvk{% endif %}" aria-labelledby="{{ d.id }}"{% if old_id %} id="{{ old_id }}"{% endif %}{% if not first_dong %} style="contain-intrinsic-size:auto {{ 40 + d.members|length * 44 }}px"{% endif %}>
           <h3 id="{{ d.id }}">{{ d.name }} <span class="tn" data-group-n>{{ d.members|length }}</span></h3>
           <ul>{% for e in d.members %}<li data-kind-row="{{ e.kind }}"{% if e._geo %} data-pt="{{ e.slug }}"{% endif %}><i class="mk mk-{{ mk[e.kind] }}" aria-hidden="true"></i><a href="{{ e._path }}">{{ e.name }}</a><span class="vh"> ({{ kl[e.kind] }})</span></li>{% endfor %}</ul>
         </section>

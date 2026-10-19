@@ -115,7 +115,9 @@ html:not(.js) .ho-ctl { display: none; }
 .hk-h { position: absolute; z-index: 1; left: 40px; top: -12px; max-width: calc(100% - 52px); margin: 0; padding: 0 8px 0 4px; background: #fff; font: 700 clamp(13px, 3.7vw, 15px)/24px var(--font); letter-spacing: -.03em; color: var(--sea-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hk-sub { order: 5; margin: 10px 0 0; font: 400 13.5px/1.5 var(--font); letter-spacing: -.01em; color: var(--ink-2); word-break: keep-all; }
 .hk-note { order: 6; margin: 2px 0 0; font: 400 13px/1.45 var(--font); color: var(--ink-3); }
-.hk-note a { color: var(--sea-hi); }
+/* a link in the note is told apart by more than its colour, and its target reaches 44px without moving the line (QA
+   2026-10-19 QA-48) */
+.hk-note a { color: var(--sea-hi); text-decoration: underline; text-underline-offset: 2px; display: inline-block; padding: 14px 0; margin: -14px 0; }
 .hk-box { order: 1; display: flex; align-items: center; gap: 4px; height: 58px; padding: 4px 4px 4px 12px; box-sizing: border-box; border: 2px solid var(--sea); border-radius: 18px; background: #fff; color: var(--ink); box-shadow: 0 10px 26px -16px rgba(29, 79, 150, .55); transition: box-shadow .2s var(--fb), border-color .2s var(--fb); }
 .hk-box:focus-within { border-color: var(--sea-deep); box-shadow: 0 0 0 3px var(--tint2), 0 0 0 5px var(--sea), 0 12px 28px -14px rgba(29, 79, 150, .6); }
 .hk-ico { flex: none; width: 22px; height: 22px; color: var(--sea); stroke-width: 1.9; }
@@ -196,7 +198,7 @@ html.js .hk-nojs { display: none; }
   .ho-cta-2 .btn-sea { padding: 0 22px; }   /* the pair stays one row in the 382px column at 1024px */
   .ho-go { align-self: stretch; max-width: 34em; margin: 14px 0 0; }
   .ho-ctl { justify-content: flex-start; gap: 18px; margin-top: 28px; }
-  .hv-c { width: 36px; height: 36px; }
+  .hv-c { width: 44px; height: 44px; }   /* a 44px target (QA 2026-10-19 QA-47) */
   .hv-prog { width: 88px; }
   .ho-news { max-width: none; }
   .nc { padding: 12px; box-shadow: var(--shadow-2); border-color: rgba(216, 224, 234, .7); }

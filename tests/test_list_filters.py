@@ -156,7 +156,7 @@ def test_the_map_page_counts_its_kinds_and_names_the_places_off_the_map(built):
                      r'data-tpl="장소 \{n\}곳" data-of=" \(전체 \{m\}곳 중\)">장소 (\d+)곳</span></p>', h).group(1) == str(len(rows_))
     # the 권역 and 동 headings carry the count site.js keeps to the shown rows
     assert h.count('<span class="count tn" data-group-n>') == h.count('<section class="region')
-    assert h.count('<span class="tn" data-group-n>') == h.count('<section class="dong"')
+    assert h.count('<span class="tn" data-group-n>') == h.count('<section class="dong')   # 'dong' or 'dong cvk' (QA-28)
 
 
 def test_the_faint_chip_keeps_its_contrast_and_the_mouse_rule_stays():

@@ -4,7 +4,7 @@
   "site_url: 운영자 결정(2026-10-19) https://incheon.webforai.kr — 회사 도메인의 하위 주소로 처음부터 최종 주소다. 공개 뒤에는 바꾸지 않는다. canonical·sitemap·robots·llms.txt·챗봇 허용 출처(public/chat/site.json url)·IndexNow host가 모두 이 값에서 나온다. 카카오 지도 JavaScript 키는 이 주소를 카카오 개발자 콘솔의 웹 도메인으로 등록한 키여야 한다.",
   "site_name·brand: 운영자 결정(2026-10-19) '인천각'(MZ 표현 '~하는 각?' — '오늘 인천 가는 각'), 영어 'Incheongak'(로고 아래 줄, city.intl.en.site_name — 영어판을 만들 때의 이름). 이전 가칭 '인천 여행의 모든 것'은 쓰지 않는다. 머리말·바닥글 글자는 '인천' 잉크 + '각' 바다색(pipeline/present.wordmark, 'Incheon' + 'gak'), 심볼은 brand_symbol(인천대교 주탑 + 책갈피, 운영자 선택 시안 A, templates/assets/brand/incheongak-*.svg). 홈 첫 화면 h1은 city.home.h1 '오늘, 인천 가는 각'.",
   "ga4_id·gtm_id·search_verification·indexnow_key·operator.contact는 비어 있다. 운영자가 정한다(indexnow_key는 공개 직전에 만든다: tools/indexnow.py).",
-  "kakao_js_key: 운영자가 2026-10-19 새 카카오 앱 '인천각'의 JavaScript 키를 보냈다(공개 키 — 카카오 개발자 콘솔에 등록한 웹 도메인에서만 동작). 2026-10-19 현재 https://incheon.webforai.kr 은 그 앱의 웹 도메인으로 아직 등록되지 않았다: 등록 전에는 SDK가 401 'domain mismatched'로 답하고 지도 상자는 글과 '지도를 불러오지 못했습니다' 줄만 남는다. 운영자가 콘솔(앱 → 플랫폼 → Web 사이트 도메인)에 https://incheon.webforai.kr 을 넣으면 다른 변경 없이 지도가 뜬다. 로컬 미리보기(http://127.0.0.1:<포트>)나 Vercel 미리보기 주소에서 지도를 보려면 그 주소도 콘솔에 더해야 한다(시험할 때만).",
+  "kakao_js_key: 운영자가 2026-10-19 새 카카오 앱 '인천각'의 JavaScript 키를 보냈다(공개 키 — 카카오 개발자 콘솔에 등록한 웹 도메인에서만 동작). https://incheon.webforai.kr 은 그 앱의 웹 도메인으로 등록되어 있다(2026-10-19 시나리오 QA에서 SDK가 그 주소에 200으로 답함). 등록하지 않은 주소(로컬 미리보기 http://127.0.0.1:<포트>, Vercel 미리보기 주소)에서는 SDK가 401 'domain mismatched'로 답하고 지도 상자는 글과 '지도를 불러오지 못했습니다' 줄만 남는다 — 그 주소에서 지도를 보려면 콘솔(앱 → 플랫폼 → Web 사이트 도메인)에 그 주소도 더한다(시험할 때만).",
   "publish_rules·crawler_policy는 군산 사이트의 값을 기본값으로 옮겼다. 인천 사이트용으로 운영자가 확인한다.",
   "official_links: 2026-10-19에 직접 열어 본 주소만 넣었다 — 인천투어 https://itour.incheon.go.kr/ (200, 제목 'Discover Incheon, 인천투어(itour) 메인'), 인천관광공사 https://www.ito.or.kr/ (200, 제목 '인천관광공사'). 인천광역시 https://www.incheon.go.kr/ 는 그날 연결이 끊겨 확인하지 못해 넣지 않았다.",
   "인천투어 하단 표기 'COPYRIGHT(c) 2018 Incheon Metropolitan City. ALL RIGHTS RESERVED.', 첫 화면에 공공누리 표시 없음(2026-10-19 확인) → 원문·사진은 게재하지 않고 링크와 표의 값만 쓴다(CLAUDE.md 3절 3항). 페이지별 이용조건은 수집 단계에서 다시 확인한다.",
@@ -335,6 +335,11 @@
     "en": "Incheon"
    },
    "chips": {}
+  },
+  "search_aliases": {
+   "인천공항": [
+    "인천국제공항"
+   ]
   }
  }
 }

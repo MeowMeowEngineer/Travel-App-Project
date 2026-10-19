@@ -273,7 +273,9 @@ def test_in_a_browser_the_planner_asks_draws_edits_recovers_and_comes_back(site)
             assert kpis.nth(2).locator(".trp-kpi-v").text_content() == "3,000원"
             assert page.get_attribute(".trp-meter", "aria-label") == "확인된 입장료 3,000원 / 예산 10,000원"
             assert page.evaluate("() => document.querySelector('.trp-meter span').style.width") == "30%"
-            assert kpis.nth(3).locator(".trp-kpi-v").text_content() == "5/5" and "그날 운영 확인 필요 1곳" in kpis.nth(3).text_content()
+            # a stop whose day the data cannot tell is not counted as 'can visit' (QA 2026-10-19 QA-03: '✓ 4/4곳' for
+            # stops with no closed days or hours)
+            assert kpis.nth(3).locator(".trp-kpi-v").text_content() == "4/5" and "운영 자료 없음 1곳" in kpis.nth(3).text_content()
             assert page.locator(".trp-tlx-row").count() == 2
             day1 = page.locator(".trp-tlx-track >> nth=0")
             assert day1.locator(".trp-seg:not(.trp-seg-gap)").count() == 4 and day1.locator(".trp-seg-gap").count() == 2
@@ -471,6 +473,9 @@ def test_in_a_browser_a_finished_plan_reads_as_finished(site):
     paths = plan_paths(site)
     plan = a_plan(paths)
     plan["days"][0]["legs"][1].update({"gap": 10, "flag": ""})
+    # every stop with its day and hours in the data: the plan reads as finished (✓); one the data cannot tell of makes
+    # it an information mark (QA-03, below)
+    plan["days"][0]["stops"][2].update({"day": "open", "checks": []})
     plan.update({"status": "ready", "flags": [], "todo": [],
                  "checks": [{"k": "need", "t": "유모차: b — 출입구 접근 정보 없음"}],
                  "aware": [{"k": "move", "t": "장소 사이 시간은 계획상 여유이고, 실제 이동 시간은 확인되지 않음(직선거리만 있음)"},
@@ -709,8 +714,16 @@ def test_in_a_browser_an_address_starts_from_the_defaults_and_never_shows_what_t
             assert who() == ("kids", "2", "0", ["8"])
             page.goto("http://site.test/plan/?with=couple&adults=1&kids=5,3", wait_until="load")
             assert who() == ("kids", "1", "0", ["5", "3"])
+            # 아이와 가족 adds a child with no age: the age prices the fees, so the reader picks it before anything is
+            # sent (QA 2026-10-19 QA-34: a 7-year-old the reader never chose)
             page.goto("http://site.test/plan/?with=kids", wait_until="load")
-            assert who() == ("kids", "2", "0", ["7"])
+            assert who() == ("kids", "2", "0", [""])
+            sent = len(calls)
+            page.click(".trp-submit")
+            page.wait_for_timeout(200)
+            assert len(calls) == sent and "아이 나이를 골라 주세요" in page.text_content("[data-plan-formerr]")
+            assert page.evaluate("document.activeElement.matches('[data-ages] select')")
+            page.select_option("[data-ages] select", "7")
             page.click(".trp-submit")
             page.wait_for_selector("#h-result")
             c = calls[-1]["conditions"]

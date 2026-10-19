@@ -285,11 +285,15 @@
 .trp-leg-go:hover { background: var(--tint); }
 .trp-leg-bad .trp-leg-in { background: #FFF3D6; }
 .trp-leg-bad .trp-leg-note { color: #5E3A00 !important; font-weight: 700; }
+.trp-leg-sea .trp-leg-in { background: #EAF2FF; }
+.trp-leg-sea .trp-leg-note { color: var(--sea-deep) !important; font-weight: 700; }
 
 /* side: map, fees, checks */
 .trp-side { display: grid; gap: 16px; }
 .trp-map { margin: 0; border-radius: 20px; overflow: hidden; background: #fff; box-shadow: inset 0 0 0 1px var(--hair), var(--shadow-1); }
-.trp-map .map { aspect-ratio: 4 / 3; min-height: 260px; }
+/* the box's width is the figure's: the base .map's fixed height with this ratio made it 560px wide in a 354px figure
+   on phones, the stops off its right edge cut away (QA 2026-10-19 QA-02) */
+.trp-map .map { aspect-ratio: 4 / 3; min-height: 260px; height: auto; width: 100%; }
 .trp-map figcaption { padding: 8px 14px 10px; font-size: 12.5px; color: var(--ink-3); }
 .trp-nomap { margin: 0; padding: 14px; border-radius: 16px; background: var(--bg-2); color: var(--ink-3); font-size: 14px; }
 .trp-box { padding: 18px; border-radius: 20px; background: #fff; box-shadow: inset 0 0 0 1px var(--hair), var(--shadow-1); }

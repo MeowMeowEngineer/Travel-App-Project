@@ -48,7 +48,7 @@
     <div class="ledger" data-ledger>
       <div class="lg-head" aria-hidden="true"><span>{{ L.title }}</span>{% for k, lab in L.slot_cols %}<span>{{ lab }}</span>{% endfor %}</div>
       {% for g in L.groups %}
-      <section class="lg-group{% if not loop.first %} cv{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h">
+      <section class="lg-group{% if not loop.first %} cvk{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h"{% if not loop.first %} style="contain-intrinsic-size:auto {{ 60 + g.recs|length * 92 }}px"{% endif %}>
         <h2 class="lg-g" id="{{ g.id }}-h">{{ g.name }} <span class="tn">{{ g.recs|length }}곳</span></h2>
         <ol class="recs">{% for it in g.recs %}{{ p1.rec(it, L.kind) }}{% endfor %}</ol>
       </section>

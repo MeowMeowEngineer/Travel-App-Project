@@ -112,12 +112,11 @@ html.gd-open .gd-sec, html.gd-open .gd-toc, html.cv-off .gd-sec, html.cv-off .gd
 .mcs-foot { display: flex; align-items: center; gap: 12px; margin-top: 6px; min-height: 0; }
 .gd-sec .mcs-credit, .mcs-credit { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ink-3); }
 .mcs-foot .car-nav { margin-left: auto; gap: 10px; }
-.mcs-foot .gal-btn { width: 36px; height: 36px; }
+.mcs-foot .gal-btn { width: 44px; height: 44px; }   /* a 44px target at every width (QA 2026-10-19 QA-47) */
 .mcs-box.no-scroll .car-nav { display: none; }
 /* the foot keeps the buttons' height whether they are in the HTML, made by site.js ([data-gal-make]) or hidden
    (.no-scroll): nothing below moves */
-@media (min-width: 761px) { .mcs-foot:has(.car-nav) { min-height: 36px; } }
-@media (min-width: 761px) and (max-width: 1023px) { .mcs-foot:has(.car-nav) { min-height: 44px; } }
+@media (min-width: 761px) { .mcs-foot:has(.car-nav) { min-height: 44px; } }
 /* the last tile of a row that shows only part of the guide's places: how many more, and the way to the full list */
 .mcs-more { flex: none; display: flex; width: min(180px, 46vw); scroll-snap-align: start; }
 .mcs-more a { display: flex; flex-direction: column; justify-content: center; gap: 6px; width: 100%; min-height: 120px; padding: 18px; border-radius: var(--r); background: var(--bg); color: var(--ink); text-decoration: none; transition: box-shadow .3s var(--ease); }

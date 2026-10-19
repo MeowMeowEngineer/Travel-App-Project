@@ -68,7 +68,7 @@ from pipeline.enrich import haversine_m, load_dotenv
 from pipeline.relations import raw_family
 from pipeline.schema import (KIND_LABELS, KINDS, TOURAPI_LICENSE_MAP, base_kind, geo_providers, license_allowed,
                              nearby_provider)
-from pipeline.textutil import normalize_name
+from pipeline.textutil import first_line, normalize_name
 from pipeline.tourapi import CONTENT_TYPES, TourAPIError, TourAPIStopError, from_site_config, kind_of, lcls3
 
 LIST_TYPES = ("12", "14", "28", "38", "32", "39")
@@ -613,7 +613,14 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
                     d["errors"].append(f"{p['name']}: {err}")
                     continue
                 checked = fetched_on(api, start, today)
+                old_home = (p.get("facts") or {}).get("homepage")
                 res = merge_facts(p, tourapi_facts(common, intro, info, ctype), checked, cid)
+                new_home = (p.get("facts") or {}).get("homepage")
+                off = p.get("official") or {}
+                # the official link a TourAPI homepage gave follows that value when it is read again (QA 2026-10-19 QA-21)
+                if (old_home and new_home and new_home != old_home and off.get("homepage") == old_home
+                        and "official" not in (p.get("locks") or [])):
+                    off["homepage"] = first_line(new_home)
                 if t.get("details_pending"):   # a place added from its list item (--lists-only): now complete
                     complete_listed(p, common, checked, allowed)
                     d["listed_completed"] += 1

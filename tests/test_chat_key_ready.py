@@ -66,9 +66,11 @@ def test_the_build_writes_this_site_s_knowledge_with_sources_and_no_other_city(b
     docs = json.loads((chat / "docs.json").read_text("utf-8"))
     assert docs["site"] == SITE and PLACES <= set(docs["docs"])
     beach = docs["docs"]["/places/test-beach-a/"]["x"]
-    # every fact with its provider and the date this site checked it; what the site lacks, said once
-    assert "- 이용시간: [테스트] 이용시간 값 — 한국관광공사 TourAPI (출처 확인 2026-10-19)" in beach
-    assert "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI (출처 확인 2026-10-19)" in beach
+    # every fact with its provider, and the date this site checked it once, on the record's 날짜 line (a fact line
+    # names its date only when it differs — QA 2026-10-19 QA-35); what the site lacks, said once
+    assert "- 이용시간: [테스트] 이용시간 값 — 한국관광공사 TourAPI\n" in beach
+    assert "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI\n" in beach
+    assert "\n날짜: 출처 확인 2026-10-19 · " in beach and "(출처 확인 2026-10-19)" not in beach
     assert "사이트에 없는 값(확인 필요): 쉬는 날·요금·전화" in beach
     about = docs["docs"]["/about/"]["x"]
     assert "Claude Haiku 5.5" in about and "대화를 저장하지 않고" in about and "인천각" in about
@@ -160,7 +162,7 @@ def test_the_function_answers_from_the_built_knowledge_once_a_key_is_set(built):
     assert out["system"].startswith(f"You are 인천 여행 도우미 (the Incheon travel helper), the assistant of the travel "
                                     f"website 인천각 ({SITE})")
     assert "/places/test-beach-a/" in out["search"].split("\n")[1]              # search_site found the built page first
-    assert "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI (출처 확인 2026-10-19)" in out["read"]
+    assert "- 주차: [테스트] 주차 값 — 한국관광공사 TourAPI" in out["read"] and "날짜: 출처 확인 2026-10-19" in out["read"]
     done = out["events"][-1]
     assert done["type"] == "done"
     assert done["links"] == [{"title": "[테스트] 가상 해변 A", "url": f"{SITE}/places/test-beach-a/", "ext": False}]

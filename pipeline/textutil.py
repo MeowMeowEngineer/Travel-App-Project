@@ -27,15 +27,43 @@ def strip_html(value: str | None) -> str:
     return "\n".join(line for line in lines if line)
 
 
+# The label of the next address glued to an address ('인천관광 https://itour.incheon.go.kr국가유산청 https://…', '…/tour/
+# 국가유산청 https://…', '…/DRFA365예술극장 https://…'): the Korean run at its end, with an upper-case or digit word
+# right after a '/' before it. Only cut when another address follows: a Korean domain or path stays ('달빛동화마을.kr').
+_GLUED_LABEL = re.compile(r"(?:(?<=/)[A-Z0-9]+)?[가-힣][가-힣]*$")
+_URL_START = re.compile(r"https?://", re.I)
+
+
+def extract_urls(value: str | None) -> list[str]:
+    """Every URL of a TourAPI 'homepage' field, in order, without repeats: the href of each '<a href=…>' (the link's
+    own text is often the site's front page), else each 'http…' address of the text, an address ending where the next
+    one starts or where the next one's label is glued on (QA 2026-10-19 QA-21: 'https://itour.incheon.go.kr국가유산청'
+    was one link that led to a 404 and the second address was lost)."""
+    if not value:
+        return []
+    hrefs = [html.unescape(h).strip() for h in _HREF.findall(value)]
+    if hrefs:
+        return list(dict.fromkeys(h for h in hrefs if h))
+    text = html.unescape(value)
+    starts = [m.start() for m in _URL_START.finditer(text)]
+    out = []
+    for i, a in enumerate(starts):
+        end = starts[i + 1] if i + 1 < len(starts) else len(text)
+        m = _URL.match(text, a, end)
+        if not m:
+            continue
+        url = m.group(0).strip()
+        if i + 1 < len(starts):
+            url = _GLUED_LABEL.sub("", url)
+        if url and url not in out:
+            out.append(url)
+    return out
+
+
 def extract_url(value: str | None) -> str:
     """TourAPI 'homepage' fields are often '<a href=...>...</a>'. Return the first URL."""
-    if not value:
-        return ""
-    m = _HREF.search(value)
-    if m:
-        return html.unescape(m.group(1)).strip()
-    m = _URL.search(html.unescape(value))
-    return m.group(0).strip() if m else ""
+    urls = extract_urls(value)
+    return urls[0] if urls else ""
 
 
 def extract_phone(value: str | None) -> str:
@@ -179,14 +207,44 @@ def address_key(address: str | None) -> str:
     return f"{m.group(1)}{m.group(2)}" if m else address_norm(address)
 
 
-def josa(word: str, pair: str) -> str:
-    """Attach the right Korean particle: josa('코스', '으로/로') -> '코스로', josa('공원', '은/는') -> '공원은'."""
-    with_final, without_final = pair.split("/")
-    last = (word or "").rstrip()[-1:] or " "
+# the final consonant (Hangul jongseong index: 0 none, 8 ㄹ) a name ending in a digit or a Latin letter is read with
+# (QA 2026-10-19 QA-43: '오션97는', '마레 616는'): digits as Sino-Korean numbers (…7 칠 → ㄹ, …6 육 → ㄱ, …10 십 → ㅂ,
+# …100 백, …1000 천), an upper-case letter by its name (L 엘, M 엠, N 엔, R 알), a lower-case word's l·m·n·ng
+_DIGIT_FINAL = {"0": 21, "1": 8, "2": 0, "3": 16, "4": 0, "5": 0, "6": 1, "7": 8, "8": 8, "9": 0}
+_TENS_FINAL = {1: 17, 2: 1, 3: 4, 4: 4}   # 십 ㅂ, 백 ㄱ, 천 ㄴ, 만 ㄴ (a run of zeros: the place it ends on)
+_LETTER_FINAL = {"L": 8, "M": 16, "N": 4, "R": 8}
+
+
+def _final_of(word: str) -> int | None:
+    """The jongseong index of how `word` ends when read aloud, or None when it cannot tell (a symbol)."""
+    w = re.sub(r"\s*[(（\[][^()（）\[\]]*[)）\]]\s*$", "", word or "").rstrip() or (word or "").rstrip()
+    last = w[-1:]
+    if not last:
+        return None
     code = ord(last) - 0xAC00
-    if not 0 <= code < 11172:
+    if 0 <= code < 11172:
+        return code % 28
+    if last.isdigit():
+        m = re.search(r"(\d*?)(0+)$", w)
+        if last == "0" and m and m.group(1).strip("0"):
+            return _TENS_FINAL.get(min(len(m.group(2)), 4), 4)
+        return _DIGIT_FINAL[last]
+    if "A" <= last <= "Z":
+        return _LETTER_FINAL.get(last, 0)
+    if "a" <= last <= "z":
+        if w.lower().endswith("ng"):
+            return 21
+        return {"l": 8, "m": 16, "n": 4}.get(last, 0)
+    return None
+
+
+def josa(word: str, pair: str) -> str:
+    """Attach the right Korean particle: josa('코스', '으로/로') -> '코스로', josa('공원', '은/는') -> '공원은',
+    josa('오션97', '은/는') -> '오션97은' (a digit or a Latin letter read as said; a trailing bracket left out)."""
+    with_final, without_final = pair.split("/")
+    final = _final_of(word)
+    if final is None:
         return f"{word}{without_final}"
-    final = code % 28
     if with_final == "으로":
         return f"{word}{'로' if final in (0, 8) else '으로'}"
     return f"{word}{with_final if final else without_final}"
@@ -202,6 +260,9 @@ _TIME_RANGE = re.compile(rf"({TIME})\s*(?:{TILDE}|[–—]|-(?=\s*\d))\s*({TIME}
 _PARKING_YES = {"가능", "주차가능", "주차 가능", "주차장이 구비", "주차장을 구비", "별도의 주차장"}
 _PARKING_NO = {"불가능", "불가"}
 _FREE_PARKING = (re.compile(r"^가능\s*,?\s*요금\s*\(\s*무료\s*\)$"), re.compile(r"^가능\s*\(\s*무료\s*\)$"))
+# TourAPI's paid parking: '가능요금 (대형 8,000원 / 소형 2,000원)', '가능\n요금 (1일 최대 2,000원)', and a fee after a
+# note '가능 (○○ 주차장 이용)\n요금 (무료)' (QA 2026-10-19 QA-20: the raw text showed)
+_FEE_PARKING = re.compile(r"^(가능(?:\s*\([^()]*\))?)\s*,?\s*요금\s*\(\s*(.+?)\s*\)$")
 _URL_KEYS = ("homepage", "reservationurl")
 # Hosts many places share: the first path segment is shown too (instagram.com/xxx), else the text is ambiguous.
 SHARED_HOSTS = ("instagram.com", "blog.naver.com", "m.blog.naver.com", "facebook.com", "youtube.com",
@@ -209,11 +270,17 @@ SHARED_HOSTS = ("instagram.com", "blog.naver.com", "m.blog.naver.com", "facebook
 
 
 def web_url(value: str | None) -> str:
-    """Link target for a stored homepage value; 'www.example.kr' gets https://, non-URLs give ''."""
-    v = squash_ws(value)
+    """Link target for a stored homepage value; 'www.example.kr' gets https://, non-URLs give ''. A value of several
+    addresses (one a line, tools/tourapi_details: every address the source gives) links its first."""
+    v = squash_ws(first_line(value))
     if v.startswith(("http://", "https://")):
         return v
     return f"https://{v}" if re.fullmatch(r"[\w.-]+\.[a-z]{2,}(/\S*)?", v, re.I) else ""
+
+
+def first_line(value) -> str:
+    """The first non-empty line of a stored value ('' for None)."""
+    return next((x for x in str(value or "").replace("\r", "").split("\n") if x.strip()), "")
 
 
 def url_domain(url: str | None) -> str:
@@ -223,9 +290,24 @@ def url_domain(url: str | None) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
+def _idna_host(host: str) -> str:
+    """'xn--939a42kurip4ljpixnkywb.com' -> the Korean domain it encodes (QA 2026-10-19 QA-21: the encoded form showed);
+    a label that does not decode stays as written."""
+    out = []
+    for label in host.split("."):
+        if label.startswith("xn--"):
+            try:
+                label = label.encode("ascii").decode("idna")
+            except (UnicodeError, ValueError):
+                pass
+        out.append(label)
+    return ".".join(out)
+
+
 def web_text(url: str | None) -> str:
-    """A homepage as shown in text: its domain; for hosts many places share, the first path segment too."""
-    host = url_domain(url)
+    """A homepage as shown in text: its domain (an encoded Korean domain decoded); for hosts many places share, the
+    first path segment too."""
+    host = _idna_host(url_domain(url))
     if host in SHARED_HOSTS:
         path = re.sub(r"^(?:[a-z][a-z0-9+.-]*://)?[^/?#]+", "", squash_ws(url), flags=re.I)
         seg = [s for s in re.split(r"[/?#]", path) if s][:1]
@@ -233,9 +315,17 @@ def web_text(url: str | None) -> str:
     return host
 
 
+def url_shown(url: str | None) -> str:
+    """A URL written out in text: no scheme, an encoded Korean domain decoded, the path as it is
+    ('http://www.xn--939a42kurip4ljpixnkywb.com/' -> 'www.강화바다캠핑장.com/'; QA 2026-10-19 QA-21)."""
+    u = re.sub(r"^https?://", "", first_line(url).strip(), flags=re.I)
+    m = re.match(r"[^/?#]+", u)
+    return _idna_host(m.group(0)) + u[m.end():] if m else u
+
+
 def url_key(url: str | None) -> str:
     """Comparison key for a URL: no scheme, no trailing '/' or '?', lower case."""
-    return re.sub(r"^https?://", "", (url or "").strip().lower()).rstrip("/?")
+    return re.sub(r"^https?://", "", first_line(url).strip().lower()).rstrip("/?")
 
 
 # ---------------------------------------------------------------- dead homepage links (QA 2026-10-15 SRC-02)
@@ -336,11 +426,15 @@ def restore_lines(raw: str | None) -> list[str]:
 
 
 def parking_text(raw: str | None) -> str:
-    """'가능요금 (무료)' -> '가능, 요금 무료'; '주차장이 구비' / '주차가능' -> '가능'; '불가능' -> '불가'.
+    """'가능요금 (무료)' -> '가능, 요금 무료'; '가능요금 (대형 8,000원 / 소형 2,000원)' -> '가능, 요금 대형 8,000원 /
+    소형 2,000원'; '주차장이 구비' / '주차가능' -> '가능'; '불가능' -> '불가'.
     Other values verbatim (lines joined with ', ')."""
     text = ", ".join(squash_ws(x) for x in str(raw or "").replace("\r", "").split("\n") if squash_ws(x))
     if any(rx.match(text) for rx in _FREE_PARKING):
         return "가능, 요금 무료"
+    m = _FEE_PARKING.match(text)
+    if m:
+        return f"{m.group(1)}, 요금 {m.group(2)}"
     if text in _PARKING_YES:
         return "가능"
     if text in _PARKING_NO:
@@ -361,9 +455,9 @@ def display_value(key: str, raw) -> str:
         return ""
     if key == "address":
         return display_address(text)
-    if key in _URL_KEYS:
-        url = link_url(text)
-        return web_text(url) if url else squash_ws(text)
+    if key in _URL_KEYS:   # one address a line (several when the source gives several)
+        lines = [x for x in text.replace("\r", "").split("\n") if x.strip()]
+        return "\n".join(web_text(link_url(x)) if link_url(x) else squash_ws(x) for x in lines)
     if key in ("course_name", "course"):
         return course_display_name(text)
     if key == "parking":
@@ -407,4 +501,4 @@ def value_shown(value: str | None, text: str | None) -> bool:
 def link_url(raw: str | None) -> str:
     """The link target the page uses for a stored homepage/booking value ('' when the value is not a URL);
     a dangling '?' is dropped. Templates, present.value_view, display_value and the validator share it."""
-    return web_url(squash_ws(raw).rstrip("?"))
+    return web_url(squash_ws(first_line(raw)).rstrip("?"))

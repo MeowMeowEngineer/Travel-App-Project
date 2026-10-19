@@ -24,7 +24,7 @@
       {% else %}{{ row.value }}{% endif %}
     </dd></div>
     {% endfor %}
-    {% if r.homepage %}<div class="fr" data-key="homepage"><dt>{{ t.website }}</dt><dd><a href="{{ r.homepage }}" rel="noopener" data-track="official_click">{{ r.homepage|replace('https://', '')|replace('http://', '') }}</a></dd></div>{% endif %}
+    {% if r.homepage %}<div class="fr" data-key="homepage"><dt>{{ t.website }}</dt><dd><a href="{{ r.homepage }}" rel="noopener" data-track="official_click">{{ r.homepage|url_shown }}</a></dd></div>{% endif %}
   </dl>
   {% if r.notes %}<ul class="en-ev-notes">{% for n in r.notes %}<li>{{ n|telx }}</li>{% endfor %}</ul>{% endif %}
   {% if r.highlights %}

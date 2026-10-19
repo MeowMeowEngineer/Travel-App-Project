@@ -141,10 +141,15 @@
     list.forEach(function (p) { if (keep[idOf(p)]) lls.push([p.lat, p.lng]); });
     return lls.length === list.length ? null : { keep: keep, lls: lls };
   }
-  // the view of a list map: the filtered places with coordinates (all of them, nothing trimmed), else the whole frame
+  // the view of a list map: the filtered places with coordinates (all of them, nothing trimmed), else the whole frame.
+  // Where the list is not shown (phones' 지도), framed in the whole box — not only its part on the first screen: the
+  // zoom buttons zoom on the box's middle (QA 2026-10-19 QA-40: the markers sat in the top of the box and two zoom-ins
+  // left none in view)
   function listView(r) {
-    var s = r.picked;
-    return s && s.lls.length ? visibleView(r.g, s.lls, 36, 5) : visibleView(r.g, r.frame, 28);
+    var s = r.picked, b = s && s.lls.length ? s.lls : r.frame, pad = s && s.lls.length ? 36 : 28, minLv = s && s.lls.length ? 5 : 2;
+    var alone = !Array.prototype.some.call(doc.querySelectorAll("[data-ledger]"), visible);
+    if (alone) return b.length === 1 ? { c: b[0], lv: 5 } : r.g.fitView(b, [pad, pad, pad, pad], minLv);
+    return visibleView(r.g, b, pad, minLv);
   }
   // beside a shown list a list map's markers are quiet (out of the tab order, hidden from screen readers: the rows
   // are the same links); where the list is not shown (phones' 지도 view) they are named links in the tab order. The
@@ -818,7 +823,7 @@
       if ((s ? s.lls.join(";") : "") !== was && visible(r.el)) { var v = listView(r); r.g.view(v.c, v.lv, true); }
     });
   });
-  var lastRegion = null;
+  var lastRegion = win.GSRegion || null;   // a 권역 chosen before this file loaded (site.js, the address's #r-…)
   function applyRegion(r, det) {
     if (!r.data.all) return;
     var pts = [];
@@ -827,7 +832,8 @@
       if (ok) { if (!r.g.shown(mk)) mk.setMap(r.map); pts.push([p.lat, p.lng]); } else if (r.g.shown(mk)) mk.setMap(null);
     });
     r.sel = det.region;
-    if (det.region && pts.length) r.g.fit(pts, [36, 36, 36, 36], 5, true);
+    // the 권역's middle: its far islands stay on the map, one zoom-out away (QA 2026-10-19 QA-41: 옹진 opened at 64 km)
+    if (det.region && pts.length) r.g.fit(robust(pts, 0.08), [36, 36, 36, 36], 5, true);
     else if (!det.region) r.g.fit(r.frame, [28, 28, 28, 28], 2, true);
     if (r.drawRegions) r.drawRegions(det.region);
   }
@@ -861,6 +867,8 @@
   els.forEach(function (el) { el.setAttribute("data-lenis-prevent", ""); });
   function fail(el) {
     el._gs = 0;
+    el.classList.add("map-failed");
+    doc.dispatchEvent(new CustomEvent("gs:mapfail", { detail: { el: el } }));   // a list page goes back to its list
     var o = el.querySelector(".map-off");
     if (o) o.textContent = W.fail || (EN ? "The map could not be loaded." : "지도를 불러오지 못했습니다.");
   }

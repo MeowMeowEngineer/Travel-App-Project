@@ -217,7 +217,7 @@
           {% else %}{% if source_used or p.orig.source_name %}{{ p.orig.source_name or site.source.name }} 원문이 없어 {% endif %}{{ facts_source.provider or '한국관광공사 TourAPI' }} 값으로 정리했습니다.{% endif %}
         </dd></div>
         {% if p.visitkorea %}<div><dt>대한민국 구석구석</dt><dd><a href="{{ p.visitkorea }}" rel="noopener" data-track="official_click" data-place="{{ p.e.id }}">한국관광공사 안내에서 보기</a></dd></div>{% endif %}
-        {% for s in sources if s.label == '공식 홈페이지' %}<div><dt>공식 홈페이지</dt><dd><a href="{{ s.url }}" rel="noopener" data-track="official_click" data-place="{{ p.e.id }}">{{ s.url|replace('https://', '')|replace('http://', '') }}</a></dd></div>{% endfor %}
+        {% for s in sources if s.label == '공식 홈페이지' %}<div><dt>공식 홈페이지</dt><dd><a href="{{ s.url }}" rel="noopener" data-track="official_click" data-place="{{ p.e.id }}">{{ s.url|url_shown }}</a></dd></div>{% endfor %}
         {% if p.photos %}<div><dt>사진</dt><dd>한국관광공사 · {{ p.photos|map(attribute='lic')|unique|join(', ') }}</dd></div>{% endif %}
       </dl>
       <p class="note"><a href="/about/#correction">틀린 정보 알리기</a></p>

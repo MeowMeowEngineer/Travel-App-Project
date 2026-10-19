@@ -60,6 +60,7 @@
     without spaces) keeps only its number together and wraps (present.nowrap_address) -#}
 {% if key == 'address' and '\n' not in v.text %}{{ v.text|addr_nw }}
 {%- elif key in PLAIN %}{% if v.closed %}<span class="closed">{{ v.text|nl2br }}</span>{% else %}{{ v.text|nl2br }}{% endif %}
+{%- elif v.url and '\n' in v.text %}{{ v.html }}
 {%- elif v.url %}<a href="{{ v.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ v.text }}</a>
 {%- elif v.closed %}<span class="closed">{{ v.html }}</span>{% else %}{{ v.html }}{% endif %}
 {%- endmacro %}
@@ -136,7 +137,9 @@
 {% if not it.photo %}<span class="rec-ic">{{ ui.type_icon(it.e, 48) }}</span>{% endif %}
 {% if it.photo %}<img class="rec-th t{{ it.photo.type }}" src="{{ it.photo.url }}"{% if it.photo.w and it.photo.h %} width="{{ it.photo.w }}" height="{{ it.photo.h }}"{% endif %} alt="" loading="lazy" decoding="async" data-kogl="{{ it.photo.type }}">{% endif %}
 </div>
-<dl class="rec-cells">{% for c in it.slots %}<div class="c-{{ c.key }}{% if c.conflict %} is-conflict{% endif %}"><dt>{{ c.label }}</dt><dd>{{ ui.kfv(c, '', false, it.e.id) }}</dd></div>{% endfor %}</dl>
+{#- a card with none of its values says so once (CLAUDE.md 3.1; QA 2026-10-19 QA-27: '확인 필요' four times a card) -#}
+{% if it.slots and not (it.slots|rejectattr('missing')|list) %}<p class="rec-need">확인 필요: {{ it.slots|map(attribute='label')|join('·') }}</p>
+{%- else %}<dl class="rec-cells">{% for c in it.slots %}<div class="c-{{ c.key }}{% if c.conflict %} is-conflict{% endif %}"><dt>{{ c.label }}</dt><dd>{{ ui.kfv(c, '', false, it.e.id) }}</dd></div>{% endfor %}</dl>{% endif %}
 {% if it.slots|selectattr('conflict')|list %}<p class="rec-call">방문 전 전화 확인</p>{% endif %}
 </li>
 {%- endmacro %}

@@ -44,7 +44,7 @@
    - `ga4_id`: GA4 측정 ID. 운영자가 GA4를 공개 뒤에 달기로 정했다면 `site.json`에 `"launch_exceptions": {"ga4_id": "<운영자 사유>"}`를 두면 경고로 바뀝니다.
    - `operator.contact`: 정정 요청을 받을 연락처.
    
-   그 밖에 카카오 지도 JavaScript 키(`kakao_js_key`, 공개 키 — 그 도메인을 카카오 개발자 콘솔에 등록; 2026-10-19 받은 새 앱 '인천각'의 키가 들어 있고, https://incheon.webforai.kr 은 아직 콘솔에 등록 전이라 그때까지 SDK가 401 'domain mismatched'로 답함), 서치콘솔(구글·빙·네이버) 인증 토큰, GTM, IndexNow 키는 검증을 막지 않지만 공개 전에 넣습니다. 비어 있는 값과 할 일은 `python tools/launch_check.py --data data/incheon --stdout`이 보여 줍니다.
+   그 밖에 카카오 지도 JavaScript 키(`kakao_js_key`, 공개 키 — 그 도메인을 카카오 개발자 콘솔에 등록; 2026-10-19 받은 새 앱 '인천각'의 키가 들어 있고, https://incheon.webforai.kr 은 콘솔에 등록되어 있어 그 주소에서 지도가 뜸 — 등록하지 않은 주소에서는 SDK가 401 'domain mismatched'로 답함), 서치콘솔(구글·빙·네이버) 인증 토큰, GTM, IndexNow 키는 검증을 막지 않지만 공개 전에 넣습니다. 비어 있는 값과 할 일은 `python tools/launch_check.py --data data/incheon --stdout`이 보여 줍니다.
 9. **Vercel**: 저장소를 Vercel 프로젝트에 연결합니다(Framework Preset: Other — 설정은 `vercel.json`: 빌드 명령 없음, 출력 `public/`, 설치 `npm ci --omit=dev`). Settings → Environment Variables에 `ANTHROPIC_API_KEY`(Production·Preview)를 넣고 재배포합니다(아래 '사이트 도우미'). 키가 없으면 `/api/chat/`은 503 `not_configured`로 답하고, 화면의 도우미는 'AI 도우미 준비 중'과 사이트 검색을 보이며 나머지 사이트는 그대로입니다.
 
 ### 도시 설정(`data/incheon/site.json`)
@@ -83,7 +83,7 @@ node tools/serve_preview.mjs --data data/incheon --out dist-qa --port 8790 --dot
 - 빌드: `python -m pipeline.build --data <data> --out <out> --mode preview`(draft까지 보이고 전부 noindex, 파이썬 명령은 환경 변수 `PYTHON`, 없으면 `python`). 경로는 저장소 루트 기준.
 - `/api/chat/`(사이트 도우미)과 `/api/plan/`(AI 코스 만들기)은 Vercel이 배포하는 함수 모듈 `api/chat.js`·`api/plan.js`가 그대로 답합니다 — 함수가 읽는 `public/chat/` 자리를 이번 빌드 폴더로 이어 줍니다. 키는 환경 변수 `ANTHROPIC_API_KEY`, 없으면 `.env`(`--dotenv`로 다른 파일 — `--env-file`은 Node가 가로채 쓰지 않음)에서 그 한 줄만 읽고 출력하지 않습니다. 키가 있으면 질문·코스 만들기마다 실제 API를 부르고 비용이 듭니다. 함수 로그(요청마다 JSON 한 줄, 숫자만)는 그 터미널에 나옵니다.
 - 도우미 답의 사이트 링크는 `site_url`(https://incheon.webforai.kr)로 오지만 화면(`chat.js`)이 지금 주소(127.0.0.1)로 바꿔 엽니다.
-- 지도: `kakao_js_key`는 카카오 개발자 콘솔에 등록한 웹 도메인에서만 동작합니다. `http://127.0.0.1:<포트>`(와 아직 미등록인 https://incheon.webforai.kr)에서는 SDK가 401 'domain mismatched'로 답해 지도 상자에 '지도를 불러오지 못했습니다'만 보입니다 — 로컬에서 지도를 보려면 그 주소를 콘솔에 더합니다(시험할 때만).
+- 지도: `kakao_js_key`는 카카오 개발자 콘솔에 등록한 웹 도메인에서만 동작합니다. `http://127.0.0.1:<포트>`(콘솔에 등록하지 않은 주소 — https://incheon.webforai.kr 은 등록됨)에서는 SDK가 401 'domain mismatched'로 답해 지도 상자에 '지도를 불러오지 못했습니다'만 보입니다 — 로컬에서 지도를 보려면 그 주소를 콘솔에 더합니다(시험할 때만).
 - 빌드를 다시 하면 서버도 다시 띄웁니다(함수가 처음 읽은 지식을 기억합니다). 시험: `tests/js/serve_preview.test.js`(가짜 빌드·가짜 키, 모델 호출 없음).
 
 ### Vercel에 키 넣기
