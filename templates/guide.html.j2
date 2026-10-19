@@ -39,8 +39,10 @@
 {% if G.picks %}{{ ui.sprite(G.icons) }}{% endif %}
   {% set camp = (art_slots or {}).get('guide.banner.' ~ G.g.id) %}
   <header class="pg-hero gd-head{% if camp %} has-camp{% endif %}"><div class="wrap">{{ artm.banner(camp) }}
-    {#- the head picture: the mascot on the transport and the food hub guides (I19, 88px), the info desk on guide-30 -#}
-    {% set gp = {'guide-12': ('mascot-bus', 'bus', 88), 'guide-13': ('mascot-eat', 'bowl', 88), 'guide-30': ('info-center', 'info', 56)}.get(G.g.id) %}{% if gp %}<p class="hd-pic">{{ ui.kpic(gp[0], gp[1], gp[2]) }}</p>{% endif %}
+    {#- the head picture of a guide the city names (site.json city.guide_pics {guide id: [3D picture id, glyph, px]}: the
+        seal with a suitcase on the getting-here guide, with a bowl on the food hub, the info desk on the visitor
+        services guide …; I19, 56–88px) -#}
+    {% set gp = (((site.city or {}).guide_pics or {}).get(G.g.id)) if site is defined and site else none %}{% if gp %}<p class="hd-pic">{{ ui.kpic(gp[0], gp[1], gp[2]) }}</p>{% endif %}
     <p class="kicker"><a href="/guides/">목적별 가이드</a>{% if G.label %}<span>{{ G.label }}</span>{% endif %}</p>
     {#- a title with ' — ' reads as the question and, in grey on its own line, its list (Apple two-tone head); the
         H1's text stays the whole title -#}

@@ -34,6 +34,14 @@ html.chat-lock, html.chat-lock body { overflow: hidden; }
 /* the conversation */
 .chat-log { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px 20px 12px; }
 .chat-hello > p { font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+/* the first screen's illustration (chat.empty, decorative) above the intro; the mascot thinking or sorry */
+.chat-hello > .chat-art { margin: 0 0 14px; border-radius: 14px; overflow: hidden; }
+.chat-art img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.chat-status .chat-mascot img { flex: none; width: 40px; height: 40px; }
+/* (a <picture> lays out as its image: the <img> is the grid item) */
+.chat-err:has(> .chat-mascot) { display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 12px; align-items: start; }
+.chat-err > .chat-mascot img { grid-column: 1; grid-row: 1 / span 3; width: 48px; height: 48px; }
+.chat-err > :not(.chat-mascot) { grid-column: 2; justify-self: start; }
 .chat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .chat-chip { min-height: 44px; padding: 8px 16px; border: 1px solid var(--hair); border-radius: 980px; background: #fff; color: var(--ink); font: 400 15px/1.3 var(--font); letter-spacing: -.01em; text-align: left; cursor: pointer; transition: background-color .2s var(--fb), border-color .2s var(--fb); }
 .chat-chip:hover { border-color: var(--ink-3); background: var(--bg-2); }
@@ -53,8 +61,9 @@ html.chat-lock, html.chat-lock body { overflow: hidden; }
 .chat-num { white-space: nowrap; }
 .chat-status { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; line-height: 1.4; color: var(--ink-3); }
 .chat-status::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+.chat-status.has-mascot::before { display: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .chat-status::before { animation: chat-pulse 1.1s ease-in-out infinite; }
+  .chat-status::before, .chat-status.has-mascot .chat-mascot img { animation: chat-pulse 1.1s ease-in-out infinite; }
   @keyframes chat-pulse { 50% { opacity: .3; } }
 }
 .chat-note2 { margin-top: 8px; font-size: 14px; line-height: 1.4; color: var(--ink-3); }

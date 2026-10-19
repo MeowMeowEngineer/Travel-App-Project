@@ -107,7 +107,8 @@ python tools/tourapi_bulk.py --data data/incheon --barrier-free --max-calls 600 
 ## 폴더
 | 경로 | 내용 |
 |---|---|
-| `data/incheon/` | 인천 사이트 데이터(`site.json`, `icons.json`, 수집 뒤 `places.json` 등) |
+| `data/incheon/` | 인천 사이트 데이터(`site.json`, `icons.json`(3D 그림 등록부), `art.json`(일러스트 자리), 수집 뒤 `places.json` 등) |
+| `incoming/` | 운영자가 넣는 그림 원본(커밋 안 함) → `python tools/icon_media.py`·`tools/mascot_media.py`·`tools/art_media.py`가 `templates/assets/{icons,mascot,art}/`에 AVIF·WebP 파생본을 만든다(그림 목록 `docs/image_prompts_incheongak.md`) |
 | `data/sample/` | 테스트용 가짜 데이터(군산 샘플). 공개하지 않습니다 |
 | `pipeline/` | 빌드·검증·구조화 데이터·TourAPI 클라이언트·챗봇 지식 만들기 |
 | `templates/` | 화면(Jinja2)·CSS·JS·글꼴(Pretendard 서브셋)·3D 아이콘 |

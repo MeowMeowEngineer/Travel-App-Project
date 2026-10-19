@@ -525,6 +525,13 @@
       l.addEventListener("error", ok, { once: true });
     });
   }
+  // the assistant's pictures (templates/_chat.html.j2 <template id="chat-art">): a copy of the one asked for — the
+  // first screen's illustration ("hello"), the mascot thinking ("think") or sorry ("sorry") — or null when the site
+  // has none (another city, no mascot): the panel is then exactly as without pictures
+  function artPiece(id) {
+    var t = doc.getElementById("chat-art"), s = t && t.content ? t.content.querySelector('[data-id="' + id + '"]') : null;
+    return s && s.firstElementChild ? s.firstElementChild.cloneNode(true) : null;
+  }
   function build() {
     var title = h("h2", { class: "chat-title", id: "chat-title", tabindex: "-1", text: T.title });
     var note = h("p", { class: "chat-note", id: "chat-note" }, [h("a", { href: T.about, text: T.note })]);
@@ -534,7 +541,7 @@
     var chips = h("ul", { class: "chat-chips" }, T.chips.map(function (q) {
       return h("li", {}, [h("button", { type: "button", class: "chat-chip", text: q })]);
     }));
-    var hello = h("div", { class: "chat-hello" }, T.chips.length ? [h("p", { text: T.intro }), chips] : [h("p", { text: T.intro })]);
+    var hello = h("div", { class: "chat-hello" }, [artPiece("hello"), h("p", { text: T.intro }), T.chips.length ? chips : null]);
     var list = h("ol", { class: "chat-msgs" });
     var off = offBlock();
     var log = h("div", { class: "chat-log" }, [hello, list, off.box]);
@@ -865,7 +872,11 @@
       if (m.dr === "rtl") body.setAttribute("dir", "rtl");
       li.append(body);
     }
-    if (m.p && (m.st || !m.t)) li.append(h("p", { class: "chat-status", text: m.st || T.thinking }));
+    if (m.p && (m.st || !m.t)) {
+      var st = h("p", { class: "chat-status", text: m.st || T.thinking }), think = artPiece("think");
+      if (think) { st.classList.add("has-mascot"); st.prepend(think); }   // the mascot thinking, in place of the dot
+      li.append(st);
+    }
     if (m.c) {
       li.append(h("p", { class: "chat-note2", text: T.cut }));
       // the last answer, cut at the length limit: the server can write the rest ({continue: true})
@@ -890,7 +901,7 @@
     return T.err[ERR_AS[code] || code] || T.err.error;
   }
   function errEl(m) {
-    var box = h("div", { class: "chat-err" }, [h("p", { text: errText(m.e) })]);
+    var box = h("div", { class: "chat-err" }, [artPiece("sorry"), h("p", { text: errText(m.e) })]);
     if (m.e === "not_configured" || m.e === "daily_limit") {   // no retry that would be refused again: the site search
       if (T.search) box.append(h("p", {}, [h("a", { href: T.search, text: T.searchLabel })]));
     } else if (m.e !== "too_long" && m.e !== "too_large" && m.e !== "refusal") {

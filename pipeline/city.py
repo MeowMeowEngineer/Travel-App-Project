@@ -47,6 +47,10 @@ site.json keys read here
     plan               {hubs: [{key, name}], island_regions: [권역 names]}: the AI course planner's start and end
                        points (names only) and the 권역 a '섬·바다' liking reads as islands; none: no hub choice
     resident_label     the residents' price group of the fee tables ('○○시민'); default: region + '시민'
+    guide_pics         {guide id: [3D picture id, glyph, px]}: the small picture at the head of a guide (the mascot
+                       with a suitcase on the getting-here guide …; templates/guide.html.j2); none: no picture
+    event_kind_words   {kind: [words]}: words that pick an event card's picture (pipeline/art.py event_kind); a kind
+                       the engine does not have becomes the city's own (its pictures events.kind.<kind>)
 """
 from __future__ import annotations
 

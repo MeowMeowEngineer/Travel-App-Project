@@ -204,7 +204,9 @@
       <div class="reg-main">
         <ol class="regs">
           {% for r in h.regions2 %}
-          <li><a href="/map/#{{ r.id }}"><span class="rg-name">{{ r.name }}</span><span class="rg-n"><b class="num tn">{{ r.n }}</b><small>곳</small></span><span class="rg-k tn">관광지 {{ r.k.attraction or 0 }} · 숙소 {{ r.k.stay or 0 }} · 음식점 {{ r.k.food or 0 }}{% if counts.cafe %} · 카페 {{ r.k.cafe or 0 }}{% endif %}{% if counts.shopping %} · 쇼핑 {{ r.k.shopping or 0 }}{% endif %}</span>{% if r.dongs %}<span class="rg-d">{{ r.dongs|join('·') }}</span>{% endif %}<span class="arr" aria-hidden="true">›</span></a></li>
+          {#- the 권역's illustration (area.<art>, the /map/ strip's picture) at the row's start: lazy, decorative -#}
+          {% set ra = (art_slots or {}).get('area.' ~ r.art) if r.art else none %}
+          <li><a href="/map/#{{ r.id }}"{% if ra %} class="has-art"{% endif %}>{% if ra %}{{ artm.figure(ra, 'ko', '(min-width: 761px) 120px, 88px', cls='rg-art', decorative=true) }}{% endif %}<span class="rg-name">{{ r.name }}</span><span class="rg-n"><b class="num tn">{{ r.n }}</b><small>곳</small></span><span class="rg-k tn">관광지 {{ r.k.attraction or 0 }} · 숙소 {{ r.k.stay or 0 }} · 음식점 {{ r.k.food or 0 }}{% if counts.cafe %} · 카페 {{ r.k.cafe or 0 }}{% endif %}{% if counts.shopping %} · 쇼핑 {{ r.k.shopping or 0 }}{% endif %}</span>{% if r.dongs %}<span class="rg-d">{{ r.dongs|join('·') }}</span>{% endif %}<span class="arr" aria-hidden="true">›</span></a></li>
           {% endfor %}
         </ol>
         {% if h.region_rule.method == 'nearest_anchor' %}<p class="rule-note">권역은 기준점 {{ h.region_map.anchors|length }}곳({% for a in h.region_map.anchors %}{{ a.place }}{% if not loop.last %}·{% endif %}{% endfor %}) 가운데 직선거리로 가장 가까운 곳으로 묶었습니다.</p>

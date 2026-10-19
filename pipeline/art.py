@@ -31,8 +31,10 @@ yet ('개편 뒤 연결') adds nothing.
 The slots (known_slot(); data/<region>/art.json _notes):
 home.card.*, list.head.*, guide.banner.<guide id>, en.guide.banner.<guide id>, intl.guide.banner.<guide id> (the
 banner without words: every other language, English where it has no en banner), og.*, page.404, search.empty,
-theme.head.<theme slug>, videos.head.<topic> (build.VIDEO_TOPIC_ART), course.banner.<course id>, area.<권역 art key>
-(the city's site.json city.travel_regions[].art, far_art), events.month.<MM>, events.kind.<kind> (event_kind), abroad.group.<group>, about.head.
+chat.empty (the assistant's first screen), plan.head, theme.head.<theme slug>, videos.head.<topic>
+(build.VIDEO_TOPIC_ART), course.banner.<course id>, area.<권역 art key> (the city's site.json
+city.travel_regions[].art, far_art: the /map/ strip and the home's 권역 row), events.month.<MM>, events.kind.<kind>
+(event_kind, with the city's own kinds), abroad.group.<group>, about.head.
 A '연결' picture whose slot is none of these is an error (data_problems); so is one whose guide, course or theme id
 the region's data does not have (ID_SLOTS: a typo). One with an id the data has that no page of a build shows (that
 page is not in this build: a draft, a guide whose English translation waits for an update, a theme without places)
@@ -86,7 +88,9 @@ PAGE_NODES = frozenset({"WebPage", "CollectionPage", "AboutPage", "SearchResults
 
 # K events.kind.<kind>: the picture of an event card without a photo. events.json has no kind field, so the kind is the
 # first row whose words appear in the event's series name (else its name); none: 'other'. Generic words here; a city's
-# own festival words (site.json city.event_kind_words {kind: [words]}) are added to their row.
+# own festival words (site.json city.event_kind_words {kind: [words]}) are added to their row, and a kind the city names
+# that is not a row here (Incheon: heritage, film, design, airport — its pictures K) becomes a row of its own, ahead of
+# these: a city's own kinds are the specific ones it drew pictures for ('영화제' is a film before it is a stage).
 EVENT_KINDS = (
     ("race", ("대회",)),
     ("ceremony", ("기념식", "추모제", "기념행사", "제전")),
@@ -103,10 +107,17 @@ EVENT_KINDS = (
 EVENT_KIND_OTHER = "other"
 
 
+def kinds_with(extra: dict) -> tuple:
+    """The kind rows with a city's event_kind_words: its own kinds first, then EVENT_KINDS with its words added."""
+    extra = extra or {}
+    known = {k for k, _ in EVENT_KINDS} | {EVENT_KIND_OTHER}
+    own = tuple((kind, tuple(words)) for kind, words in extra.items() if kind not in known and words)
+    return own + tuple((kind, (*words, *extra.get(kind, ()))) for kind, words in EVENT_KINDS)
+
+
 def event_kinds() -> tuple:
     from . import city
-    extra = city.current().get("event_kind_words", {}) or {}
-    return tuple((kind, (*words, *extra.get(kind, ()))) for kind, words in EVENT_KINDS)
+    return kinds_with(city.current().get("event_kind_words", {}))
 
 
 def event_kind(ev: dict) -> str:
@@ -216,34 +227,39 @@ def slot_lang(slot: str) -> str | None:
 
 
 @functools.lru_cache(maxsize=None)
-def _slot_rules(areas: tuple = ()) -> re.Pattern:
+def _slot_rules(areas: tuple = (), kinds: tuple = ()) -> re.Pattern:
     """Every slot a page can show (the callers of templates/_art.html.j2 and og_fallback). Fixed families list their
-    keys; guides, courses and themes take their ids; area.<key> takes the city's 권역 art keys (`areas`)."""
+    keys; guides, courses and themes take their ids; area.<key> takes the city's 권역 art keys (`areas`, on /map/ and
+    the home's 권역 rows); events.kind.<kind> the city's own event kinds (`kinds`) besides the generic ones."""
     from . import build as B   # its tables name the video topics and the /abroad/ groups
 
     def one(keys) -> str:
         return "(?:" + "|".join(re.escape(k) for k in keys) + ")"
     rules = (   # no home.hero.<season> since 2026-10-13 night: the Korean home opens on an official photo
         r"home\.card\.(?:event|abroad|video|guide|festival-[a-z0-9-]+)",
-        r"list\.head\.(?:places|food|stays|courses|guides|events|videos|abroad|map)",
+        r"list\.head\.(?:places|food|cafes|stays|shopping|courses|guides|events|videos|abroad|map)",
         rf"og\.(?:default|default-en|abroad|plan|{one(c for c in LC.CODES if c != 'en')})",
         r"page\.404", r"search\.empty", r"about\.head", r"plan\.head",   # plan.*: the AI course planner (/plan/)
+        r"chat\.empty",   # the assistant's first screen (templates/_chat.html.j2 <template>, assets/chat.js)
         r"(?:en\.|intl\.)?guide\.banner\.[a-z0-9-]+", r"course\.banner\.[a-z0-9-]+", r"theme\.head\.[a-z0-9-]+",
         rf"videos\.head\.{one(B.VIDEO_TOPIC_ART.values())}",
         *([rf"area\.{one(areas)}"] if areas else []),
         r"events\.month\.(?:0[1-9]|1[0-2])",
-        rf"events\.kind\.{one([k for k, _ in EVENT_KINDS] + [EVENT_KIND_OTHER])}",
+        rf"events\.kind\.{one(sorted({k for k, _ in EVENT_KINDS} | set(kinds) | {EVENT_KIND_OTHER}))}",
         rf"abroad\.group\.{one([k for k, _ in B.ABROAD_SOURCES] + ['videos'])}",
     )
     return re.compile("^(?:" + "|".join(rules) + ")$")
 
 
-def known_slot(slot: str, areas=None) -> bool:
-    """Is this a slot some page shows? `areas`: the city's 권역 art keys (default: the active city's)."""
+def known_slot(slot: str, areas=None, kinds=None) -> bool:
+    """Is this a slot some page shows? `areas`: the city's 권역 art keys, `kinds`: its event kinds (default: the
+    active city's)."""
     if areas is None:
         from . import present
         areas = present.region_art().values()
-    return bool(_slot_rules(tuple(sorted(set(areas)))).match(slot))
+    if kinds is None:
+        kinds = [k for k, _ in event_kinds()]
+    return bool(_slot_rules(tuple(sorted(set(areas))), tuple(sorted(set(kinds)))).match(slot))
 
 
 def city_areas(data_dir: Path) -> list[str]:
@@ -255,6 +271,16 @@ def city_areas(data_dir: Path) -> list[str]:
     except FileNotFoundError:
         return list(city.current().region_art.values())
     return list(city.City.from_site(site).region_art.values())
+
+
+def city_kinds(data_dir: Path) -> list[str]:
+    """The event kinds of data_dir/site.json's city (kinds_with its city.event_kind_words); the active city's when the
+    folder has no site.json."""
+    try:
+        site = json.loads((Path(data_dir) / "site.json").read_text("utf-8"))
+    except FileNotFoundError:
+        return [k for k, _ in event_kinds()]
+    return [k for k, _ in kinds_with((site.get("city") or {}).get("event_kind_words") or {})]
 
 
 # the slot families whose last part is an id of the region's data — known_slot() checks only its form: the file
@@ -296,7 +322,7 @@ def data_problems(data_dir: Path, art_dir: Path | None = None) -> list[str]:
     and held. (The renditions folder is shared by every region; tests/test_art.py keeps it free of files no art.json
     lists.)"""
     data, manifest, ids = load(data_dir), load_manifest(art_dir), data_ids(data_dir)
-    areas = city_areas(data_dir)
+    areas, kinds = city_areas(data_dir), city_kinds(data_dir)
     problems, seen = [], {}
     for art_id, meta in data["images"].items():
         where = f"art.json {art_id}"
@@ -322,7 +348,7 @@ def data_problems(data_dir: Path, art_dir: Path | None = None) -> list[str]:
                 problems.append(f"{where}: slot {slot}을 {seen[slot]}도 씀")
             if slot_lang(slot) and langs != [slot_lang(slot)]:
                 problems.append(f"{where}: slot {slot}은 {slot_lang(slot)} 페이지 전용 — langs는 [\"{slot_lang(slot)}\"]")
-            if meta.get("status") == "연결" and not known_slot(slot, areas):
+            if meta.get("status") == "연결" and not known_slot(slot, areas, kinds):
                 problems.append(f"{where}: '연결'인데 사이트에 없는 자리: {slot} — slot 이름 확인"
                                 "(area.<키>는 site.json city.travel_regions의 art), 자리가 아직 없으면 status '개편 뒤 연결'")
             elif meta.get("status") == "연결" and (fam := id_slot(slot)) and fam[1] not in ids[fam[0]]:
@@ -376,13 +402,13 @@ def unshown(data_dir: Path, used: set[str], art_dir: Path | None = None) -> list
 
 
 # the classes css/49-art.css's art-slots block styles (pipeline/build.py ART_SLOT_CSS): a page that shows one of these
-# pictures carries one of them
-SLOT_CSS_MARKS = ('class="art art-band art-strip"', 'class="art-hd"', " has-art-hero")
+# pictures carries one of them (rg-art: a 권역 row's picture on the home)
+SLOT_CSS_MARKS = ('class="art art-band art-strip"', 'class="art-hd"', " has-art-hero", 'class="art rg-art"')
 
 
 def slot_css_needed(out: Path) -> bool:
-    """Does a built page show a picture the art-slots CSS lays out (a map 권역 strip, a picture beside a heading, the
-    about head's picture)?"""
+    """Does a built page show a picture the art-slots CSS lays out (a map 권역 strip, a home 권역 row's picture, a
+    picture beside a heading, the about head's picture)?"""
     for f in Path(out).rglob("*.html"):
         text = f.read_text("utf-8")
         if URL_PREFIX in text and any(mark in text for mark in SLOT_CSS_MARKS):

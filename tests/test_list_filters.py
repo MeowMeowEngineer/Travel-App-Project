@@ -90,7 +90,9 @@ def test_the_zero_panel_and_the_caption_are_built_hidden_and_in_the_pages_words(
     h = (built / "places" / "index.html").read_text("utf-8")
     w = LC.LIST_WORDS["ko"]
     bar_end = h.index('<div class="ledger" data-ledger>')
-    panel = re.search(r'<p class="empty" data-empty hidden>([^<]*)</p>\s*<div class="f-undo" data-f-undo data-one="([^"]*)" '
+    # the sentence in its span, after the mascot with an empty basket when the site has one (decorative, alt="")
+    panel = re.search(r'<p class="empty" data-empty hidden>(?:<picture class="empty-pic">.*?alt="".*?</picture>)?'
+                      r'<span>([^<]*)</span></p>\s*<div class="f-undo" data-f-undo data-one="([^"]*)" '
                       r'hidden><button type="button" data-f-reset>([^<]*)</button></div>', h)
     assert panel and h.index('data-filters hidden') < panel.start() < bar_end
     assert panel.groups() == (w["empty"], "{v} 조건 해제", "전체 조건 초기화")

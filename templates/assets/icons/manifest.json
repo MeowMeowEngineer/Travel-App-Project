@@ -419,6 +419,41 @@
    ]
   ]
  },
+ "icon-ask": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-ask-64.avif",
+    64
+   ],
+   [
+    "icon-ask-128.avif",
+    128
+   ],
+   [
+    "icon-ask-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-ask-64.webp",
+    64
+   ],
+   [
+    "icon-ask-128.webp",
+    128
+   ],
+   [
+    "icon-ask-240.webp",
+    240
+   ]
+  ]
+ },
  "icon-cafe": {
   "px": [
    64,
@@ -909,6 +944,41 @@
    ]
   ]
  },
+ "kind-festival": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-festival-64.avif",
+    64
+   ],
+   [
+    "kind-festival-128.avif",
+    128
+   ],
+   [
+    "kind-festival-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-festival-64.webp",
+    64
+   ],
+   [
+    "kind-festival-128.webp",
+    128
+   ],
+   [
+    "kind-festival-240.webp",
+    240
+   ]
+  ]
+ },
  "kind-food": {
   "px": [
    64,
@@ -1045,6 +1115,181 @@
    ],
    [
     "kind-stay-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-airport": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-airport-64.avif",
+    64
+   ],
+   [
+    "mascot-airport-128.avif",
+    128
+   ],
+   [
+    "mascot-airport-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-airport-64.webp",
+    64
+   ],
+   [
+    "mascot-airport-128.webp",
+    128
+   ],
+   [
+    "mascot-airport-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-cafe": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-cafe-64.avif",
+    64
+   ],
+   [
+    "mascot-cafe-128.avif",
+    128
+   ],
+   [
+    "mascot-cafe-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-cafe-64.webp",
+    64
+   ],
+   [
+    "mascot-cafe-128.webp",
+    128
+   ],
+   [
+    "mascot-cafe-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-camera": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-camera-64.avif",
+    64
+   ],
+   [
+    "mascot-camera-128.avif",
+    128
+   ],
+   [
+    "mascot-camera-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-camera-64.webp",
+    64
+   ],
+   [
+    "mascot-camera-128.webp",
+    128
+   ],
+   [
+    "mascot-camera-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-eat": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-eat-64.avif",
+    64
+   ],
+   [
+    "mascot-eat-128.avif",
+    128
+   ],
+   [
+    "mascot-eat-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-eat-64.webp",
+    64
+   ],
+   [
+    "mascot-eat-128.webp",
+    128
+   ],
+   [
+    "mascot-eat-240.webp",
+    240
+   ]
+  ]
+ },
+ "mascot-ferry": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "mascot-ferry-64.avif",
+    64
+   ],
+   [
+    "mascot-ferry-128.avif",
+    128
+   ],
+   [
+    "mascot-ferry-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-ferry-64.webp",
+    64
+   ],
+   [
+    "mascot-ferry-128.webp",
+    128
+   ],
+   [
+    "mascot-ferry-240.webp",
     240
    ]
   ]
@@ -1574,6 +1819,216 @@
    ]
   ]
  },
+ "theme-alleys-culture": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-alleys-culture-64.avif",
+    64
+   ],
+   [
+    "theme-alleys-culture-128.avif",
+    128
+   ],
+   [
+    "theme-alleys-culture-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-alleys-culture-64.webp",
+    64
+   ],
+   [
+    "theme-alleys-culture-128.webp",
+    128
+   ],
+   [
+    "theme-alleys-culture-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-islands-sea": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-islands-sea-64.avif",
+    64
+   ],
+   [
+    "theme-islands-sea-128.avif",
+    128
+   ],
+   [
+    "theme-islands-sea-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-islands-sea-64.webp",
+    64
+   ],
+   [
+    "theme-islands-sea-128.webp",
+    128
+   ],
+   [
+    "theme-islands-sea-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-modern-history": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-modern-history-64.avif",
+    64
+   ],
+   [
+    "theme-modern-history-128.avif",
+    128
+   ],
+   [
+    "theme-modern-history-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-modern-history-64.webp",
+    64
+   ],
+   [
+    "theme-modern-history-128.webp",
+    128
+   ],
+   [
+    "theme-modern-history-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-parks-nature": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-parks-nature-64.avif",
+    64
+   ],
+   [
+    "theme-parks-nature-128.avif",
+    128
+   ],
+   [
+    "theme-parks-nature-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-parks-nature-64.webp",
+    64
+   ],
+   [
+    "theme-parks-nature-128.webp",
+    128
+   ],
+   [
+    "theme-parks-nature-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-sky-airport": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-sky-airport-64.avif",
+    64
+   ],
+   [
+    "theme-sky-airport-128.avif",
+    128
+   ],
+   [
+    "theme-sky-airport-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-sky-airport-64.webp",
+    64
+   ],
+   [
+    "theme-sky-airport-128.webp",
+    128
+   ],
+   [
+    "theme-sky-airport-240.webp",
+    240
+   ]
+  ]
+ },
+ "theme-tidal-flat": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "theme-tidal-flat-64.avif",
+    64
+   ],
+   [
+    "theme-tidal-flat-128.avif",
+    128
+   ],
+   [
+    "theme-tidal-flat-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "theme-tidal-flat-64.webp",
+    64
+   ],
+   [
+    "theme-tidal-flat-128.webp",
+    128
+   ],
+   [
+    "theme-tidal-flat-240.webp",
+    240
+   ]
+  ]
+ },
  "transit-bus": {
   "px": [
    64,
@@ -1605,6 +2060,111 @@
    ],
    [
     "transit-bus-240.webp",
+    240
+   ]
+  ]
+ },
+ "transit-ferry": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "transit-ferry-64.avif",
+    64
+   ],
+   [
+    "transit-ferry-128.avif",
+    128
+   ],
+   [
+    "transit-ferry-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "transit-ferry-64.webp",
+    64
+   ],
+   [
+    "transit-ferry-128.webp",
+    128
+   ],
+   [
+    "transit-ferry-240.webp",
+    240
+   ]
+  ]
+ },
+ "transit-plane": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "transit-plane-64.avif",
+    64
+   ],
+   [
+    "transit-plane-128.avif",
+    128
+   ],
+   [
+    "transit-plane-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "transit-plane-64.webp",
+    64
+   ],
+   [
+    "transit-plane-128.webp",
+    128
+   ],
+   [
+    "transit-plane-240.webp",
+    240
+   ]
+  ]
+ },
+ "transit-subway": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "transit-subway-64.avif",
+    64
+   ],
+   [
+    "transit-subway-128.avif",
+    128
+   ],
+   [
+    "transit-subway-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "transit-subway-64.webp",
+    64
+   ],
+   [
+    "transit-subway-128.webp",
+    128
+   ],
+   [
+    "transit-subway-240.webp",
     240
    ]
   ]

@@ -24,6 +24,9 @@
   <header class="pl-hero ev-hero">
     <div class="wrap pl-hero-in">
       <div class="pl-head">
+        {#- an event has no photo of its own here: the small kind picture above the name, as a place without a photo
+            (CLAUDE.md 5 사진 없는 항목) -#}
+        <p class="pl-kpic">{{ ui.kpic('kind-festival', 'calendar', 72, '일러스트: 행사') }}</p>
         <p class="kicker"><a href="/events/">행사·축제</a>{% if V.area %}<span>{{ V.where }}</span>{% endif %}{% if V.chip %}<span class="chip chip-inv">{{ V.chip }}</span>{% endif %}</p>
         {% if V.dp and V.dp.a %}<p class="ev-big" aria-hidden="true"><span class="num tn">{{ V.dp.a.md }}</span><span class="wd">{{ V.dp.a.wd }}</span>{% if V.dp.b %}<span class="num dash">–</span><span class="num tn">{{ V.dp.b.md }}</span><span class="wd">{{ V.dp.b.wd }}</span>{% elif V.dp.end_month %}<span class="num dash">–</span><span class="wd wd-m">{{ V.dp.end_month|int }}월</span>{% endif %}</p>{% endif %}
         <h1 class="d1 vt-title">{{ V.title }}</h1>

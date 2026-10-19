@@ -31,9 +31,8 @@
       the operator's edits of the Korean ones, 2026-10-14 night) -#}
   {% set camp = ((art_slots or {}).get('en.guide.banner.' ~ G.g.id) if loc.code == 'en' else none) or (art_slots or {}).get('intl.guide.banner.' ~ G.g.id) %}
   <header class="pg-hero gd-head{% if camp %} has-camp{% endif %}"><div class="wrap">{{ artm.banner(camp, loc.code) }}
-    {#- the head picture, as on the Korean guide: the mascot on the transport and the food hub guides, the info desk on
-        guide-30 -#}
-    {% set gp = {'guide-12': ('mascot-bus', 'bus', 88), 'guide-13': ('mascot-eat', 'bowl', 88), 'guide-30': ('info-center', 'info', 56)}.get(G.g.id) %}{% if gp %}<p class="hd-pic">{{ ui.kpic(gp[0], gp[1], gp[2]) }}</p>{% endif %}
+    {#- the head picture, as on the Korean guide (site.json city.guide_pics) -#}
+    {% set gp = (((site.city or {}).guide_pics or {}).get(G.g.id)) if site is defined and site else none %}{% if gp %}<p class="hd-pic">{{ ui.kpic(gp[0], gp[1], gp[2]) }}</p>{% endif %}
     <p class="kicker"><a href="{{ loc.home }}guides/">{{ t.guides }}</a>{% if G.label %}<span>{{ G.label }}</span>{% endif %}</p>
     {#- a title with ': ' reads as the question and, in grey on its own line, its list (the Korean two-tone head);
         the H1's text stays the whole title #}

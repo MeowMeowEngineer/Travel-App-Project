@@ -43,3 +43,12 @@
 {#- the planner's start and end points ({key: name}, site.json city.plan.hubs): planQuery reads a time said at one -#}
 {% set plan_hub_names = {} %}{% if site is defined and site %}{% for h in ((site.city or {}).plan or {}).hubs or [] %}{% if h.key and h.name %}{% set _ = plan_hub_names.update({h.key: h.name}) %}{% endif %}{% endfor %}{% endif %}
 <button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}" data-chat-site="{{ site.site_url if site is defined and site else '' }}" data-chat-search="{{ '/search/' if has_search is defined and has_search else '' }}" data-chat-city="{{ (chat_cfg.names or {})|tojson|forceescape }}" data-chat-chips="{{ (chat_cfg.chips or {})|tojson|forceescape }}" data-chat-hubs="{{ plan_hub_names|tojson|forceescape }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>
+{#- the assistant's pictures, copied by assets/chat.js where it shows them (inside a <template> nothing loads until
+    then): the first screen's illustration (chat.empty, in the page's language: art_slots is art.for_lang's — never on a
+    place page, where AI art may not be at all, CLAUDE.md 4), the mascot thinking beside '답을 찾는 중…' and sorry
+    beside an error. Only what this site has; nothing at all without them. -#}
+{% import "_art.html.j2" as artm %}
+{% set on_place = page_kind is defined and page_kind is string and page_kind.startswith('place-') %}
+{% set chat_art = (art_slots or {}).get('chat.empty') if art_slots is defined and not on_place else none %}
+{% set chat_think = mm.pic('mascot-think', 'small', 40, 'chat-mascot')|trim %}{% set chat_sorry = mm.pic('mascot-sorry', 'small', 48, 'chat-mascot')|trim %}
+{% if (chat_art and chat_art.alts.get(lang)) or chat_think or chat_sorry %}<template id="chat-art">{% if chat_art and chat_art.alts.get(lang) %}<div data-id="hello">{{ artm.figure(chat_art, lang, '(min-width: 600px) 400px, calc(100vw - 40px)', cls='chat-art', decorative=true) }}</div>{% endif %}{% if chat_think %}<span data-id="think">{{ chat_think }}</span>{% endif %}{% if chat_sorry %}<span data-id="sorry">{{ chat_sorry }}</span>{% endif %}</template>{% endif %}

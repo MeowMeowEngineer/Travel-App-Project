@@ -2966,7 +2966,8 @@ def home_vm(S) -> dict:
         dongs = Counter(e["_area"] for e in members if e["_area"]).most_common(4)
         anchor = next((a for a in S.anchors if a["name"] == rname), None)
         regions.append({"name": rname, "n": len(members), "k": Counter(e["kind"] for e in members),
-                        "dongs": [d for d, _ in dongs], "anchor": anchor, "id": "r-" + frag(rname)})
+                        "dongs": [d for d, _ in dongs], "anchor": anchor, "id": "r-" + frag(rname),
+                        "art": region_art().get(rname, "")})   # the 권역's AI art key (area.<art>, as on /map/)
     annual_n = sum(1 for ev in S.events if not ev.get("start_date") and "매년" in str(ev.get("period_text") or ""))
     region = S.site.get("region") or S.site.get("locality", "")
     h = {"h1": squash_ws(city.current().home("h1", "")) or f"{region} 여행의 모든 것",   # the opening's H1 (city.home.h1)

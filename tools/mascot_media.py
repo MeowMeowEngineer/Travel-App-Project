@@ -1,6 +1,9 @@
-"""The site's mascot as small WebP/AVIF files with transparency (owner decision 2026-10-13: a small yellow chick with
-a blue scarf, the knot on its left chest, and a brown backpack, in a soft 3D clay look — only on this site; it shows up
-only in guide spots: the assistant, empty states, 404, help).
+"""The site's mascot as small WebP/AVIF files with transparency (operator delivery 2026-10-19, docs/image_prompts_incheongak.md
+B: a small round baby spotted seal — pale grey-white body with blue-grey spots, a sea-blue scarf and a small coral
+backpack, soft 3D clay; our own character, not any other mascot). It shows up only in guide spots: the assistant,
+empty states, 404, help, the course planner; scenery and banners stay the gouache illustrations. mascot-base.png is the
+drawing reference only and is never published. The seal holding a thing (mascot-eat, -cafe, -camera, -airport, -ferry)
+is a 3D picture of the icon registry (tools/icon_media.py), not a pose here.
 
     python tools/mascot_media.py              # make what is missing from incoming/mascot/ (the originals)
     python tools/mascot_media.py --force      # make every file again
@@ -17,9 +20,9 @@ Every picture is cleaned and cut the same way:
     centred on a square, so every file of a pose is N×N and a page gives it width = height;
   - it is resized with premultiplied alpha (no dark halo at the edges), Lanczos.
 Sizes (SIZES: the pages show them at the first number, the second is for 2× screens):
-  icon    64 · 128   the face — the launcher button (mascot-icon-3d), a panel head later (mascot-icon-flat)
+  icon    64 · 128   the face — the launcher button (mascot-icon-3d)
   small   96 · 192   a spot beside a box or a message — hello, point, think, sorry, search
-  medium  200 · 400  an empty state — 404, empty
+  medium  200 · 400  an empty state — 404, empty; the course planner at work and with the plan done
 Output: templates/assets/mascot/<name>-<px>.avif|webp and manifest.json
 {name: {"size": "icon", "px": [64, 128], "avif": [[file, px, bytes], …], "webp": [[file, px, bytes], …]}}.
 The build copies the folder with the other assets (pipeline/build.py); templates/_mascot.html.j2 writes the <picture>.
@@ -41,13 +44,13 @@ OUT_DIR = ROOT / "templates" / "assets" / "mascot"
 URL_PREFIX = "/assets/mascot/"
 SIZES = {"icon": (64, 128), "small": (96, 192), "medium": (200, 400)}
 POSES = {
-    "mascot-icon-3d": "icon", "mascot-icon-flat": "icon",
+    "mascot-icon-3d": "icon",
     "mascot-hello": "small", "mascot-point": "small", "mascot-think": "small", "mascot-sorry": "small",
     "mascot-search": "small",
     "mascot-404": "medium", "mascot-empty": "medium",
-    # the AI course planner (/plan/, 2026-10-17): at work and with the plan done (the page's first picture), and the
-    # rain-edit spot beside the edit box
-    "mascot-plan": "medium", "mascot-plan-done": "medium", "mascot-plan-rain": "small",
+    # the AI course planner (/plan/): at work and with the plan done (the page's first picture). The rain-edit spot
+    # beside the edit box has no pose of its own in this delivery: pipeline/present.plan_vm falls back to mascot-point.
+    "mascot-plan": "medium", "mascot-plan-done": "medium",
 }
 ALPHA_FLOOR, ALPHA_FULL, MARGIN = 8, 248, 0.04
 AVIF_QUALITY, AVIF_SPEED, WEBP_QUALITY, WEBP_ALPHA_QUALITY = 68, 4, 82, 90

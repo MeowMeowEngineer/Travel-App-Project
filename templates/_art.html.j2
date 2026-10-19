@@ -45,8 +45,8 @@
 
 {#- hero(a): the picture of a page head beside its title (S about.head): from 900px to the right of the title (the
     head's class has-art-hero), on phones below the lede; in the first screen — not lazy, no fetchpriority. The frame
-    (520px from 900px, at most 560px, else the column) shows the drawing's subject side scaled ×1.68 (css 49-art), so
-    the drawing is 1.89 times the frame's width: the sizes say that width. -#}
+    (520px from 900px, at most 560px, else the column) is a 4:3 cover of the 3:2 drawing (css 49-art), so the drawing
+    is 1.125 times the frame's width: the sizes say that width. -#}
 {% macro hero(a, lang='ko') -%}
-{% if a %}{{ figure(a, lang, '(min-width: 900px) 983px, (min-width: 592px) 1059px, calc((100vw - 32px) * 1.89)', eager=true, cls='art-hero') }}{% endif %}
+{% if a %}{{ figure(a, lang, '(min-width: 900px) 585px, (min-width: 592px) 630px, calc((100vw - 32px) * 1.125)', eager=true, cls='art-hero') }}{% endif %}
 {%- endmacro %}

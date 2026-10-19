@@ -18,11 +18,11 @@
 {% block main_class %}{% endblock %}
 {% block bodyclass %}pg-list kind-{{ L.kind }}{% endblock %}
 {% block content %}
-<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('list.head.' ~ {'attraction': 'places', 'food': 'food', 'stay': 'stays'}.get(L.kind, '')), loc.code) }}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('list.head.' ~ {'attraction': 'places', 'food': 'food', 'stay': 'stays', 'cafe': 'cafes', 'shopping': 'shopping'}.get(L.kind, '')), loc.code) }}
   <div class="wrap band-grid">
     <div>
-      {#- the mascot beside the head of the food list, as on the Korean list (icon_audit I19) -#}
-      {% set hm = {'food': 'mascot-eat'}.get(L.kind) %}{% if hm %}<span class="hd-mascot">{{ ui.kpic(hm, 'pin', 104) }}</span>{% endif %}
+      {#- the mascot beside the head of the food and café lists, as on the Korean list (icon_audit I19) -#}
+      {% set hm = {'food': 'mascot-eat', 'cafe': 'mascot-cafe'}.get(L.kind) %}{% if hm %}<span class="hd-mascot">{{ ui.kpic(hm, 'pin', 104) }}</span>{% endif %}
       <h1 id="h-list" class="h-list">{{ h1 }} <span class="count tn">{{ L.count }}</span></h1>
       <p class="list-lede">{{ lead or (L.cols|map(attribute=1)|join(' · ')) }}</p>
       {% if hub %}<p class="list-hub"><a href="{{ hub.path }}" data-track="guide_click">{{ t.f('guide_link', name=hub.label) }}<span class="arr" aria-hidden="true">›</span></a></p>{% endif %}

@@ -170,7 +170,9 @@
 {%- set search = s.alt != '' -%}
 <section class="ask{{ ' ask-dark' if dark_top }}{{ ' ask-jsonly' if not search }}" aria-labelledby="h-ask" data-chat-dock>
   <div class="wrap"><div class="ask-card">
-    <p class="ask-k">{{ pk.pic('icon-ask', 'chat', 32, cls='ask-k-pic') }}{{ s.k }}</p>
+    {#- the kicker's mark stays the line glyph on its tinted circle even when icon-ask has a picture: the card is text
+        only, nothing for the first paint to wait for -#}
+    <p class="ask-k"><span class="pic pic-tmp ask-k-pic" data-pic="icon-ask" style="--pic:32px" aria-hidden="true">{{ ui.icon('chat', 'icon pic-g') }}</span>{{ s.k }}</p>
     <h2 id="h-ask" class="ask-h">{{ s.h|replace('{r}', region) }}</h2>
     <form class="ask-box"{% if search %} action="/search/"{% endif %} method="get" data-ask-form{{ '="search"'|safe if search }} data-empty="{{ s.empty }}">
       <div class="ask-row">

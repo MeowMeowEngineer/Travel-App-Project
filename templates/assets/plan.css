@@ -1,6 +1,6 @@
 /* The AI course planner (/plan/, operator 2026-10-17: 'UI는 아주 고도화', many cute 3D pictures). Loaded only
    by that page (templates/plan.html.j2 head), on top of style.css: the same tokens (00-tokens.css — sea blue, white
-   cards on pale sea tints, chick yellow for a spark, Pretendard 400/700, radii 12·18·24·28, pill buttons). Rules kept:
+   cards on pale sea tints, warm yellow for a spark, Pretendard 400/700, radii 12·18·24·28, pill buttons). Rules kept:
    touch targets ≥ 44px, a visible focus ring, text ≥ 4.5:1 (blue text on a pale blue is sea-deep), values never cut
    with an ellipsis, closed days red, KOGL-3 photos whole (never cropped or zoomed), nothing on the first screen starts
    hidden; the floating pictures move only without prefers-reduced-motion. */
@@ -42,19 +42,21 @@
   .trp-float.f2 { animation-delay: -1.4s; } .trp-float.f3 { animation-delay: -2.6s; } .trp-float.f4 { animation-delay: -3.3s; } .trp-float.f5 { animation-delay: -.7s; }
 }
 @keyframes trp-bob { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(-12px) rotate(2deg); } }
-/* the miniature-town illustration (art plan-hero, 1536×1024, its left 45% plain sky for the title): behind the words
-   from 900px, under them on phones — cut to the town on the right (an illustration, never a place photo) */
+/* the miniature-islands illustration (art plan-hero, 1536×1024 — a whole diorama of islands, a bridge, an airport and a
+   harbour, no plain side for a title): under the words on phones; from 900px in the right column beside them, never
+   behind them, so the words keep their contrast (an illustration, never a place photo) */
 .trp-hero.has-art { position: relative; padding-bottom: 0; background: linear-gradient(180deg, #DCEBFB 0%, #F4F8FD 100%); }
 .trp-hero-bg { margin-top: 20px; }
 .trp-hero-fig { margin: 0; }
-.trp-hero-fig img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: 88% 50%; }
+.trp-hero-fig img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 50%; }
 @media (min-width: 900px) {
-  .trp-hero.has-art { min-height: clamp(520px, 44vw, 700px); display: flex; align-items: center; padding: 48px 0; }
+  .trp-hero.has-art { min-height: clamp(480px, 40vw, 620px); display: flex; align-items: center; padding: 48px 0; }
   .trp-hero.has-art .trp-hero-in { position: relative; z-index: 1; display: block; width: 100%; }
   .trp-hero.has-art .trp-hero-t { max-width: min(46%, 560px); }
-  .trp-hero-bg { position: absolute; inset: 0; margin: 0; z-index: 0; }
+  .trp-hero-bg { position: absolute; z-index: 0; top: 48px; bottom: 48px; right: var(--ml); width: min(48%, 640px); margin: 0;
+    border-radius: var(--r-xl); overflow: hidden; }
   .trp-hero-fig, .trp-hero-fig picture { display: block; height: 100%; }
-  .trp-hero-fig img { height: 100%; aspect-ratio: auto; object-position: 70% 50%; }
+  .trp-hero-fig img { height: 100%; aspect-ratio: auto; }
 }
 .trp-nojs { padding: 16px var(--m); background: var(--sand); border-radius: var(--r-s); }
 
@@ -244,7 +246,7 @@
 .trp-body h3 a { color: var(--ink); text-decoration: none; }
 .trp-body h3 a:hover { color: var(--sea-hi); text-decoration: underline; }
 .trp-why { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 10px; font-size: 15px; line-height: 1.55; color: var(--ink-2); word-break: keep-all; }
-.trp-ai { flex: none; margin-top: 2px; padding: 1px 7px; border-radius: 6px; background: var(--chick); color: #5A4300; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; }
+.trp-ai { flex: none; margin-top: 2px; padding: 1px 7px; border-radius: 6px; background: var(--spark); color: #5A4300; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; }
 .trp-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; line-height: 1.45; }
 .trp-facts li { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); gap: 6px; color: var(--ink-2); }
 .trp-fl { color: var(--ink-3); font-weight: 700; }

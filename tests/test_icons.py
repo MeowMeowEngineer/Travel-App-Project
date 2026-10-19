@@ -19,8 +19,11 @@ IDS = ["icon-food", "icon-stay", "icon-sights", "icon-course", "icon-events", "i
        "icon-getting-here", "icon-ask", "fact-hours", "fact-closed", "fact-fee", "fact-parking", "fact-phone",
        "fact-menu", "fact-checkin", "kind-attraction", "kind-food", "kind-stay", "kind-cafe", "guide", "info-center",
        "transit-bus", "theme-modern-history", "theme-islands-sea", "theme-parks-nature", "theme-alleys-culture",
-       "sit-rainy", "sit-kids", "sit-night", "sit-carfree", "sit-free", "sit-walk", "mascot-eat", "mascot-bus",
-       "mascot-camera", "mascot-wave-boat"]
+       "sit-rainy", "sit-kids", "sit-night", "sit-carfree", "sit-free", "sit-walk", "mascot-eat", "mascot-airport",
+       "mascot-camera", "mascot-ferry",
+       # the Incheon delivery (2026-10-19, docs/image_prompts_incheongak.md C·D·I and the seal holding a thing)
+       "icon-cafe", "icon-plan", "kind-museum", "kind-experience", "kind-shopping", "kind-festival", "theme-sky-airport",
+       "theme-tidal-flat", "transit-subway", "transit-ferry", "transit-plane", "mascot-cafe"]
 
 
 @pytest.fixture
@@ -103,3 +106,17 @@ def test_a_dropped_png_becomes_files_and_the_page_uses_them(tmp_path, tmp_assets
 def test_templates_never_name_icon_files():
     for f in (ROOT / "templates").rglob("*.j2"):
         assert "/assets/icons/" not in f.read_text("utf-8") or f.name == "_pic.html.j2", f
+
+
+def test_the_delivered_pictures_have_their_files():
+    """The Incheon delivery (2026-10-19): the 3D pictures of incoming/icons/ and the seal holding a thing
+    (incoming/mascot/mascot-eat …, tools/icon_media.py ALSO_DIRS) are in the manifest with every size and format."""
+    manifest = json.loads((ROOT / "templates" / "assets" / "icons" / "manifest.json").read_text("utf-8"))
+    delivered = [i for i in IDS if not i.startswith(("fact-", "guide", "info-", "icon-abroad"))]
+    for pid in delivered:
+        assert pid in manifest, pid
+        for fmt in ("avif", "webp"):
+            assert [px for _, px in manifest[pid][fmt]] == list(icon_media.SIZES), (pid, fmt)
+            for name, _ in manifest[pid][fmt]:
+                assert (ROOT / "templates" / "assets" / "icons" / name).is_file(), name
+    assert icon_media.ALSO_DIRS == (ROOT / "incoming" / "mascot",)

@@ -1,0 +1,573 @@
+{
+ "_notes": [
+  "인천각 AI 일러스트 80장(운영자 납품 2026-10-19, docs/image_prompts_incheongak.md E·F·G·H·J·K·L·M 묶음). 원본은 incoming/ai-images/<ID>.png(커밋 안 함), 파생본은 python tools/art_media.py → templates/assets/art/.",
+  "규칙(CLAUDE.md 4절): 배경·머리 그림·장식에만 쓰고 장소 사진 자리·썸네일·장소 og:image·구조화 데이터에는 쓰지 않는다. alt는 '일러스트: '로 시작하고 그림에 보이는 것을 적는다. 'AI 생성 이미지' 표기는 하지 않고 /about/에 한 번 적는다. 그림 속 글자는 없다(모두 글자 없이 그린 그림 — text 없음).",
+  "status '연결'은 사이트에 그 자리가 있는 그림이다. 자리가 이번 빌드에 없으면(영상·가이드·코스 없음, 그 달의 지난 행사 없음) 그림은 실리지 않는다. 쓰는 파일만 빌드가 /assets/art/에 싣는다.",
+  "status '개편 뒤 연결': card-course·card-cafe·card-island·card-airport·card-season(홈 소식에 그 종류의 소식이 아직 없다 — 소식 종류가 생기면 home.card.<종류>로 연결)과 camp-*-notext 18장(가이드 머리 그림 — 가이드가 생기면 slot을 guide.banner.<가이드 id>로 바꾸고 '연결'로).",
+  "evkind-sports는 엔진의 race(달리기·대회) 자리에 건다. heritage·film·design·airport는 site.json city.event_kind_words가 만든 인천 종류다.",
+  "자르기(tools/art_media.py): area-*·head-*·vtopic-*는 가운데 1536:640 띠. vtopic-*는 정사각 원본이라 가운데 띠만 보인다."
+ ],
+ "images": {
+  "area-gaehang-wolmi": {
+   "file": "area-gaehang-wolmi.png",
+   "alt": "일러스트: 언덕길을 따라 늘어선 서양식 석조 건물과 붉은 벽돌 건물, 붉은 기둥과 등불이 달린 거리, 언덕 아래 항구와 바닷가 대관람차",
+   "alt_en": "Illustration: a hillside street of stone and red-brick buildings beside red pillars and lanterns, above a harbour and a seaside Ferris wheel",
+   "slot": "area.gaehang-wolmi",
+   "status": "연결"
+  },
+  "area-yeongjong": {
+   "file": "area-yeongjong.png",
+   "alt": "일러스트: 노을 진 백사장 해변과 파라솔, 하늘을 나는 여객기와 멀리 바다를 가로지르는 사장교",
+   "alt_en": "Illustration: a sunset beach with parasols, an airliner in the sky and a cable-stayed bridge across the sea in the distance",
+   "slot": "area.yeongjong",
+   "status": "연결"
+  },
+  "area-songdo": {
+   "file": "area-songdo.png",
+   "alt": "일러스트: 유리 고층 빌딩 사이 공원 수로를 지나는 작은 보트와 물가 산책로의 자전거, 멀리 사장교",
+   "alt_en": "Illustration: a small boat on a park canal between glass towers, a cyclist on the waterside path and a cable-stayed bridge beyond",
+   "slot": "area.songdo",
+   "status": "연결"
+  },
+  "area-ganghwa": {
+   "file": "area-ganghwa.png",
+   "alt": "일러스트: 가을 들판의 탁자식 고인돌과 산자락의 기와지붕, 멀리 반짝이는 갯벌과 섬",
+   "alt_en": "Illustration: a table-shaped dolmen in autumn fields, tiled roofs on the hillside and shining tidal flats and islands beyond",
+   "slot": "area.ganghwa",
+   "status": "연결"
+  },
+  "area-ongjin": {
+   "file": "area-ongjin.png",
+   "alt": "일러스트: 푸른 바다에 흩어진 섬들과 소나무가 선 모래 해변, 바위섬 사이를 지나는 여객선",
+   "alt_en": "Illustration: islands scattered over a blue sea, a sandy beach with pines and a ferry passing rocky islets",
+   "slot": "area.ongjin",
+   "status": "연결"
+  },
+  "area-city-sorae": {
+   "file": "area-city-sorae.png",
+   "alt": "일러스트: 노을 진 포구에 정박한 고깃배와 천막 어시장, 물을 가로지르는 옛 철교와 단풍 든 물가 길, 멀리 아파트",
+   "alt_en": "Illustration: fishing boats at a sunset harbour with a tented fish market, an old iron bridge over the water, autumn trees on the shore and apartment towers beyond",
+   "slot": "area.city-sorae",
+   "status": "연결"
+  },
+  "head-places": {
+   "file": "head-places.png",
+   "alt": "일러스트: 개항기 거리에서 바다를 가로지르는 사장교, 비행기가 나는 하늘 아래 섬 해변과 고인돌로 이어지는 풍경",
+   "alt_en": "Illustration: one landscape running from an old port street past a cable-stayed bridge to an island beach under a flying plane and a dolmen",
+   "slot": "list.head.places",
+   "status": "연결"
+  },
+  "head-food": {
+   "file": "head-food.png",
+   "alt": "일러스트: 바다가 보이는 긴 나무 식탁의 짜장면, 닭강정, 꽃게찜, 쫄면, 생선회",
+   "alt_en": "Illustration: jajangmyeon, sweet fried chicken, steamed crab, spicy chewy noodles and sliced raw fish on a long wooden table by the sea",
+   "slot": "list.head.food",
+   "status": "연결"
+  },
+  "head-cafes": {
+   "file": "head-cafes.png",
+   "alt": "일러스트: 노을 진 바다와 사장교가 보이는 통유리 창가 자리의 라테 두 잔, 딸기 케이크, 크루아상, 마카롱",
+   "alt_en": "Illustration: two lattes, strawberry cake, a croissant and macarons at a window seat over a sunset sea and a cable-stayed bridge",
+   "slot": "list.head.cafes",
+   "status": "연결"
+  },
+  "head-stays": {
+   "file": "head-stays.png",
+   "alt": "일러스트: 노을 진 바다와 섬이 내다보이는 큰 창의 아늑한 객실, 흰 침구와 작은 탁자",
+   "alt_en": "Illustration: a cosy room with white bedding and a small table, its big window on a sunset sea and islands",
+   "slot": "list.head.stays",
+   "status": "연결"
+  },
+  "head-courses": {
+   "file": "head-courses.png",
+   "alt": "일러스트: 점선 길과 핀이 항구와 다리, 섬과 공항을 차례로 잇는 그림지도",
+   "alt_en": "Illustration: a picture map whose dotted path and pins link a harbour, a bridge, islands and an airport",
+   "slot": "list.head.courses",
+   "status": "연결"
+  },
+  "head-guides": {
+   "file": "head-guides.png",
+   "alt": "일러스트: 나무 책상 위의 여행 노트와 접힌 그림지도, 빈 탑승권 모양 종이, 사진과 스티커",
+   "alt_en": "Illustration: a travel notebook, a folded picture map, a blank boarding-pass card, photos and stickers on a wooden desk",
+   "slot": "list.head.guides",
+   "status": "연결"
+  },
+  "head-events": {
+   "file": "head-events.png",
+   "alt": "일러스트: 바닷가 공원의 밤 축제, 불빛 줄과 불꽃놀이, 물에 비친 빛과 대관람차",
+   "alt_en": "Illustration: a seaside park festival at night with strings of lights, fireworks, their reflections and a Ferris wheel",
+   "slot": "list.head.events",
+   "status": "연결"
+  },
+  "head-videos": {
+   "file": "head-videos.png",
+   "alt": "일러스트: 카메라 뷰파인더 너머로 보이는 노을 진 바다와 날아가는 비행기",
+   "alt_en": "Illustration: a sunset sea and a passing plane seen through a camera viewfinder",
+   "slot": "list.head.videos",
+   "status": "연결"
+  },
+  "head-map": {
+   "file": "head-map.png",
+   "alt": "일러스트: 해안선과 섬, 다리와 공항 활주로를 하늘에서 내려다본 그림지도",
+   "alt_en": "Illustration: a bird's-eye picture map of coastline, islands, bridges and an airport runway",
+   "slot": "list.head.map",
+   "status": "연결"
+  },
+  "head-shopping": {
+   "file": "head-shopping.png",
+   "alt": "일러스트: 포구 옆 시장 골목의 과일·생선 가게 천막과 장 보는 사람들, 정박한 고깃배",
+   "alt_en": "Illustration: market stalls of fruit and fish under awnings by a harbour, shoppers and moored fishing boats",
+   "slot": "list.head.shopping",
+   "status": "연결"
+  },
+  "card-event": {
+   "file": "card-event.png",
+   "alt": "일러스트: 저녁 바닷가 광장의 등불과 노점, 모여든 사람들과 하늘의 불꽃",
+   "alt_en": "Illustration: lanterns and stalls on an evening seaside square, a crowd and fireworks in the sky",
+   "slot": "home.card.event",
+   "status": "연결"
+  },
+  "card-guide": {
+   "file": "card-guide.png",
+   "alt": "일러스트: 바다와 사장교가 보이는 창가 탁자에 펼친 그림지도와 여행 노트, 카메라와 커피",
+   "alt_en": "Illustration: a picture map, a travel notebook, a camera and coffee on a window table over the sea and a cable-stayed bridge",
+   "slot": "home.card.guide",
+   "status": "연결"
+  },
+  "card-video": {
+   "file": "card-video.png",
+   "alt": "일러스트: 삼각대 위 카메라가 노을 진 바다와 섬을 찍는 장면",
+   "alt_en": "Illustration: a camera on a tripod filming a sunset sea and islands",
+   "slot": "home.card.video",
+   "status": "연결"
+  },
+  "card-course": {
+   "file": "card-course.png",
+   "alt": "일러스트: 점선 길과 핀이 항구와 섬, 바닷가 공원과 공항을 잇는 그림 풍경",
+   "alt_en": "Illustration: a dotted route and pins linking a harbour, an island, a seaside park and an airport",
+   "slot": "home.card.course",
+   "status": "개편 뒤 연결"
+  },
+  "card-cafe": {
+   "file": "card-cafe.png",
+   "alt": "일러스트: 바다가 보이는 카페 창가의 딸기 케이크 한 접시와 라테",
+   "alt_en": "Illustration: a plate of strawberry cake and a latte at a café window over the sea",
+   "slot": "home.card.cafe",
+   "status": "개편 뒤 연결"
+  },
+  "card-island": {
+   "file": "card-island.png",
+   "alt": "일러스트: 여객선 갑판 난간 너머로 보이는 푸른 섬들과 갈매기",
+   "alt_en": "Illustration: green islands and gulls seen over the rail of a ferry deck",
+   "slot": "home.card.island",
+   "status": "개편 뒤 연결"
+  },
+  "card-airport": {
+   "file": "card-airport.png",
+   "alt": "일러스트: 공항 유리창 너머로 이륙하는 비행기와 창가 벤치의 여행자와 가방",
+   "alt_en": "Illustration: a plane taking off beyond an airport window, a traveller and a suitcase by the bench",
+   "slot": "home.card.airport",
+   "status": "개편 뒤 연결"
+  },
+  "card-season": {
+   "file": "card-season.png",
+   "alt": "일러스트: 노란 은행나무 길과 낙엽, 그 너머 바다와 다리가 보이는 언덕 공원",
+   "alt_en": "Illustration: a hill park path under yellow ginkgo trees, with the sea and a bridge beyond",
+   "slot": "home.card.season",
+   "status": "개편 뒤 연결"
+  },
+  "camp-carfree-notext": {
+   "file": "camp-carfree-notext.png",
+   "alt": "일러스트: 지하철 출구에서 나와 옛 거리로 걸어가는 두 여행자와 길가 버스 정류장, 맑은 하늘과 바다",
+   "alt_en": "Illustration: two travellers walking from a subway exit toward an old street past a bus stop, under a clear sky by the sea",
+   "slot": "guide.banner.carfree",
+   "status": "개편 뒤 연결"
+  },
+  "camp-airport-layover-notext": {
+   "file": "camp-airport-layover-notext.png",
+   "alt": "일러스트: 여행 가방을 끌고 공항철도 열차에 오르는 여행자들, 창밖의 바다와 다리",
+   "alt_en": "Illustration: travellers with suitcases boarding an airport train, the sea and a bridge outside",
+   "slot": "guide.banner.airport-layover",
+   "status": "개편 뒤 연결"
+  },
+  "camp-islands-notext": {
+   "file": "camp-islands-notext.png",
+   "alt": "일러스트: 부두에 댄 하얀 여객선과 타려고 줄 선 사람들, 멀리 섬들",
+   "alt_en": "Illustration: a white ferry at the pier with people queuing to board, islands beyond",
+   "slot": "guide.banner.islands",
+   "status": "개편 뒤 연결"
+  },
+  "camp-bridge-islands-notext": {
+   "file": "camp-bridge-islands-notext.png",
+   "alt": "일러스트: 갯벌 위 낮은 다리로 섬과 섬 사이를 달리는 작은 차",
+   "alt_en": "Illustration: a small car crossing a low bridge between islands over tidal flats",
+   "slot": "guide.banner.bridge-islands",
+   "status": "개편 뒤 연결"
+  },
+  "camp-heritage-notext": {
+   "file": "camp-heritage-notext.png",
+   "alt": "일러스트: 석조 건물과 붉은 벽돌 건물 사이 언덕 골목을 걷는 두 사람, 너머의 바다",
+   "alt_en": "Illustration: two people walking a hillside lane between stone and red-brick buildings, the sea beyond",
+   "slot": "guide.banner.heritage",
+   "status": "개편 뒤 연결"
+  },
+  "camp-chinatown-food-notext": {
+   "file": "camp-chinatown-food-notext.png",
+   "alt": "일러스트: 붉은 기둥과 등불이 달린 바닷가 거리 식당 앞의 김 오르는 만두 찜기",
+   "alt_en": "Illustration: steaming dumpling baskets outside a restaurant on a seaside street of red pillars and lanterns",
+   "slot": "guide.banner.chinatown-food",
+   "status": "개편 뒤 연결"
+  },
+  "camp-food-menu-notext": {
+   "file": "camp-food-menu-notext.png",
+   "alt": "일러스트: 바다가 보이는 식탁의 닭강정 상자, 쫄면, 짜장면, 꽃게찜, 생선회",
+   "alt_en": "Illustration: a box of sweet fried chicken, chewy noodles, jajangmyeon, steamed crabs and raw fish on a table by the sea",
+   "slot": "guide.banner.food-menu",
+   "status": "개편 뒤 연결"
+  },
+  "camp-cafe-notext": {
+   "file": "camp-cafe-notext.png",
+   "alt": "일러스트: 노을 진 바다를 내다보는 통유리 카페 창가 자리의 여행자 뒷모습",
+   "alt_en": "Illustration: a traveller seen from behind at a glass-walled café window facing a sunset sea",
+   "slot": "guide.banner.cafe",
+   "status": "개편 뒤 연결"
+  },
+  "camp-dessert-notext": {
+   "file": "camp-dessert-notext.png",
+   "alt": "일러스트: 빵집 진열대의 크루아상과 케이크, 마카롱, 종이봉투를 든 손",
+   "alt_en": "Illustration: croissants, cakes and macarons on a bakery display and a hand holding a paper bag",
+   "slot": "guide.banner.dessert",
+   "status": "개편 뒤 연결"
+  },
+  "camp-sunset-notext": {
+   "file": "camp-sunset-notext.png",
+   "alt": "일러스트: 해변에 앉아 노을을 바라보는 두 사람과 물에 비친 코랄빛",
+   "alt_en": "Illustration: two people on a beach watching the sunset, coral light on the water",
+   "slot": "guide.banner.sunset",
+   "status": "개편 뒤 연결"
+  },
+  "camp-night-notext": {
+   "file": "camp-night-notext.png",
+   "alt": "일러스트: 불 켜진 사장교와 고층 빌딩, 물가 공원의 야경과 물에 비친 불빛",
+   "alt_en": "Illustration: a lit cable-stayed bridge and towers, a waterside park at night and reflected lights",
+   "slot": "guide.banner.night",
+   "status": "개편 뒤 연결"
+  },
+  "camp-kids-notext": {
+   "file": "camp-kids-notext.png",
+   "alt": "일러스트: 바닷가 놀이공원의 대관람차와 회전목마 앞을 손잡고 걷는 가족",
+   "alt_en": "Illustration: a family walking hand in hand past a Ferris wheel and a carousel by the sea",
+   "slot": "guide.banner.kids",
+   "status": "개편 뒤 연결"
+  },
+  "camp-rain-notext": {
+   "file": "camp-rain-notext.png",
+   "alt": "일러스트: 비 오는 날 우산을 든 여행자가 석조 건물 입구로 들어가는 장면",
+   "alt_en": "Illustration: a traveller with an umbrella entering a stone building on a rainy day",
+   "slot": "guide.banner.rain",
+   "status": "개편 뒤 연결"
+  },
+  "camp-tidalflat-notext": {
+   "file": "camp-tidalflat-notext.png",
+   "alt": "일러스트: 물 빠진 넓은 갯벌을 걷는 사람들과 하늘을 나는 새 떼, 멀리 낮은 산",
+   "alt_en": "Illustration: people walking on wide tidal flats at low tide, birds in the sky and low hills beyond",
+   "slot": "guide.banner.tidalflat",
+   "status": "개편 뒤 연결"
+  },
+  "camp-ganghwa-history-notext": {
+   "file": "camp-ganghwa-history-notext.png",
+   "alt": "일러스트: 들판의 고인돌과 언덕 위 성곽 돌담과 기와지붕, 멀리 섬들",
+   "alt_en": "Illustration: a dolmen in a field, a stone fortress wall and tiled roofs on the hill, islands beyond",
+   "slot": "guide.banner.ganghwa-history",
+   "status": "개편 뒤 연결"
+  },
+  "camp-market-notext": {
+   "file": "camp-market-notext.png",
+   "alt": "일러스트: 포구 어시장의 천막 골목과 꽃게 바구니, 장 보는 사람들",
+   "alt_en": "Illustration: a tented fish-market lane by the harbour with baskets of crabs and shoppers",
+   "slot": "guide.banner.market",
+   "status": "개편 뒤 연결"
+  },
+  "camp-park-walk-notext": {
+   "file": "camp-park-walk-notext.png",
+   "alt": "일러스트: 은행나무와 단풍이 든 물가 산책로, 멀리 도시와 다리",
+   "alt_en": "Illustration: a waterside path under ginkgo and autumn maples, a city and a bridge beyond",
+   "slot": "guide.banner.park-walk",
+   "status": "개편 뒤 연결"
+  },
+  "camp-transit-notext": {
+   "file": "camp-transit-notext.png",
+   "alt": "일러스트: 바다 위 다리를 달리는 전철과 그 위를 지나는 비행기, 멀리 도시",
+   "alt_en": "Illustration: a train crossing a bridge over the sea, a plane above and a city beyond",
+   "slot": "guide.banner.transit",
+   "status": "개편 뒤 연결"
+  },
+  "month-01": {
+   "file": "month-01.png",
+   "alt": "일러스트: 눈 덮인 바닷가 공원 산책로와 하늘을 나는 겨울 철새, 멀리 다리",
+   "alt_en": "Illustration: a snowy seaside park path, winter birds overhead and a bridge in the distance",
+   "slot": "events.month.01",
+   "status": "연결"
+  },
+  "month-02": {
+   "file": "month-02.png",
+   "alt": "일러스트: 얼음이 낀 갯벌 위로 떠오르는 붉은 해",
+   "alt_en": "Illustration: a red sun rising over ice-covered tidal flats",
+   "slot": "events.month.02",
+   "status": "연결"
+  },
+  "month-03": {
+   "file": "month-03.png",
+   "alt": "일러스트: 새싹이 돋는 언덕 산책로와 바다 너머 다리",
+   "alt_en": "Illustration: budding plants along a hillside path, the sea and a bridge beyond",
+   "slot": "events.month.03",
+   "status": "연결"
+  },
+  "month-04": {
+   "file": "month-04.png",
+   "alt": "일러스트: 벚꽃이 흩날리는 언덕길과 멀리 보이는 항구",
+   "alt_en": "Illustration: a hillside path in cherry blossom above a distant harbour",
+   "slot": "events.month.04",
+   "status": "연결"
+  },
+  "month-05": {
+   "file": "month-05.png",
+   "alt": "일러스트: 들꽃이 핀 초록 들판의 고인돌",
+   "alt_en": "Illustration: a dolmen in green fields of wildflowers",
+   "slot": "events.month.05",
+   "status": "연결"
+  },
+  "month-06": {
+   "file": "month-06.png",
+   "alt": "일러스트: 수국이 핀 섬마을 길과 푸른 바다",
+   "alt_en": "Illustration: an island village path lined with hydrangeas above a blue sea",
+   "slot": "events.month.06",
+   "status": "연결"
+  },
+  "month-07": {
+   "file": "month-07.png",
+   "alt": "일러스트: 파라솔이 늘어선 여름 해변과 물놀이하는 사람들",
+   "alt_en": "Illustration: a summer beach lined with parasols and people in the water",
+   "slot": "events.month.07",
+   "status": "연결"
+  },
+  "month-08": {
+   "file": "month-08.png",
+   "alt": "일러스트: 바닷가 공원의 여름밤 불꽃놀이와 구경하는 사람들",
+   "alt_en": "Illustration: summer-night fireworks over a seaside park and people watching",
+   "slot": "events.month.08",
+   "status": "연결"
+  },
+  "month-09": {
+   "file": "month-09.png",
+   "alt": "일러스트: 꽃게 상자가 쌓인 포구와 높은 가을 하늘",
+   "alt_en": "Illustration: crates of crabs on a harbour quay under a high autumn sky",
+   "slot": "events.month.09",
+   "status": "연결"
+  },
+  "month-10": {
+   "file": "month-10.png",
+   "alt": "일러스트: 노랗게 물든 은행나무 길과 국화 화분",
+   "alt_en": "Illustration: a path of yellow ginkgo trees with pots of chrysanthemums",
+   "slot": "events.month.10",
+   "status": "연결"
+  },
+  "month-11": {
+   "file": "month-11.png",
+   "alt": "일러스트: 갈대가 흔들리는 갯벌과 노을",
+   "alt_en": "Illustration: reeds swaying by tidal flats at sunset",
+   "slot": "events.month.11",
+   "status": "연결"
+  },
+  "month-12": {
+   "file": "month-12.png",
+   "alt": "일러스트: 전구 장식이 반짝이는 눈 내린 옛 거리의 겨울밤",
+   "alt_en": "Illustration: a snowy old street twinkling with string lights on a winter night",
+   "slot": "events.month.12",
+   "status": "연결"
+  },
+  "evkind-flowers": {
+   "file": "evkind-flowers.png",
+   "alt": "일러스트: 국화와 코스모스 꽃밭 사이 바닷가 산책로",
+   "alt_en": "Illustration: a seaside path between beds of chrysanthemums and cosmos",
+   "slot": "events.kind.flowers",
+   "status": "연결"
+  },
+  "evkind-food": {
+   "file": "evkind-food.png",
+   "alt": "일러스트: 김 오르는 솥과 꽃게·조개가 쌓인 포구 노점",
+   "alt_en": "Illustration: a steaming pot and stalls piled with crabs and shellfish by the harbour",
+   "slot": "events.kind.food",
+   "status": "연결"
+  },
+  "evkind-sea": {
+   "file": "evkind-sea.png",
+   "alt": "일러스트: 해변 모래 위 깃발과 바다 위 요트",
+   "alt_en": "Illustration: flags on a sandy beach and a yacht at sea",
+   "slot": "events.kind.sea",
+   "status": "연결"
+  },
+  "evkind-night": {
+   "file": "evkind-night.png",
+   "alt": "일러스트: 바닷가 산책로의 빛 터널과 물에 비친 조명, 불 켜진 다리",
+   "alt_en": "Illustration: a tunnel of lights on a seaside promenade, reflections on the water and a lit bridge",
+   "slot": "events.kind.night",
+   "status": "연결"
+  },
+  "evkind-stage": {
+   "file": "evkind-stage.png",
+   "alt": "일러스트: 노을 진 바닷가 야외 무대의 조명과 공연을 보는 관객",
+   "alt_en": "Illustration: stage lights on an open-air seaside stage at sunset and the audience",
+   "slot": "events.kind.stage",
+   "status": "연결"
+  },
+  "evkind-market": {
+   "file": "evkind-market.png",
+   "alt": "일러스트: 천막 마켓의 빈티지 소품과 둘러보는 사람들",
+   "alt_en": "Illustration: vintage goods at a tented market and people browsing",
+   "slot": "events.kind.market",
+   "status": "연결"
+  },
+  "evkind-heritage": {
+   "file": "evkind-heritage.png",
+   "alt": "일러스트: 성문 앞 성곽 길을 지나는 전통 의상 행렬과 깃발",
+   "alt_en": "Illustration: a procession in traditional dress with flags passing a fortress gate",
+   "slot": "events.kind.heritage",
+   "status": "연결"
+  },
+  "evkind-film": {
+   "file": "evkind-film.png",
+   "alt": "일러스트: 노을 진 바닷가 잔디밭의 야외 스크린과 빈백에 앉은 관객",
+   "alt_en": "Illustration: an outdoor screen on a seaside lawn at sunset and people on beanbags",
+   "slot": "events.kind.film",
+   "status": "연결"
+  },
+  "evkind-design": {
+   "file": "evkind-design.png",
+   "alt": "일러스트: 바다가 보이는 하얀 전시장의 조형물과 관람객",
+   "alt_en": "Illustration: sculptures in a white gallery facing the sea and visitors",
+   "slot": "events.kind.design",
+   "status": "연결"
+  },
+  "evkind-sports": {
+   "file": "evkind-sports.png",
+   "alt": "일러스트: 바다를 가로지르는 사장교 위를 달리는 마라톤 주자들",
+   "alt_en": "Illustration: marathon runners on a cable-stayed bridge across the sea",
+   "slot": "events.kind.race",
+   "status": "연결"
+  },
+  "evkind-airport": {
+   "file": "evkind-airport.png",
+   "alt": "일러스트: 활주로 옆 언덕에서 이륙하는 비행기를 보는 가족",
+   "alt_en": "Illustration: a family on a grassy rise beside a runway watching a plane take off",
+   "slot": "events.kind.airport",
+   "status": "연결"
+  },
+  "evkind-other": {
+   "file": "evkind-other.png",
+   "alt": "일러스트: 삼각 깃발 줄과 풍선이 걸린 바닷가의 빈 광장",
+   "alt_en": "Illustration: an empty seaside plaza hung with bunting and balloons",
+   "slot": "events.kind.other",
+   "status": "연결"
+  },
+  "vtopic-travel-courses": {
+   "file": "vtopic-travel-courses.png",
+   "alt": "일러스트: 점선 길이 섬과 다리, 공항을 잇는 그림지도 위의 작은 카메라",
+   "alt_en": "Illustration: a small camera on a picture map whose dotted path links islands, bridges and an airport",
+   "slot": "videos.head.travel-courses",
+   "status": "연결"
+  },
+  "vtopic-food": {
+   "file": "vtopic-food.png",
+   "alt": "일러스트: 위에서 본 식탁의 짜장면과 닭강정, 단무지와 김치",
+   "alt_en": "Illustration: jajangmyeon, sweet fried chicken, pickled radish and kimchi seen from above",
+   "slot": "videos.head.food",
+   "status": "연결"
+  },
+  "vtopic-cafe": {
+   "file": "vtopic-cafe.png",
+   "alt": "일러스트: 바다와 다리가 보이는 창가 카페 탁자의 라테",
+   "alt_en": "Illustration: a latte on a café table by a window over the sea and a bridge",
+   "slot": "videos.head.cafe",
+   "status": "연결"
+  },
+  "vtopic-islands-sea": {
+   "file": "vtopic-islands-sea.png",
+   "alt": "일러스트: 섬 사이를 지나는 여객선과 갈매기",
+   "alt_en": "Illustration: a ferry passing between islands with gulls",
+   "slot": "videos.head.islands-sea",
+   "status": "연결"
+  },
+  "vtopic-modern-history": {
+   "file": "vtopic-modern-history.png",
+   "alt": "일러스트: 석조 건물과 붉은 벽돌 건물이 늘어선 거리의 옛 가로등",
+   "alt_en": "Illustration: old street lamps along a street of stone and red-brick buildings",
+   "slot": "videos.head.modern-history",
+   "status": "연결"
+  },
+  "vtopic-nature": {
+   "file": "vtopic-nature.png",
+   "alt": "일러스트: 갈대 너머 갯벌과 철새, 낮은 산",
+   "alt_en": "Illustration: tidal flats beyond reeds, migratory birds and low hills",
+   "slot": "videos.head.nature",
+   "status": "연결"
+  },
+  "vtopic-city-night": {
+   "file": "vtopic-city-night.png",
+   "alt": "일러스트: 불 켜진 사장교와 고층 빌딩의 야경",
+   "alt_en": "Illustration: a lit cable-stayed bridge and towers at night",
+   "slot": "videos.head.city-night",
+   "status": "연결"
+  },
+  "vtopic-festivals": {
+   "file": "vtopic-festivals.png",
+   "alt": "일러스트: 바닷가 언덕의 등불 줄과 불꽃놀이",
+   "alt_en": "Illustration: lanterns on a seaside hill and fireworks",
+   "slot": "videos.head.festivals",
+   "status": "연결"
+  },
+  "vtopic-other": {
+   "file": "vtopic-other.png",
+   "alt": "일러스트: 바다 풍경을 담은 필름 띠와 재생 버튼",
+   "alt_en": "Illustration: a film strip of sea views and a play button",
+   "slot": "videos.head.other",
+   "status": "연결"
+  },
+  "about-head": {
+   "file": "about-head.png",
+   "alt": "일러스트: 바다와 사장교가 내다보이는 창가 책상의 노트북 속 그림지도와 여행 노트, 커피",
+   "alt_en": "Illustration: a laptop showing a picture map, a travel notebook and coffee on a desk by a window over the sea and a cable-stayed bridge",
+   "slot": "about.head",
+   "status": "연결"
+  },
+  "art-404": {
+   "file": "art-404.png",
+   "alt": "일러스트: 안개 낀 갯벌 위로 끊긴 점선 길과 빈 나무 표지판",
+   "alt_en": "Illustration: a broken dotted path across misty tidal flats and a blank wooden signpost",
+   "slot": "page.404",
+   "status": "연결"
+  },
+  "art-empty": {
+   "file": "art-empty.png",
+   "alt": "일러스트: 잔잔한 바다를 바라보는 빈 해변 벤치와 갈매기 한 마리",
+   "alt_en": "Illustration: an empty bench above a calm sea and a single gull",
+   "slot": "search.empty",
+   "status": "연결"
+  },
+  "chat-empty": {
+   "file": "chat-empty.png",
+   "alt": "일러스트: 바닷가 정자 위 하늘에 뜬 말풍선 모양 구름 속 섬과 다리 그림지도",
+   "alt_en": "Illustration: a speech-bubble cloud holding a picture map of islands and bridges above a seaside pavilion",
+   "slot": "chat.empty",
+   "status": "연결"
+  },
+  "plan-hero": {
+   "file": "plan-hero.png",
+   "alt": "일러스트: 섬과 다리, 공항과 항구를 장난감처럼 만든 미니어처 풍경을 위에서 본 모습",
+   "alt_en": "Illustration: a toy-like miniature of islands, a bridge, an airport and a harbour seen from above",
+   "slot": "plan.head",
+   "status": "연결"
+  }
+ },
+ "held": {}
+}

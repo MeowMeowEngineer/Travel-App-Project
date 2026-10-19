@@ -64,6 +64,11 @@
       <p id="illustrations">이 사이트의 일러스트는 생성형 AI로 그렸고, 장소 사진은 모두 출처를 함께 적은 한국관광공사의 공식 사진입니다.</p>
     </div>
   </section>
+  {% elif art_slots %}
+  <section class="wrap chapter chapter-mid ch-rail" aria-labelledby="a-photo">
+    <h2 id="a-photo" class="rail-label">그림</h2>
+    <div class="rail-body prose"><p id="illustrations">이 사이트의 일러스트는 생성형 AI로 그렸습니다.</p></div>
+  </section>
   {% endif %}
 
   {% if has_videos %}

@@ -1,12 +1,14 @@
 {% extends "base.html.j2" %}
 {% import "_mascot.html.j2" as mm %}
 {% import "_p2.html.j2" as p2 %}
-{#- 404: say so, offer the search (a plain GET form to /search/, when the build has one), the list pages and the
-    home's answer tiles (h = present.home_vm). -#}
+{% import "_art.html.j2" as artm %}
+{#- 404: the head band (page.404: a broken dotted path over misty flats) and the mascot with the map upside down, then
+    say so, offer the search (a plain GET form to /search/, when the build has one), the list pages and the home's
+    answer tiles (h = present.home_vm). -#}
 {% block bodyclass %}pg-404{% endblock %}
 {% block main_class %}{% endblock %}
 {% block content %}
-<section class="pg-hero nf" aria-labelledby="h-nf">
+<section class="pg-hero nf" aria-labelledby="h-nf">{{ artm.band((art_slots or {}).get('page.404')) }}
   <div class="wrap">
     <p class="nf-mascot">{{ mm.pic('mascot-404', 'medium', 160) }}</p><h1 id="h-nf" class="h-list">페이지를 찾을 수 없습니다</h1>
     <p class="list-lede">주소가 바뀌었거나 아직 공개되지 않은 페이지입니다.</p>

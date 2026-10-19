@@ -57,7 +57,7 @@ def test_slot_name_tables_cover_their_data():
     for slug in present.region_art().values():
         assert art.known_slot(f"area.{slug}")
     for name, words in (("saemangeum-and-bieung", "area"), ("travel-course", "videos.head"), ("13", "events.month"),
-                        ("en", "og"), ("course", "home.card"), ("empty", "chat"), ("season.spring", "home")):
+                        ("en", "og"), ("course", "home.card"), ("start", "chat"), ("season.spring", "home")):
         assert not art.known_slot(f"{words}.{name}"), name                      # typos and slots without a place
     assert [art.id_slot(s) for s in ("guide.banner.guide-04", "en.guide.banner.guide-16", "course.banner.c-1",
                                      "theme.head.islands-sea", "home.card.guide", "og.zh-hans", "about.head")] == [
@@ -399,7 +399,7 @@ def test_a_picture_shows_only_where_its_slot_is(world):
         "theme-nopage": set(),                                     # the sample's islands-sea theme has no place
         "vtopic-test": {f"videos/{slugify('섬 바다')}/index.html"},
         "course-test": {course, "en/courses/spot-1/index.html", "ja/courses/spot-1/index.html"},
-        "area-test": {"map/index.html"},
+        "area-test": {"map/index.html", "index.html"},               # the /map/ strip and the home's 권역 row
         "month-test": {"events/index.html"},
         "evkind-test": {"index.html"},
         "abroad-press-test": {"abroad/index.html"},
@@ -451,6 +451,13 @@ def test_map_area_strip_heads_its_region(world):
     assert start < html.index('data-art="area-test"') < html.index('class="region-head"', start)
     assert 'class="art art-band art-strip"' in html and 'loading="lazy"' in strip and 'aria-hidden="true"' in strip
     assert html.count("data-art=") == 1                                       # 은파 has no picture: nothing there
+    # the home's 권역 rows: the same picture at the start of its row, lazy and decorative; the others as before
+    home = _html(world, "index.html")
+    row = home[home.index('<ol class="regs">'):home.index("</ol>", home.index('<ol class="regs">'))]
+    assert row.count('data-art="area-test"') == 1 and row.count('class="has-art"') == 1
+    pic = _figure(row, "area-test")
+    assert 'class="art rg-art"' in row and 'loading="lazy"' in pic and 'aria-hidden="true"' in pic
+    assert row.index('href="/map/#r-원도심" class="has-art"') < row.index('data-art="area-test"')
 
 
 def test_month_picture_beside_its_past_month_heading(world):

@@ -4,9 +4,11 @@
     python tools/icon_media.py --force      # make every file again
     python tools/icon_media.py --dry-run    # list what would be made, change nothing
 
-Originals: incoming/icons/<ID>.png — 1024×1024 PNGs from ChatGPT, named by the fixed IDs of
-the first city site's prompt list (data/incheon/icons.json lists them). Git-ignored like
-incoming/mascot/; the files made from them are committed. A PNG without transparency (a pure white background, the
+Originals: incoming/icons/<ID>.png — square PNGs from ChatGPT, named by the fixed IDs of the prompt list
+(docs/image_prompts_incheongak.md C·D·I; data/incheon/icons.json lists them). The mascot holding a thing (mascot-eat,
+-cafe, -camera, -airport, -ferry: a 3D picture beside a list or guide head, drawn like the others) is delivered with
+the mascot's poses in incoming/mascot/ (ALSO_DIRS): from there only the registry's IDs are taken, silently — the other
+poses are tools/mascot_media.py's. Git-ignored; the files made from them are committed. A PNG without transparency (a pure white background, the
 prompt's fallback) has its near-white pixels (all channels >= WHITE_CUT) made transparent first.
 Cleaning and cutting are tools/mascot_media.py's (alpha snapped, cut to the figure with an even margin, centred on a
 square, resized with premultiplied alpha). Sizes: SIZES px (the pages draw them at 32–120px; the srcset picks one).
@@ -25,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mascot_media as mm  # noqa: E402  (clean, resize, encode)
 
 SRC_DIR = ROOT / "incoming" / "icons"
+ALSO_DIRS = (ROOT / "incoming" / "mascot",)   # registry IDs delivered beside the mascot's poses
 OUT_DIR = ROOT / "templates" / "assets" / "icons"
 REGISTRY = ROOT / "data" / "incheon" / "icons.json"   # TODO(다음 단계): pipeline.icons와 함께 --data를 따르게
 SIZES = (64, 128, 240)
@@ -52,14 +55,16 @@ def knock_white(im):
 
 
 def make(src_dir: Path = SRC_DIR, out_dir: Path = OUT_DIR, registry: Path = REGISTRY, force: bool = False,
-         dry: bool = False, formats=FORMATS) -> dict:
+         dry: bool = False, formats=FORMATS, also: tuple = ()) -> dict:
+    """also: more folders whose PNGs named by a registry ID are taken too (others there are skipped without a word)."""
     from PIL import Image
     ids = known_ids(registry)
     out_dir.mkdir(parents=True, exist_ok=True)
     mf = out_dir / "manifest.json"
     manifest = json.loads(mf.read_text("utf-8")) if mf.is_file() else {}
     made = []
-    for src in sorted(src_dir.glob("*.png")):
+    sources = sorted(src_dir.glob("*.png")) + sorted(f for d in also for f in Path(d).glob("*.png") if f.stem in ids)
+    for src in sources:
         pid = src.stem
         if pid not in ids:
             print(f"알 수 없는 ID(건너뜀): {pid}", file=sys.stderr)
@@ -86,7 +91,7 @@ def main(argv=None) -> int:
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(argv)
-    print(json.dumps(make(force=a.force, dry=a.dry_run), ensure_ascii=False))
+    print(json.dumps(make(force=a.force, dry=a.dry_run, also=ALSO_DIRS), ensure_ascii=False))
     return 0
 
 

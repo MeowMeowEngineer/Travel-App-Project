@@ -233,13 +233,16 @@ def test_incheon_before_collection_preview_is_empty_state_and_production_stops(t
     assert errors == [], errors[:5]
     assert _foreign_hits(out) == []
     assert "여행지 안내를 준비하고 있습니다" in (out / "index.html").read_text("utf-8")
-    # nothing dresses the empty data up (CLAUDE.md 4): no photo, no illustration — only the menu's own 3D icons,
-    # which sit beside their links with or without data; the launcher's face, if any, is decorative site furniture
+    # nothing dresses the empty data up (CLAUDE.md 4): no photo, no illustration (no AI art at all before the first
+    # place) — only the menu's own 3D icons, which sit beside their links with or without data; the mascot is decorative
+    # site furniture (alt=""), as the launcher's face
     pages = sorted(out.rglob("*.html"))
     assert pages
     for page in pages:
         s = _scan(page)
-        assert [src for src, _ in s.images if not src.startswith("/assets/icons/")] == [], page
+        assert "/assets/art/" not in page.read_text("utf-8"), page
+        assert [src for src, alt in s.images if not src.startswith("/assets/icons/")
+                and not (src.startswith("/assets/mascot/") and alt == "")] == [], page
         assert all(src.startswith("/assets/") and alt == "" for src, alt in s.chrome), page
         # every way on goes to a page that exists: no guide, course, event, map or search page without data
         for href in s.links:

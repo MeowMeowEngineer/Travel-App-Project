@@ -1810,6 +1810,11 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
     # a '연결' picture of a guide, course or theme that no page shows: that page is not in this build
     for problem in art.unshown(data_dir, art_used):
         W("art.json", problem)
+    # the site says once, on /about/, that its illustrations are drawn with generative AI (CLAUDE.md 4), whenever a page
+    # shows one
+    about = out / "about" / "index.html"
+    if art_used and about.exists() and "생성형 AI" not in about.read_text("utf-8"):
+        E("/about/", "AI 일러스트를 싣는데 소개 페이지에 '이 사이트의 일러스트는 생성형 AI로 그렸다'는 안내가 없음(CLAUDE.md 4절)")
 
     # the other versions (/en/ /ja/ …) — only with data/<region>/<code> and complete UI words; a build without them
     # has no such pages and no hreflang or language menu link to them

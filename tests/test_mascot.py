@@ -1,13 +1,13 @@
-"""The site's mascot (owner decision 2026-10-13: a small yellow chick with a blue scarf and a brown backpack, soft 3D
-clay, only on this site): the files tools/mascot_media.py makes from the git-ignored originals (incoming/mascot/), the
+"""The site's mascot (operator delivery 2026-10-19: a small round baby spotted seal with a sea-blue scarf and a coral
+backpack, soft 3D clay): the files tools/mascot_media.py makes from the git-ignored originals (incoming/mascot/), the
 manifest that lists them, their budget (an icon at most 8 KB), the one macro that draws them (templates/_mascot.html.j2:
 decorative, 1x and 2x, width = height), and the tool itself on a generated picture — the faint specks gone, the body
 opaque, the transparent margin cut to an even padding, square sizes, the same bytes every time.
 
 Ported 2026-10-19: the Gunsan mascot is that site's own (owner decision 2026-10-13, '군산 사이트 전용') and was not
-copied, so this site has no mascot until its owner chooses one. The mascot is optional (pipeline/icons.py mascot()):
-without files the macro draws its fallback and no page names a mascot file; the tests that need a mascot make a
-test-owned one (fake_mascot) in a tmp folder."""
+copied; this site's own, the seal, came the same day. The mascot stays optional for the engine (pipeline/icons.py
+mascot()): without files the macro draws its fallback and no page names a mascot file (tested on an empty folder);
+the tests that need a fixed set of poses make a test-owned one (fake_mascot) in a tmp folder."""
 import json
 import re
 from pathlib import Path

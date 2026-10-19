@@ -1,0 +1,3232 @@
+{
+ "area-gaehang-wolmi": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "area-gaehang-wolmi-400.avif",
+    400,
+    17261
+   ],
+   [
+    "area-gaehang-wolmi-800.avif",
+    800,
+    60778
+   ],
+   [
+    "area-gaehang-wolmi-1280.avif",
+    1280,
+    128121
+   ],
+   [
+    "area-gaehang-wolmi-1536.avif",
+    1536,
+    166944
+   ]
+  ],
+  "webp": [
+   [
+    "area-gaehang-wolmi-400.webp",
+    400,
+    23704
+   ],
+   [
+    "area-gaehang-wolmi-800.webp",
+    800,
+    82190
+   ],
+   [
+    "area-gaehang-wolmi-1280.webp",
+    1280,
+    173126
+   ],
+   [
+    "area-gaehang-wolmi-1536.webp",
+    1536,
+    226782
+   ]
+  ]
+ },
+ "area-yeongjong": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "area-yeongjong-400.avif",
+    400,
+    11476
+   ],
+   [
+    "area-yeongjong-800.avif",
+    800,
+    38263
+   ],
+   [
+    "area-yeongjong-1280.avif",
+    1280,
+    80483
+   ],
+   [
+    "area-yeongjong-1536.avif",
+    1536,
+    104562
+   ]
+  ],
+  "webp": [
+   [
+    "area-yeongjong-400.webp",
+    400,
+    14428
+   ],
+   [
+    "area-yeongjong-800.webp",
+    800,
+    47192
+   ],
+   [
+    "area-yeongjong-1280.webp",
+    1280,
+    98634
+   ],
+   [
+    "area-yeongjong-1536.webp",
+    1536,
+    128444
+   ]
+  ]
+ },
+ "area-songdo": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "area-songdo-400.avif",
+    400,
+    16049
+   ],
+   [
+    "area-songdo-800.avif",
+    800,
+    59423
+   ],
+   [
+    "area-songdo-1280.avif",
+    1280,
+    131239
+   ],
+   [
+    "area-songdo-1536.avif",
+    1536,
+    173316
+   ]
+  ],
+  "webp": [
+   [
+    "area-songdo-400.webp",
+    400,
+    22702
+   ],
+   [
+    "area-songdo-800.webp",
+    800,
+    82536
+   ],
+   [
+    "area-songdo-1280.webp",
+    1280,
+    181776
+   ],
+   [
+    "area-songdo-1536.webp",
+    1536,
+    244294
+   ]
+  ]
+ },
+ "area-ganghwa": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "area-ganghwa-400.avif",
+    400,
+    16249
+   ],
+   [
+    "area-ganghwa-800.avif",
+    800,
+    61379
+   ],
+   [
+    "area-ganghwa-1280.avif",
+    1280,
+    134198
+   ],
+   [
+    "area-ganghwa-1536.avif",
+    1536,
+    175870
+   ]
+  ],
+  "webp": [
+   [
+    "area-ganghwa-400.webp",
+    400,
+    23800
+   ],
+   [
+    "area-ganghwa-800.webp",
+    800,
+    84740
+   ],
+   [
+    "area-ganghwa-1280.webp",
+    1280,
+    183058
+   ],
+   [
+    "area-ganghwa-1536.webp",
+    1536,
+    245046
+   ]
+  ]
+ },
+ "area-ongjin": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "area-ongjin-400.avif",
+    400,
+    17259
+   ],
+   [
+    "area-ongjin-800.avif",
+    800,
+    61610
+   ],
+   [
+    "area-ongjin-1280.avif",
+    1280,
+    134255
+   ],
+   [
+    "area-ongjin-1536.avif",
+    1536,
+    177910
+   ]
+  ],
+  "webp": [
+   [
+    "area-ongjin-400.webp",
+    400,
+    22958
+   ],
+   [
+    "area-ongjin-800.webp",
+    800,
+    81160
+   ],
+   [
+    "area-ongjin-1280.webp",
+    1280,
+    179394
+   ],
+   [
+    "area-ongjin-1536.webp",
+    1536,
+    237734
+   ]
+  ]
+ },
+ "area-city-sorae": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "area-city-sorae-400.avif",
+    400,
+    17124
+   ],
+   [
+    "area-city-sorae-800.avif",
+    800,
+    62720
+   ],
+   [
+    "area-city-sorae-1280.avif",
+    1280,
+    136046
+   ],
+   [
+    "area-city-sorae-1536.avif",
+    1536,
+    178442
+   ]
+  ],
+  "webp": [
+   [
+    "area-city-sorae-400.webp",
+    400,
+    24758
+   ],
+   [
+    "area-city-sorae-800.webp",
+    800,
+    86234
+   ],
+   [
+    "area-city-sorae-1280.webp",
+    1280,
+    185398
+   ],
+   [
+    "area-city-sorae-1536.webp",
+    1536,
+    246094
+   ]
+  ]
+ },
+ "head-places": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-places-400.avif",
+    400,
+    15275
+   ],
+   [
+    "head-places-800.avif",
+    800,
+    53648
+   ],
+   [
+    "head-places-1280.avif",
+    1280,
+    115479
+   ],
+   [
+    "head-places-1536.avif",
+    1536,
+    150861
+   ]
+  ],
+  "webp": [
+   [
+    "head-places-400.webp",
+    400,
+    20958
+   ],
+   [
+    "head-places-800.webp",
+    800,
+    71074
+   ],
+   [
+    "head-places-1280.webp",
+    1280,
+    156680
+   ],
+   [
+    "head-places-1536.webp",
+    1536,
+    207986
+   ]
+  ]
+ },
+ "head-food": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-food-400.avif",
+    400,
+    16153
+   ],
+   [
+    "head-food-800.avif",
+    800,
+    55150
+   ],
+   [
+    "head-food-1280.avif",
+    1280,
+    115240
+   ],
+   [
+    "head-food-1536.avif",
+    1536,
+    150311
+   ]
+  ],
+  "webp": [
+   [
+    "head-food-400.webp",
+    400,
+    22048
+   ],
+   [
+    "head-food-800.webp",
+    800,
+    71686
+   ],
+   [
+    "head-food-1280.webp",
+    1280,
+    153974
+   ],
+   [
+    "head-food-1536.webp",
+    1536,
+    198152
+   ]
+  ]
+ },
+ "head-cafes": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-cafes-400.avif",
+    400,
+    10451
+   ],
+   [
+    "head-cafes-800.avif",
+    800,
+    35280
+   ],
+   [
+    "head-cafes-1280.avif",
+    1280,
+    76619
+   ],
+   [
+    "head-cafes-1536.avif",
+    1536,
+    100058
+   ]
+  ],
+  "webp": [
+   [
+    "head-cafes-400.webp",
+    400,
+    13242
+   ],
+   [
+    "head-cafes-800.webp",
+    800,
+    42996
+   ],
+   [
+    "head-cafes-1280.webp",
+    1280,
+    91728
+   ],
+   [
+    "head-cafes-1536.webp",
+    1536,
+    118658
+   ]
+  ]
+ },
+ "head-stays": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-stays-400.avif",
+    400,
+    9584
+   ],
+   [
+    "head-stays-800.avif",
+    800,
+    30186
+   ],
+   [
+    "head-stays-1280.avif",
+    1280,
+    63243
+   ],
+   [
+    "head-stays-1536.avif",
+    1536,
+    82625
+   ]
+  ],
+  "webp": [
+   [
+    "head-stays-400.webp",
+    400,
+    11786
+   ],
+   [
+    "head-stays-800.webp",
+    800,
+    34582
+   ],
+   [
+    "head-stays-1280.webp",
+    1280,
+    71408
+   ],
+   [
+    "head-stays-1536.webp",
+    1536,
+    92928
+   ]
+  ]
+ },
+ "head-courses": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-courses-400.avif",
+    400,
+    15506
+   ],
+   [
+    "head-courses-800.avif",
+    800,
+    54371
+   ],
+   [
+    "head-courses-1280.avif",
+    1280,
+    116830
+   ],
+   [
+    "head-courses-1536.avif",
+    1536,
+    153575
+   ]
+  ],
+  "webp": [
+   [
+    "head-courses-400.webp",
+    400,
+    20262
+   ],
+   [
+    "head-courses-800.webp",
+    800,
+    69830
+   ],
+   [
+    "head-courses-1280.webp",
+    1280,
+    153346
+   ],
+   [
+    "head-courses-1536.webp",
+    1536,
+    202222
+   ]
+  ]
+ },
+ "head-guides": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-guides-400.avif",
+    400,
+    12680
+   ],
+   [
+    "head-guides-800.avif",
+    800,
+    40392
+   ],
+   [
+    "head-guides-1280.avif",
+    1280,
+    84906
+   ],
+   [
+    "head-guides-1536.avif",
+    1536,
+    112738
+   ]
+  ],
+  "webp": [
+   [
+    "head-guides-400.webp",
+    400,
+    15972
+   ],
+   [
+    "head-guides-800.webp",
+    800,
+    51506
+   ],
+   [
+    "head-guides-1280.webp",
+    1280,
+    108192
+   ],
+   [
+    "head-guides-1536.webp",
+    1536,
+    141830
+   ]
+  ]
+ },
+ "head-events": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-events-400.avif",
+    400,
+    15533
+   ],
+   [
+    "head-events-800.avif",
+    800,
+    55294
+   ],
+   [
+    "head-events-1280.avif",
+    1280,
+    117445
+   ],
+   [
+    "head-events-1536.avif",
+    1536,
+    152781
+   ]
+  ],
+  "webp": [
+   [
+    "head-events-400.webp",
+    400,
+    21328
+   ],
+   [
+    "head-events-800.webp",
+    800,
+    72008
+   ],
+   [
+    "head-events-1280.webp",
+    1280,
+    153528
+   ],
+   [
+    "head-events-1536.webp",
+    1536,
+    200846
+   ]
+  ]
+ },
+ "head-videos": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-videos-400.avif",
+    400,
+    9463
+   ],
+   [
+    "head-videos-800.avif",
+    800,
+    28325
+   ],
+   [
+    "head-videos-1280.avif",
+    1280,
+    57492
+   ],
+   [
+    "head-videos-1536.avif",
+    1536,
+    76738
+   ]
+  ],
+  "webp": [
+   [
+    "head-videos-400.webp",
+    400,
+    10646
+   ],
+   [
+    "head-videos-800.webp",
+    800,
+    33082
+   ],
+   [
+    "head-videos-1280.webp",
+    1280,
+    68770
+   ],
+   [
+    "head-videos-1536.webp",
+    1536,
+    86542
+   ]
+  ]
+ },
+ "head-map": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-map-400.avif",
+    400,
+    14436
+   ],
+   [
+    "head-map-800.avif",
+    800,
+    51401
+   ],
+   [
+    "head-map-1280.avif",
+    1280,
+    112423
+   ],
+   [
+    "head-map-1536.avif",
+    1536,
+    148059
+   ]
+  ],
+  "webp": [
+   [
+    "head-map-400.webp",
+    400,
+    18284
+   ],
+   [
+    "head-map-800.webp",
+    800,
+    64172
+   ],
+   [
+    "head-map-1280.webp",
+    1280,
+    141404
+   ],
+   [
+    "head-map-1536.webp",
+    1536,
+    188688
+   ]
+  ]
+ },
+ "head-shopping": {
+  "w": 1536,
+  "h": 640,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "head-shopping-400.avif",
+    400,
+    16601
+   ],
+   [
+    "head-shopping-800.avif",
+    800,
+    57584
+   ],
+   [
+    "head-shopping-1280.avif",
+    1280,
+    121626
+   ],
+   [
+    "head-shopping-1536.avif",
+    1536,
+    159254
+   ]
+  ],
+  "webp": [
+   [
+    "head-shopping-400.webp",
+    400,
+    22798
+   ],
+   [
+    "head-shopping-800.webp",
+    800,
+    76586
+   ],
+   [
+    "head-shopping-1280.webp",
+    1280,
+    162738
+   ],
+   [
+    "head-shopping-1536.webp",
+    1536,
+    216080
+   ]
+  ]
+ },
+ "card-event": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "card-event-400.avif",
+    400,
+    23205
+   ],
+   [
+    "card-event-800.avif",
+    800,
+    79230
+   ]
+  ],
+  "webp": [
+   [
+    "card-event-400.webp",
+    400,
+    29580
+   ],
+   [
+    "card-event-800.webp",
+    800,
+    100942
+   ]
+  ]
+ },
+ "card-guide": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "card-guide-400.avif",
+    400,
+    23332
+   ],
+   [
+    "card-guide-800.avif",
+    800,
+    78216
+   ]
+  ],
+  "webp": [
+   [
+    "card-guide-400.webp",
+    400,
+    30790
+   ],
+   [
+    "card-guide-800.webp",
+    800,
+    100440
+   ]
+  ]
+ },
+ "card-video": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "card-video-400.avif",
+    400,
+    21905
+   ],
+   [
+    "card-video-800.avif",
+    800,
+    72311
+   ]
+  ],
+  "webp": [
+   [
+    "card-video-400.webp",
+    400,
+    26944
+   ],
+   [
+    "card-video-800.webp",
+    800,
+    88936
+   ]
+  ]
+ },
+ "card-course": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "card-course-400.avif",
+    400,
+    28619
+   ],
+   [
+    "card-course-800.avif",
+    800,
+    102507
+   ]
+  ],
+  "webp": [
+   [
+    "card-course-400.webp",
+    400,
+    36492
+   ],
+   [
+    "card-course-800.webp",
+    800,
+    129976
+   ]
+  ]
+ },
+ "card-cafe": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "card-cafe-400.avif",
+    400,
+    21041
+   ],
+   [
+    "card-cafe-800.avif",
+    800,
+    70489
+   ]
+  ],
+  "webp": [
+   [
+    "card-cafe-400.webp",
+    400,
+    26444
+   ],
+   [
+    "card-cafe-800.webp",
+    800,
+    88524
+   ]
+  ]
+ },
+ "card-island": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "card-island-400.avif",
+    400,
+    19339
+   ],
+   [
+    "card-island-800.avif",
+    800,
+    60954
+   ]
+  ],
+  "webp": [
+   [
+    "card-island-400.webp",
+    400,
+    24518
+   ],
+   [
+    "card-island-800.webp",
+    800,
+    78800
+   ]
+  ]
+ },
+ "card-airport": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "card-airport-400.avif",
+    400,
+    16075
+   ],
+   [
+    "card-airport-800.avif",
+    800,
+    51308
+   ]
+  ],
+  "webp": [
+   [
+    "card-airport-400.webp",
+    400,
+    21056
+   ],
+   [
+    "card-airport-800.webp",
+    800,
+    65916
+   ]
+  ]
+ },
+ "card-season": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "card-season-400.avif",
+    400,
+    29522
+   ],
+   [
+    "card-season-800.avif",
+    800,
+    101811
+   ]
+  ],
+  "webp": [
+   [
+    "card-season-400.webp",
+    400,
+    37870
+   ],
+   [
+    "card-season-800.webp",
+    800,
+    129404
+   ]
+  ]
+ },
+ "camp-carfree-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-carfree-notext-400.avif",
+    400,
+    14367
+   ],
+   [
+    "camp-carfree-notext-800.avif",
+    800,
+    46951
+   ],
+   [
+    "camp-carfree-notext-1280.avif",
+    1280,
+    101727
+   ],
+   [
+    "camp-carfree-notext-1536.avif",
+    1536,
+    133534
+   ]
+  ],
+  "webp": [
+   [
+    "camp-carfree-notext-400.webp",
+    400,
+    18594
+   ],
+   [
+    "camp-carfree-notext-800.webp",
+    800,
+    62398
+   ],
+   [
+    "camp-carfree-notext-1280.webp",
+    1280,
+    133294
+   ],
+   [
+    "camp-carfree-notext-1536.webp",
+    1536,
+    175556
+   ]
+  ]
+ },
+ "camp-airport-layover-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-airport-layover-notext-400.avif",
+    400,
+    10962
+   ],
+   [
+    "camp-airport-layover-notext-800.avif",
+    800,
+    33921
+   ],
+   [
+    "camp-airport-layover-notext-1280.avif",
+    1280,
+    72845
+   ],
+   [
+    "camp-airport-layover-notext-1536.avif",
+    1536,
+    96850
+   ]
+  ],
+  "webp": [
+   [
+    "camp-airport-layover-notext-400.webp",
+    400,
+    13480
+   ],
+   [
+    "camp-airport-layover-notext-800.webp",
+    800,
+    42674
+   ],
+   [
+    "camp-airport-layover-notext-1280.webp",
+    1280,
+    93330
+   ],
+   [
+    "camp-airport-layover-notext-1536.webp",
+    1536,
+    124586
+   ]
+  ]
+ },
+ "camp-islands-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-islands-notext-400.avif",
+    400,
+    15678
+   ],
+   [
+    "camp-islands-notext-800.avif",
+    800,
+    50947
+   ],
+   [
+    "camp-islands-notext-1280.avif",
+    1280,
+    106649
+   ],
+   [
+    "camp-islands-notext-1536.avif",
+    1536,
+    138850
+   ]
+  ],
+  "webp": [
+   [
+    "camp-islands-notext-400.webp",
+    400,
+    20852
+   ],
+   [
+    "camp-islands-notext-800.webp",
+    800,
+    66194
+   ],
+   [
+    "camp-islands-notext-1280.webp",
+    1280,
+    134024
+   ],
+   [
+    "camp-islands-notext-1536.webp",
+    1536,
+    174078
+   ]
+  ]
+ },
+ "camp-bridge-islands-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-bridge-islands-notext-400.avif",
+    400,
+    13585
+   ],
+   [
+    "camp-bridge-islands-notext-800.avif",
+    800,
+    46771
+   ],
+   [
+    "camp-bridge-islands-notext-1280.avif",
+    1280,
+    102269
+   ],
+   [
+    "camp-bridge-islands-notext-1536.avif",
+    1536,
+    134731
+   ]
+  ],
+  "webp": [
+   [
+    "camp-bridge-islands-notext-400.webp",
+    400,
+    16986
+   ],
+   [
+    "camp-bridge-islands-notext-800.webp",
+    800,
+    59370
+   ],
+   [
+    "camp-bridge-islands-notext-1280.webp",
+    1280,
+    128284
+   ],
+   [
+    "camp-bridge-islands-notext-1536.webp",
+    1536,
+    168350
+   ]
+  ]
+ },
+ "camp-heritage-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-heritage-notext-400.avif",
+    400,
+    14012
+   ],
+   [
+    "camp-heritage-notext-800.avif",
+    800,
+    46814
+   ],
+   [
+    "camp-heritage-notext-1280.avif",
+    1280,
+    100011
+   ],
+   [
+    "camp-heritage-notext-1536.avif",
+    1536,
+    131338
+   ]
+  ],
+  "webp": [
+   [
+    "camp-heritage-notext-400.webp",
+    400,
+    17790
+   ],
+   [
+    "camp-heritage-notext-800.webp",
+    800,
+    59594
+   ],
+   [
+    "camp-heritage-notext-1280.webp",
+    1280,
+    126738
+   ],
+   [
+    "camp-heritage-notext-1536.webp",
+    1536,
+    164828
+   ]
+  ]
+ },
+ "camp-chinatown-food-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-chinatown-food-notext-400.avif",
+    400,
+    16303
+   ],
+   [
+    "camp-chinatown-food-notext-800.avif",
+    800,
+    51355
+   ],
+   [
+    "camp-chinatown-food-notext-1280.avif",
+    1280,
+    107328
+   ],
+   [
+    "camp-chinatown-food-notext-1536.avif",
+    1536,
+    139028
+   ]
+  ],
+  "webp": [
+   [
+    "camp-chinatown-food-notext-400.webp",
+    400,
+    20294
+   ],
+   [
+    "camp-chinatown-food-notext-800.webp",
+    800,
+    62492
+   ],
+   [
+    "camp-chinatown-food-notext-1280.webp",
+    1280,
+    128470
+   ],
+   [
+    "camp-chinatown-food-notext-1536.webp",
+    1536,
+    167204
+   ]
+  ]
+ },
+ "camp-food-menu-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-food-menu-notext-400.avif",
+    400,
+    15727
+   ],
+   [
+    "camp-food-menu-notext-800.avif",
+    800,
+    49155
+   ],
+   [
+    "camp-food-menu-notext-1280.avif",
+    1280,
+    103637
+   ],
+   [
+    "camp-food-menu-notext-1536.avif",
+    1536,
+    135529
+   ]
+  ],
+  "webp": [
+   [
+    "camp-food-menu-notext-400.webp",
+    400,
+    19888
+   ],
+   [
+    "camp-food-menu-notext-800.webp",
+    800,
+    63710
+   ],
+   [
+    "camp-food-menu-notext-1280.webp",
+    1280,
+    131702
+   ],
+   [
+    "camp-food-menu-notext-1536.webp",
+    1536,
+    172154
+   ]
+  ]
+ },
+ "camp-cafe-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-cafe-notext-400.avif",
+    400,
+    14739
+   ],
+   [
+    "camp-cafe-notext-800.avif",
+    800,
+    44740
+   ],
+   [
+    "camp-cafe-notext-1280.avif",
+    1280,
+    89856
+   ],
+   [
+    "camp-cafe-notext-1536.avif",
+    1536,
+    115924
+   ]
+  ],
+  "webp": [
+   [
+    "camp-cafe-notext-400.webp",
+    400,
+    18220
+   ],
+   [
+    "camp-cafe-notext-800.webp",
+    800,
+    54816
+   ],
+   [
+    "camp-cafe-notext-1280.webp",
+    1280,
+    110382
+   ],
+   [
+    "camp-cafe-notext-1536.webp",
+    1536,
+    139160
+   ]
+  ]
+ },
+ "camp-dessert-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-dessert-notext-400.avif",
+    400,
+    11736
+   ],
+   [
+    "camp-dessert-notext-800.avif",
+    800,
+    35404
+   ],
+   [
+    "camp-dessert-notext-1280.avif",
+    1280,
+    75379
+   ],
+   [
+    "camp-dessert-notext-1536.avif",
+    1536,
+    99881
+   ]
+  ],
+  "webp": [
+   [
+    "camp-dessert-notext-400.webp",
+    400,
+    14494
+   ],
+   [
+    "camp-dessert-notext-800.webp",
+    800,
+    43480
+   ],
+   [
+    "camp-dessert-notext-1280.webp",
+    1280,
+    88544
+   ],
+   [
+    "camp-dessert-notext-1536.webp",
+    1536,
+    115086
+   ]
+  ]
+ },
+ "camp-sunset-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-sunset-notext-400.avif",
+    400,
+    15360
+   ],
+   [
+    "camp-sunset-notext-800.avif",
+    800,
+    50693
+   ],
+   [
+    "camp-sunset-notext-1280.avif",
+    1280,
+    105554
+   ],
+   [
+    "camp-sunset-notext-1536.avif",
+    1536,
+    138283
+   ]
+  ],
+  "webp": [
+   [
+    "camp-sunset-notext-400.webp",
+    400,
+    18854
+   ],
+   [
+    "camp-sunset-notext-800.webp",
+    800,
+    61320
+   ],
+   [
+    "camp-sunset-notext-1280.webp",
+    1280,
+    126780
+   ],
+   [
+    "camp-sunset-notext-1536.webp",
+    1536,
+    165380
+   ]
+  ]
+ },
+ "camp-night-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-night-notext-400.avif",
+    400,
+    14071
+   ],
+   [
+    "camp-night-notext-800.avif",
+    800,
+    48668
+   ],
+   [
+    "camp-night-notext-1280.avif",
+    1280,
+    104606
+   ],
+   [
+    "camp-night-notext-1536.avif",
+    1536,
+    137758
+   ]
+  ],
+  "webp": [
+   [
+    "camp-night-notext-400.webp",
+    400,
+    17562
+   ],
+   [
+    "camp-night-notext-800.webp",
+    800,
+    63156
+   ],
+   [
+    "camp-night-notext-1280.webp",
+    1280,
+    137052
+   ],
+   [
+    "camp-night-notext-1536.webp",
+    1536,
+    182808
+   ]
+  ]
+ },
+ "camp-kids-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-kids-notext-400.avif",
+    400,
+    17485
+   ],
+   [
+    "camp-kids-notext-800.avif",
+    800,
+    55268
+   ],
+   [
+    "camp-kids-notext-1280.avif",
+    1280,
+    114840
+   ],
+   [
+    "camp-kids-notext-1536.avif",
+    1536,
+    149395
+   ]
+  ],
+  "webp": [
+   [
+    "camp-kids-notext-400.webp",
+    400,
+    21390
+   ],
+   [
+    "camp-kids-notext-800.webp",
+    800,
+    68570
+   ],
+   [
+    "camp-kids-notext-1280.webp",
+    1280,
+    140608
+   ],
+   [
+    "camp-kids-notext-1536.webp",
+    1536,
+    183044
+   ]
+  ]
+ },
+ "camp-rain-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-rain-notext-400.avif",
+    400,
+    16656
+   ],
+   [
+    "camp-rain-notext-800.avif",
+    800,
+    58238
+   ],
+   [
+    "camp-rain-notext-1280.avif",
+    1280,
+    131184
+   ],
+   [
+    "camp-rain-notext-1536.avif",
+    1536,
+    174385
+   ]
+  ],
+  "webp": [
+   [
+    "camp-rain-notext-400.webp",
+    400,
+    21670
+   ],
+   [
+    "camp-rain-notext-800.webp",
+    800,
+    76356
+   ],
+   [
+    "camp-rain-notext-1280.webp",
+    1280,
+    164394
+   ],
+   [
+    "camp-rain-notext-1536.webp",
+    1536,
+    217938
+   ]
+  ]
+ },
+ "camp-tidalflat-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-tidalflat-notext-400.avif",
+    400,
+    14061
+   ],
+   [
+    "camp-tidalflat-notext-800.avif",
+    800,
+    44802
+   ],
+   [
+    "camp-tidalflat-notext-1280.avif",
+    1280,
+    93435
+   ],
+   [
+    "camp-tidalflat-notext-1536.avif",
+    1536,
+    121375
+   ]
+  ],
+  "webp": [
+   [
+    "camp-tidalflat-notext-400.webp",
+    400,
+    17488
+   ],
+   [
+    "camp-tidalflat-notext-800.webp",
+    800,
+    56164
+   ],
+   [
+    "camp-tidalflat-notext-1280.webp",
+    1280,
+    113962
+   ],
+   [
+    "camp-tidalflat-notext-1536.webp",
+    1536,
+    148506
+   ]
+  ]
+ },
+ "camp-ganghwa-history-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-ganghwa-history-notext-400.avif",
+    400,
+    20002
+   ],
+   [
+    "camp-ganghwa-history-notext-800.avif",
+    800,
+    70611
+   ],
+   [
+    "camp-ganghwa-history-notext-1280.avif",
+    1280,
+    154850
+   ],
+   [
+    "camp-ganghwa-history-notext-1536.avif",
+    1536,
+    203542
+   ]
+  ],
+  "webp": [
+   [
+    "camp-ganghwa-history-notext-400.webp",
+    400,
+    26308
+   ],
+   [
+    "camp-ganghwa-history-notext-800.webp",
+    800,
+    92398
+   ],
+   [
+    "camp-ganghwa-history-notext-1280.webp",
+    1280,
+    201800
+   ],
+   [
+    "camp-ganghwa-history-notext-1536.webp",
+    1536,
+    270896
+   ]
+  ]
+ },
+ "camp-market-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-market-notext-400.avif",
+    400,
+    15676
+   ],
+   [
+    "camp-market-notext-800.avif",
+    800,
+    51711
+   ],
+   [
+    "camp-market-notext-1280.avif",
+    1280,
+    110716
+   ],
+   [
+    "camp-market-notext-1536.avif",
+    1536,
+    146410
+   ]
+  ],
+  "webp": [
+   [
+    "camp-market-notext-400.webp",
+    400,
+    19240
+   ],
+   [
+    "camp-market-notext-800.webp",
+    800,
+    63434
+   ],
+   [
+    "camp-market-notext-1280.webp",
+    1280,
+    136144
+   ],
+   [
+    "camp-market-notext-1536.webp",
+    1536,
+    178432
+   ]
+  ]
+ },
+ "camp-park-walk-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-park-walk-notext-400.avif",
+    400,
+    19938
+   ],
+   [
+    "camp-park-walk-notext-800.avif",
+    800,
+    64655
+   ],
+   [
+    "camp-park-walk-notext-1280.avif",
+    1280,
+    136147
+   ],
+   [
+    "camp-park-walk-notext-1536.avif",
+    1536,
+    177358
+   ]
+  ],
+  "webp": [
+   [
+    "camp-park-walk-notext-400.webp",
+    400,
+    24902
+   ],
+   [
+    "camp-park-walk-notext-800.webp",
+    800,
+    82048
+   ],
+   [
+    "camp-park-walk-notext-1280.webp",
+    1280,
+    174236
+   ],
+   [
+    "camp-park-walk-notext-1536.webp",
+    1536,
+    227234
+   ]
+  ]
+ },
+ "camp-transit-notext": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "camp-transit-notext-400.avif",
+    400,
+    12830
+   ],
+   [
+    "camp-transit-notext-800.avif",
+    800,
+    40766
+   ],
+   [
+    "camp-transit-notext-1280.avif",
+    1280,
+    85073
+   ],
+   [
+    "camp-transit-notext-1536.avif",
+    1536,
+    111263
+   ]
+  ],
+  "webp": [
+   [
+    "camp-transit-notext-400.webp",
+    400,
+    15916
+   ],
+   [
+    "camp-transit-notext-800.webp",
+    800,
+    51830
+   ],
+   [
+    "camp-transit-notext-1280.webp",
+    1280,
+    105388
+   ],
+   [
+    "camp-transit-notext-1536.webp",
+    1536,
+    137444
+   ]
+  ]
+ },
+ "month-01": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-01-400.avif",
+    400,
+    34231
+   ],
+   [
+    "month-01-800.avif",
+    800,
+    114097
+   ]
+  ],
+  "webp": [
+   [
+    "month-01-400.webp",
+    400,
+    44072
+   ],
+   [
+    "month-01-800.webp",
+    800,
+    147090
+   ]
+  ]
+ },
+ "month-02": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-02-400.avif",
+    400,
+    32219
+   ],
+   [
+    "month-02-800.avif",
+    800,
+    112921
+   ]
+  ],
+  "webp": [
+   [
+    "month-02-400.webp",
+    400,
+    42244
+   ],
+   [
+    "month-02-800.webp",
+    800,
+    144420
+   ]
+  ]
+ },
+ "month-03": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-03-400.avif",
+    400,
+    38973
+   ],
+   [
+    "month-03-800.avif",
+    800,
+    132769
+   ]
+  ],
+  "webp": [
+   [
+    "month-03-400.webp",
+    400,
+    51292
+   ],
+   [
+    "month-03-800.webp",
+    800,
+    174430
+   ]
+  ]
+ },
+ "month-04": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-04-400.avif",
+    400,
+    38615
+   ],
+   [
+    "month-04-800.avif",
+    800,
+    129783
+   ]
+  ],
+  "webp": [
+   [
+    "month-04-400.webp",
+    400,
+    52254
+   ],
+   [
+    "month-04-800.webp",
+    800,
+    169590
+   ]
+  ]
+ },
+ "month-05": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-05-400.avif",
+    400,
+    37325
+   ],
+   [
+    "month-05-800.avif",
+    800,
+    124870
+   ]
+  ],
+  "webp": [
+   [
+    "month-05-400.webp",
+    400,
+    51138
+   ],
+   [
+    "month-05-800.webp",
+    800,
+    164718
+   ]
+  ]
+ },
+ "month-06": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-06-400.avif",
+    400,
+    39274
+   ],
+   [
+    "month-06-800.avif",
+    800,
+    127466
+   ]
+  ],
+  "webp": [
+   [
+    "month-06-400.webp",
+    400,
+    51814
+   ],
+   [
+    "month-06-800.webp",
+    800,
+    162002
+   ]
+  ]
+ },
+ "month-07": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-07-400.avif",
+    400,
+    34263
+   ],
+   [
+    "month-07-800.avif",
+    800,
+    118034
+   ]
+  ],
+  "webp": [
+   [
+    "month-07-400.webp",
+    400,
+    44320
+   ],
+   [
+    "month-07-800.webp",
+    800,
+    148402
+   ]
+  ]
+ },
+ "month-08": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-08-400.avif",
+    400,
+    39671
+   ],
+   [
+    "month-08-800.avif",
+    800,
+    139267
+   ]
+  ],
+  "webp": [
+   [
+    "month-08-400.webp",
+    400,
+    54518
+   ],
+   [
+    "month-08-800.webp",
+    800,
+    187922
+   ]
+  ]
+ },
+ "month-09": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-09-400.avif",
+    400,
+    35544
+   ],
+   [
+    "month-09-800.avif",
+    800,
+    118267
+   ]
+  ],
+  "webp": [
+   [
+    "month-09-400.webp",
+    400,
+    48106
+   ],
+   [
+    "month-09-800.webp",
+    800,
+    154924
+   ]
+  ]
+ },
+ "month-10": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-10-400.avif",
+    400,
+    37477
+   ],
+   [
+    "month-10-800.avif",
+    800,
+    123997
+   ]
+  ],
+  "webp": [
+   [
+    "month-10-400.webp",
+    400,
+    50260
+   ],
+   [
+    "month-10-800.webp",
+    800,
+    161014
+   ]
+  ]
+ },
+ "month-11": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-11-400.avif",
+    400,
+    30040
+   ],
+   [
+    "month-11-800.avif",
+    800,
+    101620
+   ]
+  ],
+  "webp": [
+   [
+    "month-11-400.webp",
+    400,
+    39926
+   ],
+   [
+    "month-11-800.webp",
+    800,
+    132990
+   ]
+  ]
+ },
+ "month-12": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "month-12-400.avif",
+    400,
+    37279
+   ],
+   [
+    "month-12-800.avif",
+    800,
+    124257
+   ]
+  ],
+  "webp": [
+   [
+    "month-12-400.webp",
+    400,
+    48878
+   ],
+   [
+    "month-12-800.webp",
+    800,
+    160058
+   ]
+  ]
+ },
+ "evkind-flowers": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-flowers-400.avif",
+    400,
+    35498
+   ],
+   [
+    "evkind-flowers-800.avif",
+    800,
+    115572
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-flowers-400.webp",
+    400,
+    46430
+   ],
+   [
+    "evkind-flowers-800.webp",
+    800,
+    146388
+   ]
+  ]
+ },
+ "evkind-food": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-food-400.avif",
+    400,
+    36908
+   ],
+   [
+    "evkind-food-800.avif",
+    800,
+    119727
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-food-400.webp",
+    400,
+    49062
+   ],
+   [
+    "evkind-food-800.webp",
+    800,
+    152652
+   ]
+  ]
+ },
+ "evkind-sea": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-sea-400.avif",
+    400,
+    30764
+   ],
+   [
+    "evkind-sea-800.avif",
+    800,
+    103677
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-sea-400.webp",
+    400,
+    39610
+   ],
+   [
+    "evkind-sea-800.webp",
+    800,
+    132816
+   ]
+  ]
+ },
+ "evkind-night": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-night-400.avif",
+    400,
+    35140
+   ],
+   [
+    "evkind-night-800.avif",
+    800,
+    122504
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-night-400.webp",
+    400,
+    46486
+   ],
+   [
+    "evkind-night-800.webp",
+    800,
+    156098
+   ]
+  ]
+ },
+ "evkind-stage": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-stage-400.avif",
+    400,
+    30445
+   ],
+   [
+    "evkind-stage-800.avif",
+    800,
+    97194
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-stage-400.webp",
+    400,
+    38038
+   ],
+   [
+    "evkind-stage-800.webp",
+    800,
+    120974
+   ]
+  ]
+ },
+ "evkind-market": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-market-400.avif",
+    400,
+    35129
+   ],
+   [
+    "evkind-market-800.avif",
+    800,
+    113707
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-market-400.webp",
+    400,
+    46338
+   ],
+   [
+    "evkind-market-800.webp",
+    800,
+    148992
+   ]
+  ]
+ },
+ "evkind-heritage": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-heritage-400.avif",
+    400,
+    38538
+   ],
+   [
+    "evkind-heritage-800.avif",
+    800,
+    133054
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-heritage-400.webp",
+    400,
+    52350
+   ],
+   [
+    "evkind-heritage-800.webp",
+    800,
+    174910
+   ]
+  ]
+ },
+ "evkind-film": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-film-400.avif",
+    400,
+    30647
+   ],
+   [
+    "evkind-film-800.avif",
+    800,
+    97786
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-film-400.webp",
+    400,
+    39558
+   ],
+   [
+    "evkind-film-800.webp",
+    800,
+    121918
+   ]
+  ]
+ },
+ "evkind-design": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-design-400.avif",
+    400,
+    22907
+   ],
+   [
+    "evkind-design-800.avif",
+    800,
+    69027
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-design-400.webp",
+    400,
+    27380
+   ],
+   [
+    "evkind-design-800.webp",
+    800,
+    78764
+   ]
+  ]
+ },
+ "evkind-sports": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-sports-400.avif",
+    400,
+    31371
+   ],
+   [
+    "evkind-sports-800.avif",
+    800,
+    104222
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-sports-400.webp",
+    400,
+    42602
+   ],
+   [
+    "evkind-sports-800.webp",
+    800,
+    138050
+   ]
+  ]
+ },
+ "evkind-airport": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-airport-400.avif",
+    400,
+    28542
+   ],
+   [
+    "evkind-airport-800.avif",
+    800,
+    90741
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-airport-400.webp",
+    400,
+    37456
+   ],
+   [
+    "evkind-airport-800.webp",
+    800,
+    121424
+   ]
+  ]
+ },
+ "evkind-other": {
+  "w": 1254,
+  "h": 1254,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "evkind-other-400.avif",
+    400,
+    30990
+   ],
+   [
+    "evkind-other-800.avif",
+    800,
+    102608
+   ]
+  ],
+  "webp": [
+   [
+    "evkind-other-400.webp",
+    400,
+    40186
+   ],
+   [
+    "evkind-other-800.webp",
+    800,
+    130334
+   ]
+  ]
+ },
+ "vtopic-travel-courses": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-travel-courses-400.avif",
+    400,
+    18193
+   ],
+   [
+    "vtopic-travel-courses-800.avif",
+    800,
+    62944
+   ],
+   [
+    "vtopic-travel-courses-1254.avif",
+    1254,
+    122600
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-travel-courses-400.webp",
+    400,
+    25054
+   ],
+   [
+    "vtopic-travel-courses-800.webp",
+    800,
+    81966
+   ],
+   [
+    "vtopic-travel-courses-1254.webp",
+    1254,
+    160616
+   ]
+  ]
+ },
+ "vtopic-food": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-food-400.avif",
+    400,
+    16096
+   ],
+   [
+    "vtopic-food-800.avif",
+    800,
+    52157
+   ],
+   [
+    "vtopic-food-1254.avif",
+    1254,
+    101025
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-food-400.webp",
+    400,
+    22632
+   ],
+   [
+    "vtopic-food-800.webp",
+    800,
+    67856
+   ],
+   [
+    "vtopic-food-1254.webp",
+    1254,
+    130424
+   ]
+  ]
+ },
+ "vtopic-cafe": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-cafe-400.avif",
+    400,
+    14890
+   ],
+   [
+    "vtopic-cafe-800.avif",
+    800,
+    51231
+   ],
+   [
+    "vtopic-cafe-1254.avif",
+    1254,
+    102260
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-cafe-400.webp",
+    400,
+    19618
+   ],
+   [
+    "vtopic-cafe-800.webp",
+    800,
+    66678
+   ],
+   [
+    "vtopic-cafe-1254.webp",
+    1254,
+    131680
+   ]
+  ]
+ },
+ "vtopic-islands-sea": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-islands-sea-400.avif",
+    400,
+    16473
+   ],
+   [
+    "vtopic-islands-sea-800.avif",
+    800,
+    61879
+   ],
+   [
+    "vtopic-islands-sea-1254.avif",
+    1254,
+    121655
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-islands-sea-400.webp",
+    400,
+    22376
+   ],
+   [
+    "vtopic-islands-sea-800.webp",
+    800,
+    80372
+   ],
+   [
+    "vtopic-islands-sea-1254.webp",
+    1254,
+    161330
+   ]
+  ]
+ },
+ "vtopic-modern-history": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-modern-history-400.avif",
+    400,
+    16184
+   ],
+   [
+    "vtopic-modern-history-800.avif",
+    800,
+    56157
+   ],
+   [
+    "vtopic-modern-history-1254.avif",
+    1254,
+    109686
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-modern-history-400.webp",
+    400,
+    22110
+   ],
+   [
+    "vtopic-modern-history-800.webp",
+    800,
+    74892
+   ],
+   [
+    "vtopic-modern-history-1254.webp",
+    1254,
+    148616
+   ]
+  ]
+ },
+ "vtopic-nature": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-nature-400.avif",
+    400,
+    12764
+   ],
+   [
+    "vtopic-nature-800.avif",
+    800,
+    45605
+   ],
+   [
+    "vtopic-nature-1254.avif",
+    1254,
+    90076
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-nature-400.webp",
+    400,
+    16396
+   ],
+   [
+    "vtopic-nature-800.webp",
+    800,
+    54608
+   ],
+   [
+    "vtopic-nature-1254.webp",
+    1254,
+    105982
+   ]
+  ]
+ },
+ "vtopic-city-night": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-city-night-400.avif",
+    400,
+    15953
+   ],
+   [
+    "vtopic-city-night-800.avif",
+    800,
+    59520
+   ],
+   [
+    "vtopic-city-night-1254.avif",
+    1254,
+    118380
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-city-night-400.webp",
+    400,
+    22474
+   ],
+   [
+    "vtopic-city-night-800.webp",
+    800,
+    81164
+   ],
+   [
+    "vtopic-city-night-1254.webp",
+    1254,
+    166658
+   ]
+  ]
+ },
+ "vtopic-festivals": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-festivals-400.avif",
+    400,
+    16068
+   ],
+   [
+    "vtopic-festivals-800.avif",
+    800,
+    54955
+   ],
+   [
+    "vtopic-festivals-1254.avif",
+    1254,
+    106651
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-festivals-400.webp",
+    400,
+    21022
+   ],
+   [
+    "vtopic-festivals-800.webp",
+    800,
+    69878
+   ],
+   [
+    "vtopic-festivals-1254.webp",
+    1254,
+    136550
+   ]
+  ]
+ },
+ "vtopic-other": {
+  "w": 1254,
+  "h": 522,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "vtopic-other-400.avif",
+    400,
+    12607
+   ],
+   [
+    "vtopic-other-800.avif",
+    800,
+    43054
+   ],
+   [
+    "vtopic-other-1254.avif",
+    1254,
+    84303
+   ]
+  ],
+  "webp": [
+   [
+    "vtopic-other-400.webp",
+    400,
+    15362
+   ],
+   [
+    "vtopic-other-800.webp",
+    800,
+    51978
+   ],
+   [
+    "vtopic-other-1254.webp",
+    1254,
+    104882
+   ]
+  ]
+ },
+ "about-head": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "about-head-400.avif",
+    400,
+    21963
+   ],
+   [
+    "about-head-800.avif",
+    800,
+    71840
+   ],
+   [
+    "about-head-1280.avif",
+    1280,
+    147204
+   ],
+   [
+    "about-head-1536.avif",
+    1536,
+    190169
+   ]
+  ],
+  "webp": [
+   [
+    "about-head-400.webp",
+    400,
+    29610
+   ],
+   [
+    "about-head-800.webp",
+    800,
+    94432
+   ],
+   [
+    "about-head-1280.webp",
+    1280,
+    192146
+   ],
+   [
+    "about-head-1536.webp",
+    1536,
+    248678
+   ]
+  ]
+ },
+ "art-404": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "art-404-640.avif",
+    640,
+    38440
+   ],
+   [
+    "art-404-1280.avif",
+    1280,
+    120192
+   ],
+   [
+    "art-404-1536.avif",
+    1536,
+    155735
+   ]
+  ],
+  "webp": [
+   [
+    "art-404-640.webp",
+    640,
+    44482
+   ],
+   [
+    "art-404-1280.webp",
+    1280,
+    136964
+   ],
+   [
+    "art-404-1536.webp",
+    1536,
+    177162
+   ]
+  ]
+ },
+ "art-empty": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "art-empty-640.avif",
+    640,
+    52164
+   ],
+   [
+    "art-empty-1280.avif",
+    1280,
+    160775
+   ],
+   [
+    "art-empty-1536.avif",
+    1536,
+    211234
+   ]
+  ],
+  "webp": [
+   [
+    "art-empty-640.webp",
+    640,
+    65678
+   ],
+   [
+    "art-empty-1280.webp",
+    1280,
+    208754
+   ],
+   [
+    "art-empty-1536.webp",
+    1536,
+    273924
+   ]
+  ]
+ },
+ "chat-empty": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "chat-empty-640.avif",
+    640,
+    55232
+   ],
+   [
+    "chat-empty-1280.avif",
+    1280,
+    177443
+   ],
+   [
+    "chat-empty-1536.avif",
+    1536,
+    232634
+   ]
+  ],
+  "webp": [
+   [
+    "chat-empty-640.webp",
+    640,
+    70706
+   ],
+   [
+    "chat-empty-1280.webp",
+    1280,
+    225920
+   ],
+   [
+    "chat-empty-1536.webp",
+    1536,
+    297296
+   ]
+  ]
+ },
+ "plan-hero": {
+  "w": 1536,
+  "h": 1024,
+  "avif_quality": 60,
+  "webp_quality": 78,
+  "avif": [
+   [
+    "plan-hero-640.avif",
+    640,
+    40346
+   ],
+   [
+    "plan-hero-1280.avif",
+    1280,
+    106794
+   ],
+   [
+    "plan-hero-1536.avif",
+    1536,
+    134935
+   ]
+  ],
+  "webp": [
+   [
+    "plan-hero-640.webp",
+    640,
+    47466
+   ],
+   [
+    "plan-hero-1280.webp",
+    1280,
+    127490
+   ],
+   [
+    "plan-hero-1536.webp",
+    1536,
+    162564
+   ]
+  ]
+ }
+}

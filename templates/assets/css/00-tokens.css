@@ -28,11 +28,11 @@
 
    Look (UI4, owner 2026-10-14, after the AIO2O proposal demo for KT Skylife — its design language only): a light
    page, white cards with a hairline border on soft sea-blue tints, one brand colour, 바다 파랑 (sea blue, the
-   family of the mascot's blue scarf), in the reference's green roles — buttons, key numbers, small eyebrow labels,
+   family of the mascot's blue scarf — the seal's, 2026-10-19), in the reference's green roles — buttons, key numbers, small eyebrow labels,
    highlights, focus. Calm, never neon. The lime / lavender / sky accents are retired (their names now point at the sea
    tints, so a rule not yet rewritten reads calm). Pretendard 400 + 700; radii 12 · 18 · 24 · 28; pill buttons.
    Palette (docs/handover/specs/ui4_mapping.md (b), the shared contract): sea #2F6FC9 · sea-hi #255DAF ·
-   sea-deep #1D4F96 · tint #EAF2FC · tint2 #D9E7F8 · g0 #F2F7FD · g1 #E2EDFA · g2 #CFE1F6 · chick #FFD54A ·
+   sea-deep #1D4F96 · tint #EAF2FC · tint2 #D9E7F8 · g0 #F2F7FD · g1 #E2EDFA · g2 #CFE1F6 · spark #FFD54A ·
    ink #172033 · ink-2 #3E4757 · ink-3 #5F6878 · bg #fff · bg-2 #F4F7FB · bg-3 #E7EDF4 · hair #D8E0EA · red #C9252C.
 
    Rules every partial keeps (CLAUDE.md 7 + owner feedback 2026-10-08):
@@ -54,7 +54,7 @@
 :root {
   /* 바다 파랑 (UI4) */
   --sea: #2F6FC9; --sea-hi: #255DAF; --sea-deep: #1D4F96; --tint: #EAF2FC; --tint2: #D9E7F8;
-  --g0: #F2F7FD; --g1: #E2EDFA; --g2: #CFE1F6; --chick: #FFD54A; --sand: #F6EFE4; --field: #858FA1;
+  --g0: #F2F7FD; --g1: #E2EDFA; --g2: #CFE1F6; --spark: #FFD54A; --sand: #F6EFE4; --field: #858FA1;
   --bg: #ffffff; --bg-2: #F4F7FB; --bg-3: #E7EDF4; --tile: #F4F7FB;
   --ink: #172033; --ink-2: #3E4757; --ink-3: #5F6878; --hair: #D8E0EA;
   --blue: var(--sea); --blue-hi: var(--sea-hi); --link: var(--sea-hi); --red: #C9252C; --focus: var(--sea);

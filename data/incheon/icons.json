@@ -1,5 +1,5 @@
 {
- "_about": "3D 그림 자리 등록부(엔진 공통, 군산 사이트에서 옮김 2026-10-19). id → glyph(그림 파일이 없을 때 templates/_ui.html.j2 icon으로 그리는 임시판)·label·group. 원본 incoming/icons/<id>.png → python tools/icon_media.py → templates/assets/icons/<id>-<px>.avif|webp + manifest.json. 옮겨 온 그림은 도시와 무관한 28장뿐이다(theme-*·mascot-* 그림은 군산 장소·군산 전용 마스코트라 옮기지 않았고, 그 자리는 glyph로 그린다). label은 그림이 혼자 뜻을 전할 때만 alt '일러스트: <label>'로 쓴다.",
+ "_about": "3D 그림 자리 등록부(엔진 공통). id → glyph(그림 파일이 없을 때 templates/_ui.html.j2 icon으로 그리는 임시판)·label·group. 원본 incoming/icons/<id>.png(마스코트가 든 그림 mascot-eat·-cafe·-camera·-airport·-ferry는 incoming/mascot/<id>.png) → python tools/icon_media.py → templates/assets/icons/<id>-<px>.avif|webp + manifest.json. 2026-10-19 운영자 납품(docs/image_prompts_incheongak.md C·D·I 묶음과 B 묶음의 소품 든 물범 5장)으로 인천각 그림을 만들었다. 군산에서 옮긴 도시 무관 그림은 납품에 없는 것만 남았다(fact-*·guide·info-center·icon-abroad·plan-*·pref-photo·cond-*). label은 그림이 혼자 뜻을 전할 때만 alt '일러스트: <label>'로 쓴다.",
  "icons": {
   "icon-food": {
    "glyph": "bowl",
@@ -126,6 +126,11 @@
    "label": "체험",
    "group": "no-photo"
   },
+  "kind-festival": {
+   "glyph": "calendar",
+   "label": "행사",
+   "group": "no-photo"
+  },
   "guide": {
    "glyph": "book",
    "label": "가이드",
@@ -139,6 +144,21 @@
   "transit-bus": {
    "glyph": "bus",
    "label": "시내버스",
+   "group": "guides"
+  },
+  "transit-subway": {
+   "glyph": "bus",
+   "label": "전철·공항철도",
+   "group": "guides"
+  },
+  "transit-ferry": {
+   "glyph": "wave",
+   "label": "배편",
+   "group": "guides"
+  },
+  "transit-plane": {
+   "glyph": "globe",
+   "label": "비행기",
    "group": "guides"
   },
   "theme-modern-history": {
@@ -159,6 +179,16 @@
   "theme-alleys-culture": {
    "glyph": "lamp",
    "label": "골목·문화",
+   "group": "themes"
+  },
+  "theme-sky-airport": {
+   "glyph": "globe",
+   "label": "하늘·공항",
+   "group": "themes"
+  },
+  "theme-tidal-flat": {
+   "glyph": "wave",
+   "label": "갯벌·철새",
    "group": "themes"
   },
   "sit-rainy": {
@@ -196,9 +226,14 @@
    "label": "맛집 안내 마스코트",
    "group": "mascot"
   },
-  "mascot-bus": {
+  "mascot-cafe": {
+   "glyph": "cup",
+   "label": "카페·디저트 안내 마스코트",
+   "group": "mascot"
+  },
+  "mascot-airport": {
    "glyph": "bus",
-   "label": "가는 법 안내 마스코트",
+   "label": "공항·가는 법 안내 마스코트",
    "group": "mascot"
   },
   "mascot-camera": {
@@ -206,9 +241,9 @@
    "label": "영상 안내 마스코트",
    "group": "mascot"
   },
-  "mascot-wave-boat": {
+  "mascot-ferry": {
    "glyph": "wave",
-   "label": "섬·바다 안내 마스코트",
+   "label": "섬 가는 배 안내 마스코트",
    "group": "mascot"
   },
   "icon-plan": {

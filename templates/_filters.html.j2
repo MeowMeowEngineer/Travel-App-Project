@@ -45,9 +45,11 @@
 {#- the zero-result panel, between the bar and the ledger (so the phone's 지도 view, which hides the ledger, shows it
     too): the sentence, then site.js puts one '<값> 조건 해제' button per filter that brings rows back on its own
     (data-one: {v} = the chip's label in this version) before the reset of every filter. Hidden until nothing matches;
-    never shown without JS (the list is then complete). -#}
+    never shown without JS (the list is then complete). The mascot with an empty basket stands beside the sentence
+    (decorative; nothing when the site has no mascot). -#}
 {% macro zero(F) -%}
-<p class="empty" data-empty hidden>{{ F.w.empty }}</p>
+{%- import "_mascot.html.j2" as mm -%}
+<p class="empty" data-empty hidden>{{ mm.pic('mascot-empty', 'medium', 72, 'empty-pic') }}<span>{{ F.w.empty }}</span></p>
 <div class="f-undo" data-f-undo data-one="{{ F.w.clear_one }}" hidden><button type="button" data-f-reset>{{ F.w.clear_all }}</button></div>
 {%- endmacro %}
 

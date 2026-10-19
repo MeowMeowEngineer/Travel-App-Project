@@ -22,7 +22,11 @@
 - 광역시 처리: `tools/tourapi_bulk.py`가 `site.json` `tourapi.scope` 'sido'면 TourAPI 법정동 코드 목록의 구·군을 모두 돈다(`--districts`로 일부만). 새 장소는 그 구·군을 `district`로 단다. 시도·구·군 코드는 저장하지 않고 실행 때 TourAPI(ldongCode2)에서 받는다(`tools/tourapi_doctor.py`가 보여 준다).
 - 키를 받으면: `python tools/collect.py --data data/incheon` 한 명령(키 확인 → 진단 → 목록·좌표·사진 → 행사(오늘부터) → 상세 → TourAPI에만 있는 장소 → 요약·남은 호출·다음 명령). 호출 예산 식은 `README.md` 'TourAPI 호출 예산'.
 - 군산 실데이터(`data/gunsan`)·군산 그림·군산 문서에 기대던 테스트와 군산 측정 질문 도구는 옮기지 않았다: `tests/excluded_gunsan_tests.txt`. 인천 데이터가 생기면 같은 성질의 시험을 인천 데이터로 다시 쓴다. 엔진 시험의 고정 데이터는 `data/sample/`(군산 모양의 가짜 샘플)과 `tests/fixtures/incheon_tiny/`(인천 설정용 가짜 장소 5곳)다.
-- 마스코트는 없다(군산 마스코트는 '군산 사이트 전용'). 엔진은 마스코트 없이 동작한다(`pipeline/icons.py` `mascot()`).
+- **그림(운영자 납품 2026-10-19, `docs/image_prompts_incheongak.md`, 137장)** — 원본 `incoming/{brand,mascot,icons,ai-images}/<ID>.png`는 커밋하지 않고 파생본(AVIF·WebP)만 커밋한다.
+  - 마스코트 점박이물범(B): `tools/mascot_media.py` → `templates/assets/mascot/`. 자리: AI 챗봇 버튼(icon-3d), 홈 질문 상자·코스 만들기 안내(hello), 챗봇 답 기다림(think)·오류(sorry), 검색 머리(search), 목록 필터 0건(empty), 404(404), `/plan/`(plan·plan-done, 수정 상자 자리는 point). mascot-base는 기준 그림이라 싣지 않는다. 엔진은 마스코트 없이도 동작한다(`pipeline/icons.py` `mascot()`).
+  - 소품 든 물범(mascot-eat·-cafe·-camera·-airport·-ferry)과 3D 아이콘(C·D·I): `tools/icon_media.py`(원본 `incoming/icons/`와 `incoming/mascot/`의 등록부 ID) → `templates/assets/icons/`, 등록부 `data/incheon/icons.json`. 홈 메뉴(icon-*), 사진 없는 장소·행사(kind-*, 행사 페이지는 kind-festival), 코스 만들기(theme-*·sit-*·transit-bus), 음식점·카페 목록 머리(mascot-eat·-cafe), 영상 목록 머리(mascot-camera). 가이드 머리 그림은 `site.json` `city.guide_pics`({가이드 id: [그림, glyph, px]} — 가는 법 가이드가 생기면 mascot-airport), 섬 테마는 mascot-ferry. transit-subway·-ferry·-plane, theme-sky-airport·-tidal-flat은 등록만(쓰는 페이지가 아직 없다).
+  - 일러스트 80장(E–M): `data/incheon/art.json` → `tools/art_media.py` → `templates/assets/art/`. 권역(area-* — 지도 권역 띠와 홈 권역 줄, `site.json` `city.travel_regions[].art`), 목록 머리(head-* — 카페·쇼핑 포함), 홈 소식 카드(card-event·-guide·-video), 월(month-*), 행사 종류(evkind-* — `city.event_kind_words`가 인천 종류 heritage·film·design·airport를 만들고 sports는 race 자리), 영상 주제(vtopic-*), 소개 머리·404·빈 검색·챗봇 첫 화면·코스 만들기 머리. card-course·-cafe·-island·-airport·-season과 가이드 머리 camp-*-notext 18장은 자리가 아직 없어 '개편 뒤 연결'로 등록만 했다(가이드가 생기면 slot을 `guide.banner.<가이드 id>`로). 장소가 하나도 없는 동안(수집 전)에는 일러스트를 싣지 않는다(빈 데이터를 장식으로 덮지 않음). 그림을 싣는 빌드에서 /about/에 '생성형 AI' 안내가 없으면 검증 오류다.
+  - 로고 시안(A)은 `tools/brand_kit.py`가 도형으로 다시 그린 SVG만 쓴다(원본 래스터는 싣지 않는다).
 - **운영자 결정(2026-10-19)**
   - **이름**: 인천각(MZ 표현 '~하는 각?' — '오늘 인천 가는 각'), 영어 **Incheongak**. `site.json` `site_name`·`brand` '인천각', 영어 이름은 `city.intl.en.site_name`(영어판을 만들 때의 이름, 로고 아래 줄). 가칭 '인천 여행의 모든 것'은 쓰지 않는다. 머리말·바닥글은 심볼(`brand_symbol`) + '인천' 잉크 + '각' 로고 파랑(`pipeline/present.wordmark`, css `--brand`). 페이지 제목·og:site_name·구조화 데이터 WebSite 이름은 site_name에서 나온다. 홈 첫 화면 h1은 `city.home.h1` '오늘, 인천 가는 각'(없으면 '<지역> 여행의 모든 것').
   - **로고**: 시안 A(인천대교 주탑 + 책갈피, `incoming/brand/logo-a-bridge.png`와 단색·반전 래스터 — 커밋 안 함)를 래스터에서 재서 도형으로 다시 그렸다: `tools/brand_kit.py`(shapely·fonttools, 이 도구만) → `templates/assets/brand/incheongak-symbol.svg`(머리말·바닥글)·`-symbol-reverse`·`-symbol-mono`·`-logo`(가로형, 글자는 Pretendard Bold 윤곽)·`-app-icon`, `icon-48/96/180/192/512.png`·`favicon.ico`. 색은 `site.json` `brand_colors`(바다 파랑 #1764C0, 노을 코랄 #FF7A5C, 잉크 #172033).
@@ -85,7 +89,7 @@
   - alt는 '일러스트'로 시작한다. 소개 페이지(/about/)에 '이 사이트의 일러스트는 생성형 AI로 그렸다'고 한 번 적는다.
   - 장소 사진 자리·썸네일과 구조화 데이터(ImageObject·장소 og:image)에는 쓰지 않는다.
   - 'AI 생성 이미지' 표기는 하지 않는다(`pipeline/art.py`·validate가 검사).
-- 군산 사이트의 일러스트·사진·마스코트는 군산을 그렸거나 군산 전용이라 쓰지 않는다. 옮긴 그림은 도시와 무관한 3D 아이콘 44장(`templates/assets/icons/`: 처음 28장, 2026-10-19 재동기화 때 코스 만들기·사진 없는 관광지용 16장)·브랜드(운영사 로고)·글꼴뿐이다.
+- 군산 사이트의 일러스트·사진·마스코트는 군산을 그렸거나 군산 전용이라 쓰지 않는다. 옮긴 그림은 도시와 무관한 3D 아이콘(`templates/assets/icons/`)·브랜드(운영사 로고)·글꼴뿐이고, 같은 ID의 아이콘은 인천 납품(2026-10-19)으로 바뀌었다 — 군산에서 온 것은 납품에 없는 fact-*·guide·info-center·icon-abroad·plan-*·pref-photo·cond-*만 남았다.
 - 첫 화면 내용을 스크립트로 숨겼다가 보여 주지 않는다. 연출은 첫 화면 아래 요소에만 쓴다.
 - '멈추고 보고'를 남발하지 않는다. 6절 항목만 사람에게 넘기고, 나머지는 판단해서 진행한다.
 - `public/`을 직접 고치지 않는다. 빌드로만 갱신한다.
@@ -118,7 +122,7 @@
 - **출처 이용 조건**: 인천투어·인천관광공사 자료의 이용 조건, 추가 출처 수집 범위, TourAPI overview 게재 여부.
 - **카카오 지도 JavaScript 키**: 새 도메인을 카카오 개발자 콘솔에 등록하고 키를 보낸다.
 - `publish_rules`·`crawler_policy`: 군산 값을 기본으로 옮겼다. 인천용으로 확인한다.
-- 마스코트·일러스트를 새로 만들지, 영어·다국어판을 할지(권장: 한국어만 먼저).
+- 영어·다국어판을 할지(권장: 한국어만 먼저). 마스코트·일러스트는 운영자가 납품했다(2026-10-19, 2절). 글자처럼 보이는 무늬가 있는 그림(evkind-heritage 깃발의 금색 문양, mascot-404의 물음표)을 다시 그릴지.
 - **코스 만들기 출발·도착 장소**(`city.plan.hubs`: 역·터미널·공항 이름 — 비어 있으면 선택이 없다), **섬 권역**(`city.plan.island_regions`), **좌표 범위**(`city.geo_bounds`, 비어 있으면 범위 검사 없음), **긴급 연락처 절**(`site.json` `emergency`: 군산은 한국관광공사 VisitKorea 119·112·1330 — 인천판은 운영자 확인 뒤), **운영사 공식 정보**(`operator.business_no` 등이 있으면 바닥글·/about/#company에 나온다).
 - 저장소 공개 여부와 원본 데이터(`data/raw`) 위치.
 

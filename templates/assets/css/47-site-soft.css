@@ -120,6 +120,13 @@ body .faq-acc summary:hover h3 { color: var(--sea-deep); }
 .res-g li a:hover .res-nm { color: var(--sea); }
 .empty-mascot { margin: 24px 0 0; line-height: 0; }
 .empty-mascot img { width: 120px; height: 120px; }
+/* the list's zero-result sentence beside the mascot with an empty basket (_filters.html.j2 zero) */
+.empty[data-empty]:not([hidden]) { display: flex; align-items: center; gap: 12px; }
+.empty .empty-pic { flex: none; line-height: 0; }
+.empty .empty-pic img { width: 72px; height: 72px; }
+/* the search page: the mascot with a magnifier beside the title (a <picture>, not a registry .pic) */
+.hd-mascot > picture img { width: 96px; height: 96px; }
+@media (max-width: 699px) { .hd-mascot > picture img { width: 72px; height: 72px; } }
 
 /* ---------------------------------------------------------------- 404: the mascot, then the links as pills */
 .nf-mascot { margin: 0 0 8px; line-height: 0; }

@@ -1,0 +1,312 @@
+{
+ "mascot-icon-3d": {
+  "size": "icon",
+  "px": [
+   64,
+   128
+  ],
+  "avif": [
+   [
+    "mascot-icon-3d-64.avif",
+    64,
+    2127
+   ],
+   [
+    "mascot-icon-3d-128.avif",
+    128,
+    4054
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-icon-3d-64.webp",
+    64,
+    2202
+   ],
+   [
+    "mascot-icon-3d-128.webp",
+    128,
+    4604
+   ]
+  ]
+ },
+ "mascot-hello": {
+  "size": "small",
+  "px": [
+   96,
+   192
+  ],
+  "avif": [
+   [
+    "mascot-hello-96.avif",
+    96,
+    3364
+   ],
+   [
+    "mascot-hello-192.avif",
+    192,
+    6446
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-hello-96.webp",
+    96,
+    3450
+   ],
+   [
+    "mascot-hello-192.webp",
+    192,
+    7356
+   ]
+  ]
+ },
+ "mascot-point": {
+  "size": "small",
+  "px": [
+   96,
+   192
+  ],
+  "avif": [
+   [
+    "mascot-point-96.avif",
+    96,
+    3360
+   ],
+   [
+    "mascot-point-192.avif",
+    192,
+    6561
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-point-96.webp",
+    96,
+    3700
+   ],
+   [
+    "mascot-point-192.webp",
+    192,
+    7946
+   ]
+  ]
+ },
+ "mascot-think": {
+  "size": "small",
+  "px": [
+   96,
+   192
+  ],
+  "avif": [
+   [
+    "mascot-think-96.avif",
+    96,
+    3077
+   ],
+   [
+    "mascot-think-192.avif",
+    192,
+    6621
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-think-96.webp",
+    96,
+    3514
+   ],
+   [
+    "mascot-think-192.webp",
+    192,
+    7506
+   ]
+  ]
+ },
+ "mascot-sorry": {
+  "size": "small",
+  "px": [
+   96,
+   192
+  ],
+  "avif": [
+   [
+    "mascot-sorry-96.avif",
+    96,
+    2981
+   ],
+   [
+    "mascot-sorry-192.avif",
+    192,
+    6338
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-sorry-96.webp",
+    96,
+    3274
+   ],
+   [
+    "mascot-sorry-192.webp",
+    192,
+    7268
+   ]
+  ]
+ },
+ "mascot-search": {
+  "size": "small",
+  "px": [
+   96,
+   192
+  ],
+  "avif": [
+   [
+    "mascot-search-96.avif",
+    96,
+    3846
+   ],
+   [
+    "mascot-search-192.avif",
+    192,
+    7288
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-search-96.webp",
+    96,
+    4276
+   ],
+   [
+    "mascot-search-192.webp",
+    192,
+    9064
+   ]
+  ]
+ },
+ "mascot-404": {
+  "size": "medium",
+  "px": [
+   200,
+   400
+  ],
+  "avif": [
+   [
+    "mascot-404-200.avif",
+    200,
+    8084
+   ],
+   [
+    "mascot-404-400.avif",
+    400,
+    17531
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-404-200.webp",
+    200,
+    9888
+   ],
+   [
+    "mascot-404-400.webp",
+    400,
+    22122
+   ]
+  ]
+ },
+ "mascot-empty": {
+  "size": "medium",
+  "px": [
+   200,
+   400
+  ],
+  "avif": [
+   [
+    "mascot-empty-200.avif",
+    200,
+    7033
+   ],
+   [
+    "mascot-empty-400.avif",
+    400,
+    14870
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-empty-200.webp",
+    200,
+    8284
+   ],
+   [
+    "mascot-empty-400.webp",
+    400,
+    18748
+   ]
+  ]
+ },
+ "mascot-plan": {
+  "size": "medium",
+  "px": [
+   200,
+   400
+  ],
+  "avif": [
+   [
+    "mascot-plan-200.avif",
+    200,
+    8127
+   ],
+   [
+    "mascot-plan-400.avif",
+    400,
+    17161
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-plan-200.webp",
+    200,
+    9144
+   ],
+   [
+    "mascot-plan-400.webp",
+    400,
+    20126
+   ]
+  ]
+ },
+ "mascot-plan-done": {
+  "size": "medium",
+  "px": [
+   200,
+   400
+  ],
+  "avif": [
+   [
+    "mascot-plan-done-200.avif",
+    200,
+    6914
+   ],
+   [
+    "mascot-plan-done-400.avif",
+    400,
+    14854
+   ]
+  ],
+  "webp": [
+   [
+    "mascot-plan-done-200.webp",
+    200,
+    8424
+   ],
+   [
+    "mascot-plan-done-400.webp",
+    400,
+    18138
+   ]
+  ]
+ }
+}

@@ -238,8 +238,11 @@ def test_validate_rejects_art_misused_in_a_built_site(tmp_path):
     place = next((out / "places").glob("*/index.html"))
     place.write_text(place.read_text("utf-8").replace("</main>", fig() + "</main>", 1), "utf-8")
     (out / "assets" / "style.css").write_text(".h{background:url(/assets/art/x.webp)}", "utf-8")
+    about = out / "about" / "index.html"                    # the about page without its one line on the illustrations
+    about.write_text(about.read_text("utf-8").replace("생성형 AI", "AI"), "utf-8")
     errors = "\n".join(validate(SAMPLE, out, "sample")[0])
     assert "figure[data-art]" in errors and "장소 페이지에 AI 그림" in errors and "CSS 배경" in errors
+    assert "소개 페이지에 '이 사이트의 일러스트는 생성형 AI로 그렸다'는 안내가 없음" in errors
 
 
 # ------------------------------------------------------------------ tools/art_media.py (needs Pillow with AVIF)
@@ -443,3 +446,54 @@ def test_home_opening_and_news_cards_with_and_without_art(tmp_path, monkeypatch)
     assert 'data-pic="guide"' in guide and 'class="nc-frame nc-icof"' in guide
     assert not (tmp_path / "without" / "assets" / "art").exists()
     assert validate(data, tmp_path / "without", "sample")[0] == []
+
+
+# ------------------------------------------------------------------ Incheon's own pictures (operator delivery 2026-10-19)
+INCHEON = ROOT / "data" / "incheon"
+
+
+def test_incheon_art_json_matches_the_renditions_on_disk():
+    """data/incheon/art.json (docs/image_prompts_incheongak.md E–M, 80 pictures) against templates/assets/art: every
+    picture described as an illustration in Korean and English, one well-formed slot each, '연결' only where the site
+    has the slot (the city's 권역 art keys and event kinds included), every rendition present with its size, and
+    nothing in the folder that the manifest does not list (the manifest is exactly art.json's pictures)."""
+    data = json.loads((INCHEON / "art.json").read_text("utf-8"))
+    assert art.data_problems(INCHEON) == []
+    images = data["images"]
+    assert len(images) == 80 and not data["held"]
+    for art_id, meta in images.items():
+        assert meta["alt"].startswith("일러스트: ") and meta["alt_en"].startswith("Illustration: "), art_id
+        assert not meta.get("text"), art_id                       # drawn without words: nothing printed in them
+        assert meta["file"] == f"{art_id}.png"
+    manifest = art.load_manifest()
+    assert set(manifest) == set(images)
+    listed = {name for e in manifest.values() for fmt in ("avif", "webp", "jpg") for name, _, _ in e.get(fmt) or []}
+    on_disk = {f.name for f in art.ART_DIR.iterdir() if f.name != "manifest.json"}
+    assert on_disk == listed
+    # where each group goes (the prompt document's tables)
+    slot = {k: v["slot"] for k, v in images.items()}
+    assert slot["head-cafes"] == "list.head.cafes" and slot["head-shopping"] == "list.head.shopping"
+    assert slot["evkind-sports"] == "events.kind.race" and slot["chat-empty"] == "chat.empty"
+    assert slot["plan-hero"] == "plan.head" and slot["art-404"] == "page.404" and slot["art-empty"] == "search.empty"
+    later = {k for k, v in images.items() if v["status"] == "개편 뒤 연결"}
+    assert later == {k for k in images if k.startswith("camp-")} | {"card-course", "card-cafe", "card-island",
+                                                                     "card-airport", "card-season"}
+
+
+def test_a_city_names_its_own_event_kinds_ahead_of_the_generic_ones():
+    """site.json city.event_kind_words: words for a generic kind join its row; a kind the engine does not have is the
+    city's own, matched first ('영화제' is a film before it is a stage), and is a slot (events.kind.<kind>)."""
+    site = json.loads((INCHEON / "site.json").read_text("utf-8"))
+    from pipeline import city
+    city.activate(site)
+    kinds = [k for k, _ in art.event_kinds()]
+    assert kinds[:4] == ["heritage", "film", "design", "airport"] and "race" in kinds
+    for name, kind in (("드림파크 국화축제", "flowers"), ("오슬로우 빈티지 마켓", "market"), ("왕가의 산책", "heritage"),
+                       ("인천 영화 주간 2026", "film"), ("디아스포라영화제", "film"), ("2026 인천국제디자인페어(INDEF)", "design"),
+                       ("2026 문화가 있는 날", "other"), ("인천 국제 마라톤", "race"), ("불꽃축제", "night")):
+        assert art.event_kind({"name": name}) == kind, name
+    for kind in ("heritage", "film", "design", "airport", "race", "other"):
+        assert art.known_slot(f"events.kind.{kind}"), kind
+    city.activate_dir(SAMPLE)
+    assert not art.known_slot("events.kind.heritage")            # the sample city has no such kind
+    assert art.city_kinds(INCHEON)[:4] == ["heritage", "film", "design", "airport"]

@@ -609,7 +609,9 @@ class State:
         self.abroad = load_abroad(data_dir)
         self.abroad_highlights = load_abroad_highlights(data_dir, self.abroad)   # the /abroad/ highlights row
         self.abroad_videos = [v for v in self.videos if (v.get("lang") or "ko") != "ko"]
-        self.art = art.slots(data_dir)   # AI art by slot (pipeline/art.py); an empty slot renders as before
+        # AI art by slot (pipeline/art.py); an empty slot renders as before. A region with no place yet shows none:
+        # illustrations never dress up empty data (CLAUDE.md 4) — its pages stay the honest empty state
+        self.art = art.slots(data_dir) if self.entities else {}
         # the homes' centre question card (pipeline/ask.py, owner 2026-10-13): its starter questions, or None when the
         # region has no ask.json or no places (the assistant answers from them; the Korean box falls back to /search/,
         # which only a build with places has) — then the homes render as before
@@ -1265,11 +1267,12 @@ def event_series(events: list[dict], S: State) -> list[dict]:
 
 
 VIDEOS_PER_PAGE = 3
-VIDEO_TOPICS = ("여행 코스", "근대역사", "섬·바다", "호수·공원", "자연·생태", "먹거리", "축제", "숙소", "기타")
-# each topic page's AI art band, videos.head.<key> (pipeline/art.py): the topic in English, as the owner's picture list
-# (docs/handover/image_prompts_round2_2026-10-13.md M) names it — the one table of these names
+VIDEO_TOPICS = ("여행 코스", "근대역사", "섬·바다", "호수·공원", "자연·생태", "도시·야경", "먹거리", "카페", "축제", "숙소",
+                "기타")
+# each topic page's AI art band, videos.head.<key> (pipeline/art.py): the topic in English, as the owner's picture lists
+# name it (docs/image_prompts_incheongak.md L, vtopic-<key>; 도시·야경 and 카페 came with it) — the one table of these names
 VIDEO_TOPIC_ART = dict(zip(VIDEO_TOPICS, ("travel-courses", "modern-history", "islands-sea", "lakes-parks", "nature",
-                                          "food", "festivals", "stays", "other")))
+                                          "city-night", "food", "cafe", "festivals", "stays", "other")))
 
 
 ABROAD_PLATFORMS = {"instagram": "Instagram", "threads": "Threads", "x": "X", "facebook": "Facebook"}
