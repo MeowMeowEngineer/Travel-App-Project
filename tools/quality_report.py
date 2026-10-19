@@ -1,8 +1,8 @@
 """사이트 정보 품질 리포트 — '정보가 실제로 들어갔는가'를 매 라운드 같은 기준으로 잰다.
 
-    python tools/quality_report.py --data data/gunsan --out public
-    python tools/quality_report.py --data data/gunsan --out dist-preview --json   # 에이전트용
-    python tools/quality_report.py --data data/gunsan --out public --md docs/handover/quality_after.md
+    python tools/quality_report.py --data data/incheon --out public
+    python tools/quality_report.py --data data/incheon --out dist-preview --json   # 에이전트용
+    python tools/quality_report.py --data data/incheon --out public --md docs/handover/quality_after.md
 
 - 표준 라이브러리만 쓴다. 데이터와 빌드 결과(--out)만 읽고 아무것도 고치지 않는다.
 - '화면에 나간 장소' = --out/places/<slug>/index.html 이 있는 장소. 데이터 전체가 아니라 사람이 보는 범위를 잰다.
@@ -17,6 +17,12 @@ import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from pipeline import city  # noqa: E402
+from pipeline.schema import taut_pattern  # noqa: E402
 
 # 실용 정보로 치는 facts 키(출처별 이름이 달라 묶어서 본다)
 GROUPS = {
@@ -37,7 +43,7 @@ KIND_GROUPS = {  # 유형별로 '있어야 하는' 정보 — 빈칸률을 이 �
 CARD_FIELDS = ("usetime", "restdate", "usetime_restdate", "parking", "parking_seats", "menu")
 CARD_MAX = 24            # 목록 카드 칩에서 잘리기 쉬운 길이(글자)
 NON_PLACE = re.compile(r"(\s코스$|코스$|기본지식|탐방\s|안내서$)")
-TAUT = r"^{name}\s*(은|는)\s*군산시[^.]*?(있는|위치한)[^.]*?입니다\.$"
+TAUT = taut_pattern   # the index rule's own pattern for the active city (pipeline/schema.py)
 BANMAL = re.compile(r"(어|야|해|돼|래|까|니|지|줘|나)\?*$")
 JONDAE = re.compile(r"(나요|까요|습니까|가요|인가요|세요|되나요|있나요|하나요)\?$")
 
@@ -69,6 +75,7 @@ def pct(a: int, b: int) -> str:
 
 def analyse(data: Path, out: Path, today: str) -> dict:
     site = load(data / "site.json") or {}
+    city.activate(site)
     allowed = set((site.get("publish_rules") or {}).get("allowed_image_licenses") or ["KOGL-1", "KOGL-3"])
     places = [p for p in load(data / "places.json") if not p.get("duplicate_of")]
     shown = built_slugs(out, "places")
@@ -89,7 +96,7 @@ def analyse(data: Path, out: Path, today: str) -> dict:
             for g in GROUPS:
                 c[g] += has(f, g)
             ss = sentences(p.get("summary") or "")
-            taut = bool(ss) and bool(re.match(TAUT.format(name=re.escape(p.get("name", ""))), ss[0]))
+            taut = bool(ss) and bool(re.match(TAUT(p.get("name", "")), ss[0]))
             c["summary_tautology_first"] += taut
             practical = any(has(f, g) for g in KIND_GROUPS.get(kind, ()))
             thin = (not practical) or (taut and len(ss) <= 1)
@@ -169,7 +176,7 @@ def analyse(data: Path, out: Path, today: str) -> dict:
 def to_md(rep: dict) -> str:
     L = [f"# 정보 품질 리포트 ({rep['today']})", "",
          f"- 데이터 장소 {rep['data_places']}곳(중복 제외) · 화면에 나간 장소 {rep['shown_places']}곳 · 상태 {rep['status']}", ""]
-    L += ["## 유형별 채움률(화면에 나간 장소 기준)", "", "| 유형 | 수 | 좌표 | 허용 사진 | 필수 정보 채움 | 얇은 페이지 | 요약 첫 문장이 '○○은 군산시 ○○에 있는 ○○입니다' |", "|---|---|---|---|---|---|---|"]
+    L += ["## 유형별 채움률(화면에 나간 장소 기준)", "", "| 유형 | 수 | 좌표 | 허용 사진 | 필수 정보 채움 | 얇은 페이지 | 요약 첫 문장이 '○○은 ○○시 ○○에 있는 ○○입니다' |", "|---|---|---|---|---|---|---|"]
     for k, v in rep["kinds"].items():
         need = " · ".join(f"{g} {s}" for g, s in v["need"].items())
         L.append(f"| {k} | {v['n']} | {pct(v.get('geo', 0), v['n'])} | {pct(v.get('photo', 0), v['n'])} | {need} | "
@@ -185,7 +192,7 @@ def to_md(rep: dict) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=Path("data/gunsan"))
+    ap.add_argument("--data", type=Path, default=Path("data/incheon"))
     ap.add_argument("--out", type=Path, default=Path("public"))
     ap.add_argument("--today", default=dt.date.today().isoformat())
     ap.add_argument("--json", action="store_true")

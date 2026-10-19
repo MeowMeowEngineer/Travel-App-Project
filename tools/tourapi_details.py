@@ -174,7 +174,7 @@ def _same(key: str, a: str, b: str) -> bool:
     if key == "address":
         from tools.tourapi_bulk import road_key  # local import: avoid a cycle at module load
         ra, rb = road_key(a), road_key(b)
-        if ra and rb:  # '남군산로 1685' = '남군산로 1685-53': same main number, one adds the sub-number
+        if ra and rb:  # '○○로 1685' = '○○로 1685-53': same main number, one adds the sub-number
             return ra.split("-")[0] == rb.split("-")[0]
         return not ra or same_meaning(a, b)  # '해망동 일원' vs a road address in it: the road one is just more exact
     return same_meaning(a, b)
@@ -216,13 +216,13 @@ def merge_facts(place: dict, new: dict, today: str, contentid: str) -> dict:
         s = dict(own_source(key))
         if s.get("provider") != PROVIDER:
             prev = s.get("confirmed_by") or ""
-            if PROVIDER not in prev:  # a re-run keeps the richer note written earlier (e.g. '… · 군산시 문화관광 본문')
+            if PROVIDER not in prev:  # a re-run keeps the richer note written earlier (e.g. '… · <city tourism site> 본문')
                 s["confirmed_by"] = " · ".join(x for x in (prev, f"{PROVIDER} {today}") if x)
             sources[key] = s
             out["confirmed"].append(key)
 
     handled = set()
-    for combined, parts in COMBINED.items():  # e.g. 군산시 '영업시간·정기휴일' vs TourAPI 영업시간 + 쉬는 날
+    for combined, parts in COMBINED.items():  # e.g. the city site's '영업시간·정기휴일' vs TourAPI 영업시간 + 쉬는 날
         if not facts.get(combined) or not any(new.get(p) for p in parts):
             continue
         joined = " / ".join(new[p] for p in parts if new.get(p))
@@ -271,15 +271,18 @@ def merge_facts(place: dict, new: dict, today: str, contentid: str) -> dict:
 
 
 def display_name(title: str | None) -> str:
-    """'동국사(군산)' -> '동국사', '[백년가게]쌍용반점' -> '쌍용반점'."""
-    return re.sub(r"\s*\((?:군산|군산시)\)|\[[^\]]*\]\s*", "", title or "").strip()
+    """'X사(<city>)' -> 'X사' (the active city's names in brackets, pipeline/city.py), '[백년가게]Y반점' -> 'Y반점'."""
+    from pipeline import city
+    names = "|".join(re.escape(n) for n in city.current().names)
+    rx = (rf"\s*\((?:{names})\)|" if names else "") + r"\[[^\]]*\]\s*"
+    return re.sub(rx, "", title or "").strip()
 
 
 def alternate_name(place: dict, title: str | None) -> str:
-    """TourAPI's own name when it differs from ours in more than spacing/brackets (e.g. 군산근대역사박물관)."""
+    """TourAPI's own name when it differs from ours in more than spacing/brackets (e.g. '<city>근대역사박물관')."""
     name = display_name(title)
     mine, theirs = normalize_name(place.get("name")), normalize_name(name)
-    # '동국사' for our '군산 동국사 대웅전' names the whole temple, '궁전' for '궁전갈치찜' is a shortening: not another name
+    # 'X사' for our '<city> X사 대웅전' names the whole temple, '궁전' for '궁전갈치찜' is a shortening: not another name
     if not name or theirs == mine or theirs in mine:
         return ""
     return name
@@ -290,7 +293,9 @@ def https(url: str) -> str:
 
 
 def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: str, allowed, taken: set) -> dict:
-    """A draft/basic place for a TourAPI item that matches nothing in the 군산시 data."""
+    """A draft/basic place for a TourAPI item that matches nothing in the region's data. A 광역시's items carry the
+    구·군 TourAPI listed them under (tourapi_bulk: '_signgu_name'), kept as `district` (pipeline/city.py district_of
+    reads it when the address names none)."""
     cid, ctype = str(item["contentid"]), str(item.get("contenttypeid") or "")
     name = display_name(common.get("title") or item.get("title"))
     slug, n = slugify(name), 2
@@ -317,6 +322,8 @@ def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: st
         place["geo"] = {"lat": lat, "lng": lng, "source": "TourAPI"}
     except (TypeError, ValueError):
         pass
+    if item.get("_signgu_name"):
+        place["district"] = item["_signgu_name"]
     first = common.get("firstimage") or item.get("firstimage")
     code = TOURAPI_LICENSE_MAP.get(str(common.get("cpyrhtDivCd") or item.get("cpyrhtDivCd") or ""), "UNKNOWN")
     if first and license_allowed(code, allowed):
@@ -325,7 +332,7 @@ def new_place(item: dict, common: dict, intro: dict, info: list[dict], today: st
 
 
 def duplicate_candidates(item: dict, places: list[dict], region: str) -> list[dict]:
-    """군산시 records that may be the same place as an unmatched TourAPI item (for a person or reviewer)."""
+    """The region's records that may be the same place as an unmatched TourAPI item (for a person or reviewer)."""
     from tools.tourapi_bulk import GENERIC, name_key, road_key
     kind = KIND_BY_TYPE.get(str(item.get("contenttypeid")))
     nk = name_key(display_name(item.get("title")), region)
@@ -373,6 +380,6 @@ def festival_event(item: dict, intro: dict, common: dict, today: str) -> dict:
 
 
 def event_key(name: str | None) -> str:
-    """'2026 군산시간여행축제' and '제12회 군산시간여행축제' -> same key."""
+    """'2026 ○○축제' and '제12회 ○○축제' -> same key."""
     s = re.sub(r"^\s*(\d{4}\s*년?|제\s*\d+\s*회)\s*", "", name or "")
     return normalize_name(s)

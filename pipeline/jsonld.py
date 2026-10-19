@@ -16,12 +16,13 @@ from __future__ import annotations
 import json
 import re
 
+from . import city
 from .schema import FACT_LABELS, designations, node_types, schema_type, serves_cuisine
 from .textutil import display_address, display_value, extract_phones, phone_intl, squash_ws
 
 PROP_KEYS = ("usetime", "restdate", "usefee", "parking", "spendtime", "menu", "babycarriage", "pet")
 # `award` (schema.org Organization / LocalBusiness): the official designations a restaurant or lodging page shows
-# (schema.designations) as their visible labels, e.g. '군산맛집(2026, 군산시 지정)' — never on a plain Place type
+# (schema.designations) as their visible labels, e.g. '모범음식점(○○시 지정)' — never on a plain Place type
 AWARD_TYPES = {"Restaurant", "LodgingBusiness", "Hotel", "Motel"}
 _TIME = re.compile(r"^\d{1,2}:\d{2}$")
 # Image licence pages (both checked to open on 2026-10-08)
@@ -79,9 +80,12 @@ def author_node(site: dict | None, site_url: str, lang: str = "ko") -> dict:
     return node
 
 
+CITY_ID = "#city"   # the one city node's fragment on the home page (city-neutral: every city site uses it)
+
+
 def city_ref(site: dict, site_url: str) -> dict:
-    """The one Gunsan node (defined on the home page) that places point to."""
-    return {"@id": f"{site_url}/#gunsan", "@type": "City", "name": site.get("locality", "")}
+    """The one city node (defined on the home page) that places point to."""
+    return {"@id": f"{site_url}/{CITY_ID}", "@type": "City", "name": site.get("locality", "")}
 
 
 def place_ref(page_url: str, e: dict) -> dict:
@@ -144,19 +148,17 @@ def alternate_names(e: dict) -> list[str]:
 
 def postal_address(raw: str | None, site: dict) -> dict | None:
     """PostalAddress from the displayed address. Region and locality are split off only when the visible
-    string starts with them; streetAddress is the visible remainder (or the whole string)."""
+    string starts with them (a province and its 시, or a 광역시 and its 구·군: pipeline/city.py postal_parts);
+    streetAddress is the visible remainder (or the whole string)."""
     addr = display_address(raw)
     if not addr:
         return None
     node = {"@type": "PostalAddress"}
-    rest = addr
-    region, locality = site.get("region_admin", ""), site.get("locality", "")
-    if region and rest.startswith(region):
+    region, locality, rest = city.current().postal_parts(addr)
+    if region:
         node["addressRegion"] = region
-        rest = rest[len(region):].lstrip()
-    if locality and rest.startswith(locality):
+    if locality:
         node["addressLocality"] = locality
-        rest = rest[len(locality):].lstrip()
     node["streetAddress"] = rest or addr
     node["addressCountry"] = "KR"
     return node
@@ -262,7 +264,7 @@ def entity_node(e: dict, site: dict, site_url: str, page_url: str, images: list[
     if has_map:
         node["hasMap"] = has_map
     phones = [phone_intl(p) for p in extract_phones(facts.get("infocenter"))]
-    # a second official number (e.g. 군산시 위생과 list) is shown next to the first, so both go here too
+    # a second official number (e.g. the city's hygiene-office list) is shown next to the first, so both go here too
     for alt in (e.get("fact_alternatives") or {}).get("infocenter") or []:
         for ph in extract_phones(alt.get("value") if isinstance(alt, dict) else alt):
             if phone_intl(ph) not in phones:
@@ -395,9 +397,9 @@ def event_graph(ev: dict, page_url: str, crumbs, site: dict) -> dict:
 
 
 def home_graph(site, site_url, featured: list[dict], site_faq: list[dict]) -> dict:
-    """WebSite, publisher and the one Gunsan node (City + TouristDestination). The site description is not
-    put on the Gunsan node: it describes the website, not the city, and is not shown as such."""
-    dest = {"@type": ["City", "TouristDestination"], "@id": f"{site_url}/#gunsan", "name": site.get("locality", "")}
+    """WebSite, publisher and the one city node (City + TouristDestination). The site description is not
+    put on the city node: it describes the website, not the city, and is not shown as such."""
+    dest = {"@type": ["City", "TouristDestination"], "@id": f"{site_url}/{CITY_ID}", "name": site.get("locality", "")}
     if featured:
         dest["includesAttraction"] = featured
     graph = [website(site, site_url), organization(site, site_url), dest]

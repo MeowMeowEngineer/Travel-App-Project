@@ -1,8 +1,13 @@
 """TourAPI bulk enrichment: one region list per content type, matched locally (few calls).
 
-    python tools/tourapi_bulk.py --data data/gunsan [--max-calls 120] [--offline]
+    python tools/tourapi_bulk.py --data data/incheon [--max-calls 120] [--offline]
+    python tools/tourapi_bulk.py --data data/incheon --add-new --details --events --max-calls 900
+    python tools/tourapi_bulk.py --data data/incheon --districts 연수구,강화군 --add-new   # some 구·군 only
 
-1. ldongCode2 -> the region's lDongRegnCd/lDongSignguCd (site.json region, e.g. 전북특별자치도 군산시).
+1. ldongCode2 -> the region's lDongRegnCd and its 시군구 codes (site.json region_full: '인천광역시' or '<도> <시>').
+   A 광역시 (site.json tourapi.scope 'sido') takes every 구·군 TourAPI lists under it — a name its site.json does not
+   list in districts / districts_former is reported (the owner updates site.json); a 시 takes the one 시군구 named
+   locality. Each list item keeps the 구·군 it was listed under (`_signgu_name` → the place's `district`).
 2. areaBasedList2 for content types 12·14·28·38·32·39 (all pages) -> contentid, title, address, mapx/mapy,
    firstimage + cpyrhtDivCd.
 3. Local matching against places.json (duplicates skipped): same normalised name, or a near-identical name
@@ -45,7 +50,7 @@ NEARBY_PER_KIND = 3
 
 
 def road_key(address: str | None) -> str:
-    """'군산시 경촌4길 14(경암동)' -> '경촌4길14'; '' when the address has no road + number."""
+    """'X시 Y4길 14(Z동)' -> 'Y4길14'; '' when the address has no road + number."""
     m = ROAD.search(re.sub(r"\s+", " ", address or ""))
     return f"{m.group(1)}{m.group(2)}" if m else ""
 
@@ -65,17 +70,51 @@ def retry(fn, *args, **kwargs):
             time.sleep(min(30, 2 ** (attempt + 1)))
 
 
-def fetch_region(api, regn: str, signgu: str, rows: int = 200) -> list[dict]:
+def fetch_region(api, regn: str, signgu: str, rows: int = 200, name: str = "") -> list[dict]:
+    """Every list item of the content types in one 시군구 (all pages); each keeps the 구·군 name it was listed under."""
     items: list[dict] = []
     for ctype in LIST_TYPES:
         page = 1
         while True:
             got = retry(api.area_based, regn, signgu, ctype, rows=rows, page=page)
-            items += got
+            items += [{**it, "_signgu_name": name} if name else it for it in got]
             if len(got) < rows:
                 break
             page += 1
     return items
+
+
+class RegionError(RuntimeError):
+    """site.json does not name a region TourAPI knows (the message says what to fix)."""
+
+
+def region_codes(api, site: dict, only: list[str] | None = None) -> tuple[str, list[tuple[str, str]], list[str]]:
+    """(lDongRegnCd, [(lDongSignguCd, 시군구 name)], notes) of the site's region, from TourAPI's own code lists.
+    The 시도 is the one whose name is in site.json region_full; a 광역시 (tourapi.scope 'sido') takes every 시군구
+    TourAPI lists under it (or the `only` names), a 시 the one named locality (or region + '시', region). A 시군구 name
+    the site.json does not list (districts, districts_former) is a note: TourAPI may use the new names before the data
+    does, or the other way round — both are read (pipeline/city.py district_of)."""
+    region_full = str(site.get("region_full") or "").strip()
+    if not region_full:
+        raise RegionError("site.json에 region_full이 없습니다(예: '인천광역시', '○○도 ○○시').")
+    regn = next((str(r["code"]) for r in retry(api.ldong_code) if r.get("name") and r["name"] in region_full), "")
+    if not regn:
+        raise RegionError(f"TourAPI 법정동 시도 목록에 region_full '{region_full}'에 든 이름이 없습니다.")
+    signgus = [(str(r["code"]), str(r.get("name") or "")) for r in retry(api.ldong_code, regn) if r.get("code")]
+    notes: list[str] = []
+    if (site.get("tourapi") or {}).get("scope") == "sido":
+        known = set(site.get("districts") or []) | set(site.get("districts_former") or [])
+        notes += [f"site.json districts에 없는 구·군(TourAPI): {n}" for _, n in signgus if known and n not in known]
+        chosen = [(c, n) for c, n in signgus if not only or n in only]
+        missing = sorted(set(only or []) - {n for _, n in signgus})
+        notes += [f"TourAPI 목록에 없는 구·군: {n}" for n in missing]
+        return regn, chosen, notes
+    region = str(site.get("region") or "")
+    names = [x for x in (site.get("locality"), f"{region}시" if region else "", region) if x]
+    hit = next(((c, n) for c, n in signgus if n in names), None)
+    if not hit:
+        raise RegionError(f"TourAPI 법정동 시군구 목록에 locality '{site.get('locality')}'가 없습니다.")
+    return regn, [hit], notes
 
 
 def match(place: dict, by_name: dict, by_road: dict, region: str) -> tuple[dict | None, str]:
@@ -108,8 +147,9 @@ def match(place: dict, by_name: dict, by_road: dict, region: str) -> tuple[dict 
 
 
 def photo_title(title: str | None) -> str:
-    """What the provider photo shows: '동국사(군산)' -> '동국사', '[백년가게]쌍용반점' -> '쌍용반점'."""
-    return re.sub(r"\s*\((?:군산|군산시)\)|\[[^\]]*\]\s*", "", title or "").strip()
+    """What the provider photo shows: 'X사(<city>)' -> 'X사', '[백년가게]Y반점' -> 'Y반점' (tourapi_details.display_name)."""
+    from tools.tourapi_details import display_name
+    return display_name(title)
 
 
 def https(url: str) -> str:
@@ -119,6 +159,8 @@ def https(url: str) -> str:
 def fill(place: dict, cand: dict, basis: str, allowed: list | None) -> dict:
     locks = set(place.get("locks") or [])
     changed = {"geo": False, "image": ""}
+    if cand.get("_signgu_name") and not place.get("district"):   # the 구·군 TourAPI lists it under (a 광역시)
+        place["district"] = cand["_signgu_name"]
     place["tourapi"] = {**(place.get("tourapi") or {}), "contentid": str(cand["contentid"]),
                         "contenttypeid": str(cand.get("contenttypeid", "")), "title": cand.get("title", ""),
                         "match_basis": basis, "modifiedtime": cand.get("modifiedtime", "")}
@@ -220,14 +262,18 @@ def _details(api, cid: str, ctype: str) -> tuple[dict, dict, list]:
 
 
 def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, details: bool = False,
-        add_new: bool = False, events: bool = False, refresh: bool = False) -> dict:
+        add_new: bool = False, events: bool = False, refresh: bool = False, districts: list[str] | None = None) -> dict:
     import datetime as dt
+
+    from pipeline import city
     from tools.tourapi_details import (NEW_PLACE_TYPES, alternate_name, clean, duplicate_candidates, event_key,
                                        festival_event, merge_facts, new_place, tourapi_facts)
     load_dotenv(Path(".env"))
     site = json.loads((data_dir / "site.json").read_text("utf-8"))
+    city.activate(site)   # the city's names for name matching and photo titles (pipeline/city.py)
     places_path = data_dir / "places.json"
-    places = json.loads(places_path.read_text("utf-8"))
+    # before the first collection there is no places.json: every TourAPI item is new (--add-new)
+    places = json.loads(places_path.read_text("utf-8")) if places_path.exists() else []
     overrides_path = data_dir / "tourapi_overrides.json"
     overrides = json.loads(overrides_path.read_text("utf-8")) if overrides_path.exists() else {}
     same = {str(k): ([v] if isinstance(v, str) else list(v))                 # contentid -> our slug(s)
@@ -237,13 +283,10 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
     hold = {str(x) for x in overrides.get("hold") or {}}                     # contentid: a person decides first
     api = from_site_config(site, os.environ.get("TOURAPI_KEY", ""), data_dir.parent / "cache" / "tourapi",
                            offline=offline, refresh=refresh, max_calls=max_calls)
-    region_full = site.get("region_full") or "전북특별자치도 군산시"
-    region = site.get("region", "군산")
-    regions = retry(api.ldong_code)
-    regn = next(str(r["code"]) for r in regions if r.get("name") and r["name"] in region_full)
-    signgu = next(str(r["code"]) for r in retry(api.ldong_code, regn)
-                  if r.get("name") in (site.get("locality"), f"{region}시", region))
-    items = fetch_region(api, regn, signgu)
+    region = str(site.get("region") or "")
+    regn, signgus, region_notes = region_codes(api, site, districts)
+    sido = (site.get("tourapi") or {}).get("scope") == "sido"
+    items = [it for code, name in signgus for it in fetch_region(api, regn, code, name=name if sido else "")]
     by_cid = {str(it["contentid"]): it for it in items}
     by_name: dict[str, list] = {}
     by_road: dict[str, list] = {}
@@ -254,7 +297,8 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
             by_road.setdefault(rk, []).append(it)
     allowed = (site.get("publish_rules") or {}).get("allowed_image_licenses")
     today = dt.date.today().isoformat()
-    stats = {"list_items": len(items), "live_calls": 0, "targets": 0, "matched": {}, "geo": 0,
+    stats = {"list_items": len(items), "districts": [n for _, n in signgus], "region_notes": region_notes,
+             "live_calls": 0, "targets": 0, "matched": {}, "geo": 0,
              "images": {"KOGL-1": 0, "KOGL-3": 0}, "image_other_type": 0, "unmatched": []}
     forced = {slug: by_cid[cid] for cid, slugs in same.items() if cid in by_cid for slug in slugs}
     for p in places:
@@ -285,7 +329,8 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
             existing = json.loads(ev_path.read_text("utf-8")) if ev_path.exists() else []
             e = stats["events"] = {"festival_items": 0, "added": [], "updated": [], "errors": []}
             mark = len(getattr(api, "fetched_dates", []))
-            fest = retry(api.search_festival, f"{today[:4]}0101", regn, signgu)
+            # a 광역시: one call for the whole 시도 (each item's address names its 구·군); a 시: its 시군구
+            fest = retry(api.search_festival, f"{today[:4]}0101", regn, None if sido else signgus[0][0])
             list_date = fetched_on(api, mark, today)
             e["festival_items"] = len(fest)
             have_cid = {str(x.get("contentid")): x for x in existing if x.get("contentid")}
@@ -309,7 +354,7 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
                 key, year = event_key(ev["name"]), ev["start_date"][:4]
                 twin = next((x for x in existing if event_key(x.get("name")) == key
                              and (x.get("start_date") or "")[:4] == year and year), None)
-                if twin:  # same edition already listed from 군산시: keep its dates, note TourAPI's next to them
+                if twin:  # same edition already listed from the city's own source: keep its dates, note TourAPI's next to them
                     twin["tourapi_contentid"] = cid
                     if (twin.get("start_date"), twin.get("end_date")) != (ev["start_date"], ev["end_date"]):
                         twin["date_alternatives"] = [{"start_date": ev["start_date"], "end_date": ev["end_date"],
@@ -400,7 +445,9 @@ def run(data_dir: Path, max_calls: int, offline: bool, gallery: bool = False, de
     places_path.write_text(json.dumps(places, ensure_ascii=False, indent=2) + "\n", "utf-8")
     report = Path("reports")
     report.mkdir(exist_ok=True)
-    lines = [f"# TourAPI 일괄 보강 ({today})", "", f"- 목록 항목 {len(items)} · 실호출 {api.live_calls} · 캐시 {api.cache_hits}",
+    lines = [f"# TourAPI 일괄 보강 ({today})", "", f"- 시군구 {', '.join(stats['districts'])}",
+             *[f"- 확인: {x}" for x in region_notes],
+             f"- 목록 항목 {len(items)} · 실호출 {api.live_calls} · 캐시 {api.cache_hits}",
              f"- 대상 {stats['targets']} · 매칭 {stats['matched']} · 좌표 {stats['geo']}",
              f"- 허용 사진 Type1 {stats['images']['KOGL-1']} · Type3 {stats['images']['KOGL-3']}"
              f" · 사진은 있으나 허용 외 유형 {stats['image_other_type']}",
@@ -446,7 +493,7 @@ def squash(value: str) -> str:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=Path("data/gunsan"))
+    ap.add_argument("--data", type=Path, default=Path("data/incheon"))
     ap.add_argument("--max-calls", type=int, default=120)
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--offline", action="store_true", help="캐시만 쓴다(네트워크 호출 없음)")
@@ -458,8 +505,17 @@ def main(argv=None) -> int:
     ap.add_argument("--add-new", action="store_true",
                     help="TourAPI에만 있는 장소(유형 12·14·28·32·39)를 draft/basic으로 추가(중복 의심은 보류)")
     ap.add_argument("--events", action="store_true", help="searchFestival2(올해 1월 1일부터)로 행사 갱신")
+    ap.add_argument("--districts", default="", help="광역시에서 이 구·군만(쉼표로, 예: 연수구,강화군) — 호출 한도 안에서 나눠 받을 때")
     a = ap.parse_args(argv)
-    run(a.data, a.max_calls, a.offline, a.gallery, a.details, a.add_new, a.events, a.refresh)
+    only = [x.strip() for x in a.districts.split(",") if x.strip()] or None
+    try:
+        run(a.data, a.max_calls, a.offline, a.gallery, a.details, a.add_new, a.events, a.refresh, only)
+    except RegionError as err:
+        print(f"중단: {err}", file=sys.stderr)
+        return 1
+    except TourAPIError as err:   # a provider error before any data was written (masked key, provider message as-is)
+        print(f"중단: {err} — python tools/tourapi_doctor.py --data {a.data} 로 키·네트워크를 확인하세요.", file=sys.stderr)
+        return 1
     return 0
 
 

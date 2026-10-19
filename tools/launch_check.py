@@ -2,7 +2,7 @@
 
     python tools/launch_check.py                                   # 점검표를 쓴다(이 파일 말고는 아무것도 바꾸지 않음)
     python tools/launch_check.py --stdout                          # 쓰지 않고 출력만
-    python tools/launch_check.py --data data/gunsan --md docs/handover/launch_checklist.md
+    python tools/launch_check.py --data data/incheon --md docs/handover/launch_checklist.md
 
 - production 빌드·검증은 임시 폴더에서 한다: `python -m pipeline.build --mode production` →
   `python -m pipeline.validate --mode production --report <임시>`. data/·public/·reports/·site.json은 건드리지 않는다.
@@ -94,7 +94,7 @@ def parse_qa_report(path: Path) -> tuple[list[tuple[str, str]], list[tuple[str, 
 
 def _split_where(item: str) -> tuple[str, str] | None:
     """'[where] message' -> (where, message). The where part may hold brackets of its own
-    ('gunsan-1 [백년가게]쌍용반점'), so the closing bracket is the one that balances the first."""
+    ('place-1 [백년가게]X반점'), so the closing bracket is the one that balances the first."""
     depth = 0
     for i, ch in enumerate(item):
         depth += {"[": 1, "]": -1}.get(ch, 0)
@@ -456,7 +456,7 @@ def launch_items(O: dict, R: dict, reh: dict) -> list[str]:
         f"- [ ] **IndexNow(배포 후마다)**: `indexnow_key` {_filled(site.get('indexnow_key'))}. production을 빌드·배포하고 "
         "`https://<도메인>/<키>.txt`가 열리는지 본 뒤 `python tools/indexnow.py --out <prod> --send`. 응답 코드를 측정 기록에 남긴다"
         "(빙·네이버·얀덱스 등에 전달, 구글은 아님).",
-        f"- [ ] **검수 → 공개 전환**: 지금 published {pub_total}건. `python tools/make_review_sheet.py --data data/gunsan --out "
+        f"- [ ] **검수 → 공개 전환**: 지금 published {pub_total}건. `python tools/make_review_sheet.py --data data/incheon --out "
         "docs/handover/review_round3.csv` → 판정 칸에 OK/수정 → `python tools/apply_review.py --sheet docs/handover/review_round3.csv "
         "--apply`(status=reviewed·reviewed_at) → 질문 대상 페이지부터 사람이 status=published. 2절의 '미달' 페이지는 내용을 채운 뒤에.",
         "- [ ] **주 1회 갱신**: `python tools/refresh.py`(TourAPI 캐시 우선 → 공식 확인값 → `public/` → `reports/quality_latest.md`, "
@@ -487,10 +487,11 @@ def owner_rows(O: dict) -> list[tuple[str, str, str]]:
          "(`site_url`)가 바뀌면 그 주소를 콘솔의 웹 도메인에 더한다."),
         ("MaruBuri 글꼴 라이선스", O["font"],
          "도입하면 OFL 라이선스 파일(OFL.txt)을 글꼴 파일과 같은 폴더에 둔다(Pretendard처럼). 출처 페이지 표기도 사람이 확인."),
-        ("군산 위키백과·위키데이터 sameAs", "넣음" if O["same_as"] else "없음(`jsonld.home_graph`의 `#gunsan` 노드)",
-         "사람이 한국어 위키백과 「군산시」와 위키데이터 항목을 직접 열어 확인한 URL만 넣는다(추측 금지). 넣지 않아도 공개에는 지장 없음."),
-        ("군산시 원문·사진 이용 협의", "원문은 링크만, 사진은 TourAPI 1·3유형만",
-         "협의 요청 / 지금처럼 링크만. 요청 메일 초안: `docs/handover/gunsan_rights_request_draft.md`."),
+        (f"{site.get('locality') or '도시'} 위키백과·위키데이터 sameAs", "넣음" if O["same_as"] else "없음(`jsonld.home_graph`의 `#city` 노드)",
+         f"사람이 한국어 위키백과 「{site.get('locality') or '도시'}」와 위키데이터 항목을 직접 열어 확인한 URL만 넣는다(추측 금지). "
+         "넣지 않아도 공개에는 지장 없음."),
+        (f"{(site.get('source') or {}).get('name') or '시 관광 사이트'} 원문·사진 이용 협의", "원문은 링크만, 사진은 TourAPI 1·3유형만",
+         "협의 요청 / 지금처럼 링크만."),
         ("고객사 숙소 노출과 관계 표시",
          f"장소 데이터에 있음: {', '.join(O['clients'])}" if O["clients"] else "장소 데이터에 없음(노출하려면 기록을 새로 만든다)",
          "노출하지 않음 / 노출하고 운영사와의 관계를 페이지에 밝힘(CLAUDE.md 9절)."),
@@ -517,7 +518,7 @@ def run(data: Path, md: Path | None, questions: Path) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=ROOT / "data" / "gunsan")
+    ap.add_argument("--data", type=Path, default=ROOT / "data" / "incheon")
     ap.add_argument("--md", type=Path, default=DEFAULT_MD)
     ap.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
     ap.add_argument("--stdout", action="store_true", help="파일을 쓰지 않고 출력만")

@@ -1,10 +1,10 @@
-/* 군산 여행 — /search/: a static index (search/index.json, built with the site by pipeline/present.search_index)
+/* /search/: a static index (search/index.json, built with the site by pipeline/present.search_index)
    fetched on the first focus of the box, or at once when the page opens with ?q=. No server.
-   Index rows: n name, a other names (course: its stops), m 대표 메뉴·취급 메뉴, g official designations ('군산맛집(2026,
-   군산시 지정) · 모범음식점(군산시 지정)'), d 동 (or road), r 권역, t type, k kind, p path, s the status line as text.
+   Index rows: n name, a other names (course: its stops), m 대표 메뉴·취급 메뉴, g official designations ('○○맛집(2026,
+   ○○시 지정) · 모범음식점(○○시 지정)'), d 동 (or road), r 권역, t type, k kind, p path, s the status line as text.
    Ranking: name (exact, prefix, inside) > other names > menu > designation > 동·권역·type. Spaces and ·-()[]|, are
    ignored when matching. A row says why it matched when it was not the name ("메뉴: 짜장면", "다른 이름: …",
-   "경유: …", "지정: 모범음식점(군산시 지정)").
+   "경유: …", "지정: 모범음식점(○○시 지정)").
 
    MARKUP
      form[data-search]          action="/search/"; data-index overrides the index URL; its input[name=q]
@@ -102,7 +102,7 @@
       var counts = ORDER.filter(function (k) { return groups[k]; }).map(function (k) { return KIND[k] + " " + groups[k].length; });
       var places = hits.every(function (h) { return PLACES.indexOf(h[1].k) > -1; });
       var unit = places ? "곳" : "건";
-      // '‘짜장면’ 12곳', or with several kinds '‘선유도’ 25건 · 관광지 10 · 숙소 3 · 코스 12' (the kind counts only
+      // '‘짜장면’ 12곳', or with several kinds '‘○○’ 25건 · 관광지 10 · 숙소 3 · 코스 12' (the kind counts only
       // when there is more than one kind; '중 20건' when the list is cut at LIMIT)
       var html = '<p class="f-result">‘' + esc(raw.trim()) + "’ " + hits.length + unit +
         (hits.length > LIMIT ? " 중 " + LIMIT + unit : "") + (counts.length > 1 ? " · " + esc(counts.join(" · ")) : "") + "</p>";

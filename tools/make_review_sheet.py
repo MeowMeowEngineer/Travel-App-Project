@@ -1,7 +1,7 @@
 """검수 시트(CSV) 만들기 — 사람이 판정(OK/수정)과 메모를 적고, tools/apply_review.py가 그 표시만 반영한다.
 
-    python tools/make_review_sheet.py --data data/gunsan --out docs/handover/review_round3.csv
-    python tools/make_review_sheet.py --data data/gunsan --base https://gunsan.webforai.kr
+    python tools/make_review_sheet.py --data data/incheon --out docs/handover/review_round3.csv
+    python tools/make_review_sheet.py --data data/incheon --base https://preview.example   # 기본: site.json site_url
 
 - 대상(한 줄에 하나): full 장소(tier=full, duplicate_of 없음) · 가이드 전부 · 코스 전부 · 행사 전부.
 - 열: 구분, ID, 이름, 미리보기 URL, 핵심 사실, 출처 링크, 현재 상태, 판정(빈칸), 메모(빈칸).
@@ -25,7 +25,15 @@ from pipeline.build import _unique_slugs, guide_has_content
 from pipeline.schema import FACT_ALIASES, FACT_LABELS, KEY_FACTS
 from pipeline.textutil import first_sentence, squash_ws
 
-DEFAULT_BASE = "https://gunsan.webforai.kr"
+DEFAULT_BASE = ""   # the region's site.json site_url (site_base)
+
+
+def site_base(data: Path) -> str:
+    """The address the sheet's page links start with: the region's site.json site_url."""
+    try:
+        return str(json.loads((Path(data) / "site.json").read_text("utf-8")).get("site_url") or "")
+    except (OSError, ValueError):
+        return ""
 HEADERS = ("구분", "ID", "이름", "미리보기 URL", "핵심 사실", "출처 링크", "현재 상태", "판정", "메모")
 # 구분 -> (데이터 파일, 이름 키). apply_review.py도 이 표로 레코드를 찾는다.
 KINDS = {"장소": ("places.json", "name"), "가이드": ("guides.json", "title"),
@@ -172,10 +180,11 @@ def write_sheet(rows: list[dict], out: Path) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--data", default=Path("data/gunsan"), type=Path)
+    parser.add_argument("--data", default=Path("data/incheon"), type=Path)
     parser.add_argument("--out", default=Path("docs/handover/review_round3.csv"), type=Path)
-    parser.add_argument("--base", default=DEFAULT_BASE, help="미리보기 주소(기본: %(default)s)")
+    parser.add_argument("--base", default=DEFAULT_BASE, help="미리보기 주소(기본: 지역 site.json의 site_url)")
     args = parser.parse_args(argv)
+    args.base = args.base or site_base(args.data)
     parsed = urlsplit(args.base)
     if parsed.scheme not in ("http", "https") or not parsed.netloc or parsed.username or parsed.query or parsed.fragment:
         parser.error("--base는 인증정보·쿼리·fragment 없는 http(s) 주소여야 합니다")

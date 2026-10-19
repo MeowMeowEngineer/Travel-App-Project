@@ -66,16 +66,13 @@ def phone_domestic(phone: str) -> str:
     return rest if re.match(r"1\d{3}-\d{4}$", rest) else "0" + rest
 
 
-# The province has been 전북특별자치도 since 2024-01-18; sources still write the old or short form.
-_PROVINCE_PREFIX = re.compile(r"^(?:전라북도|전북\s*특별자치도|전북)\s+")
-PROVINCE = "전북특별자치도"
-
-
 def display_address(raw: str | None) -> str:
-    """Address as shown: only the province prefix is rewritten ('전라북도 군산시 …' -> '전북특별자치도 군산시 …').
-    Nothing else is derived (no 지번, no postcode). The stored value stays the source string."""
+    """Address as shown: only the city's configured prefix rewrites apply (site.json city.address_rewrites, e.g. a
+    province renamed after the source wrote the address). Nothing else is derived (no 지번, no postcode). The stored
+    value stays the source string."""
+    from . import city
     text = squash_ws(raw)
-    return _PROVINCE_PREFIX.sub(PROVINCE + " ", text, count=1) if text else ""
+    return city.current().display_address(text) if text else ""
 
 
 def normalize_name(name: str | None) -> str:
@@ -115,19 +112,20 @@ def first_sentence(text: str | None, limit: int = 120) -> str:
     return s
 
 
-_AREA_PAREN = re.compile(r"\(([가-힣0-9]+(?:동|면|읍))(?:[,\s][^()]*)?\)")
-_AREA_TOKEN = re.compile(r"(?:^|[\s(])([가-힣]+[0-9]*(?:읍|면|동))(?=[\s,)\d]|$)")
+# a 법정동 may carry a 가 number ('관동1가', '중앙동3가'): it is one name and is never cut to '관동'
+_AREA_PAREN = re.compile(r"\(([가-힣0-9]+(?:동|면|읍)(?:[0-9]+가)?)(?:[,\s][^()]*)?\)")
+_AREA_TOKEN = re.compile(r"(?:^|[\s(])([가-힣]+[0-9]*(?:읍|면|동)(?:[0-9]+가)?)(?=[\s,)\d]|$)")
 
 
 def area_from_address(address: str | None) -> str:
-    """읍·면·동 named in an address, e.g. '군산시 경촌4길 14(경암동)' -> '경암동'. Empty when not stated."""
+    """읍·면·동 named in an address, e.g. 'X시 Y4길 14(Z동)' -> 'Z동', 'X광역시 Y구 관동1가 3' -> '관동1가'. Empty
+    when not stated. A province name ending in 도 is not a 동 (the token must end in 읍·면·동)."""
     text = address or ""
     m = _AREA_PAREN.search(text)
     if m:
         return m.group(1)
     for m in _AREA_TOKEN.finditer(text):
-        if m.group(1) not in ("전북특별자치도", "전라북도"):
-            return m.group(1)
+        return m.group(1)
     return ""
 
 
@@ -135,7 +133,7 @@ _ROAD = re.compile(r"(?:^|\s)([가-힣]+[0-9]*(?:로|길)(?:\s?[0-9]+번?길)?)\
 
 
 def road_from_address(address: str | None) -> str:
-    """Road name of a road-name address, e.g. '군산시 내항2길 32' -> '내항2길'. Empty when not found."""
+    """Road name of a road-name address, e.g. 'X시 Y2길 32' -> 'Y2길'. Empty when not found."""
     m = _ROAD.search(address or "")
     return m.group(1).replace(" ", "") if m else ""
 
@@ -178,7 +176,7 @@ def web_url(value: str | None) -> str:
 
 
 def url_domain(url: str | None) -> str:
-    """'https://www.gunsandal.kr/x' -> 'gunsandal.kr'."""
+    """'https://www.example.kr/x' -> 'example.kr'."""
     m = re.match(r"^(?:[a-z][a-z0-9+.-]*://)?([^/?#:]+)", squash_ws(url), re.I)
     host = (m.group(1) if m else "").lower()
     return host[4:] if host.startswith("www.") else host
@@ -225,7 +223,7 @@ def parking_text(raw: str | None) -> str:
 
 
 def course_display_name(name: str | None) -> str:
-    """'A코스 | 근대~고군산' -> 'A코스 근대~고군산' (the source's separator pipe is not shown)."""
+    """'A코스 | 원도심~섬' -> 'A코스 원도심~섬' (the source's separator pipe is not shown)."""
     return squash_ws(re.sub(r"\s*\|\s*", " ", str(name or "")))
 
 
@@ -256,7 +254,7 @@ def tidy_punct(text: str) -> str:
 
 # ---------------------------------------------------------------- value-shown check (pipeline.validate)
 # A word token is a maximal run of letters/digits that may hold joiners between them ('10:00–21:00',
-# '3,000원', '063-445-2429', '토·일', 'gunsandal.kr'). Every other character is a token of its own ('~' in
+# '3,000원', '063-445-2429', '토·일', 'example.kr'). Every other character is a token of its own ('~' in
 # '~21:00', '%' in '50%', '+', '₩', '.', '·', '→' …), except whitespace and the layout punctuation that a
 # restored line break or a table layout replaces: / , : ( ) [ ] ※ and the '-' list marker (LAYOUT). So a
 # value matches only when every word and every symbol is there in order; nothing may be added in between,

@@ -20,7 +20,7 @@ function through functions.includeFiles).
                  Latin / Cyrillic / digit words; api/chat.js tokenizes queries the same way).
 
 Facts come only from the records and helpers the pages use (CLAUDE.md 3.1, 3.2). Never included: TourAPI overview text
-(3.4), 군산시 original text, photos. Single videos are not catalog lines (642 lines would take a third of the token
+(3.4), the city tourism site's original text, photos. Single videos are not catalog lines (642 lines would take a third of the token
 budget): the catalog lists the video topic pages, docs/index hold every video.
 """
 from __future__ import annotations
@@ -31,7 +31,7 @@ import re
 import unicodedata
 from pathlib import Path
 
-from . import jsonld, present
+from . import city, jsonld, present
 from .schema import FACT_LABELS, FACT_ORDER, FIT_ORDER, KIND_LABELS, designations
 from .textutil import display_address, first_sentence, squash_ws, web_url
 
@@ -111,7 +111,7 @@ def _period(ev: dict) -> str:
 
 
 def _src(src: dict | None, url: str = "") -> str:
-    """'군산근대역사박물관 홈페이지 https://… (출처 확인 2026-10-08)': the provider, the exact address the value came
+    """'○○박물관 홈페이지 https://… (출처 확인 2026-10-08)': the provider, the exact address the value came
     from when the data has one, and the date this site last checked that source (출처 확인 — not a page review date)."""
     src = src or {}
     p = _clean(src.get("provider")) or "출처 미기재"
@@ -120,7 +120,7 @@ def _src(src: dict | None, url: str = "") -> str:
 
 
 def _fact_url(e: dict, src: dict | None) -> str:
-    """The address one fact's value came from: the source's own URL, else for 군산시 문화관광 the place's 원문 page (the
+    """The address one fact's value came from: the source's own URL, else for the city tourism site the place's 원문 page (the
     page the importer read), else ''. TourAPI values come from an API: the place doc names the same content's public
     page (대한민국 구석구석) once instead of repeating it on every line."""
     src = src or {}
@@ -128,7 +128,7 @@ def _fact_url(e: dict, src: dict | None) -> str:
     if url:
         return url
     orig, official = e.get("original") or {}, e.get("official") or {}
-    if _clean(src.get("provider")).startswith("군산시 문화관광"):
+    if _clean(src.get("provider")).startswith(city.current().official["name"] or "\0"):
         return web_url(orig.get("source_url") or official.get("source_url") or "")
     return ""
 
@@ -146,7 +146,7 @@ EFFECTIVE_RX = re.compile(r"(\d{4})\.(\d{1,2})\.(\d{1,2})\.?\s*시행")
 
 def _effective(sources: list[dict]) -> list[str]:
     """Timetables a guide cites with their 시행일 (the date the timetable took effect, from the source's own title
-    '군산시내버스시간표(2024.10.21 시행) — 군산시'): ['군산시내버스시간표 — 군산시, 시행 2024-10-21, https://…']."""
+    '○○시내버스시간표(2024.10.21 시행) — ○○시'): ['○○시내버스시간표 — ○○시, 시행 2024-10-21, https://…']."""
     out = []
     for s in sources or []:
         name = _clean(s.get("name") or s.get("title"))
@@ -203,7 +203,7 @@ def _chain_lines(text: str) -> list[str]:
             else:
                 way = f"돌아오는 길({home} 쪽)"
             out.append(f"- {name} — {kind}, {way}: {times} (첫 {clocks[0]}, 마지막 {clocks[-1]})")
-        # live check 2026-10-14: an example naming one stop's last time ('선유도 21:15 차는 … 떠나는 차가 아니다') made the
+        # live check 2026-10-14: an example naming one stop's last time ('○○ 21:15 차는 … 떠나는 차가 아니다') made the
         # model deny that the same bus is the last one back from that stop — the rule is given without a named example
         out.append(f"읽는 법: 정류장에 붙은 시각은 버스가 그 정류장에 오는 시각이라 그 정류장에서 타는 시각이고, {home}에서 그 시각에 "
                    f"출발하는 차라는 뜻이 아니다. {far} 쪽으로 가는 마지막 차는 {home} {last[0]} 출발이다.")
@@ -234,19 +234,19 @@ TICKET_LABEL = re.compile(r"\[([^\]\n]{2,40})\]")   # a ticket's name in a fee t
 COMBINED_TICKET = "통합권"   # a ticket for several places — the fee table often names them only by kind ('미술관+건축관')
 NAME_MIN = 3                 # names shorter than this (without spaces) are not looked for in sentences ('연도')
 TOPIC = re.compile(r"^(.{1,40}?)[은는]\s")   # what a sentence is about: '박물관 통합권은 …' → '박물관 통합권'
-# the list a sentence about a ticket gives, right after its topic: '… 근대역사박물관·군산근대미술관·…·위봉함 네 곳을 묶은 표로'
+# the list a sentence about a ticket gives, right after its topic: '… 역사박물관·○○미술관·…·위봉함 네 곳을 묶은 표로'
 TICKET_ITEMS = re.compile(r"^(.+?)(?:\s*(?:두|세|네|다섯|여섯|일곱|여덟|아홉|열|\d+)\s*곳)?[을를]\s*(?:묶은|함께|더한)")
 ITEM_SPLIT = re.compile(r"\s*[·,、]\s*")
 
 
 def _bare(text) -> str:
-    """A name or a sentence without spaces, for finding names in text ('군산 근대건축관' = '군산근대건축관')."""
+    """A name or a sentence without spaces, for finding names in text ('○○ 근대건축관' = '○○근대건축관')."""
     return re.sub(r"\s+", "", unicodedata.normalize("NFC", str(text or "")))
 
 
 def _same_place(a: str, b: str) -> bool:
-    """Two names in ticket lists that are one place: one is the other with more in front ('근대미술관' · '군산근대미술관',
-    '위봉함' · '진포해양공원 위봉함', the kind '박물관' · '근대역사박물관')."""
+    """Two names in ticket lists that are one place: one is the other with more in front ('근대미술관' · '○○근대미술관',
+    '함정' · '○○공원 함정', the kind '박물관' · '근대역사박물관')."""
     x, y = _bare(a), _bare(b)
     return bool(x and y) and (x.endswith(y) or y.endswith(x))
 
@@ -261,7 +261,7 @@ def _cap(text: str, limit: int) -> str:
 
 def _slot_text(s: dict) -> str:
     """A key-fact slot as the first screen gives it, with a short label ('시간 09:00–18:00'); a conflict names
-    both providers ('시간 두 출처 다름: 군산시 09:00–18:00 / 한국관광공사 상시 개방')."""
+    both providers ('시간 두 출처 다름: ○○시 09:00–18:00 / 한국관광공사 상시 개방')."""
     def one(v):
         t = _clean(v.get("main"))
         if v.get("sub"):
@@ -393,15 +393,15 @@ class Knowledge:
         en_name = self.en_names.get(e["id"], "")
         kf = present.key_facts(e, "hero")
         slots = "; ".join(_slot_text(s) for s in kf["slots"])
-        where = "·".join(x for x in (e.get("_area") or e.get("_road") or "",
-                                     e.get("_region") if e.get("_region") != present.NONE_LABEL else "") if x)
+        where = "·".join(x for x in (e.get("_district") or "", e.get("_area") or e.get("_road") or "",
+                                     e.get("_region") if e.get("_region") != present.none_label() else "") if x)
         ds = designations(e)
         title = f"{name} ({en_name})" if en_name else name
         alt = jsonld.alternate_names(e)
         if alt:   # the other names the page lists under its name: a building and the museum in it, an old and a new name
             title += " · 다른 이름 " + ", ".join(alt)
         # a combined ticket's places as the guides name them, with the page name of a place they call by another name
-        # ('군산근대미술관(=구 일본 제18은행 군산지점 /places/…/)'): the review's '정정' came from a model that could not tie
+        # ('○○미술관(=구 ○○은행 지점 /places/…/)'): the review's '정정' came from a model that could not tie
         # the two; live check 2026-10-14: without the path the model said the museum had no page of its own
         tickets = "; ".join(
             f"{t['label']} {len(t['places'])}곳: " + "·".join(
@@ -423,7 +423,8 @@ class Knowledge:
         alt = jsonld.alternate_names(e)
         if alt:
             L.append("다른 이름: " + ", ".join(alt))
-        where = [x for x in (e.get("_area"), f"{e['_region']} 권역" if e.get("_region") not in (None, "", present.NONE_LABEL) else "") if x]
+        where = [x for x in (" ".join(y for y in (e.get("_district"), e.get("_area")) if y),
+                             f"{e['_region']} 권역" if e.get("_region") not in (None, "", present.none_label()) else "") if x]
         if where:
             L.append("위치: " + " · ".join(where))
         if e.get("summary"):
@@ -521,7 +522,7 @@ class Knowledge:
     def places_in(self, text: str, skip=frozenset()) -> list[tuple[str, dict]]:
         """The places a sentence names, by their name or another name, in the order the sentence names them:
         [(the name as the sentence writes it, the place)]. Longer names are read first, so a name inside one already read
-        (근대역사박물관 in 군산근대역사박물관) is not read again. Places whose id is in `skip` are left out."""
+        (역사박물관 in 근대역사박물관) is not read again. Places whose id is in `skip` are left out."""
         t = _bare(text)
         found: dict[str, tuple[int, str, dict]] = {}
         for key, written, e in self.names():
@@ -550,12 +551,12 @@ class Knowledge:
         [{label, said: [(guide path, sentence)], places: [{written, e, by}]}].
 
         The fee table often names a ticket's places only by kind ('[통합권]인근 전시장(박물관+미술관+건축관+위봉함)'),
-        so a reader of one page cannot tell that '미술관' is 군산근대미술관 = 구 일본 제18은행 군산지점 (the external
+        so a reader of one page cannot tell that '미술관' is ○○미술관 = 구 ○○은행 지점 (the external
         evaluation's assistant then 'corrected' a right answer). The guides' sentences about the ticket ('박물관 통합권은
         …' — the ticket is what the sentence is about) that name this place say which places it covers: `said` = the two
         that name the most places. `places` = the ticket's places, one per place, in the order those sentences list them
-        ('… 근대역사박물관·군산근대미술관·군산근대건축관·위봉함 네 곳을 묶은 표로'), each with the name the guides write
-        (`written`: the first of its names that names a place page — '진포해양공원 위봉함' rather than '위봉함'), the
+        ('… 역사박물관·○○미술관·○○건축관·위봉함 네 곳을 묶은 표로'), each with the name the guides write
+        (`written`: the first of its names that names a place page — '○○공원 함정' rather than '함정'), the
         place (`e`, None when no place page has that name) and how the name points to it (`by`: 'name', or 'other' — one
         of its other names). Another sentence about the ticket adds its names only when every item of its list is
         already one of the ticket's places under a shorter or longer name ('근대미술관', '위봉함'), never a new place
@@ -624,7 +625,7 @@ class Knowledge:
 
     def ticket_lines(self, e: dict) -> list[str]:
         """Under the fee line: each combined ticket's sentences from the guides, then its places with their pages — a
-        place the guides call by another name with the page's own name ('군산근대미술관 = 구 일본 제18은행 군산지점
+        place the guides call by another name with the page's own name ('○○미술관 = 구 ○○은행 지점
         /places/…/'), this page marked as such (tickets())."""
         out = []
         for t in self.tickets(e):
@@ -649,7 +650,7 @@ class Knowledge:
         meta = getattr(self.S, "nearby_meta", None) or {}
         park, bus = meta.get("parking") or {}, meta.get("bus") or {}
         tt = bus.get("timetable") or {}
-        key = {v: k for k, v in present.ACCESS_SOURCES.items()}.get(name, "")
+        key = {v: k for k, v in present.access_sources().items()}.get(name, "")
         src = {"standard": park, "stops": bus}.get(key)
         if src:
             self.keep_url(src.get("url"))
@@ -666,7 +667,7 @@ class Knowledge:
     def _lot(l: dict) -> str:
         bits = [l["type"], f"{l['m']}m"]
         if l.get("spaces") is not None:
-            bits.append(f"{l['spaces']}면" + (f"(군산시 문화관광 {l['alt_spaces']}면)" if l.get("alt_spaces") is not None
+            bits.append(f"{l['spaces']}면" + (f"({l['alt_src']} {l['alt_spaces']}면)" if l.get("alt_spaces") is not None
                                               and l["alt_spaces"] != l["spaces"] else ""))
         if l.get("paid"):
             bits.append(l["paid"])
@@ -695,7 +696,7 @@ class Knowledge:
         if timetables:
             L.append("시간표 시행일: " + "; ".join(timetables))
         at = next((i for i, b in enumerate(body, 1) if _chain_lines(_clean(b.get("text")))), 0)
-        if at:   # the summary names stop times too ('선유도 기준 시각은 …'): how to read them, and where they are spelled out
+        if at:   # the summary names stop times too ('○○ 기준 시각은 …'): how to read them, and where they are spelled out
             L.append(f"시각 읽는 법: '○○ 기준 시각'은 버스가 그 정류장에 오는 시각이라 그 정류장에서 타는 시각이고, 그 정류장으로 "
                      f"가는 차가 출발하는 시각이 아니다. 정류장·방향·첫차·막차와 정류장마다 돌아가는 차는 {g['_path']}#h-b{at} 절에 "
                      f"한 줄씩 풀어 두었다.")
@@ -840,7 +841,7 @@ class Knowledge:
         if v.get("event_names"):
             L.append("관련 행사: " + ", ".join(_clean(n) for n in v["event_names"]))
         if (v.get("lang") or "ko") != "ko":
-            L.append(f"언어: {v['lang']} (해외에서 본 군산 /abroad/에도 실림)")
+            L.append(f"언어: {v['lang']} (해외에서 본 {self.S.site.get('region', '')} /abroad/에도 실림)")
         self.keep_url(v["url"])
         self.add_doc(f"video:{v['youtube_id']}", _clean(v["title"]), "video", "\n".join(L), page=g["_path"] if g else "/videos/")
 
@@ -876,6 +877,17 @@ class Knowledge:
         n = {k: len(v) for k, v in S.lists.items()}
         op = site.get("operator") or {}
         contact = op.get("contact") or ""
+        C = city.current()
+        regions = [r for r in S.region_names if r != C.none_label and any(e["_region"] == r for e in S.entities)]
+        if S.anchors:   # the rule in force, as the map page states it
+            rule = ("권역은 좌표가 있는 장소를 가장 가까운 기준 장소(" + "·".join(f"{a['name']} {a['place']}" for a in S.anchors)
+                    + ")에 묶고" + (f", 기준 장소에서 직선 {C.far_m // 1000}km보다 먼 곳은 '{C.far_label}'" if C.far_m else "")
+                    + ", 좌표가 없으면 같은 읍·면·동의 권역을 따른다")
+        elif C.region_method == "district" and regions:
+            rule = ("권역은 주소의 구·군(일부는 법정동)으로 나눈다: " + "; ".join(C.region_rule_lines())
+                    + (f". {C.region_rule_note}" if C.region_rule_note else ""))
+        else:
+            rule = ""
         pages = [
             ("/", f"홈 — {site.get('site_name', '')}: 관광지 {n.get('attraction', 0)}곳·음식점 {n.get('food', 0)}곳·숙소 "
                   f"{n.get('stay', 0)}곳, 가이드 {len(S.guides)}편·코스 {len(S.courses)}개·행사 {len(S.series)}개·영상 {len(S.videos)}편",
@@ -884,11 +896,9 @@ class Knowledge:
             ("/food/", f"음식점 목록 {n.get('food', 0)}곳 (대표 메뉴·영업시간·쉬는 날)", ""),
             ("/stays/", f"숙소 목록 {n.get('stay', 0)}곳 (체크인·체크아웃·주차·문의)", ""),
             ("/guides/", f"목적별 가이드 {len(S.guides)}편", ""),
-            ("/courses/", f"여행 코스 {len(S.courses)}개 (군산시 문화관광 안내 코스)", ""),
+            ("/courses/", f"여행 코스 {len(S.courses)}개 ({city.current().official['name']} 안내 코스)", ""),
             ("/events/", f"행사·축제 일정 {len(S.series)}개 (월별 기간·장소)", ""),
-            ("/map/", "지도·지역: 읍·면·동 묶음과 여행 권역(" + "·".join(a["name"] for a in S.anchors) + ")",
-             "권역은 좌표가 있는 장소를 가장 가까운 기준 장소(" + "·".join(f"{a['name']} {a['place']}" for a in S.anchors)
-             + f")에 묶고, 기준 장소에서 직선 12km보다 먼 곳은 '{present.FAR_LABEL}', 좌표가 없으면 같은 읍·면·동의 권역을 따른다"),
+            ("/map/", "지도·지역: 읍·면·동 묶음" + (f"과 여행 권역({'·'.join(regions)})" if regions else ""), rule),
             ("/search/", "검색: 장소 이름·다른 이름·대표 메뉴·동 이름·코스·가이드·행사 이름으로 찾는다", ""),
             ("/videos/", f"영상 {len(S.videos)}편, 주제별 (공식 채널 표시, 누를 때만 YouTube 불러옴)", ""),
             ("/abroad/", f"해외에서 본 {region}: 외신·해외 매체 기사 {len(S.abroad)}건과 외국어 영상 {len(S.abroad_videos)}편", ""),
@@ -952,7 +962,7 @@ class Knowledge:
             head = tokens(f"{d['t']} {key if key.startswith('/') else ''}")
             lines = d["x"].split("\n", 3)
             head += [t for t in tokens(lines[0]) if t not in head]
-            # a place's other names count as its title: '군산근대미술관' finds 구 일본 제18은행 군산지점 first
+            # a place's other names count as its title: a museum's other name finds the building's page first
             alt = next((x[len("다른 이름: "):] for x in lines[1:3] if x.startswith("다른 이름: ")), "")
             head += [t for t in tokens(alt) if t not in head]
             # web addresses (sources, official links) are not words a reader searches for: 'tour', 'view', '305395'
@@ -965,14 +975,27 @@ def dumps(obj) -> str:
     return json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+def site_json(S) -> dict:
+    """The site the assistant answers for (chatbot/site.js): the public address, the site's name, the city's name in
+    each language (site.json city.chat.names; Korean defaults to the region) and the further origins the owner allows
+    (city.chat.origins)."""
+    chat = city.current().get("chat", {}) or {}
+    names = {k: str(v) for k, v in (chat.get("names") or {}).items() if str(v).strip()}
+    if S.site.get("region") and "ko" not in names:
+        names["ko"] = S.site["region"]
+    return {"url": S.site_url, "name": S.site.get("site_name", ""), "city": names,
+            "origins": [str(o) for o in chat.get("origins") or [] if str(o).strip()]}
+
+
 def export(S, out: Path) -> dict:
-    """Write <out>/chat/catalog.txt, docs.json and index.json (UTF-8, LF line ends on every system) and return the
-    sizes for the build stats."""
+    """Write <out>/chat/catalog.txt, docs.json, index.json and site.json (UTF-8, LF line ends on every system) and
+    return the sizes for the build stats."""
     k = Knowledge(S).build()
     target = Path(out) / CHAT_DIR
     target.mkdir(parents=True, exist_ok=True)
     catalog = k.catalog()
-    files = {"catalog.txt": catalog, "docs.json": dumps(k.docs_json()) + "\n", "index.json": dumps(k.index_json()) + "\n"}
+    files = {"catalog.txt": catalog, "docs.json": dumps(k.docs_json()) + "\n", "index.json": dumps(k.index_json()) + "\n",
+             "site.json": dumps(site_json(S)) + "\n"}
     for name, text in files.items():
         (target / name).write_bytes(text.encode("utf-8"))
     places = sum(1 for line in k.lines if line.startswith("P "))

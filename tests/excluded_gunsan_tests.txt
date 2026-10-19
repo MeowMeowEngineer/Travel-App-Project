@@ -16,6 +16,7 @@ tests/test_import_gunsan_courses.py (8)         A  tools/import_gunsan_courses.p
 tests/test_import_gunsan_full.py (8)            A  tools/import_gunsan_full.py — 군산 상세 가져오기
 tests/test_round3_festivals.py (2)              A  tools/round3_festivals.py — 군산 3차 회차 스크립트
 tests/test_domain_move.py (5)                   C  군산 이전 주소 308 규칙(vercel.json)·data/gunsan/site.json
+tests/test_question_coverage.py (18)            A  tools/question_coverage.py — 군산 측정 질문표(N01~N30·P01~P03의 군산 장소와 군산시 수집 원문)를 판정하는 도구. 2026-10-19 2단계에서 뺐다: 질문이 군산 것이고, 이식 안내서 0·3절대로 측정은 회사 내부 틀로 하며 질문은 도시마다 새로 쓴다
 
 ## 함수만 옮기지 않음 (나머지 시험은 그대로 돈다)
 tests/test_aeo_geo.py::test_most_specific_types_from_the_source_category                 B  data/gunsan/places.json 분류

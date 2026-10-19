@@ -68,5 +68,262 @@
       "a": "군산시 문화관광 원문과 한국관광공사 TourAPI입니다. 각 페이지에 원문 수집일과 정보 확인일을 따로 표시합니다.",
       "source": "출처·이용 안내"
     }
-  ]
+  ],
+  "city": {
+    "_notes": [
+      "테스트용 샘플 도시(군산 모양의 가짜 데이터)의 도시 설정. 엔진의 도시별 값은 pipeline/city.py가 이 블록에서 읽는다."
+    ],
+    "address_prefixes": [
+      "전북특별자치도 군산시",
+      "전라북도 군산시",
+      "전북특별자치도"
+    ],
+    "address_rewrites": [
+      [
+        "^(?:전라북도|전북\\s*특별자치도|전북)\\s+",
+        "전북특별자치도 "
+      ]
+    ],
+    "official": {
+      "name": "군산시 문화관광",
+      "short": "군산시",
+      "match": [
+        "군산시"
+      ],
+      "domains": [
+        "gunsan.go.kr"
+      ],
+      "press": "군산시 보도자료"
+    },
+    "travel_regions": {
+      "method": "nearest_anchor",
+      "far_m": 12000,
+      "far_label": "먼 섬",
+      "none_label": "권역 미정",
+      "far_art": "outlying-islands",
+      "regions": [
+        {
+          "name": "원도심",
+          "anchor": "근대역사박물관",
+          "art": "old-downtown"
+        },
+        {
+          "name": "은파",
+          "anchor": "은파호수공원",
+          "art": "eunpa"
+        },
+        {
+          "name": "고군산",
+          "anchor": "선유도",
+          "art": "gogunsan"
+        },
+        {
+          "name": "새만금·비응",
+          "anchor": "새만금비응공원",
+          "art": "saemangeum-bieung"
+        },
+        {
+          "name": "금강",
+          "anchor": "금강미래체험관",
+          "art": "geumgang"
+        }
+      ]
+    },
+    "distance_anchors": [
+      "근대역사박물관",
+      "은파호수공원",
+      "새만금비응공원",
+      "선유도"
+    ],
+    "designations": {
+      "order": [
+        "gunsan_matjip",
+        "baeknyeon",
+        "mobeom",
+        "hyangto",
+        "jjamppong_street",
+        "goodprice",
+        "ansim"
+      ],
+      "short": {
+        "gunsan_matjip": "군산맛집",
+        "jjamppong_street": "짬뽕 특화거리"
+      },
+      "short_year": [
+        "gunsan_matjip"
+      ]
+    },
+    "access_sources": {
+      "ordinance": "군산시 주차장 조례",
+      "city_tour": "군산시 문화관광",
+      "stops": "공공데이터포털 군산시 버스정류장현황",
+      "timetable": "군산시 시내버스 시간표"
+    },
+    "fee_sources": {
+      "ordinance": "군산시 주차장 조례 도서지역 요금",
+      "tourapi": "한국관광공사 선유도해수욕장 안내"
+    },
+    "intl": {
+      "en": {
+        "site_name": "All About Gunsan Travel",
+        "city": "Gunsan",
+        "source": "Gunsan City Culture and Tourism",
+        "provider": "Gunsan City",
+        "admin": "Gunsan City",
+        "address": {
+          "prefix": [
+            "전북특별자치도",
+            "군산시"
+          ],
+          "tail": "Gunsan-si, Jeonbuk State"
+        }
+      },
+      "ja": {
+        "site_name": "群山旅行のすべて",
+        "city": "群山"
+      },
+      "zh-hans": {
+        "site_name": "群山旅游全攻略",
+        "city": "群山"
+      },
+      "zh-hant": {
+        "site_name": "群山旅遊全攻略",
+        "city": "群山"
+      },
+      "de": {
+        "site_name": "Alles über Gunsan",
+        "city": "Gunsan"
+      },
+      "fr": {
+        "site_name": "Tout sur Gunsan",
+        "city": "Gunsan"
+      },
+      "es": {
+        "site_name": "Todo sobre Gunsan",
+        "city": "Gunsan"
+      },
+      "ru": {
+        "site_name": "Всё о Кунсане",
+        "city": "Кунсан"
+      }
+    },
+    "chat": {
+      "names": {
+        "ko": "군산",
+        "en": "Gunsan",
+        "ja": "群山",
+        "zh-Hans": "群山",
+        "zh-Hant": "群山",
+        "de": "Gunsan",
+        "fr": "Gunsan",
+        "es": "Gunsan",
+        "ru": "Кунсан"
+      },
+      "chips": {
+        "ko": [
+          "선유도 가는 법",
+          "월요일에 여는 음식점",
+          "비 오는 날 갈 곳",
+          "군산 짬뽕 어디서 먹나요?",
+          "이번 달 행사·축제"
+        ],
+        "en": [
+          "How do I get to Seonyudo?",
+          "Restaurants open on Mondays",
+          "Where to go on a rainy day",
+          "Where can I eat jjamppong?",
+          "Events this month"
+        ],
+        "ja": [
+          "仙遊島への行き方",
+          "月曜日に開いている飲食店",
+          "雨の日に行ける所",
+          "群山のチャンポンはどこで食べられる？",
+          "今月のイベント・祭り"
+        ],
+        "zh-Hans": [
+          "怎么去仙游岛",
+          "周一营业的餐厅",
+          "下雨天去哪里",
+          "群山炒码面在哪里吃？",
+          "本月活动·节庆"
+        ],
+        "zh-Hant": [
+          "怎麼去仙遊島",
+          "週一營業的餐廳",
+          "下雨天去哪裡",
+          "群山炒碼麵在哪裡吃？",
+          "本月活動·節慶"
+        ],
+        "de": [
+          "Wie komme ich nach Seonyudo?",
+          "Restaurants, die montags geöffnet haben",
+          "Was tun bei Regen?",
+          "Wo gibt es Jjamppong?",
+          "Veranstaltungen in diesem Monat"
+        ],
+        "fr": [
+          "Comment aller à Seonyudo ?",
+          "Restaurants ouverts le lundi",
+          "Où aller par temps de pluie",
+          "Où manger du jjamppong ?",
+          "Événements de ce mois-ci"
+        ],
+        "es": [
+          "¿Cómo llegar a Seonyudo?",
+          "Restaurantes abiertos los lunes",
+          "Qué visitar si llueve",
+          "¿Dónde comer jjamppong?",
+          "Eventos de este mes"
+        ],
+        "ru": [
+          "Как добраться до Сонъюдо?",
+          "Рестораны, открытые в понедельник",
+          "Куда пойти в дождь",
+          "Где поесть чжамппон?",
+          "События в этом месяце"
+        ]
+      }
+    },
+    "search_examples": [
+      "짬뽕",
+      "철길",
+      "장미동"
+    ],
+    "event_kind_words": {
+      "book": [
+        "책책북북"
+      ],
+      "sea": [
+        "선유도",
+        "어청도",
+        "갑토리의 날"
+      ],
+      "food": [
+        "짬뽕"
+      ],
+      "alley": [
+        "시간여행",
+        "우체통",
+        "손편지"
+      ],
+      "stage": [
+        "쉬엄쉬엄"
+      ]
+    },
+    "kakao_safe_extras": [
+      "전북",
+      "전북군산",
+      "전라북도군산",
+      "호남"
+    ],
+    "kakao_admin_words": [
+      "전라북도",
+      "전북특별자치도",
+      "전북"
+    ],
+    "kakao_large_categories": [
+      "금강"
+    ]
+  }
 }

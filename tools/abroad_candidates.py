@@ -1,7 +1,9 @@
-"""해외에서 본 군산 — Threads·X에서 군산 관련 공개 게시물 후보를 찾아 사람이 고를 표로 만든다 (아무것도 공개하지 않는다).
+"""해외에서 본 <지역> — Threads·X에서 그 지역 관련 공개 게시물 후보를 찾아 사람이 고를 표로 만든다 (아무것도 공개하지 않는다).
 
-    python tools/abroad_candidates.py                       # 키가 있는 서비스만 검색 → reports/abroad_candidates.csv
-    python tools/abroad_candidates.py --max 30 --keywords "Gunsan,群山,군산 여행"
+    python tools/abroad_candidates.py --data data/incheon   # 키가 있는 서비스만 검색 → reports/abroad_candidates.csv
+    python tools/abroad_candidates.py --max 30 --keywords "Incheon,仁川,인천 여행"
+
+검색어 기본값은 그 지역 site.json의 도시 이름들이다(city.chat.names의 각 언어 이름과 '<한국어 이름> 여행').
 
 키(.env 또는 환경 변수, 커밋 금지 · 로그에서는 가린다):
 - THREADS_ACCESS_TOKEN: Threads 앱의 사용자 토큰. 남의 게시물까지 찾으려면 threads_keyword_search 권한 승인이 필요하다
@@ -29,7 +31,15 @@ if __package__ in (None, ""):
 from pipeline.enrich import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_KEYWORDS = ["Gunsan", "群山", "군산 여행", "Seonyudo", "선유도"]
+def default_keywords(data: Path) -> list[str]:
+    """The city's names in each language (site.json city.chat.names; Korean: the region) and '<Korean name> 여행'."""
+    try:
+        site = json.loads((Path(data) / "site.json").read_text("utf-8"))
+    except (OSError, ValueError):
+        return []
+    names = dict(((site.get("city") or {}).get("chat") or {}).get("names") or {})
+    ko = names.pop("ko", "") or site.get("region", "")
+    return list(dict.fromkeys(x for x in [*names.values(), f"{ko} 여행" if ko else ""] if x))
 
 
 def get_json(url: str, headers: dict, secret: str) -> tuple[dict | None, str]:
@@ -72,7 +82,8 @@ def x_recent(keyword: str, token: str, limit: int) -> tuple[list[dict], str]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--keywords", default=",".join(DEFAULT_KEYWORDS))
+    ap.add_argument("--data", type=Path, default=ROOT / "data" / "incheon")
+    ap.add_argument("--keywords", default="", help="쉼표로 구분(기본: site.json의 도시 이름들)")
     ap.add_argument("--max", type=int, default=20, help="서비스·검색어마다 받을 최대 건수 (X는 건당 과금)")
     ap.add_argument("--out", default=str(ROOT / "reports" / "abroad_candidates.csv"))
     args = ap.parse_args(argv)
@@ -83,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
               "X_BEARER_TOKEN(X, 종량제)을 넣으세요. 키 없이는 abroad_queue.csv에 직접 주소를 넣고 abroad_check.py를 쓰면 됩니다.")
         return 0
     rows, seen = [], set()
-    for kw in [k.strip() for k in args.keywords.split(",") if k.strip()]:
+    for kw in [k.strip() for k in args.keywords.split(",") if k.strip()] or default_keywords(args.data):
         for name, fn in (("threads", threads), ("x", x_recent)):
             if not keys[name]:
                 continue

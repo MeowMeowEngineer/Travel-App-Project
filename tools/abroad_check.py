@@ -1,8 +1,8 @@
-"""해외에서 본 군산 — 사람이 고른 기사·SNS 게시물 주소를 확인해 data/<region>/abroad.json에 넣는다 (기본은 미리보기).
+"""해외에서 본 <지역> — 사람이 고른 기사·SNS 게시물 주소를 확인해 data/<region>/abroad.json에 넣는다 (기본은 미리보기).
 
-    python tools/abroad_check.py                      # data/gunsan/abroad_queue.csv를 확인만 하고 결과를 출력
+    python tools/abroad_check.py                      # data/incheon/abroad_queue.csv를 확인만 하고 결과를 출력
     python tools/abroad_check.py --apply              # 확인된 행을 abroad.json에 넣는다
-    python tools/abroad_check.py --queue my.csv --data data/gunsan --apply
+    python tools/abroad_check.py --queue my.csv --data data/incheon --apply
 
 큐 CSV 열: url, note, place_slugs(;로 구분), event_slugs(;), date(YYYY-MM-DD 또는 YYYY-MM), approve(Y면 공개),
           image(선택: 비우면 기사의 og:image, '-'면 사진 없음)
@@ -11,7 +11,7 @@
   Threads는 2026년부터 토큰 없이 부를 수 있고, META_OEMBED_TOKEN이 있으면 붙인다(.env 또는 환경 변수, 로그에는 가린다).
   oEmbed로 받은 값은 화면 표시(작성자 이름)에만 쓴다 — 메타 이용 조건.
 - 기사는 주소가 열리는지(200)와 제목·매체 이름·대표 이미지(og:image)를 확인한다. 제목은 원문 그대로 인용한다.
-  대표 이미지는 복사하지 않고 그 주소를 기사 옆 미리보기로만 쓴다. 군산을 찍은 사진이 아니면(다른 지역·필자 얼굴·
+  대표 이미지는 복사하지 않고 그 주소를 기사 옆 미리보기로만 쓴다. 그 지역을 찍은 사진이 아니면(다른 지역·필자 얼굴·
   매체 로고) image 열에 '-'를 적는다 — 미리보기 출력에 나온 주소를 열어 보고 고른다. 로고·아이콘 주소는 자동으로 뺀다.
 - approve가 Y이고 확인을 통과한 행만 status=published, 나머지는 draft. 이미 있는 주소는 note·장소·승인만 갱신한다.
 - 공급자 오류 메시지는 그대로 보여 준다(토큰 문자열만 가린다).
@@ -146,7 +146,7 @@ def item_from(row: dict, result: dict, today: str) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--data", default=str(ROOT / "data" / "gunsan"))
+    ap.add_argument("--data", default=str(ROOT / "data" / "incheon"))
     ap.add_argument("--queue", default="")
     ap.add_argument("--apply", action="store_true", help="abroad.json에 쓴다 (없으면 미리보기)")
     args = ap.parse_args(argv)
@@ -172,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
         platform = platform_of(url)
         result = check_post(url, platform, token) if platform else check_article(url)
         print(("확인" if result["ok"] else "실패") + f" [{platform or 'article'}] {url}" + ("" if result["ok"] else f" — {result['why']}")
-              + (f"\n    대표 이미지: {result['image']} (군산 사진이 아니면 image 열에 '-')" if result.get("image") else ""))
+              + (f"\n    대표 이미지: {result['image']} (그 지역 사진이 아니면 image 열에 '-')" if result.get("image") else ""))
         if not result["ok"]:
             failed += 1
         item = item_from(row, result, today)

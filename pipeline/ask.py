@@ -2,7 +2,7 @@
 assistant (chat.js, CLAUDE.md 3.10) from the middle of the home page.
 
 templates/_ask.html.j2 draws the card; this module gives it its starter questions from data/<region>/ask.json:
-  {"starters": [{"q": {"ko": "선유도 가는 법", "en": "How do I get to Seonyudo?"}, "guide": "guide-08"},
+  {"starters": [{"q": {"ko": "○○섬 가는 법", "en": "How do I get to ○○ Island?"}, "guide": "guide-08"},
                 {"q": {"ko": "이번 달 행사·축제", "en": "Events this month"}, "page": "events"}, …]}
 A starter is a question the assistant answers when JS runs and, as a plain link, the page that answers it — a guide
 (by id) or a list (PAGES) — so the card does something without JS and every starter is a real page of the build.

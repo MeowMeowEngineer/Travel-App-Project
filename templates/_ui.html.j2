@@ -306,7 +306,7 @@
 
 {#- onroute(rows, place): the official courses through a place (place_vm.boards: [{cv, s}]), one row each. -#}
 {% macro onroute(rows, place='') -%}
-<table class="onroute"><caption class="h-sub">이곳을 지나는 군산시 공식 코스 {{ rows|length }}개</caption><tbody>
+<table class="onroute"><caption class="h-sub">이곳을 지나는 공식 코스 {{ rows|length }}개</caption><tbody>
 {% for b in rows %}{% set s = b.s %}
 <tr><th scope="row"><a href="{{ b.cv.path }}#s{{ s.n }}" data-track="course_click" data-place="{{ place }}">{{ b.cv.display }}</a><span class="or-n tn">{{ s.n }}/{{ b.cv.stops|length }}</span></th>
 <td class="or-prev">{% if s.prev %}{% if s.prev.path %}<a href="{{ s.prev.path }}">{% endif %}<span aria-hidden="true">← </span><span class="vh">이전 </span>{{ s.prev.name }}{% if s.prev.path %}</a>{% endif %}{% if s.prev_m is not none %} <span class="tn">{{ s.prev_m|pdist }}</span>{% endif %}{% else %}<span class="muted">출발</span>{% endif %}</td>
@@ -417,7 +417,7 @@
 <form class="abar-search" action="/search/" method="get" role="search">
 <label for="{{ hid }}" class="vh">장소·메뉴·동네 찾기</label>
 {{ icon('search', 'abar-ico') }}
-<input id="{{ hid }}" name="q" type="search" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="장소·메뉴·동네 (예: 짬뽕, 선유도)">
+<input id="{{ hid }}" name="q" type="search" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="장소·메뉴·동네{% if search_hint %} ({{ search_hint }}){% endif %}">
 <button type="submit" class="btn">검색</button>
 </form>
 {% if ev %}<a class="abar-ev" href="{{ ev.path or ev.source_url }}"{% if not ev.path %} rel="noopener" data-track="official_click"{% endif %}>
@@ -445,7 +445,7 @@
     bento); the others load after 'load' and cross-fade OVER it (motion.js hero(); dots follow). The only
     scroll motion is a push-in of the KOGL-1 photo (1 → 1.06, [data-hero-zoom]). Pause button stops the slide show
     (WCAG 2.2.2). -#}
-{% macro showcase(slides, sizes='(min-width: 1024px) 880px, calc(100vw - 32px)', label='군산 풍경 사진', high=true) -%}
+{% macro showcase(slides, sizes='(min-width: 1024px) 880px, calc(100vw - 32px)', label='풍경 사진', high=true) -%}
 {% set slides = slides|selectattr('type', 'equalto', 1)|list %}{# a cropped, zoomed slot takes KOGL-1 only #}
 {% if slides %}
 <section class="op-show" data-hero aria-label="{{ label }}">
@@ -605,7 +605,8 @@
 
 {#- search_form(id, value, label, placeholder, live): GET /search/. live=true adds data-search (assets/search.js then
     fetches /search/index.json and prints results into the page's [data-results] element). -#}
-{% macro search_form(id='q', value='', label='장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', placeholder='예: 짬뽕, 철길, 장미동', live=true) -%}
+{% macro search_form(id='q', value='', label='장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', placeholder=none, live=true) -%}
+{% set placeholder = placeholder or search_hint or '장소 이름·메뉴·동 이름' %}
 <form class="search" action="/search/" method="get" role="search"{% if live %} data-search data-index="/search/index.json"{% endif %}>
 <label class="search-l" for="{{ id }}">{{ label }}</label>
 <div class="search-row"><input id="{{ id }}" name="q" type="search" value="{{ value }}" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="{{ placeholder }}"><button type="submit" class="btn">찾기</button></div>

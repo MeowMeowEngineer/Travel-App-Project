@@ -51,12 +51,12 @@
     <div class="wrap pl-hero-in pl-x{% if lead %} has-lead{% endif %}">
       <div class="pl-head">
         {% if not lead %}<p class="pl-kpic">{{ ui.kpic(ui.KIND_PIC.get((p.e._visual or ('', 'pin'))[1], 'kind-attraction'), (p.e._visual or ('', 'pin'))[1], 72, '일러스트: ' ~ p.kind_label) }}</p>{% endif %}
-        <p class="kicker">{% for lab, href in p.kicker %}<a href="{{ href }}">{{ lab }}</a>{% endfor %}<span>{{ site.locality }}{% if p.dong %} {{ p.dong }}{% endif %}</span></p>
+        <p class="kicker">{% for lab, href in p.kicker %}<a href="{{ href }}">{{ lab }}</a>{% endfor %}<span>{{ p.where }}</span></p>
         <h1 class="d1 vt-title">{{ nm }}</h1>
         {% if p.alt_names %}<p class="alt-n pl-alt">다른 이름: {{ p.alt_names|join(' · ') }}</p>{% endif %}
         <div class="summary" data-block="summary">
           {% if p.lede %}<p class="lede">{{ p.lede }}{% if p.story %} <span class="lede-2">{{ p.story|join(' ') }}</span>{% endif %}</p>
-          {% else %}<p class="lede">{{ nm|josa('은/는') }} {{ site.locality }}{% if p.dong %} {{ p.dong }}{% endif %}에 있는 {{ p.kind_label }}입니다.</p>{% endif %}
+          {% else %}<p class="lede">{{ nm|josa('은/는') }} {{ p.where }}에 있는 {{ p.kind_label }}입니다.</p>{% endif %}
         </div>
         {{ p1.dzchips(p.designations, p.e.id) }}
         {{ ui.kf(p.kf, 'kf-hero', '#h-facts', p.e.id) }}

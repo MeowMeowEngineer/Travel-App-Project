@@ -26,7 +26,7 @@ def _dump(path: Path, data) -> None:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=ROOT / "data" / "gunsan")
+    ap.add_argument("--data", type=Path, default=ROOT / "data" / "incheon")
     ap.add_argument("--selection", type=Path, default=ROOT / "reports" / "review_build_selection.json")
     ap.add_argument("--date", required=True)
     ap.add_argument("--by", default="운영자 공개 승인(페이지별 검수 전)")

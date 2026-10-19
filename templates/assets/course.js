@@ -1,4 +1,4 @@
-/* 군산 여행 — course page: the one motion that carries data (attached by site.js when [data-course] exists).
+/* Course page: the one motion that carries data (attached by site.js when [data-course] exists).
    The stop being read (the one crossing a band 40–55% down the viewport) drives:
    - the stop band: [data-fill] grows to that stop (vertical on desktop ≥1024px, to n / N of a thin bar on phones);
      GSAP .5s power2.out when motion is allowed (fetched here, after load), set directly otherwise;

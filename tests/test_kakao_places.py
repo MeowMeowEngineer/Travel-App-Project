@@ -155,7 +155,7 @@ def test_places_without_coordinates_need_name_gunsan_and_building_number():
     assert K.decide(p, [ok])["status"] == "accepted"
     assert K.decide(p, [doc("호텔나운", road="전북특별자치도 군산시 현충로 86", group="AD5")])["status"] == "none"
     other_city = doc("호텔나운", road="전북특별자치도 익산시 현충로 84", jibun="전북특별자치도 익산시 영등동 1", group="AD5")
-    assert K.decide(p, [other_city])["reason"] == "군산시 밖"
+    assert K.decide(p, [other_city])["reason"] == "군산 밖"   # the region (site.json region) the Kakao address must name
     no_road = place("대각산", kind="attraction", category="산", address="전북특별자치도 군산시 옥도면 일원", geo=False)
     assert K.decide(no_road, [doc("대각산", road="", jibun="전북특별자치도 군산시 옥도면 신시도리 산 1",
                                    category="여행 > 산")])["reason"].startswith("좌표 없음")

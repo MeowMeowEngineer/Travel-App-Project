@@ -22,4 +22,4 @@
   - Lenis는 데스크톱(1024px 이상) + 정밀 포인터(`hover: hover` + `pointer: fine`)에서만 받는다. 지도·`[data-lenis-prevent]` 안의 휠은 건드리지 않고, 앵커는 머리말 아래로 이동한 뒤 초점을 옮기며, 키보드 스크롤은 브라우저 기본 동작 그대로다.
   - 동작 줄이기(reduced motion)면 motion.js 자체를 받지 않는다. JS가 없으면 아무것도 받지 않는다. 둘 다 최종 상태 그대로 보인다(`templates/assets/css/65-states.css`).
 - **지도(카카오맵, 운영자 결정 2026-10-14)**: 자체 호스팅하지 않는다. 카카오 지도 JavaScript SDK(`dapi.kakao.com/v2/maps/sdk.js?appkey=…&autoload=false`)를 map.js가 지도 상자(`.map[data-map]`, 옛 `.map[data-points]`)가 화면 가까이(400px) 오거나 접힌 지도가 열릴 때, 페이지 로드(`load`) 뒤에만 받는다. 주소는 빌드가 `site.json`의 `kakao_js_key`로 만들어 상자의 `data-kakao-sdk`에 적는다(`pipeline/build.kakao_sdk_url`). 지도 상자가 없는 페이지는 map.js도 SDK도 받지 않는다. 마커·이름표·확대 버튼은 사이트 CSS(`css/30-info.css`)로 꾸민 우리 요소이고, 지도 안 로고는 카카오가 그린다.
-  - 이 키는 카카오 개발자 콘솔에 등록한 웹 도메인(지금 `https://gunsan.webforai.kr`)에서만 동작한다. 다른 주소에서는 SDK가 HTTP 401(domain mismatched)을 돌려주고, 상자에는 '지도를 불러오지 못했습니다'가 남는다(목록·글은 그대로).
+  - 이 키는 카카오 개발자 콘솔에 등록한 웹 도메인(`site.json`의 `site_url`)에서만 동작한다. 다른 주소에서는 SDK가 HTTP 401(domain mismatched)을 돌려주고, 상자에는 '지도를 불러오지 못했습니다'가 남는다(목록·글은 그대로).

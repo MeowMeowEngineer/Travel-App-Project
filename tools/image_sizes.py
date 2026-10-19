@@ -1,7 +1,7 @@
 """Record the intrinsic size and byte length of every licensed photo the site shows.
 
-    python tools/image_sizes.py --data data/gunsan                 # probe photos not yet in the file
-    python tools/image_sizes.py --data data/gunsan --refresh       # probe every photo again
+    python tools/image_sizes.py --data data/incheon                 # probe photos not yet in the file
+    python tools/image_sizes.py --data data/incheon --refresh       # probe every photo again
 
 Writes data/<region>/image_sizes.json: {url: [width, height, bytes]}. pipeline/present.py reads it so every
 <img> can carry width/height/aspect-ratio (no layout shift) and never be drawn above its native width.
@@ -29,7 +29,7 @@ from pathlib import Path
 
 DEFAULT_LICENSES = ("KOGL-1", "KOGL-3")
 STEPS = (32768, 262144, None)  # bytes per attempt; None = the whole file
-UA = "Mozilla/5.0 (compatible; gunsan-image-size-probe)"
+UA = "Mozilla/5.0 (compatible; webforai-image-size-probe)"
 
 
 def image_size(data: bytes) -> tuple[int, int] | None:
@@ -141,7 +141,7 @@ def run(data_dir: Path, out: Path | None = None, refresh: bool = False, limit: i
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=Path("data/gunsan"))
+    ap.add_argument("--data", type=Path, default=Path("data/incheon"))
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--refresh", action="store_true", help="probe recorded photos again")
     ap.add_argument("--limit", type=int, default=2000, help="most requests in one run")

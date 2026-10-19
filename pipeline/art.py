@@ -28,10 +28,10 @@ and manifest.json {ID: {"w", "h", "avif": [[name, width, bytes], …], "webp": [
 publishes to /assets/art/ only the files a built page refers to (copy_used), so a picture whose slot does not exist
 yet ('개편 뒤 연결') adds nothing.
 
-The slots (known_slot(); data/gunsan/art.json _notes, docs/handover/image_prompts_round2_2026-10-13.md):
+The slots (known_slot(); data/<region>/art.json _notes):
 home.card.*, list.head.*, guide.banner.<guide id>, en.guide.banner.<guide id>, og.*, page.404, search.empty,
-theme.head.<theme slug>, videos.head.<topic> (build.VIDEO_TOPIC_ART), course.banner.<course id>, area.<권역>
-(present.REGION_ART), events.month.<MM>, events.kind.<kind> (event_kind), abroad.group.<group>, about.head.
+theme.head.<theme slug>, videos.head.<topic> (build.VIDEO_TOPIC_ART), course.banner.<course id>, area.<권역 art key>
+(the city's site.json city.travel_regions[].art, far_art), events.month.<MM>, events.kind.<kind> (event_kind), abroad.group.<group>, about.head.
 A '연결' picture whose slot is none of these is an error (data_problems); so is one whose guide, course or theme id
 the region's data does not have (ID_SLOTS: a typo). One with an id the data has that no page of a build shows (that
 page is not in this build: a draft, a guide whose English translation waits for an update, a theme without places)
@@ -83,30 +83,35 @@ OG_IMAGE = {"og:image", "og:image:url", "og:image:secure_url", "twitter:image", 
 # any other node (an ImageObject, a place, an Event, a TouristTrip, an Article …) is reported
 PAGE_NODES = frozenset({"WebPage", "CollectionPage", "AboutPage", "SearchResultsPage", "WebSite"})
 
-# K events.kind.<kind> (docs/handover/image_prompts_round2_2026-10-13.md K): the picture of an event card without a
-# photo. events.json has no kind field, so the kind is the first row whose words appear in the event's series name
-# (else its name); none: 'other'. The 2026-10-13 data (75 records, 44 series) falls into these rows the same way
-# whether series or name is read.
+# K events.kind.<kind>: the picture of an event card without a photo. events.json has no kind field, so the kind is the
+# first row whose words appear in the event's series name (else its name); none: 'other'. Generic words here; a city's
+# own festival words (site.json city.event_kind_words {kind: [words]}) are added to their row.
 EVENT_KINDS = (
     ("race", ("대회",)),
     ("ceremony", ("기념식", "추모제", "기념행사", "제전")),
-    ("book", ("북페어", "책책북북")),
-    ("sea", ("섬", "선유도", "어청도", "노을", "비치", "해맞이", "해넘이", "방류", "갑토리의 날")),
+    ("book", ("북페어",)),
+    ("sea", ("섬", "노을", "비치", "해맞이", "해넘이", "방류")),
     ("night", ("야행", "야시장", "나이트", "밤", "미디어아트")),
-    ("food", ("짬뽕", "맥주")),
+    ("food", ("맥주",)),
     ("flowers", ("보리", "벚꽃", "연꽃")),
     ("nature", ("걷기", "등산", "철새")),
-    ("alley", ("골목", "시간여행", "우체통", "손편지")),
-    ("stage", ("탱고", "마이크", "예술제", "영화제", "쉬엄쉬엄")),
+    ("alley", ("골목",)),
+    ("stage", ("탱고", "마이크", "예술제", "영화제")),
     ("market", ("장터", "마켓", "캠핑쇼", "로컬페스타")),
 )
 EVENT_KIND_OTHER = "other"
 
 
+def event_kinds() -> tuple:
+    from . import city
+    extra = city.current().get("event_kind_words", {}) or {}
+    return tuple((kind, (*words, *extra.get(kind, ()))) for kind, words in EVENT_KINDS)
+
+
 def event_kind(ev: dict) -> str:
-    """'race' … 'market', else 'other': the first EVENT_KINDS row with a word in the series name (else the name)."""
+    """'race' … 'market', else 'other': the first event_kinds() row with a word in the series name (else the name)."""
     name = " ".join(str(ev.get("series") or ev.get("name") or "").split())
-    return next((kind for kind, words in EVENT_KINDS if any(w in name for w in words)), EVENT_KIND_OTHER)
+    return next((kind for kind, words in event_kinds() if any(w in name for w in words)), EVENT_KIND_OTHER)
 
 
 def alt_key(lang: str) -> str:
@@ -210,10 +215,10 @@ def slot_lang(slot: str) -> str | None:
 
 
 @functools.lru_cache(maxsize=None)
-def _slot_rules() -> re.Pattern:
+def _slot_rules(areas: tuple = ()) -> re.Pattern:
     """Every slot a page can show (the callers of templates/_art.html.j2 and og_fallback). Fixed families list their
-    keys; guides, courses and themes take their ids."""
-    from . import build as B, present as P   # their tables name the video topics, the 권역 and the /abroad/ groups
+    keys; guides, courses and themes take their ids; area.<key> takes the city's 권역 art keys (`areas`)."""
+    from . import build as B   # its tables name the video topics and the /abroad/ groups
 
     def one(keys) -> str:
         return "(?:" + "|".join(re.escape(k) for k in keys) + ")"
@@ -224,7 +229,7 @@ def _slot_rules() -> re.Pattern:
         r"page\.404", r"search\.empty", r"about\.head",
         r"(?:en\.)?guide\.banner\.[a-z0-9-]+", r"course\.banner\.[a-z0-9-]+", r"theme\.head\.[a-z0-9-]+",
         rf"videos\.head\.{one(B.VIDEO_TOPIC_ART.values())}",
-        rf"area\.{one(P.REGION_ART.values())}",
+        *([rf"area\.{one(areas)}"] if areas else []),
         r"events\.month\.(?:0[1-9]|1[0-2])",
         rf"events\.kind\.{one([k for k, _ in EVENT_KINDS] + [EVENT_KIND_OTHER])}",
         rf"abroad\.group\.{one([k for k, _ in B.ABROAD_SOURCES] + ['videos'])}",
@@ -232,8 +237,23 @@ def _slot_rules() -> re.Pattern:
     return re.compile("^(?:" + "|".join(rules) + ")$")
 
 
-def known_slot(slot: str) -> bool:
-    return bool(_slot_rules().match(slot))
+def known_slot(slot: str, areas=None) -> bool:
+    """Is this a slot some page shows? `areas`: the city's 권역 art keys (default: the active city's)."""
+    if areas is None:
+        from . import present
+        areas = present.region_art().values()
+    return bool(_slot_rules(tuple(sorted(set(areas)))).match(slot))
+
+
+def city_areas(data_dir: Path) -> list[str]:
+    """The 권역 art keys data_dir/site.json's city gives (pipeline/city.py region_art); the active city's when the
+    folder has no site.json."""
+    from . import city
+    try:
+        site = json.loads((Path(data_dir) / "site.json").read_text("utf-8"))
+    except FileNotFoundError:
+        return list(city.current().region_art.values())
+    return list(city.City.from_site(site).region_art.values())
 
 
 # the slot families whose last part is an id of the region's data — known_slot() checks only its form: the file
@@ -272,6 +292,7 @@ def data_problems(data_dir: Path, art_dir: Path | None = None) -> list[str]:
     and held. (The renditions folder is shared by every region; tests/test_art.py keeps it free of files no art.json
     lists.)"""
     data, manifest, ids = load(data_dir), load_manifest(art_dir), data_ids(data_dir)
+    areas = city_areas(data_dir)
     problems, seen = [], {}
     for art_id, meta in data["images"].items():
         where = f"art.json {art_id}"
@@ -297,9 +318,9 @@ def data_problems(data_dir: Path, art_dir: Path | None = None) -> list[str]:
                 problems.append(f"{where}: slot {slot}을 {seen[slot]}도 씀")
             if slot_lang(slot) and langs != [slot_lang(slot)]:
                 problems.append(f"{where}: slot {slot}은 {slot_lang(slot)} 페이지 전용 — langs는 [\"{slot_lang(slot)}\"]")
-            if meta.get("status") == "연결" and not known_slot(slot):
+            if meta.get("status") == "연결" and not known_slot(slot, areas):
                 problems.append(f"{where}: '연결'인데 사이트에 없는 자리: {slot} — slot 이름 확인"
-                                "(docs/handover/image_prompts_round2_2026-10-13.md), 자리가 아직 없으면 status '개편 뒤 연결'")
+                                "(area.<키>는 site.json city.travel_regions의 art), 자리가 아직 없으면 status '개편 뒤 연결'")
             elif meta.get("status") == "연결" and (fam := id_slot(slot)) and fam[1] not in ids[fam[0]]:
                 name, _, what = ID_SLOTS[fam[0]]
                 problems.append(f"{where}: '연결'인데 사이트에 없는 자리: {slot} — {name}에 없는 {what}: {fam[1]} "

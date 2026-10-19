@@ -1,10 +1,10 @@
 """Read-only rights inventory; it does not grant rights or change source records.
 
-    python tools/rights_report.py --data data/gunsan --raw data/raw/gunsan \
+    python tools/rights_report.py --data data/incheon --raw data/raw/incheon \
         --out reports/rights_report.md
 
-The optional raw folder contains rights_evidence.json. Its sibling
-gunsan_courses.json supplies courses which have not yet been imported.
+The optional raw folder (data/raw/<region>) contains rights_evidence.json. Its courses.json, or the sibling
+<region>_courses.json (the collector's layout), supplies courses which have not yet been imported.
 Photos registered in the dataset and photos observed by the collector have
 separate denominators. Images are never downloaded by this tool.
 """
@@ -99,9 +99,9 @@ def inventory(data_dir: Path, raw_dir: Path | None = None) -> dict:
     registered_keys = {(_source_url(e), e.get("name")) for _, e in registered}
     pending_courses = []
     if raw_dir:
-        raw_courses_path = raw_dir / "gunsan_courses.json"
+        raw_courses_path = raw_dir / "courses.json"
         if not raw_courses_path.exists():
-            raw_courses_path = raw_dir.parent / "gunsan_courses.json"
+            raw_courses_path = raw_dir.parent / f"{raw_dir.name}_courses.json"
         for index, entity in enumerate(_read(raw_courses_path, []), 1):
             if (_source_url(entity), entity.get("name")) in registered_keys:
                 continue

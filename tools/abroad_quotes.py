@@ -1,7 +1,7 @@
-"""해외에서 본 군산 — 하이라이트 인용문 확인: 원문을 다시 받아 저장한 인용문이 글자 그대로 들어 있는지 본다 (아무것도 고치지 않는다).
+"""해외에서 본 <지역> — 하이라이트 인용문 확인: 원문을 다시 받아 저장한 인용문이 글자 그대로 들어 있는지 본다 (아무것도 고치지 않는다).
 
-    python tools/abroad_quotes.py                       # data/gunsan/abroad_highlights.json의 quote 전부
-    python tools/abroad_quotes.py --id stripes-2025-jinpo --data data/gunsan
+    python tools/abroad_quotes.py                       # data/incheon/abroad_highlights.json의 quote 전부
+    python tools/abroad_quotes.py --id <highlight id> --data data/incheon
     python tools/abroad_quotes.py --show <id>           # 그 항목 원문의 보이는 글을 출력(인용문을 고를 때)
 
 운영자 결정 2026-10-14(CLAUDE.md 3절 10항): /abroad/ 하이라이트와 기사 카드에는 원문의 짧은 대목(연속한 1~2문장,
@@ -177,7 +177,7 @@ def check(data_dir: Path, ids: list[str] | None = None,
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--data", default=str(ROOT / "data" / "gunsan"))
+    ap.add_argument("--data", default=str(ROOT / "data" / "incheon"))
     ap.add_argument("--id", action="append", default=[], help="이 id만 (여러 번 줄 수 있음)")
     ap.add_argument("--show", default="", help="이 id의 원문에서 뽑은 보이는 글을 출력하고 끝낸다")
     args = ap.parse_args(argv)

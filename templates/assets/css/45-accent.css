@@ -3,7 +3,7 @@
      1. the colour bento — the home answer bar's tiles (ui.bento): the three hub guides on lime / lavender / sky, the
         official courses as the one black tile with a lime pill, the rest Apple grey; big figure + unit top-left
         (never bigger than the H1), bold title, one fact line, a round arrow bottom-right (decorative, drawn here as
-        one mask; the whole tile is the link). The lime tile names what its figure counts (짬뽕 20곳) and shows the
+        one mask; the whole tile is the link). The lime tile names what its figure counts (a dish count: '○○ 20곳') and shows the
         other parts as outline pills between figure and title from 700px.
      2. the big-numerals band (ui.nums): huge bold figures with small grey labels, each a link to its list
      3. (the lime marker under one phrase of the home H1 — taken out by the owner 2026-10-09; ui.mark prints plain text)
@@ -29,7 +29,7 @@
 .ap-n { white-space: nowrap; line-height: 1; padding-right: 52px; }
 .ap-n b { font-size: 32px; line-height: .9; letter-spacing: -.045em; font-variant-numeric: lining-nums proportional-nums; }   /* display figures: no tabular gaps */
 .ap-n small { font: 700 15px/1 var(--font); margin-left: 3px; letter-spacing: -.01em; }
-.ap-n .ap-l { margin: 0 2px 0 0; font-size: 17px; letter-spacing: -.02em; }   /* what the figure counts: 짬뽕 요리 20곳 */
+.ap-n .ap-l { margin: 0 2px 0 0; font-size: 17px; letter-spacing: -.02em; }   /* what the figure counts: '○○ 요리 20곳' */
 .ap-k { display: block; padding: 6px 48px 0 0; font: 700 19px/1.25 var(--font); letter-spacing: -.025em; }
 .ap-v { display: block; margin-top: 3px; padding-right: 48px; font-size: 14px; line-height: 1.45; color: var(--ink-2); letter-spacing: -.01em; }
 .bt-go { --go: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E");

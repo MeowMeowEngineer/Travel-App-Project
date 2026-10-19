@@ -165,30 +165,47 @@ INDEX_KIND_GROUPS = {
 INDEX_GROUP_LABELS = {"hours": "이용시간", "restdate": "쉬는 날", "fee": "요금", "parking": "주차", "phone": "전화",
                       "homepage": "홈페이지", "checkin": "체크인", "menu": "대표 메뉴"}
 INDEX_MIN_GROUPS = 2
-# First sentence "○○은 군산시 ○○에 있는 ○○입니다." alone (same pattern as tools/quality_report.py TAUT)
-INDEX_TAUT = r"^{name}\s*(은|는)\s*군산시[^.]*?(있는|위치한)[^.]*?입니다\.$"
+
+
+def taut_pattern(name: str) -> str:
+    """First sentence "○○은 <city> ○○에 있는 ○○입니다." alone, for the active city (pipeline/city.py taut_rx: its
+    province, city and 구·군 names). tools/quality_report.py uses this same function."""
+    from . import city
+    return city.current().taut_rx(name)
+
+
 # Source commentary ("원문은 ~라고 소개합니다") instead of an answer
 SOURCE_COMMENTARY = re.compile(r"원문[은는이에서의]|라고\s*(소개|설명|안내|합니다|한다|전합니다|알려져)"
                                r"|(으)?로\s*소개(합니다|한다|하고|되어|됩니다)")
 INDEX_REASONS = {
     "groups": f"유형별 필수 정보 {INDEX_MIN_GROUPS}개 미만",
     "no_summary": "요약 없음",
-    "taut": "요약 첫 문장이 상투구('○○은 군산시 ○○에 있는 ○○입니다')",
+    "taut": "요약 첫 문장이 상투구('○○은 ○○시 ○○에 있는 ○○입니다')",
     "commentary": "요약에 출처 해설체('원문은…')",
     "unreviewed": "검수일(reviewed_at)·운영자 공개 승인(approved_at) 없음",
 }
 
-# Official designations (지정): the city / national lists a place is on — 군산맛집, 모범음식점, 백년가게, … (data:
-# e["designations"], one entry per list: type, label, year, source_name, url, checked_at, match). Shown on the place
-# page (chips under the answer, a '지정' row in the facts card with each list's link and 확인일), as one short chip on
-# list records, in the search index, llms.txt and JSON-LD `award`. Only entries matched with high/medium confidence
-# and not flagged needs_check are shown (designation_problems). DESIGNATION_ORDER is the display priority; a list
-# record shows the first. The index criteria (INDEX_GROUPS) do not count designations.
-DESIGNATION_ORDER = ("gunsan_matjip", "baeknyeon", "mobeom", "hyangto", "jjamppong_street", "goodprice", "ansim")
-DESIGNATION_SHORT = {"gunsan_matjip": "군산맛집", "baeknyeon": "백년가게", "mobeom": "모범음식점", "hyangto": "향토음식점",
-                     "jjamppong_street": "짬뽕 특화거리", "goodprice": "착한가격업소", "ansim": "안심식당"}
-DESIGNATION_SHORT_YEAR = ("gunsan_matjip", "hyangto")   # the year is part of what the designation says
+# Official designations (지정): the city / national lists a place is on — the city's own list, 모범음식점, 백년가게, …
+# (data: e["designations"], one entry per list: type, label, year, source_name, url, checked_at, match). Shown on the
+# place page (chips under the answer, a '지정' row in the facts card with each list's link and 확인일), as one short
+# chip on list records, in the search index, llms.txt and JSON-LD `award`. Only entries matched with high/medium
+# confidence and not flagged needs_check are shown (designation_problems). The display priority is the city's order
+# (site.json city.designations.order: its own lists in front), then the national lists below; a list record shows the
+# first. The index criteria (INDEX_GROUPS) do not count designations.
+DESIGNATION_ORDER = ("baeknyeon", "mobeom", "hyangto", "goodprice", "ansim")
+DESIGNATION_SHORT = {"baeknyeon": "백년가게", "mobeom": "모범음식점", "hyangto": "향토음식점",
+                     "goodprice": "착한가격업소", "ansim": "안심식당"}
+DESIGNATION_SHORT_YEAR = ("hyangto",)   # the year is part of what the designation says
 DESIGNATION_MATCH_OK = ("high", "medium")
+
+
+def designation_tables() -> tuple[tuple, dict, tuple]:
+    """(order, short labels, types whose year is shown) — the city's lists (site.json city.designations) merged with
+    the national ones."""
+    from . import city
+    d = city.current().get("designations", {}) or {}
+    order = tuple(dict.fromkeys([*(d.get("order") or ()), *DESIGNATION_ORDER]))
+    return order, {**DESIGNATION_SHORT, **(d.get("short") or {})}, (*DESIGNATION_SHORT_YEAR, *(d.get("short_year") or ()))
 
 
 def designation_problems(d: dict) -> list[str]:
@@ -210,16 +227,17 @@ def designation_problems(d: dict) -> list[str]:
 
 
 def designation_short(d: dict) -> str:
-    """'군산맛집 2026', '모범음식점', '향토음식점 2020' — the one chip of a list record."""
-    short = DESIGNATION_SHORT.get(d.get("type"), "") or re.sub(r"\(.*?\)", "", str(d.get("label") or "")).strip()
-    if d.get("type") in DESIGNATION_SHORT_YEAR and d.get("year"):
+    """'<city list> 2026', '모범음식점', '향토음식점 2020' — the one chip of a list record."""
+    _, shorts, with_year = designation_tables()
+    short = shorts.get(d.get("type"), "") or re.sub(r"\(.*?\)", "", str(d.get("label") or "")).strip()
+    if d.get("type") in with_year and d.get("year"):
         short = f"{short} {d['year']}"
     return short
 
 
 def designations(e: dict) -> list[dict]:
-    """The designations a page shows, in DESIGNATION_ORDER, each with `short` (designation_short)."""
-    order = {t: i for i, t in enumerate(DESIGNATION_ORDER)}
+    """The designations a page shows, in the city's order (designation_tables), each with `short`."""
+    order = {t: i for i, t in enumerate(designation_tables()[0])}
     shown = [d for d in e.get("designations") or [] if not designation_problems(d)]
     shown.sort(key=lambda d: order.get(d.get("type"), len(order)))
     return [{**d, "label": str(d["label"]).strip(), "short": designation_short(d)} for d in shown]
@@ -255,7 +273,7 @@ def summary_problems(e: dict) -> list[str]:
     if not sentences:
         return ["no_summary"]
     out = []
-    if re.match(INDEX_TAUT.format(name=re.escape(e.get("name", ""))), sentences[0]):
+    if re.match(taut_pattern(e.get("name", "")), sentences[0]):
         out.append("taut")
     if SOURCE_COMMENTARY.search(e.get("summary") or ""):
         out.append("commentary")

@@ -1,6 +1,6 @@
 """CSV -> data/<region>/places.json : the contract between collectors and the rest of the pipeline.
 
-Any collector (the Gunsan site crawler, a converter for the v0 export, a hand-made sheet)
+Any collector (a city tourism site crawler, a converter for the v0 export, a hand-made sheet)
 only has to produce a CSV with these columns (UTF-8, header row):
 
   id, name, kind, category, themes, tier, status,
@@ -8,7 +8,7 @@ only has to produce a CSV with these columns (UTF-8, header row):
   image_url, image_license, image_credit,
   lat, lng, naver_place_id, google_place_id
 
-- id            : stable unique id, e.g. gunsan-0001 (never reuse or change)
+- id            : stable unique id, e.g. incheon-0001 (never reuse or change)
 - kind          : attraction | stay | food
 - themes        : theme slugs separated by ';'
 - tier          : full | basic          (default basic)
@@ -17,7 +17,7 @@ only has to produce a CSV with these columns (UTF-8, header row):
 - original_license / image_license : KOGL-1 | KOGL-2 | KOGL-3 | KOGL-4 | NONE | UNKNOWN
 - collected_at  : YYYY-MM-DD
 
-    python -m pipeline.importer --csv data/raw/gunsan_places.csv --data data/gunsan
+    python -m pipeline.importer --csv data/raw/places.csv --data data/incheon
 
 Existing records with the same id keep their enrichment (facts, nearby, summary, faq ...);
 only the source-side fields are updated. A changed original text is reported (its hash changes).

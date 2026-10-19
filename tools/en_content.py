@@ -1,10 +1,10 @@
 """The language versions' content: official names, translation batches, parity checks, merge (CLAUDE.md 3절).
 
     python tools/en_content.py names [--lang en] [--max-calls 40] [--offline]   # TourAPI EngService2 (JpnService2 …)
-                                                                                  #   -> data/gunsan/<lang>/names.json
+                                                                                  #   -> data/incheon/<lang>/names.json
     python tools/en_content.py prepare --out <dir> [--lang en] [--batch 40]     # <lang>-XX.input.json batches
     python tools/en_content.py check <dir>/<lang>-03.output.json [...]          # parity checks, exit 1 on findings
-    python tools/en_content.py merge <dir>/<lang>-*.output.json                 # data/gunsan/<lang>/{places,guides,…}.json
+    python tools/en_content.py merge <dir>/<lang>-*.output.json                 # data/incheon/<lang>/{places,guides,…}.json
 
 --lang: en (default) | ja | zh-hans | zh-hant | de | fr | es | ru (pipeline/locales.py). check and merge read the
 language from the input batch. English is described below and unchanged; the other languages (section 'the other
@@ -15,11 +15,11 @@ disclaimers, 24-hour times, full-width punctuation in Japanese and Chinese) and 
 ways with OpenCC, kana in Japanese, Cyrillic in Russian, the language of German/French/Spanish prose). Their strings
 batch carries the labels from the Korean and the pages' own words (pipeline/intl_text.py) from the English.
 
-The English text is a translation of OUR Korean data (data/gunsan/*.json) and nothing else: no new facts, no
-general knowledge, no TourAPI overview, nothing from 군산시 originals beyond what the Korean already states.
+The English text is a translation of OUR Korean data (data/incheon/*.json) and nothing else: no new facts, no
+general knowledge, no TourAPI overview, nothing from the city tourism site's originals beyond what the Korean already states.
 
 Names: the official English name from TourAPI EngService2 when a place matches (coordinates within 150 m and a
-matching content type); otherwise the name in data/gunsan/en/names.json — the specific part in Revised Romanization and the generic
+matching content type); otherwise the name in data/incheon/en/names.json — the specific part in Revised Romanization and the generic
 part in English after the MCST guideline for public terms (은파호수공원 -> Eunpa Lake Park; business names stay
 romanized) — and the plain Revised Romanization (romanize() below) only for a place missing there. The Korean
 name is always kept in its own field (name_ko).
@@ -52,7 +52,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from pipeline import intl_text
+from pipeline import city, intl_text
 from pipeline import locales as LC
 from pipeline.schema import FACT_LABELS, designations, index_status
 from pipeline.textutil import extract_phones, normalize_name, squash_ws
@@ -64,7 +64,7 @@ from pipeline.en_source import (CONFLICT_NOTE, EVENT_CONFLICT_NOTE, EVENT_FIELDS
                                 event_series, guide_item, place_item, romanize)
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data" / "gunsan"
+DATA = ROOT / "data" / "incheon"
 EN_BASE_URL = "https://apis.data.go.kr/B551011/EngService2"
 MATCH_RADIUS_M = 150
 
@@ -140,7 +140,7 @@ def names(data: Path = DATA, max_calls: int = 40, offline: bool = False, lang: s
         return names_l(data, max_calls, offline, LC.get(lang).code)
     from pipeline.enrich import load_dotenv
     from pipeline.tourapi import TourAPI, TourAPIError, TourAPIStopError, from_site_config
-    from tools.tourapi_bulk import retry
+    from tools.tourapi_bulk import RegionError, region_codes, retry
     load_dotenv(ROOT / ".env")
     site = json.loads((data / "site.json").read_text("utf-8"))
     places = [p for p in json.loads((data / "places.json").read_text("utf-8")) if p.get("status") == "published"]
@@ -151,24 +151,22 @@ def names(data: Path = DATA, max_calls: int = 40, offline: bool = False, lang: s
     items: list[dict] = []
     try:
         kor = from_site_config(site, key, cache, offline=offline, max_calls=4)  # statutory codes (cached)
-        regn = next(str(r["code"]) for r in retry(kor.ldong_code)
-                    if r.get("name") and r["name"] in (site.get("region_full") or "전북특별자치도 군산시"))
-        signgu = next(str(r["code"]) for r in retry(kor.ldong_code, regn)
-                      if r.get("name") in (site.get("locality"), f"{site.get('region', '군산')}시"))
+        regn, signgus, _ = region_codes(kor, site)   # the city's 시군구 (a 광역시: every 구·군), tools/tourapi_bulk.py
         api = TourAPI(key, base_url=EN_BASE_URL, mobile_app=(site.get("tourapi") or {}).get("mobile_app", "WebforAI"),
                       cache_dir=cache, offline=offline, max_calls=max_calls)
         try:
-            page = 1
-            while True:
-                got = retry(api.call, "areaBasedList", lDongRegnCd=regn, lDongSignguCd=signgu, numOfRows=200,
-                            pageNo=page, arrange="A")
-                items += got
-                if len(got) < 200:
-                    break
-                page += 1
+            for signgu, _ in signgus:
+                page = 1
+                while True:
+                    got = retry(api.call, "areaBasedList", lDongRegnCd=regn, lDongSignguCd=signgu, numOfRows=200,
+                                pageNo=page, arrange="A")
+                    items += got
+                    if len(got) < 200:
+                        break
+                    page += 1
         finally:
             stats["live_calls"], stats["cache_hits"] = api.live_calls + kor.live_calls, api.cache_hits + kor.cache_hits
-    except (TourAPIError, TourAPIStopError, StopIteration) as err:
+    except (TourAPIError, TourAPIStopError, StopIteration, RegionError) as err:
         stats["error"] = str(err) or type(err).__name__
     stats["list_items"] = len(items)
     out = {}
@@ -213,17 +211,29 @@ RULES = {
                  f"'{EVENT_CONFLICT_NOTE}'. Never pick one side.",
     "faq": "Same number of questions and answers, same order; each question ends with '?'.",
     "address": "Use address_en_candidate when it is given; otherwise write '<number> <Road>, <eup/myeon/dong>, "
-               "Gunsan-si, Jeonbuk State' with Revised Romanization and every digit kept.",
+               "<the city's English address tail>' with Revised Romanization and every digit kept.",
 }
 
+TAIL_MARK = "<the city's English address tail>"
+
+
+def city_fill(obj):
+    """The rules and examples with the city's English address tail (site.json city.intl.en.address.tail) in place of
+    TAIL_MARK; the mark stays when the city has none (the translator then writes the city as the Korean names it)."""
+    tail = ((city.current().intl("en").get("address") or {}).get("tail") or "").strip()
+    if not tail:
+        return obj
+    return json.loads(json.dumps(obj, ensure_ascii=False).replace(TAIL_MARK, tail.replace('"', "")))
+
+
 PLACE_OUTPUT_EXAMPLE = {
-    "id": "gunsan-305373", "name_en": "Wolmyeong Park",
-    "summary": "Wolmyeong Park is a downtown park in Gunsan ...",
-    "facts": [{"key": "address", "value": "26 Wolmyeonggongwon 1-gil, Gunsan-si, Jeonbuk State"},
+    "id": "place-0001", "name_en": "Hosu Park",
+    "summary": "Hosu Park is a lakeside park ...",
+    "facts": [{"key": "address", "value": "26 Hosugongwon 1-gil, <the city's English address tail>"},
               {"key": "usetime", "value": "09:00–18:00", "alternatives": [{"value": "Always open"}], "note": CONFLICT_NOTE},
               {"key": "usefee", "value": "Free"}],
     "details": [{"heading": "...", "text": "..."}],
-    "faq": [{"q": "Do I need to pay to enter Wolmyeong Park?", "a": "No. Admission is free, and parking is available."}],
+    "faq": [{"q": "Do I need to pay to enter Hosu Park?", "a": "No. Admission is free, and parking is available."}],
 }
 
 
@@ -272,7 +282,8 @@ def template_strings(path: Path) -> list[dict]:
 
 
 def pipeline_strings() -> list[dict]:
-    from pipeline import build as B, present as PR, schema as SC
+    from pipeline import build as B, city, present as PR, schema as SC
+    C = city.current()   # the city's own labels (site.json city: purposes, travel_regions)
     rows: list[dict] = []
 
     def add(id_, ko, where):
@@ -291,19 +302,19 @@ def pipeline_strings() -> list[dict]:
             add(f"LISTS.{kind}.{f}", cfg.get(f), "pipeline/build.py")
     for i, (name, _) in enumerate(B.ATTRACTION_GROUPS):
         add(f"ATTRACTION_GROUPS.{i}", name, "pipeline/build.py")
-    for i, (label, _, _, note) in enumerate(B.PURPOSES):
-        add(f"PURPOSES.{i}.label", label, "pipeline/build.py")
-        add(f"PURPOSES.{i}.note", note, "pipeline/build.py")
+    for i, (label, _, _, note) in enumerate(C.get("purposes", []) or []):
+        add(f"PURPOSES.{i}.label", label, "site.json city.purposes")
+        add(f"PURPOSES.{i}.note", note, "site.json city.purposes")
     for k, v in B.ALT_LABELS.items():
         add(f"ALT_LABELS.{k}", v, "pipeline/build.py")
     for i, v in enumerate(B.VIDEO_TOPICS):
         add(f"VIDEO_TOPICS.{i}", v, "pipeline/build.py")
     for i, (label, *_) in enumerate(PR.NAV):
         add(f"NAV.{i}", label, "pipeline/present.py")
-    for i, (label, _) in enumerate(PR.REGIONS):
-        add(f"REGIONS.{i}", label, "pipeline/present.py")
-    add("FAR_LABEL", PR.FAR_LABEL, "pipeline/present.py")
-    add("NONE_LABEL", PR.NONE_LABEL, "pipeline/present.py")
+    for i, r in enumerate(C.regions):
+        add(f"REGIONS.{i}", r.name, "site.json city.travel_regions")
+    add("FAR_LABEL", C.far_label, "site.json city.travel_regions")
+    add("NONE_LABEL", C.none_label, "site.json city.travel_regions")
     for name in ("STAY_TYPE", "FOOD_TYPE", "ATTR_TYPE", "STATUS_PREFIX", "CONTEST_LABEL", "STOP_KIND_LABELS"):
         for k, v in getattr(PR, name).items():
             add(f"{name}.{k}", v, "pipeline/present.py")
@@ -324,21 +335,22 @@ def pipeline_strings() -> list[dict]:
 
 
 def strings_items(data: Path, places: list[dict]) -> list[dict]:
-    rows = pipeline_strings()
     site = _load(data, "site.json", {})
+    city.activate(site)
+    rows = pipeline_strings()
     for f in ("site_name", "description", "disclaimer"):
-        rows.append({"id": f"site.{f}", "ko": squash_ws(site.get(f)), "where": "data/gunsan/site.json",
+        rows.append({"id": f"site.{f}", "ko": squash_ws(site.get(f)), "where": "data/incheon/site.json",
                      **({"note": "Brand name: translate literally; the owner decides the English brand."}
                         if f == "site_name" else {})})
     rows.append({"id": "site.operator.name", "ko": squash_ws((site.get("operator") or {}).get("name")),
-                 "where": "data/gunsan/site.json", "note": "Company name: Revised Romanization; the owner confirms."})
+                 "where": "data/incheon/site.json", "note": "Company name: Revised Romanization; the owner confirms."})
     for i, link in enumerate(site.get("official_links") or []):
         rows.append({"id": f"site.official_links.{i}.name", "ko": squash_ws(link.get("name")), "where": "site.json"})
         rows.append({"id": f"site.official_links.{i}.note", "ko": squash_ws(link.get("note")), "where": "site.json"})
     for t in _load(data, "themes.json", []):
-        rows.append({"id": f"theme.{t['slug']}.name", "ko": squash_ws(t.get("name")), "where": "data/gunsan/themes.json"})
+        rows.append({"id": f"theme.{t['slug']}.name", "ko": squash_ws(t.get("name")), "where": "data/incheon/themes.json"})
         rows.append({"id": f"theme.{t['slug']}.description", "ko": squash_ws(t.get("description")),
-                     "where": "data/gunsan/themes.json"})
+                     "where": "data/incheon/themes.json"})
     cats, provs = [], []
     for p in places:
         c = squash_ws(p.get("category"))
@@ -398,6 +410,7 @@ def prepare(out: Path, batch: int = 40, data: Path = DATA, lang: str = "en") -> 
     order = {"attraction": 0, "food": 1, "stay": 2}
     flagged = [(p, index_status(p)[0]) for p in places]
     flagged.sort(key=lambda x: (not x[1], order.get(x[0]["kind"], 9), x[0].get("tier") != "full", x[0]["name"]))
+    city.activate_dir(data)   # the city's English address tail in the rules and examples (city_fill)
     out.mkdir(parents=True, exist_ok=True)
     for old in out.glob("en-*.input.json"):
         old.unlink()
@@ -406,8 +419,8 @@ def prepare(out: Path, batch: int = 40, data: Path = DATA, lang: str = "en") -> 
     def write(kind: str, items: list[dict], example: dict):
         n = len(files) + 1
         path = out / f"en-{n:02d}.input.json"
-        payload = {"type": kind, "rules": RULES, "output_file": f"en-{n:02d}.output.json",
-                   "output_example": example, "items": items}
+        payload = {"type": kind, "rules": city_fill(RULES), "output_file": f"en-{n:02d}.output.json",
+                   "output_example": city_fill(example), "items": items}
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", "utf-8")
         chars = sum(len(HANGUL.findall(json.dumps(i, ensure_ascii=False))) for i in items)
         files.append({"file": str(path), "type": kind, "items": len(items), "hangul_chars": chars,
@@ -427,10 +440,10 @@ OUTPUT_EXAMPLES = {
     "guides": {"id": "guide-01", "label": "Car-free trip", "title": "...", "summary": "...",
                "body": [{"heading": "...", "text": "..."}], "items": [{"place_slug": "근대역사박물관", "reason": "..."}],
                "faq": [{"q": "...?", "a": "..."}], "sources": [{"name": "..."}]},
-    "courses": {"id": "gunsan-course-m2107-1", "name": "Course 1 Modern Cultural Heritage Tour", "group": "...",
+    "courses": {"id": "course-0001", "name": "Course 1 Modern Cultural Heritage Tour", "group": "...",
                 "duration": "", "summary": "...", "stops": [{"name": "Geundaeyeoksabangmulgwan", "note": ""}]},
-    "events": {"id": "군산짬뽕페스티벌", "series_name": "Gunsan Jjamppong Festival",
-               "newest": {"name": "2026 Gunsan Jjamppong Festival", "period_text": "October 9 (Fri)–October 11 (Sun), 2026, 3 days",
+    "events": {"id": "음식축제", "series_name": "Food Festival",
+               "newest": {"name": "2026 Food Festival", "period_text": "October 9 (Fri)–October 11 (Sun), 2026, 3 days",
                           "place_name": "...", "address": "...", "fee": "Free", "playtime": "12:00–22:00",
                           "sponsor": "...", "tel": "063-454-3912, 3913", "notes": ["..."]},
                "alternatives": {"fee": {"values": ["..."], "note": EVENT_CONFLICT_NOTE}},
@@ -665,7 +678,7 @@ _NAMED: list[str] | None = None
 
 
 def _named_with_banned_word() -> list[str]:
-    """English place names that contain a word from BANNED (Best Western Gunsan Hotel): a name is not promotion."""
+    """English place names that contain a word from BANNED (Best Western … Hotel): a name is not promotion."""
     global _NAMED
     if _NAMED is None:
         rows = (_load(DATA, "en/names.json", {}) or {}).values()
@@ -1410,7 +1423,7 @@ def rules_for(code: str) -> dict:
                      f"'{loc.event_conflict}'. Never pick one side.",
         "faq": "Same number of questions and answers, same order; each question ends with a question mark.",
         "address": "Use address_en_candidate (the romanized address, the same in every language) as the address value "
-                   "when it is given; otherwise write '<number> <Road>, <eup/myeon/dong>, Gunsan-si, Jeonbuk State' "
+                   "when it is given; otherwise write '<number> <Road>, <eup/myeon/dong>, <the city's English address tail>' "
                    "with Revised Romanization and every digit kept.",
         "strings": "Rows with 'ko' are labels to translate from the Korean. Rows with 'en' (chrome.*) are the pages' own "
                    "words, given in English: translate them, keep every {placeholder} exactly, keep it short like the "
@@ -1476,6 +1489,7 @@ def chrome_rows(code: str) -> list[dict]:
 def prepare_l(out: Path, batch: int, data: Path, code: str) -> dict:
     """prepare for another language: the English batches' items (same order, same ko_hash) with the language's name
     fields and rules, then the strings batch (labels from the Korean, the pages' own words from the English)."""
+    city.activate_dir(data)   # the city's names in this language (LC.get) and its English address tail (city_fill)
     loc = LC.get(code)
     places_all = json.loads((data / "places.json").read_text("utf-8"))
     places = [p for p in places_all if p.get("status") == "published" and not p.get("duplicate_of")]
@@ -1501,7 +1515,7 @@ def prepare_l(out: Path, batch: int, data: Path, code: str) -> dict:
     files: list[dict] = []
     rules = rules_for(code)
     example = {**{k: v for k, v in PLACE_OUTPUT_EXAMPLE.items() if k != "name_en"}, loc.name_key: "…",
-               "facts": [{"key": "address", "value": "26 Wolmyeonggongwon 1-gil, Gunsan-si, Jeonbuk State"},
+               "facts": [{"key": "address", "value": "26 Hosugongwon 1-gil, <the city's English address tail>"},
                          {"key": "usetime", "value": "09:00–18:00", "alternatives": [{"value": "…"}], "note": loc.conflict},
                          {"key": "usefee", "value": "…"}],
                "summary": "…", "faq": [{"q": "…?", "a": "…"}]}
@@ -1509,8 +1523,8 @@ def prepare_l(out: Path, batch: int, data: Path, code: str) -> dict:
     def write(kind: str, items: list[dict], ex: dict):
         n = len(files) + 1
         path = out / f"{code}-{n:02d}.input.json"
-        payload = {"type": kind, "lang": code, "rules": rules, "output_file": f"{code}-{n:02d}.output.json",
-                   "output_example": ex, "items": items}
+        payload = {"type": kind, "lang": code, "rules": city_fill(rules), "output_file": f"{code}-{n:02d}.output.json",
+                   "output_example": city_fill(ex), "items": items}
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", "utf-8")
         chars = sum(len(HANGUL.findall(json.dumps(i, ensure_ascii=False))) for i in items)
         files.append({"file": str(path), "type": kind, "items": len(items), "hangul_chars": chars,
@@ -1538,7 +1552,7 @@ def names_l(data: Path, max_calls: int, offline: bool, code: str) -> dict:
     message (key masked) is reported and every place stays 'translated'."""
     from pipeline.enrich import load_dotenv
     from pipeline.tourapi import TourAPI, TourAPIError, TourAPIStopError, from_site_config
-    from tools.tourapi_bulk import retry
+    from tools.tourapi_bulk import RegionError, region_codes, retry
     loc = LC.get(code)
     base_url = f"https://apis.data.go.kr/B551011/{loc.service}"
     load_dotenv(ROOT / ".env")
@@ -1551,24 +1565,22 @@ def names_l(data: Path, max_calls: int, offline: bool, code: str) -> dict:
     items: list[dict] = []
     try:
         kor = from_site_config(site, key, cache, offline=offline, max_calls=4)  # statutory codes (cached)
-        regn = next(str(r["code"]) for r in retry(kor.ldong_code)
-                    if r.get("name") and r["name"] in (site.get("region_full") or "전북특별자치도 군산시"))
-        signgu = next(str(r["code"]) for r in retry(kor.ldong_code, regn)
-                      if r.get("name") in (site.get("locality"), f"{site.get('region', '군산')}시"))
+        regn, signgus, _ = region_codes(kor, site)   # the city's 시군구 (a 광역시: every 구·군), tools/tourapi_bulk.py
         api = TourAPI(key, base_url=base_url, mobile_app=(site.get("tourapi") or {}).get("mobile_app", "WebforAI"),
                       cache_dir=cache, offline=offline, max_calls=max_calls)
         try:
-            page = 1
-            while True:
-                got = retry(api.call, "areaBasedList", lDongRegnCd=regn, lDongSignguCd=signgu, numOfRows=200,
-                            pageNo=page, arrange="A")
-                items += got
-                if len(got) < 200:
-                    break
-                page += 1
+            for signgu, _ in signgus:
+                page = 1
+                while True:
+                    got = retry(api.call, "areaBasedList", lDongRegnCd=regn, lDongSignguCd=signgu, numOfRows=200,
+                                pageNo=page, arrange="A")
+                    items += got
+                    if len(got) < 200:
+                        break
+                    page += 1
         finally:
             stats["live_calls"], stats["cache_hits"] = api.live_calls + kor.live_calls, api.cache_hits + kor.cache_hits
-    except (TourAPIError, TourAPIStopError, StopIteration) as err:
+    except (TourAPIError, TourAPIStopError, StopIteration, RegionError) as err:
         stats["error"] = str(err) or type(err).__name__
     stats["list_items"] = len(items)
     out = {}
@@ -1599,7 +1611,7 @@ STRONG_BASIS = ("coordinates_type_korean_title", "coordinates_type_same_photo", 
 
 
 def building_no(address) -> str:
-    """'전북특별자치도 군산시 해망로 240' -> '240' (the road address's building number), '' without one."""
+    """'<도> <시> 해망로 240' -> '240' (the road address's building number), '' without one."""
     text = squash_ws(address.get("value") if isinstance(address, dict) else address)
     m = re.search(r"[가-힣0-9.]+(?:로|길)\s*(\d+(?:-\d+)?)", text)
     return m.group(1) if m else ""

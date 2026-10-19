@@ -97,7 +97,7 @@ def run(data: Path, out: Path, report_dir: Path):
         report["staging_link_changes"].append({"context": context, "removed_key": key, "target": target,
                                                 "name": reference["name"], "reason": "target_not_in_curated_preview"})
 
-    with tempfile.TemporaryDirectory(prefix="gunsan-review-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="site-review-") as temporary:
         staged = Path(temporary)
         for name, content in snapshots.items():
             if name == "source_documents.json":
@@ -147,7 +147,7 @@ def run(data: Path, out: Path, report_dir: Path):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data", type=Path, default=Path("data/gunsan"))
+    parser.add_argument("--data", type=Path, default=Path("data/incheon"))
     parser.add_argument("--out", type=Path, default=Path("public"))
     parser.add_argument("--report-dir", type=Path, default=Path("reports"))
     args = parser.parse_args(argv)

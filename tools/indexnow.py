@@ -1,14 +1,14 @@
 """IndexNow 알림 — production 빌드의 sitemap URL을 IndexNow(빙·네이버·얀덱스 등 공유)에 알린다. 사람이 실행한다.
 
-    python -m pipeline.build --data data/gunsan --out dist-prod --mode production
-    python -m pipeline.validate --data data/gunsan --out dist-prod --mode production
+    python -m pipeline.build --data data/incheon --out dist-prod --mode production
+    python -m pipeline.validate --data data/incheon --out dist-prod --mode production
     python tools/indexnow.py --out dist-prod                     # 미리 보기: 키 파일을 쓰고 보낼 내용을 출력
     (dist-prod를 배포하고 https://<도메인>/<키>.txt 가 열리는지 확인한 뒤)
     python tools/indexnow.py --out dist-prod --send              # 실제 전송, 공급자 응답을 그대로 출력
     python tools/indexnow.py --out dist-prod --since 2026-10-20  # sitemap lastmod가 이 날짜 이후인 URL만
 
 준비(사람이 정한다 — CLAUDE.md 9절):
-- data/gunsan/site.json에 `site_url`(공개 도메인)과 `"indexnow_key"`를 넣는다. 키는 8~128자의 영문·숫자·'-'이다.
+- data/incheon/site.json에 `site_url`(공개 도메인)과 `"indexnow_key"`를 넣는다. 키는 8~128자의 영문·숫자·'-'이다.
   예: `python -c "import secrets; print(secrets.token_hex(16))"`. 이 스크립트는 site.json을 고치지 않는다.
 - 배포 설정의 noindex(예: vercel.json의 X-Robots-Tag)를 푸는 것도 사람이 한다. 남아 있으면 알림이 소용없다.
 
@@ -139,7 +139,7 @@ def post_json(url: str, payload: dict, timeout: float = 30) -> tuple[int, str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", required=True, type=Path, help="production 빌드 폴더(예: dist-prod)")
-    parser.add_argument("--data", default=ROOT / "data" / "gunsan", type=Path)
+    parser.add_argument("--data", default=ROOT / "data" / "incheon", type=Path)
     parser.add_argument("--since", default="", help="sitemap lastmod가 이 날짜(YYYY-MM-DD) 이후인 URL만")
     parser.add_argument("--endpoint", default=ENDPOINT)
     parser.add_argument("--send", action="store_true", help="실제로 보낸다(없으면 미리 보기)")

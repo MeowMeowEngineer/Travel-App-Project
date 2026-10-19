@@ -1,4 +1,4 @@
-/* 군산 여행 — maps (progressive enhancement; attached by site.js when the page has a map box). Kakao Maps JavaScript
+/* Maps (progressive enhancement; attached by site.js when the page has a map box). Kakao Maps JavaScript
    SDK (map provider: owner decision 2026-10-14; the key is site.json kakao_js_key, which the build writes into each box
    as data-kakao-sdk) is fetched only when a box comes within 400px of the viewport, or when a folded map opens
    (gs:showmap), and never before the window 'load' event: nothing of it is on the first screen's critical path, and

@@ -1,4 +1,4 @@
-/* 군산 여행 — motion layer, Apple direction: restrained, 0.5–1.1s, cubic-bezier(.28,.11,.32,1); progressive
+/* Motion layer, Apple direction: restrained, 0.5–1.1s, cubic-bezier(.28,.11,.32,1); progressive
    enhancement. site.js attaches this file after the window 'load' event (or 4s), never under reduced motion; a page
    may also load it with `defer` (it then waits for 'load' itself). The HTML is complete and in its final state
    without it. Libraries (GSAP + ScrollTrigger, SplitText only when a split heading exists, Lenis only on a desktop

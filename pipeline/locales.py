@@ -38,8 +38,8 @@ class Locale:
     og: str              # og:locale
     label: str           # the language menu label, in the language itself
     english: str         # the language's English name (translator rules)
-    site_name: str
-    city: str            # Gunsan in this language
+    site_name: str       # '' here: the city's (site.json city.intl.<code>.site_name), filled by get()
+    city: str            # '' here: the city's name in this language (city.intl.<code>.city), filled by get()
     service: str         # TourAPI multilingual service (official names)
     cjk: bool = False
     dec: str = "."       # decimal mark
@@ -155,13 +155,13 @@ class Locale:
 
 _DE_WD = ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
 LOCALES: dict[str, Locale] = {
-    "en": Locale("en", "en", "en", "en_US", "English", "English", "All About Gunsan Travel", "Gunsan", "EngService2",
+    "en": Locale("en", "en", "en", "en_US", "English", "English", "", "", "EngService2",
                  weekdays=("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
                  conflict="Sources differ — call before visiting",
                  event_conflict="Sources differ — check with the organizer before visiting", money_word="won",
                  abbr=("No", "Dr", "Mt", "St", "Mr", "Ms", "Jr", "vs", "approx", "Ave"),
                  art_alt="Illustration: "),
-    "ja": Locale("ja", "ja", "ja", "ja_JP", "日本語", "Japanese", "群山旅行のすべて", "群山", "JpnService2", cjk=True,
+    "ja": Locale("ja", "ja", "ja", "ja_JP", "日本語", "Japanese", "", "", "JpnService2", cjk=True,
                  title_max=40, desc_max=110, sent_max=80, plural=("other",),
                  weekdays=("月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日", "日曜日"),
                  weekdays_short=("月", "火", "水", "木", "金", "土", "日"),
@@ -173,8 +173,8 @@ LOCALES: dict[str, Locale] = {
                  free="無料", colon="：", list_sep="、", sjoin="",
                  art_alt="イラスト：",
                  extra={"date": "{y}年{m}月{d}日（{wd}）", "md": "{m}月{d}日", "lang_word": "言語"}),
-    "zh-hans": Locale("zh-hans", "zh_hans", "zh-Hans", "zh_CN", "中文(简体)", "Simplified Chinese", "群山旅游全攻略",
-                      "群山", "ChsService2", cjk=True, title_max=40, desc_max=110, sent_max=70, plural=("other",),
+    "zh-hans": Locale("zh-hans", "zh_hans", "zh-Hans", "zh_CN", "中文(简体)", "Simplified Chinese", "",
+                      "", "ChsService2", cjk=True, title_max=40, desc_max=110, sent_max=70, plural=("other",),
                       weekdays=("周一", "周二", "周三", "周四", "周五", "周六", "周日"),
                       weekdays_short=("周一", "周二", "周三", "周四", "周五", "周六", "周日"),
                       months=tuple(f"{i}月" for i in range(1, 13)), months_short=tuple(f"{i}月" for i in range(1, 13)),
@@ -185,8 +185,8 @@ LOCALES: dict[str, Locale] = {
                       free="免费", colon="：", list_sep="、", sjoin="",
                       art_alt="插图：",
                       extra={"date": "{y}年{m}月{d}日（{wd}）", "md": "{m}月{d}日", "lang_word": "语言"}),
-    "zh-hant": Locale("zh-hant", "zh_hant", "zh-Hant", "zh_TW", "中文(繁體)", "Traditional Chinese", "群山旅遊全攻略",
-                      "群山", "ChtService2", cjk=True, title_max=40, desc_max=110, sent_max=70, plural=("other",),
+    "zh-hant": Locale("zh-hant", "zh_hant", "zh-Hant", "zh_TW", "中文(繁體)", "Traditional Chinese", "",
+                      "", "ChtService2", cjk=True, title_max=40, desc_max=110, sent_max=70, plural=("other",),
                       weekdays=("週一", "週二", "週三", "週四", "週五", "週六", "週日"),
                       weekdays_short=("週一", "週二", "週三", "週四", "週五", "週六", "週日"),
                       months=tuple(f"{i}月" for i in range(1, 13)), months_short=tuple(f"{i}月" for i in range(1, 13)),
@@ -197,7 +197,7 @@ LOCALES: dict[str, Locale] = {
                       free="免費", colon="：", list_sep="、", sjoin="",
                       art_alt="插圖：",
                       extra={"date": "{y}年{m}月{d}日（{wd}）", "md": "{m}月{d}日", "lang_word": "語言"}),
-    "de": Locale("de", "de", "de", "de_DE", "Deutsch", "German", "Alles über Gunsan", "Gunsan", "GerService2",
+    "de": Locale("de", "de", "de", "de_DE", "Deutsch", "German", "", "", "GerService2",
                  dec=",", grp=".", weekdays=_DE_WD, weekdays_short=("Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa.", "So."),
                  months=("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober",
                          "November", "Dezember"),
@@ -212,7 +212,7 @@ LOCALES: dict[str, Locale] = {
                  abbr=("Nr", "z", "B", "ca", "bzw", "Str", "St", "Dr", "usw", "inkl", "evtl", "u", "a", "Tel"),
                  art_alt="Illustration: ",
                  extra={"date": "{d}. {mo} {y} ({wd})", "md": "{d}. {mo}", "lang_word": "Sprache"}),
-    "fr": Locale("fr", "fr", "fr", "fr_FR", "Français", "French", "Tout sur Gunsan", "Gunsan", "FreService2",
+    "fr": Locale("fr", "fr", "fr", "fr_FR", "Français", "French", "", "", "FreService2",
                  dec=",", grp=NNBSP,
                  weekdays=("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"),
                  weekdays_short=("lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."),
@@ -229,7 +229,7 @@ LOCALES: dict[str, Locale] = {
                  abbr=("M", "Mme", "St", "Ste", "av", "bd", "env", "n°", "tél", "p. ex"),
                  art_alt="Illustration : ",
                  extra={"date": "{d} {mo} {y} ({wd})", "md": "{d} {mo}", "lang_word": "Langue"}),
-    "es": Locale("es", "es", "es", "es_ES", "Español", "Spanish", "Todo sobre Gunsan", "Gunsan", "SpnService2",
+    "es": Locale("es", "es", "es", "es_ES", "Español", "Spanish", "", "", "SpnService2",
                  dec=",", grp=".",
                  weekdays=("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"),
                  weekdays_short=("lun.", "mar.", "mié.", "jue.", "vie.", "sáb.", "dom."),
@@ -246,7 +246,7 @@ LOCALES: dict[str, Locale] = {
                  abbr=("Sr", "Sra", "Dr", "Dra", "av", "Avda", "núm", "aprox", "tel", "p. ej"),
                  art_alt="Ilustración: ",
                  extra={"date": "{d} de {mo} de {y} ({wd})", "md": "{d} {mo}", "lang_word": "Idioma"}),
-    "ru": Locale("ru", "ru", "ru", "ru_RU", "Русский", "Russian", "Всё о Кунсане", "Кунсан", "RusService2",
+    "ru": Locale("ru", "ru", "ru", "ru_RU", "Русский", "Russian", "", "", "RusService2",
                  dec=",", grp=NNBSP, plural=("one", "few", "many"),
                  weekdays=("понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"),
                  weekdays_short=("пн", "вт", "ср", "чт", "пт", "сб", "вс"),
@@ -268,7 +268,14 @@ CODES = tuple(LOCALES)
 
 
 def get(code: str) -> Locale:
-    return LOCALES[code.lower()]
+    """The locale with this city's site name and city name in that language (site.json city.intl.<code>; '' when the
+    city has none — en_site.load_all then builds no such version)."""
+    from dataclasses import replace
+
+    from . import city
+    loc = LOCALES[code.lower()]
+    names = city.current().intl(loc.code)
+    return replace(loc, site_name=str(names.get("site_name") or ""), city=str(names.get("city") or ""))
 
 
 def by_html(html: str) -> Locale | None:
@@ -511,7 +518,7 @@ def _k_run(text: str) -> str:
 
 
 def kontsevich(text: str | None) -> str:
-    """Cyrillic for a Korean name by the Kontsevich system ('군산' -> 'Кунсан', '경암동' -> 'Кёнам-дон'): each
+    """Cyrillic for a Korean name by the Kontsevich system ('경암동' -> 'Кёнам-дон'): each
     word capitalized, Latin letters and digits kept, administrative units hyphenated."""
     words = []
     for word in re.sub(r"\s+", " ", str(text or "")).strip().split(" "):

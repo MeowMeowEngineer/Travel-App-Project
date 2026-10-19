@@ -5,7 +5,7 @@
     python tools/icon_media.py --dry-run    # list what would be made, change nothing
 
 Originals: incoming/icons/<ID>.png — 1024×1024 PNGs from ChatGPT, named by the fixed IDs of
-the Gunsan site's prompt list (data/incheon/icons.json lists them). Git-ignored like
+the first city site's prompt list (data/incheon/icons.json lists them). Git-ignored like
 incoming/mascot/; the files made from them are committed. A PNG without transparency (a pure white background, the
 prompt's fallback) has its near-white pixels (all channels >= WHITE_CUT) made transparent first.
 Cleaning and cutting are tools/mascot_media.py's (alpha snapped, cut to the figure with an even margin, centred on a

@@ -32,13 +32,14 @@
 {% for w in (t or '').split('·') %}<span class="nw">{{ w }}{{ '·' if not loop.last }}</span>{% if not loop.last %}<wbr>{% endif %}{% endfor %}
 {%- endmacro %}
 
-{#- abar: see ui.abar for the parts. placeholder: the field's own words; hints: the owner's examples (짬뽕, 선유도,
-    주차), printed as /search/?q= links under the field so a phone never cuts them off; search=false leaves the form
+{#- abar: see ui.abar for the parts. placeholder: the field's own words; hints: the city's search examples (site.json
+    city.search_examples, the search_words global), printed as /search/?q= links under the field so a phone never cuts them off; search=false leaves the form
     out (no /search/ page is built without places). Purpose tiles: the colour bento (ui.bento, 45-accent.css) — the
     three hub guides on lime · lavender · sky, 당일 as the black tile, the rest Apple grey; figure + unit, the
-    purpose, the short answer (desktop) or the tiny one (phones), a round arrow. A tile with pills (맛집: 짬뽕 요리 20곳 then
-    게장 · 아귀 · 떡갈비 as pills) shows the pills from 700px and the tiny line on phones. -#}
-{% macro abar(purposes, ev=none, hid='q-home', placeholder='무엇이든 찾아보세요', search=true, hints=('짬뽕', '선유도', '주차')) -%}
+    purpose, the short answer (desktop) or the tiny one (phones), a round arrow. A tile with pills (맛집: a dish count
+    then the other dishes as pills) shows the pills from 700px and the tiny line on phones. -#}
+{% macro abar(purposes, ev=none, hid='q-home', placeholder='무엇이든 찾아보세요', search=true, hints=none) -%}
+{% set hints = hints if hints is not none else search_words %}
 <section class="abar" aria-label="바로 찾기">
 <div class="wrap"><div class="abar-in">
 {% if search or ev %}<div class="abar-top{% if not (search and ev) %} abar-one{% endif %}">
@@ -70,7 +71,7 @@
 <a class="vr-a" href="{{ v.url }}" rel="noopener" data-track="video_click"><span class="vr-th">{% if t.url %}<img src="{{ t.url }}" width="{{ t.width or 320 }}" height="{{ t.height or 180 }}" alt="" loading="lazy" decoding="async">{% endif %}<span class="vid-disc vid-disc-sm" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg></span></span><span class="vr-text"><span class="vr-title">{{ v.title }}</span><span class="vr-meta">{{ v.channel }}{% if v.channel_kind == 'official' %} · 공식{% endif %}{% if v.published_date %} · <time datetime="{{ v.published_date }}" class="tn">{{ v.published_date|short_iso }}</time>{% endif %}</span></span></a></li>
 {%- endmacro %}
 
-{#- src(name, url, checked): '군산시 보도자료'; the name links to the source when it has a URL. The 확인일 stays in
+{#- src(name, url, checked): '○○시 보도자료'; the name links to the source when it has a URL. The 확인일 stays in
     the data and JSON-LD, never on the page (operator decision 2026-10-09). -#}
 {% macro src(name, url='', checked='') -%}
 {% if url %}<a href="{{ url }}" rel="noopener" data-track="official_click">{{ name or '주최 측 안내' }}</a>{% else %}{{ name or '-' }}{% endif %}

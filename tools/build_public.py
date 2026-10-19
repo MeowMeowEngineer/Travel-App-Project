@@ -1,10 +1,11 @@
 """공개 사이트 빌드 — public/(Vercel이 그대로 배포)을 production 모드로 다시 만들고 검증한다.
 
-    python tools/build_public.py                       # data/gunsan → public/, production 검증, IndexNow 키 파일
+    python tools/build_public.py                       # data/incheon → public/, production 검증, IndexNow 키 파일
     python tools/build_public.py --out /tmp/prod       # 다른 곳에 만들어 보기
 
-- 2026-10-08 운영자 공개 전환 뒤로 public/은 production 빌드다(공개 레코드만, 색인 기준 미달은 noindex·sitemap 제외).
-  이전의 선별 미리보기(tools/build_review.py, noindex)는 검수용으로만 쓴다.
+- public/은 production 빌드다(공개 레코드만, 색인 기준 미달은 noindex·sitemap 제외). 선별 미리보기
+  (tools/build_review.py, noindex)는 검수용으로만 쓴다.
+- 장소가 하나도 없으면(TourAPI 수집 전) 빌드하지 않고 수집 명령을 알려 준 뒤 종료 코드 1로 끝낸다.
 - site.json에 indexnow_key가 있으면 <키>.txt를 함께 쓴다(IndexNow 전송은 tools/indexnow.py --send).
 - 마지막 줄에 JSON 한 줄: selected(공개 장소 페이지 수)·indexable·qa_errors(검증 오류 수)·warnings.
   검증 오류가 있으면 종료 코드 1(배포하지 않는다).
@@ -19,16 +20,20 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from pipeline.build import build
+from pipeline.build import NoPlacesError, build
 from pipeline.validate import validate
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=Path("data/gunsan"))
+    ap.add_argument("--data", type=Path, default=Path("data/incheon"))
     ap.add_argument("--out", type=Path, default=Path("public"))
     a = ap.parse_args(argv)
-    stats = build(a.data, a.out, "production")
+    try:
+        stats = build(a.data, a.out, "production")
+    except NoPlacesError as err:
+        print(f"중단: {err}", file=sys.stderr)
+        return 1
     errors, warnings = validate(a.data, a.out, "production")[:2]
     for e in errors:
         print(f"ERROR {e}")

@@ -1,7 +1,7 @@
 """Render the static site from data/<region>/*.json.
 
-    python -m pipeline.build --data data/gunsan --out dist                      # 공개용 (published만)
-    python -m pipeline.build --data data/gunsan --out dist-preview --mode preview  # 검수용 (reviewed 포함, noindex)
+    python -m pipeline.build --data data/incheon --out dist                      # 공개용 (published만)
+    python -m pipeline.build --data data/incheon --out dist-preview --mode preview  # 검수용 (reviewed 포함, noindex)
     python -m pipeline.build --data data/sample --out dist-sample --mode sample     # 샘플 미리보기
 
 Modes
@@ -19,6 +19,12 @@ Other language versions (/en/, /ja/, /zh-hans/, /zh-hant/, /de/, /fr/, /es/, /ru
 pipeline/en_site.py (one engine, locale table pipeline/locales.py) builds them next to the Korean ones from the
 translations whose ko_hash matches the current Korean data (stale ones are skipped with a warning); Korean pages
 with a twin carry hreflang links, and every page the language menu (each version's counterpart, else its home).
+
+The city is configuration: data/<region>/site.json (region keys and the "city" block, pipeline/city.py). State
+activates it before anything else reads the data, so every helper reads this build's city.
+
+Before collection (no places yet): a preview or sample build makes the empty-state site and prints how to collect;
+a production build stops with that message (EMPTY_HINT).
 
 Everything a reader or crawler needs is in the HTML. JavaScript only adds the map (when coordinates
 exist) and list filters; without it every page is complete.
@@ -38,7 +44,7 @@ from urllib.parse import quote
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
-from . import art, ask, chat_index, en_site, icons, jsonld
+from . import art, ask, chat_index, city, en_site, icons, jsonld
 from .enrich import haversine_m
 from .maplinks import DEFAULT_TMAP_SCHEME, build_links, precision_summary, search_link
 from .schema import (DEFAULT_ALLOWED_LICENSES, FACT_ALIASES, FACT_LABELS, FACT_ORDER, FIT_ORDER, INDEX_GROUP_LABELS,
@@ -74,25 +80,36 @@ AI_USE_BOTS = TRAINING_BOTS + ["Google-Extended", "Applebot-Extended", "meta-ext
 LISTS = {
     "attraction": {"path": "/places/", "title": "관광지", "h1": "가볼만한 곳·관광지",
                    "seo": "{region} 가볼만한 곳 {n}곳 — 관광지 이용시간·쉬는 날·요금·주차·길찾기",
-                   "lead": "어떤 곳인지, 지금 가도 되는지 확인하고 길찾기로 이어 가세요.",
-                   "hub": ("guide-15", "권역별로 고른 가볼만한 곳")},
+                   "lead": "어떤 곳인지, 지금 가도 되는지 확인하고 길찾기로 이어 가세요."},
     "stay": {"path": "/stays/", "title": "숙소", "h1": "숙소",
              "seo": "{region} 숙소 {n}곳 — 호텔·모텔·게스트하우스의 체크인·주차·문의",
-             "lead": "숙소마다 체크인·체크아웃·주차·문의처를 정리했습니다.",
-             "hub": ("guide-14", "호텔·모텔·게스트하우스·섬 민박·펜션 고르는 법")},
+             "lead": "숙소마다 체크인·체크아웃·주차·문의처를 정리했습니다."},
     "food": {"path": "/food/", "title": "음식점", "h1": "맛집·음식점",
              "seo": "{region} 맛집·음식점 {n}곳 — 대표 메뉴·영업시간·쉬는 날·주차",
-             "lead": "음식점마다 대표 메뉴와 영업시간·정기휴일을 정리했습니다.",
-             "hub": ("guide-13", "짬뽕·꽃게장·박대·아귀찜, 메뉴별 맛집")},
+             "lead": "음식점마다 대표 메뉴와 영업시간·정기휴일을 정리했습니다."},
 }
-# Official Gunsan categories grouped for the list filter (presentation only).
+
+
+def list_hub(kind: str) -> tuple[str, str] | None:
+    """The hub guide a list page points to: (guide id, line) from site.json city.list_hubs, or None."""
+    v = (city.current().get("list_hubs", {}) or {}).get(kind)
+    return (str(v[0]), str(v[1])) if v else None
+
+
+# Attraction categories grouped for the list filter (presentation only): generic words here, a city's own words
+# (site.json city.attraction_groups {label: [words]}) added to them.
 ATTRACTION_GROUPS = (
-    ("박물관·전시", ("박물관", "전시관", "근대건축관")),
+    ("박물관·전시", ("박물관", "전시관")),
     ("체험", ("체험", "농장", "농원")),
     ("문화유산", ("문화유산", "보물", "사적", "명승", "향토", "기념물")),
-    ("자연·야외", ("공원", "금강", "섬", "천연기념물", "마파지길", "캠핑", "골프")),
+    ("자연·야외", ("공원", "섬", "천연기념물", "캠핑", "골프", "해수욕장", "수목원", "휴양림")),
 )
-MOUNTAIN = re.compile(r"(?<![군유])산(?=\s|$)")  # 오성산, category '산' — not 군산·산업·유산
+MOUNTAIN = re.compile(r"(?<!유)산(?=\s|$)")  # 'X산', category '산' — not 유산·산업 (the city's own name is taken out first)
+
+
+def attraction_groups() -> tuple:
+    extra = city.current().get("attraction_groups", {}) or {}
+    return tuple((label, (*words, *extra.get(label, ()))) for label, words in ATTRACTION_GROUPS)
 VISUALS = {  # tone, icon
     "stay": ("stay", "bed"), "food": ("food", "bowl"),
     "islands-sea": ("sea", "wave"), "parks-nature": ("park", "tree"),
@@ -100,17 +117,9 @@ VISUALS = {  # tone, icon
     "박물관·전시": ("history", "museum"), "체험": ("craft", "spark"), "문화유산": ("history", "pin"),   # 향교·석탑 too: not the brick building (theme-modern-history)
     "자연·야외": ("park", "tree"),
 }
-# Home hero slides: (place slug, n-th Type1 photo). Only KOGL-1 (cropping allowed); Type3 is never cropped.
-HERO_PICKS = (("대장도", 1), ("장자도", 0), ("오성산", 0), ("월명공원", 1), ("무녀도", 1))
-PURPOSES = (  # home entry points: guide id (when written) or fallback path
-    ("맛집", "guide-13", "/food/", "짬뽕·꽃게장·박대·아귀찜, 메뉴별로"),
-    ("숙소·펜션", "guide-14", "/stays/", "호텔·모텔·게스트하우스·섬 민박"),
-    ("가볼만한 곳", "guide-15", "/places/", "원도심·고군산·은파·새만금·금강 권역별"),
-    ("당일 여행", "guide-01", "/courses/#g-당일-코스", "공식 당일 코스와 차 없이 다니는 법"),
-    ("아이와 함께", "guide-02", "/places/", "체험·박물관처럼 아이와 둘러볼 곳"),
-    ("비 오는 날", "guide-03", "/places/", "실내 전시·박물관"),
-    ("차 없이", "guide-01", "/courses/", "버스·시티투어·관광안내소"),
-)
+# Home hero slides ([place slug, n-th Type1 photo]; only KOGL-1: cropping allowed, Type3 is never cropped) and the
+# home entry points ([label, guide id (when written), fallback path, note]) are the city's: site.json city.hero_picks,
+# city.purposes.
 
 
 # ---------------------------------------------------------------- helpers
@@ -187,6 +196,7 @@ def make_env() -> Environment:
     env.globals["icon_pic"] = icons.lookup
     env.globals["icon_glyph"] = icons.glyph
     env.globals["mascot_pic"] = icons.mascot   # optional mascot (templates/_mascot.html.j2 falls back without files)
+    env.globals["search_words"], env.globals["search_hint"] = [], ""   # build() sets the city's (search_examples)
     en_site.add_filters(env)  # the English templates (templates/en/)
     return env
 
@@ -251,8 +261,8 @@ def category_group(e: dict) -> str:
             return f"{inner.rstrip(')').strip()}({name.strip()})"
         return cat or "기타"
     text = f"{e.get('category', '')} {e.get('name', '')}"
-    for label, words in ATTRACTION_GROUPS:
-        if any(w in text for w in words) or (label == "자연·야외" and MOUNTAIN.search(text)):
+    for label, words in attraction_groups():
+        if any(w in text for w in words) or (label == "자연·야외" and MOUNTAIN.search(city.current().without_city_words(text))):
             return label
     return "테마 여행지"
 
@@ -363,7 +373,7 @@ def source_labels(e: dict) -> dict:
     out = {}
     orig = e.get("original") or {}
     if orig.get("source_url"):
-        out[orig["source_url"]] = orig.get("source_name") or "군산시 문화관광"
+        out[orig["source_url"]] = orig.get("source_name") or city.current().official["name"]
     for src in (e.get("fact_sources") or {}).values():
         if src.get("url") and src.get("provider"):
             out.setdefault(src["url"], src["provider"])
@@ -388,6 +398,7 @@ class State:
         self.mode = mode
         self.cfg = MODES[mode]
         self.site = _load(data_dir / "site.json")
+        self.city = city.activate(self.site)
         self.site_url = self.site["site_url"].rstrip("/")
         self.today = dt.date.today().isoformat()
         statuses = self.cfg["statuses"]
@@ -473,7 +484,7 @@ class State:
         self.series = event_series(self.events, self)
         for e in self.entities:
             e["_events"] = [sr for sr in self.series if e["slug"] in sr["place_slugs"]]
-        # YouTube videos (data/gunsan/videos.json, each checked through YouTube oEmbed): linked from places and
+        # YouTube videos (data/<region>/videos.json, each checked through YouTube oEmbed): linked from places and
         # event pages, all of them on /videos/. Only the title, channel and link are ours to show.
         self.videos = load_videos(data_dir)
         for e in self.entities:
@@ -484,7 +495,7 @@ class State:
                                    if sr["keys"] & {normalize_name(YEAR_PREFIX.sub("", squash_ws(n)))
                                                     for n in v.get("event_names") or []}),
                                   key=video_rank)[:VIDEOS_PER_PAGE]
-        # 해외에서 본 군산 (data/<region>/abroad.json, owner 2026-10-13): foreign press and social posts, shown as our
+        # 해외에서 본 <region> (data/<region>/abroad.json, owner 2026-10-13): foreign press and social posts, shown as our
         # own one-line note + the link (+ the outlet's og:image, from its address; posts load the service's official
         # embed near the screen). Published only.
         self.abroad = load_abroad(data_dir)
@@ -606,7 +617,7 @@ def map_points(items: list[dict]) -> list[dict]:
 # ---------------------------------------------------------------- contexts
 def qualified_name(e: dict, region: str) -> str:
     """Name with the city in it for the title: the name itself, a visible other name that holds both the city
-    and the name (군산근대역사박물관), else '군산 {name}'. Presentation only; the h1 stays e.name."""
+    and the name ('<city>근대역사박물관'), else '<city> {name}'. Presentation only; the h1 stays e.name."""
     name = e["name"]
     if not region or region in name:
         return name
@@ -690,7 +701,7 @@ def entity_ctx(e: dict, S: State) -> dict:
     labels = list(dict.fromkeys(TITLE_LABELS[r["key"]] for r in key_rows if r["key"] in TITLE_LABELS))[:3]
     title = f"{qualified_name(e, region)} {'·'.join(labels) or '방문 정보·지도'}"  # <title> adds ' | site_name' (base)
     summary = e.get("summary") or ""
-    fallback = f"{josa(e['name'], '은/는')} {site.get('locality', '')}{' ' + e['_area'] if e['_area'] else ''}에 있는 {KIND_LABELS.get(kind, '')}입니다."
+    fallback = f"{josa(e['name'], '은/는')} {city.current().place_where(e.get('_district') or '', e['_area'] or '')}에 있는 {KIND_LABELS.get(kind, '')}입니다."
     description = answer_description(summary, fallback, key_rows)
     faqs = [f for f in e.get("faq") or [] if f.get("q") and f.get("a")]
     # facts.homepage joins sameAs only when it is this place's own site: a homepage several places share
@@ -832,11 +843,11 @@ def llms_txt(S: State) -> tuple[str, str]:
             f"{credits} 방문 정보마다 출처를 적었습니다. 운영: {(site.get('operator') or {}).get('name', '')}.", ""]
     short = list(head)
     if S.guides:
-        hubs = sorted(c["hub"][0] for c in LISTS.values() if c.get("hub"))  # 맛집·숙소·가볼만한 곳 허브 가이드 먼저
+        hubs = sorted(h[0] for h in (list_hub(k) for k in LISTS) if h)  # 맛집·숙소·가볼만한 곳 허브 가이드 먼저
         ordered = sorted(S.guides, key=lambda g: hubs.index(g["id"]) if g["id"] in hubs else len(hubs))
         short += ["## 목적별 가이드"] + [f"- [{g['title']}]({g['_url']}): {first_sentence(g.get('summary'), 100)}".rstrip() for g in ordered] + [""]
 
-    def dz_note(e: dict) -> str:  # ' 지정: 군산맛집 2026·모범음식점.' (the labels and their sources are on the page)
+    def dz_note(e: dict) -> str:  # ' 지정: <city list> 2026·모범음식점.' (the labels and their sources are on the page)
         ds = designations(e)
         return f" 지정: {'·'.join(d['short'] for d in ds)}." if ds else ""
 
@@ -1127,16 +1138,16 @@ def upcoming_events(S: State) -> list[dict]:
 
 # ---------------------------------------------------------------- build
 def course_title(name: str, n_stops: int, region: str) -> str:
-    """'A코스 | 근대~고군산 당일 코스' -> '군산 근대~고군산 당일 코스(A코스) — 경유지 11곳' (<title> adds ' | site_name')."""
+    """'A코스 | 원도심~섬 당일 코스' -> '<region> 원도심~섬 당일 코스(A코스) — 경유지 11곳' (<title> adds ' | site_name')."""
     m = re.match(r"^\s*(\S*코스)\s*\|\s*(.+)$", name)
     core = f"{m.group(2).strip()}({m.group(1)})" if m else squash_ws(name)
-    if region and not re.search(rf"(?<![가-힣]){re.escape(region)}", core):  # '고군산' does not name the city
+    if region and not re.search(rf"(?<![가-힣]){re.escape(region)}", core):  # 'X<region>' (one word) does not name the city
         core = f"{region} {core}"
     return f"{core} — 경유지 {n_stops}곳"
 
 
 def event_answer(ev: dict, with_place: bool = True) -> str:
-    """Tense-free answer line: '2026 군산시간여행축제 기간: 2026년 10월 2일(금)~10월 5일(월) · 장소: …'."""
+    """Tense-free answer line: '2026 ○○축제 기간: 2026년 10월 2일(금)~10월 5일(월) · 장소: …'."""
     start, end = ev["start_date"], ev.get("end_date") or ""
     period = ko_date(start)
     if end and end != start:
@@ -1148,8 +1159,25 @@ def event_answer(ev: dict, with_place: bool = True) -> str:
     return f"{ev['_title']} 기간: {period}" + (f" · 장소: {place}" if place and with_place else "")
 
 
+# Before the first collection there are no places: a preview / sample build makes the honest empty-state site (the
+# home says the guide is being prepared and links the official tourism site) and prints this; a production build stops
+# with it — a public site without places is not a site to publish.
+EMPTY_HINT = ("TourAPI 수집 전: {places}에 장소가 없습니다. TOURAPI_KEY를 .env나 환경 변수에 넣고 "
+              "python tools/tourapi_doctor.py --data {data} 로 연결을 확인한 뒤 "
+              "python tools/tourapi_bulk.py --data {data} --add-new --details --events --max-calls 900 를 먼저 실행하세요.")
+
+
+class NoPlacesError(RuntimeError):
+    """A production build of a region with no collected places (EMPTY_HINT)."""
+
+
 def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
     S = State(data_dir, mode)
+    if not S.entities_all:
+        hint = EMPTY_HINT.format(places=Path(data_dir) / "places.json", data=data_dir)
+        if mode == "production":
+            raise NoPlacesError(hint)
+        print(f"안내: {hint} 지금은 빈 상태 사이트를 만듭니다.", file=sys.stderr)
     # the other language versions (/en/ …) whose data/<region>/<code> exists: which records are current, their slugs
     # and the ko ↔ version pairs are known before any page is written, so every Korean page can carry its hreflang
     # links and the language menu
@@ -1157,6 +1185,10 @@ def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
     S.en = S.intl.sites.get("en")
     env = make_env()
     env.globals["kakao_sdk"] = kakao_sdk_url(S.site)  # the map boxes' data-kakao-sdk (templates/_ui mapfig …)
+    # the search fields' examples: the city's own words (site.json city.search_examples), none before it has any
+    words = [str(w) for w in S.city.get("search_examples", []) or [] if str(w).strip()]
+    env.globals["search_words"] = words
+    env.globals["search_hint"] = ("예: " + ", ".join(words)) if words else ""
     _prepare_out(out, data_dir)
     region = S.site.get("region", "")
     # Dates (P0-4): every lastmod is a data date shown on that page; aggregate pages use the newest date
@@ -1203,7 +1235,7 @@ def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
                             crumbs, [it["e"]["_url"] for g in L["groups"] for it in g["recs"]], map=bool(points),
                             filters=True, image=next((og_image(e["_images"]) for e in items if e["_images"]), ""))
         page_kind = "places" if kind == "attraction" else f"list-{kind}"
-        hub_id, hub_label = cfg.get("hub") or ("", "")
+        hub_id, hub_label = list_hub(kind) or ("", "")
         hub = S.guide_by_id.get(hub_id)
         _render(env, S, out, "list.html.j2", cfg["path"], page, page_kind, lastmod, kind=kind, cfg=cfg, items=items,
                 hub={"path": hub["_path"], "label": hub_label} if hub else None, groups=groups, areas=areas, themes=themes,
@@ -1295,7 +1327,7 @@ def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
         crumbs = [("홈", S.site_url + "/"), ("여행 코스", S.abs(path))]
         lastmod = date_of(S.courses)
         page = _simple_page(S, path, f"{region} 여행 코스 — 당일·1박 2일·2박 3일",
-                            f"군산시 문화관광이 안내하는 {region} 여행 코스와 경유지를 정리했습니다.", crumbs,
+                            f"{josa(city.current().official['name'], '이/가')} 안내하는 {region} 여행 코스와 경유지를 정리했습니다.".lstrip(), crumbs,
                             image=next((c["_cover"]["url"] for c in S.courses if c.get("_cover")), ""))
         _render(env, S, out, "courses_index.html.j2", path, page, "courses", lastmod, groups=course_groups(S.courses),
                 co_groups=present.course_groups_vm(S))
@@ -1338,7 +1370,8 @@ def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
         checked = latest(*(v.get("checked_at") for v in S.videos))
         official = sum(v.get("channel_kind") == "official" for v in S.videos)
         page = _simple_page(S, path, f"영상으로 보는 {region} — 주제별 YouTube 영상 {len(S.videos)}편",
-                            f"{region} 여행 코스·근대역사·섬·먹거리·축제를 다룬 YouTube 영상 {len(S.videos)}편을 주제별로 모았습니다."
+                            f"{region} {'·'.join(g['title'] for g in groups if g['title'] != '기타')}을 다룬 YouTube 영상 "
+                            f"{len(S.videos)}편을 주제별로 모았습니다."
                             f" 공식 채널 영상은 {official}편입니다.", crumbs,
                             None, videos=True)  # no ItemList: the items are YouTube pages, not this site's URLs
         _render(env, S, out, "videos.html.j2", path, page, "videos", checked, groups=groups, checked=checked,
@@ -1358,7 +1391,7 @@ def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
                     video_groups=present.video_groups_vm([g]))
 
     if S.abroad or S.abroad_videos:
-        # /abroad/ 해외에서 본 군산 (owner 2026-10-13): foreign press (our note + the link), YouTube videos in other
+        # /abroad/ 해외에서 본 <region> (owner 2026-10-13): foreign press (our note + the link), YouTube videos in other
         # languages (the same facade cards as /videos/) and social posts (a card; the service's official embed loads
         # near the screen). Korean only, like every page added after 2026-10-09.
         path = "/abroad/"
@@ -1414,13 +1447,13 @@ def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
     attractions = S.lists["attraction"]
     featured = sorted(attractions, key=lambda e: (not e["_images"], e.get("tier") != "full", not e.get("summary")))[:7]
     hero = []
-    for slug, n in HERO_PICKS:
+    for slug, n in city.current().get("hero_picks", []) or []:
         e = S.ent_by_slug.get(slug)
         type1 = [i for i in (e or {}).get("_images", []) if i.get("license") == "KOGL-1"]
         if type1:
             hero.append({"e": e, "img": type1[min(n, len(type1) - 1)]})
     purposes = []
-    for label, gid, fallback, note in PURPOSES:
+    for label, gid, fallback, note in city.current().get("purposes", []) or []:
         g = S.guide_by_id.get(gid)
         href = g["_path"] if g else fallback
         if "#" in href and href.split("#", 1)[1] not in {grp["id"] for grp in course_groups(S.courses)}:
@@ -1485,6 +1518,9 @@ def build(data_dir: Path, out: Path, mode: str = "production") -> dict:
         if st.get("missing_strings"):
             print(f"경고: {code} strings.json에 없는 이름표 {len(st['missing_strings'])}개(대신 키를 표시) "
                   f"{st['missing_strings'][:5]}", file=sys.stderr)
+    for code in S.intl.no_names:   # data/<region>/<code> exists but the city has no names in that language
+        print(f"경고: site.json city.intl.{code}에 사이트 이름·도시 이름(site_name, city)이 없어 이 언어 페이지를 만들지 않음",
+              file=sys.stderr)
     for code, missing in S.intl.skipped.items():  # data/<region>/<code> exists but its UI words are incomplete
         S.stats.setdefault("intl_skipped", {})[code] = len(missing)
         print(f"경고: {code} strings.json에 화면 문구(chrome.*) {len(missing)}개가 없어 이 언어 페이지를 만들지 않음 "
@@ -1526,7 +1562,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--mode", choices=list(MODES), default="production")
     a = ap.parse_args(argv)
-    build(a.data, a.out, a.mode)
+    try:
+        build(a.data, a.out, a.mode)
+    except NoPlacesError as err:
+        print(f"중단: {err}", file=sys.stderr)
+        return 1
     return 0
 
 

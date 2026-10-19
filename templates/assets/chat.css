@@ -1,4 +1,4 @@
-/* 군산 여행 — the site assistant's panel (assets/chat.js builds it; site.js loads both on the launcher's first press,
+/* The site assistant's panel (assets/chat.js builds it; site.js loads both on the launcher's first press,
    never in the first paint). Tokens from style.css (css/00-tokens.css): ink, hair, blue, lime; Pretendard 400 and 700
    only. Wide screens: a 400×640 card at the bottom right, non-modal. Phones (narrower than 640px, or shorter than
    520px): a full-height sheet, modal, inside the safe areas. Contrast: ink #1d1d1f on #fff 16.8:1, ink-3 #6e6e73 on

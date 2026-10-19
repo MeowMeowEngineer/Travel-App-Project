@@ -180,6 +180,8 @@
 .rule[open] summary::after { content: "–"; }
 .rule p { font-size: 15px; line-height: 1.65; color: var(--ink-2); padding: 14px 18px; border-radius: var(--r); background: var(--bg-2); }
 .rule a { color: var(--link); }
+.rule-lines { margin: 8px 0 0; padding: 0 18px 0 36px; font-size: 15px; line-height: 1.65; color: var(--ink-2); }
+.rule-lines li { list-style: disc; }
 .map-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 var(--g); margin-top: 12px; align-items: start; padding-bottom: var(--sec); }
 .map-dir { grid-column: 1 / span 6; min-width: 0; }
 .map-side { grid-column: 7 / -1; position: sticky; top: calc(var(--bar) + 16px); }

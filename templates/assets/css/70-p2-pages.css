@@ -16,7 +16,7 @@
 @media (max-width: 1023px) { .sec-co .lines-home { align-self: stretch; } }
 /* the topic link above each video row: its name and count apart, a 44px target */
 .pg-home .vr-topic a { gap: .3em; min-height: 44px; }
-/* 군산 이야기 without one of its four chapters (a data edit): the static tiles share the row evenly */
+/* <city> 이야기 without one of its chapters (a data edit): the static tiles share the row evenly */
 @media (min-width: 1024px) { .story:not(.is-staged) .st-chs[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .story:not(.is-staged) .st-chs[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* 공식 안내: the official sites as link tiles */

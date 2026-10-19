@@ -2,7 +2,7 @@
 
     python tools/apply_review.py --sheet docs/handover/review_round3.csv                # 미리 보기(기본, 쓰지 않음)
     python tools/apply_review.py --sheet docs/handover/review_round3.csv --apply        # 반영
-    python tools/apply_review.py --sheet ... --data data/gunsan --date 2026-10-20 --apply
+    python tools/apply_review.py --sheet ... --data data/incheon --date 2026-10-20 --apply
 
 - 판정이 OK(앞뒤 공백·대소문자 무시)인 행: 지금 status가 draft·reviewed일 때만 reviewed + reviewed_at(기본 오늘).
   published는 건드리지 않고, 어떤 행도 published로 바꾸지 않는다(공개는 사람이 정한다 — CLAUDE.md 3절 7항).
@@ -175,7 +175,7 @@ def report(result: dict, date: str, applied: bool) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--sheet", default=Path("docs/handover/review_round3.csv"), type=Path)
-    parser.add_argument("--data", default=Path("data/gunsan"), type=Path)
+    parser.add_argument("--data", default=Path("data/incheon"), type=Path)
     parser.add_argument("--date", default=dt.date.today().isoformat(), help="reviewed_at 값(YYYY-MM-DD, 기본 오늘)")
     parser.add_argument("--apply", action="store_true", help="파일에 쓴다(없으면 미리 보기만)")
     args = parser.parse_args(argv)

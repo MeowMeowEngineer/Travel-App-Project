@@ -38,28 +38,46 @@ from urllib.parse import urlencode
 
 from markupsafe import Markup, escape
 
-from . import art, ask, intl_text, jsonld, media, present
+from . import art, ask, city, intl_text, jsonld, media, present
 from . import locales as LC
 from .en_source import CONFLICT_NOTE, EVENT_CONFLICT_NOTE, HANGUL, _admin, current_hashes, event_series, romanize
 from .maplinks import DEFAULT_TMAP_SCHEME, build_links
 from .schema import FACT_ALIASES, KEY_FACTS, KEY_FACTS_BY_CATEGORY, designations, node_types, schema_type
 from .textutil import display_address, extract_phones, link_url, phone_intl, url_domain, web_text, web_url
 
-EN = LC.get("en")
-EN_SITE_NAME = EN.site_name   # the owner's '군산 여행의 모든 것', matching the owner's address all-about-gunsan (2026-10-09)
+EN = LC.get("en")   # its site name and city name are the city's (site.json city.intl.en; LC.for_city)
 EN_HOME = "/en/"
 KINDS = ("attraction", "food", "stay")
-# list pages: the path under the version's home, the Korean counterpart and the hub guide
-LIST_PAGES = {"attraction": {"seg": "places/", "ko": "/places/", "hub": "guide-15"},
-              "food": {"seg": "food/", "ko": "/food/", "hub": "guide-13"},
-              "stay": {"seg": "stays/", "ko": "/stays/", "hub": "guide-14"}}
-HUBS = ("guide-13", "guide-14", "guide-15")   # food by dish · lodging & pensions · things to do
+# list pages: the path under the version's home and the Korean counterpart; each one's hub guide is the city's
+# (site.json city.list_hubs, build.list_hub)
+LIST_PAGES = {"attraction": {"seg": "places/", "ko": "/places/"},
+              "food": {"seg": "food/", "ko": "/food/"},
+              "stay": {"seg": "stays/", "ko": "/stays/"}}
+
+
+def hub_of(kind: str) -> str:
+    from .build import list_hub
+    h = list_hub(kind)
+    return h[0] if h else ""
+
+
+def hubs() -> tuple:
+    """The hub guides in the home's order: food by dish · lodging · things to do (the city's list_hubs)."""
+    return tuple(g for g in (hub_of("food"), hub_of("stay"), hub_of("attraction")) if g)
+
+
+def short_provider_key(short: str) -> str:
+    """The UI-word key of a short provider name (present.slot_provider): 한국관광공사, the city's official site (its
+    short name in site.json city.official), 공식 홈페이지."""
+    return {"한국관광공사": "provider_kto", city.current().official["short"]: "provider_city",
+            "공식 홈페이지": "provider_official"}.get(short, "")
+
+
 NAV_KEYS = (("nav_attraction", "places/"), ("nav_food", "food/"), ("nav_stay", "stays/"), ("guides", "guides/"),
             ("courses", "courses/"), ("events", "events/"))
 CURRENT = {"place-attraction": "places/", "places": "places/", "place-food": "food/", "list-food": "food/",
            "place-stay": "stays/", "list-stay": "stays/", "guide": "guides/", "guides": "guides/",
            "course": "courses/", "courses": "courses/", "events": "events/"}
-SHORT_PROVIDER = {"한국관광공사": "provider_kto", "군산시": "provider_city", "공식 홈페이지": "provider_official"}
 # key-fact slots: the label key in strings.json (the Korean slot names: present.SLOT_LABEL)
 SLOT_STRING = {"hours": "TITLE_LABELS.usetime", "closed": "FACT_LABELS.restdate", "fee": "STATUS_PREFIX.usefee",
                "parking": "FACT_LABELS.parking", "tel": "INDEX_GROUP_LABELS.phone", "menu": "FACT_LABELS.menu",
@@ -95,8 +113,8 @@ SLUG_TAIL = {"a", "an", "and", "at", "by", "for", "from", "in", "of", "on", "or"
 
 
 def en_slug(text: str | None, max_len: int = 60) -> str:
-    """'Eunpa Lake Park' -> 'eunpa-lake-park': lowercase ASCII, words joined by '-' ('Modern–Gogunsan' ->
-    'modern-gogunsan'), cut at a word boundary without a dangling 'and' / 'the' …"""
+    """'Eunpa Lake Park' -> 'eunpa-lake-park': lowercase ASCII, words joined by '-' ('Old Town–Islands' ->
+    'old-town-islands'), cut at a word boundary without a dangling 'and' / 'the' …"""
     t = unicodedata.normalize("NFKD", squash_ws(text))
     t = "".join(c if c.isascii() else ("" if unicodedata.category(c).startswith("M") else " ") for c in t).lower()
     t = t.replace("&", " and ").replace("'", "")
@@ -333,6 +351,18 @@ class UIText:
         else:
             self._w = {k[len("chrome."):]: v for k, v in strings.items() if k.startswith("chrome.") and v}
         self.missing = [k for k in intl_text.keys_for(loc) if not self._w.get(k)]
+        # the city's names in these words ({city_source}, {city_provider}, {city_admin}): site.json city.intl.<code>
+        # (source, provider, admin), else the English ones, else a generic phrase
+        own, en = city.current().intl(loc.code), city.current().intl("en")
+        names = {f"{{city_{k}}}": str(own.get(k) or en.get(k) or d)
+                 for k, d in (("source", "the city's official tourism site"), ("provider", "the city"),
+                              ("admin", "the city"))}
+
+        def fill(v: str) -> str:
+            for ph, name in names.items():
+                v = v.replace(ph, name)
+            return v
+        self._w = {k: fill(v) for k, v in self._w.items()}
 
     def _raw(self, key: str, count: int | None = None) -> str:
         if count is not None:
@@ -378,6 +408,7 @@ class Site:
     page view models."""
 
     def __init__(self, S, data_dir: Path, loc: LC.Locale = EN, book: "SlugBook | None" = None):
+        loc = LC.get(loc.code)   # with the city's names in this language (site.json city.intl)
         self.S, self.loc = S, loc
         ldir = Path(data_dir) / loc.code
         strings = _load(ldir / "strings.json", {}) or {}
@@ -385,7 +416,7 @@ class Site:
         self.t = UIText(loc, self.strings)
         recs = {k: _load(ldir / f"{k}.json", {}) or {} for k in ("places", "guides", "courses", "events")}
         hashes = current_hashes(Path(data_dir))
-        self.region = (romanize(S.site.get("region", "")) or "Gunsan") if loc.code == "en" else loc.city
+        self.region = loc.city or romanize(S.site.get("region", ""))
         self.stale: dict[str, list[str]] = {k: [] for k in recs}
         self.hashes, self.recs = hashes, recs
         self.home = loc.home
@@ -521,7 +552,7 @@ class Site:
     def lists(self) -> dict[str, dict]:
         """The three list pages of this version: path, Korean counterpart, nav label, H1, <title>, hub guide."""
         t, r = self.t, self.region
-        return {kind: {"path": self.home + c["seg"], "ko": c["ko"], "hub": c["hub"], "kind": kind,
+        return {kind: {"path": self.home + c["seg"], "ko": c["ko"], "hub": hub_of(kind), "kind": kind,
                        "nav": t.s(f"nav_{kind}"), "h1": t.s(f"h1_{kind}", r=r)} for kind, c in LIST_PAGES.items()}
 
     def nav(self) -> list[tuple[str, str]]:
@@ -567,9 +598,10 @@ class Site:
             if T(f"theme.{t['slug']}.name"):
                 m[t["name"]] = T(f"theme.{t['slug']}.name")
         self.type_en = m
-        self.region_en = {name: T(f"REGIONS.{i}") for i, (name, _) in enumerate(present.REGIONS) if T(f"REGIONS.{i}")}
-        self.region_en[present.FAR_LABEL] = T("FAR_LABEL")
-        self.region_en[present.NONE_LABEL] = T("NONE_LABEL")
+        C = city.current()
+        self.region_en = {r.name: T(f"REGIONS.{i}") for i, r in enumerate(C.regions) if T(f"REGIONS.{i}")}
+        self.region_en[C.far_label] = T("FAR_LABEL")
+        self.region_en[C.none_label] = T("NONE_LABEL")
 
     def kind_label(self, kind: str) -> str:
         return self.T(f"KIND_LABELS.{kind}", kind, track=True)
@@ -585,12 +617,12 @@ class Site:
         k = squash_ws(ko)
         if not k:
             return ""
-        short = SHORT_PROVIDER.get(present.slot_provider(k))
+        short = short_provider_key(present.slot_provider(k))
         return self.T(f"provider:{k}") or (self.t.s(short) if short else "") or no_hangul(k) or self.t.s("source")
 
     def short_provider(self, ko: str | None) -> str:
         k = squash_ws(ko)
-        short = SHORT_PROVIDER.get(present.slot_provider(k))
+        short = short_provider_key(present.slot_provider(k))
         return (self.t.s(short) if short else "") or self.provider(k)
 
     def event_source(self, rec: dict, ko: str | None) -> str:
@@ -823,7 +855,7 @@ class Site:
                 if s.startswith("http"):
                     name = labels.get(s) or (site.t.s("kto_visitkorea") if "visitkorea" in s
                                              else site.provider((S.site.get("source") or {}).get("name"))
-                                             if "gunsan.go.kr" in s else url_domain(s))
+                                             if city.current().official_url(s) else url_domain(s))
                     item = {"url": s, "name": name}
                 else:
                     item = {"url": "", "name": site.provider(s)}
@@ -834,7 +866,7 @@ class Site:
 
     # ---- routes
     def route(self, p: dict) -> dict:
-        """Front row: Google Maps (by coordinates, else the Korean name + 군산), Naver Map, Kakao Map (the Korean
+        """Front row: Google Maps (by coordinates, else the Korean name + the region), Naver Map, Kakao Map (the Korean
         page's exact links); the rest under 'Other maps'. Same data-track / data-provider values as the Korean."""
         e, S, t = p["e"], self.S, self.t
         geo = e["_geo"] or {}
@@ -1251,9 +1283,11 @@ class SlugBook:
 class Intl:
     """The versions this build has (in menu order) and what their pages share: hreflang sets and the language menu."""
 
-    def __init__(self, sites: dict[str, Site], skipped: dict[str, list[str]] | None = None):
+    def __init__(self, sites: dict[str, Site], skipped: dict[str, list[str]] | None = None,
+                 no_names: list[str] | None = None):
         self.sites = sites
         self.skipped = skipped or {}
+        self.no_names = no_names or []   # data/<region>/<code> exists but site.json city.intl.<code> has no names
 
     def __bool__(self) -> bool:
         return bool(self.sites)
@@ -1301,12 +1335,22 @@ def load_all(S, data_dir: Path) -> Intl:
     data_dir = Path(data_dir)
     sites: dict[str, Site] = {}
     skipped: dict[str, list[str]] = {}
-    en = Site(S, data_dir, EN) if (data_dir / "en").is_dir() else None
+    no_names: list[str] = []
+    named = lambda code: bool(LC.get(code).site_name and LC.get(code).city)   # noqa: E731
+    en = None
+    if (data_dir / "en").is_dir():
+        if named("en"):
+            en = Site(S, data_dir, LC.get("en"))
+        else:
+            no_names.append("en")
     if en:
         sites["en"] = en
     book = None
     for code in LC.ORDER[1:]:
         if not (data_dir / code).is_dir():
+            continue
+        if not named(code):   # the city has no site name / city name in this language yet: no such version
+            no_names.append(code)
             continue
         book = book or SlugBook(S, data_dir, en)
         site = Site(S, data_dir, LC.get(code), book)
@@ -1316,14 +1360,14 @@ def load_all(S, data_dir: Path) -> Intl:
                 (e.get("_intl") or {}).pop(code, None)
             continue
         sites[code] = site
-    return Intl(sites, skipped)
+    return Intl(sites, skipped, no_names)
 
 
 def load(S, data_dir: Path) -> Site | None:
     """The English site for this build, or None when data/<region>/en does not exist (the sample data)."""
-    if not (Path(data_dir) / "en").is_dir():
+    if not (Path(data_dir) / "en").is_dir() or not LC.get("en").site_name:
         return None
-    return Site(S, data_dir, EN)
+    return Site(S, data_dir, LC.get("en"))
 
 
 # ---------------------------------------------------------------------------------------------- JSON-LD
@@ -1345,7 +1389,7 @@ def _webpage(site: Site, url: str, title: str, about: str | None = None, modifie
 
 
 def _city(site: Site) -> dict:
-    return {"@id": f"{site.S.site_url}/#gunsan", "@type": "City", "name": site.region}
+    return {"@id": f"{site.S.site_url}/{jsonld.CITY_ID}", "@type": "City", "name": site.region}
 
 
 def _author(site: Site) -> dict:
@@ -1583,8 +1627,9 @@ class Pages:
                         hub={"path": hub["path"], "label": squash_ws(hub["rec"].get("label"))} if hub else None)
 
     def guide_order(self) -> list[dict]:
-        hubs = [self.site.guides[g] for g in HUBS if g in self.site.guides]
-        return hubs + [x for gid, x in self.site.guides.items() if gid not in HUBS]
+        hs = hubs()
+        return [self.site.guides[g] for g in hs if g in self.site.guides] + [x for gid, x in self.site.guides.items()
+                                                                          if gid not in hs]
 
     def guides(self) -> None:
         site, t, loc = self.site, self.t, self.loc
@@ -1723,21 +1768,23 @@ class Pages:
         home = site.home
         lists = site.lists()
         tiles = []
-        for g in HUBS:   # the accent bento (present.ACCENT_TONES): hub guides on lime · lavender · sky
+        tones, leads = present.accent_tones(), present.hub_lead()
+        tiny_key = {hub_of("stay"): "hub_tiny_stay", hub_of("attraction"): "hub_tiny_attraction"}
+        for g in hubs():   # the accent bento (the city's accent tones): hub guides on the lead and two tints
             if g not in site.guides:
                 continue
             x = site.guides[g]
             n = len([it for it in x["rec"].get("items") or [] if it.get("place_slug")])
-            tone, icon = present.ACCENT_TONES.get(g, ("", ""))
+            tone, icon = tones.get(g, ("", ""))
             title = squash_ws(x["rec"].get("title"))
             if loc.code == "en":
                 head, _, tail = title.partition(": ")
             else:   # 'title：list' (CJK) or 'title : list' (French spacing)
                 parts = re.split(r"\s*[:：]\s*", title, maxsplit=1)
                 head, tail = parts[0], (parts[1] if len(parts) > 1 else "")
-            # the food hub (present.HUB_LEAD) shows its first dishes as pills, from the guide title's own list
-            pills = (title_list(tail, loc)[:4] if g in present.HUB_LEAD else [])
-            tiny = {"guide-14": "hub_tiny_stay", "guide-15": "hub_tiny_attraction"}.get(g)
+            # the food hub (the city's hub lead) shows its first dishes as pills, from the guide title's own list
+            pills = (title_list(tail, loc)[:4] if g in leads else [])
+            tiny = tiny_key.get(g)
             tiles.append({"href": x["path"], "fig": str(n), "unit": t.sn("places_unit", n), "key": squash_ws(x["rec"].get("label")),
                           "short": head, "tiny": " · ".join(pills[:3]) if pills else (t.s(tiny) if tiny else head),
                           "track": "guide_click", "tone": tone, "icon": icon, "pills": pills})
@@ -1764,7 +1811,7 @@ class Pages:
                 hero = {**ph, "alt": tp["name"], "name": tp["name"], "place": tp["name"],
                         "path": tp["path"], "credit": kto, "lic": site.lic("KOGL-1")}
                 break
-        cover = None   # the full-bleed opening photo (media.HOME_COVER, KOGL-1), with the place's name in this language
+        cover = None   # the full-bleed opening photo (city.home.photos.cover, KOGL-1), with the place's name in this language
         ph = media.slot_photos(S).get("cover")
         tg = S.ent_by_slug.get(ph.get("slug")) if ph else None
         tp = site.own(tg)
@@ -1782,7 +1829,7 @@ class Pages:
         page = {"title": t.s("home_title", site=loc.site_name, r=site.region),
                 "description": t.s("home_desc", a=counts["attraction"], f=counts["food"], s=counts["stay"], r=site.region),
                 "canonical": self.abs(home), "crumbs": [], "image": (cover or hero or {}).get("url", "")}
-        dest = {"@type": ["City", "TouristDestination"], "@id": f"{S.site_url}/#gunsan", "name": site.region}
+        dest = {"@type": ["City", "TouristDestination"], "@id": f"{S.site_url}/{jsonld.CITY_ID}", "name": site.region}
         if featured:
             dest["includesAttraction"] = [place_ref(c["p"]) for c in featured]
         website = {"@type": "WebSite", "@id": f"{S.site_url}{home}#website", "url": self.abs(home), "name": loc.site_name,
@@ -1801,7 +1848,7 @@ class Pages:
             {"events": f"{home}events/"} if site.series and S.events else {})
         self.render("en/home.html.j2", home, page, "home", lastmod, counts=counts, tiles=tiles, hero=hero, cover=cover,
                     hero_ev=hero_ev, today=S.today, featured=featured, events=EV["upcoming"][:4], lines=lines,
-                    hubs=[site.guides[g] for g in HUBS if g in site.guides], lists=lists,
+                    hubs=[site.guides[g] for g in hubs() if g in site.guides], lists=lists,
                     n_courses=len(site.courses), n_guides=len(site.guides), ask_starters=ask_starters)
 
 
@@ -1831,7 +1878,7 @@ def llms_lines(site: Site) -> list[str]:
     S, t = site.S, site.t
     if site.loc.code != "en":
         out = [f"## {site.loc.label}", f"- [{site.loc.site_name}]({S.abs(site.home)}): {t.s('llms_home', r=site.region)}"]
-        for gid in HUBS:
+        for gid in hubs():
             x = site.guides.get(gid)
             if x:
                 first = (sentences(x["rec"].get("summary"), site.loc) or [""])[0]
@@ -1840,8 +1887,8 @@ def llms_lines(site: Site) -> list[str]:
             if site.by_kind[kind]:
                 out.append(f"- [{cfg['h1']}]({S.abs(cfg['path'])}): {t.sn('count_' + kind, len(site.by_kind[kind]))}")
         return out + [""]
-    out = ["## English", f"- [{EN_SITE_NAME}]({S.abs(EN_HOME)}): {t.s('llms_home', r=site.region)}"]
-    for gid in HUBS:
+    out = ["## English", f"- [{site.loc.site_name}]({S.abs(EN_HOME)}): {t.s('llms_home', r=site.region)}"]
+    for gid in hubs():
         x = site.guides.get(gid)
         if x:
             first = (sentences_en(x["rec"].get("summary")) or [""])[0]

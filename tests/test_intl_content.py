@@ -175,7 +175,8 @@ def _ok(items):
 def test_names_official_and_provider_error_masks_key(tmp_path, monkeypatch):
     data = tmp_path / "data"
     data.mkdir()
-    (data / "site.json").write_text(json.dumps({"region": "군산", "locality": "군산시"}, ensure_ascii=False), "utf-8")
+    (data / "site.json").write_text(json.dumps({"region": "군산", "locality": "군산시", "region_full": "전북특별자치도 군산시"},
+                                                ensure_ascii=False), "utf-8")
     # p1: one candidate within the radius, no name or photo in common — it stands because the item's address carries
     # the place's building number (review 2026-10-14: without it the match is dropped, see test_vet_matches_…)
     places = [{"id": "p1", "name": "월명공원", "status": "published", "kind": "attraction",

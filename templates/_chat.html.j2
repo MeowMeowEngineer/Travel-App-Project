@@ -29,9 +29,12 @@
 } %}
 {% set cl = chat_ui.get(lang) or chat_ui['en'] %}
 {% if lang == 'ko' and site is defined %}{% import "_ui.html.j2" as qui %}
-{% set QM = [('search', '검색', '/search/') if has_search else none, ('map', '지도', '/map/'),
-             ('route', '길찾기', ctxbtn[1]) if ctxbtn and ctxbtn[1] == '#h-dir' else ('calendar', '행사 달력', '/events/'),
+{% set QM = [('search', '검색', '/search/') if has_search else none, ('map', '지도', '/map/') if has_map else none,
+             ('route', '길찾기', ctxbtn[1]) if ctxbtn and ctxbtn[1] == '#h-dir' else (('calendar', '행사 달력', '/events/') if has_events else none),
              ('up', '맨 위로', '#main-content')] %}
 <nav class="qm" aria-label="빠른 메뉴"><ul>{% for it in QM if it %}<li><a class="qm-i" href="{{ it[2] }}" aria-label="{{ it[1] }}" title="{{ it[1] }}" data-tip="{{ it[1] }}">{{ qui.icon(it[0]) }}</a></li>{% endfor %}</ul></nav>
 {% endif %}
-<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>
+{#- the city's words for chat.js (site.json city.chat: names {lang: city name}, chips {lang: [starter questions]}) and
+    the public address it turns links into on-site paths for -#}
+{% set chat_cfg = ((site.city or {}).chat or {}) if site is defined and site else {} %}
+<button type="button" class="chat-fab" data-chat-open aria-haspopup="dialog" aria-label="{{ cl[1] }}" data-chat-site="{{ site.site_url if site is defined and site else '' }}" data-chat-city="{{ (chat_cfg.names or {})|tojson|forceescape }}" data-chat-chips="{{ (chat_cfg.chips or {})|tojson|forceescape }}"><span class="chat-fab-face">{{ mm.pic('mascot-icon-3d', 'icon', 52, glyph='chat') }}</span><span class="chat-fab-l">{{ cl[0] }}</span></button>

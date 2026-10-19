@@ -1,4 +1,4 @@
-/* 해외에서 본 군산 — the highlights viewer (/abroad/, owner 2026-10-13; templates/_abroad_hl.html.j2). site.js attaches
+/* 해외에서 본 <city> — the highlights viewer (/abroad/, owner 2026-10-13; templates/_abroad_hl.html.j2). site.js attaches
    this file on the first press of a [data-hl-open=N] link in the [data-hl=URL] row (without JS the link goes to the
    original) and has already started fetching the viewer's markup (window.gsHlData: {"html": "<dialog …>"} from URL,
    written by the build); this file puts the dialog in the page and opens card N (window.gsHlWant); later presses call

@@ -21,7 +21,7 @@ sync_api = pytest.importorskip("playwright.sync_api")
 
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = ROOT / "data" / "sample"
-SITE = "https://gunsan.webforai.kr"
+SITE = json.loads((SAMPLE / "site.json").read_text("utf-8"))["site_url"]   # the public address chat.js reads (data-chat-site)
 ANSWER = ("은파호수공원은 쉬는 날 없이 열려 있습니다. [은파호수공원](/places/eunpa-lake-park/)\n\n"
           "- 시간: 상시 개방\n- 주차: 가능 — **무료**\n\n[없는 페이지](/places/nowhere/)")
 

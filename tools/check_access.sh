@@ -52,7 +52,7 @@ def prevents_indexing(body, headers, agent):
 
 def main():
     ap = argparse.ArgumentParser(description="주요 URL의 HTTP 상태·robots·noindex 점검")
-    ap.add_argument("url", help="예: https://gunsan.webforai.kr")
+    ap.add_argument("url", help="예: site.json의 site_url")
     ap.add_argument("--mode", choices=("preview", "production"), default="production")
     ap.add_argument("--path", action="append", default=[], help="추가 HTML 경로(반복 가능)")
     ap.add_argument("--timeout", type=float, default=20, help="각 요청의 제한 시간(초)")
@@ -75,7 +75,7 @@ def main():
     print(f"모드: {args.mode} / URL: {base}")
     print("| User-Agent | 경로 | HTTP | 판정 |")
     print("|---|---|---:|---|")
-    with tempfile.TemporaryDirectory(prefix="gunsan-access-") as folder:
+    with tempfile.TemporaryDirectory(prefix="site-access-") as folder:
         body_file, header_file = Path(folder) / "body", Path(folder) / "headers"
 
         def fetch(agent, path):

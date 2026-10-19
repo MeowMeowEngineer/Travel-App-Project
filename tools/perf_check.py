@@ -1,7 +1,7 @@
 """모바일 체감 속도 점검 — 느린 4G·저사양 폰을 흉내 내 LCP·CLS·전송량을 잰다.
 
     python tools/perf_check.py --out public                      # 기본 페이지 3개, 모션 켬/끔 비교
-    python tools/perf_check.py --out dist-preview --pages / /places/선유도/ --json
+    python tools/perf_check.py --out dist-preview --pages / /places/<장소-slug>/ --json
     python tools/perf_check.py --out public --block-external      # 외부 사진·지도 타일 없이(재현성 우선)
 
 - 필요: pip install playwright && python -m playwright install chromium
@@ -20,7 +20,13 @@ import time
 import urllib.parse
 from pathlib import Path
 
-DEFAULT_PAGES = ["/", "/places/", "/places/경암동-철길마을/"]
+DEFAULT_PAGES = ["/", "/places/"]   # + the first place page the build has (first_place_page)
+
+
+def first_place_page(out: Path) -> list[str]:
+    """The first place page in the built folder (by name), so a place's first screen is measured too."""
+    first = next(iter(sorted((Path(out) / "places").glob("*/index.html"))), None)
+    return [f"/places/{first.parent.name}/"] if first else []
 PROBE = """() => new Promise(res => {
   let lcp = 0, el = '', cls = 0;
   new PerformanceObserver(l => { for (const e of l.getEntries()) { lcp = e.startTime;
@@ -89,11 +95,11 @@ def measure(out: Path, pages: list[str], block_external: bool, port: int = 8790)
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", type=Path, default=Path("public"))
-    ap.add_argument("--pages", nargs="*", default=DEFAULT_PAGES)
+    ap.add_argument("--pages", nargs="*", default=None, help="기본: / · /places/ · 첫 장소 페이지")
     ap.add_argument("--block-external", action="store_true")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
-    rows = measure(a.out, a.pages, a.block_external)
+    rows = measure(a.out, a.pages or DEFAULT_PAGES + first_place_page(a.out), a.block_external)
     if a.json:
         print(json.dumps(rows, ensure_ascii=False, indent=1))
     else:

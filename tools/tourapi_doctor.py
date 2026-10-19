@@ -1,7 +1,8 @@
 """TourAPI 연결 진단 — 키·네트워크·서비스 버전 문제를 한 번에 가린다.
 
     python tools/tourapi_doctor.py                      # .env 또는 환경 변수 TOURAPI_KEY 사용
-    python tools/tourapi_doctor.py --keyword 선유도
+    python tools/tourapi_doctor.py --data data/incheon  # 검색어: 그 지역 site.json tourapi.region_keyword(없으면 region)
+    python tools/tourapi_doctor.py --keyword 월미도
     python tools/tourapi_doctor.py --json               # 결과를 JSON으로(에이전트용)
 
 - 표준 라이브러리만 쓴다. 저장소의 pipeline 코드와 무관하게 단독으로 돈다.
@@ -199,12 +200,22 @@ def run(keyword: str, raw_key: str) -> dict:
     return report
 
 
+def default_keyword(data: Path) -> str:
+    """The region's search word: site.json tourapi.region_keyword, else its region ('인천'); '관광' without a file."""
+    try:
+        site = json.loads((data / "site.json").read_text("utf-8"))
+    except (OSError, ValueError):
+        return "관광"
+    return str((site.get("tourapi") or {}).get("region_keyword") or site.get("region") or "관광")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--keyword", default="경암동 철길마을")
+    ap.add_argument("--data", type=Path, default=Path("data/incheon"), help="지역 데이터 폴더(검색어 기본값을 읽는다)")
+    ap.add_argument("--keyword", default="", help="시험 검색어(기본: 지역 site.json의 tourapi.region_keyword)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
-    rep = run(a.keyword, load_key())
+    rep = run(a.keyword or default_keyword(a.data), load_key())
     if a.json:
         print(json.dumps(rep, ensure_ascii=False, indent=2))
     else:

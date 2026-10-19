@@ -20,6 +20,7 @@ def write(path: Path, data) -> None:
 
 def dataset(tmp_path: Path) -> Path:
     root = tmp_path / "data"
+    write(root / "site.json", {"site_url": "https://gunsan.webforai.kr"})   # the sheet's default base (site_url)
     src = {"provider": "군산시 문화관광", "checked_at": "2026-10-08"}
     write(root / "places.json", [
         {"id": "p-dup", "name": "같은 이름", "kind": "attraction", "tier": "basic", "status": "draft"},
@@ -178,7 +179,7 @@ def test_apply_changes_only_status_and_reviewed_at(tmp_path, capsys):
         "places.json": ['-    "status": "draft",', '+    "status": "reviewed",', f'+    "reviewed_at": "{DATE}",'],
         "guides.json": ['-    "reviewed_at": "2026-10-02",', f'+    "reviewed_at": "{DATE}",'],
     }
-    assert all(text.endswith("]\n") for text in after.values())
+    assert all(text.endswith("]\n") for name, text in after.items() if name != "site.json")   # record lists
     places = json.loads(after["places.json"])
     assert [p["status"] for p in places] == ["draft", "reviewed", "published", "draft", "draft"]
     assert "".join(after.values()).count('"published"') == "".join(before.values()).count('"published"')

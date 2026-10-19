@@ -419,8 +419,8 @@ def test_entity_graph_lists_and_courses(tmp_path):
     out = tmp_path / "s"
     build(SAMPLE, out, "sample")
     gy = place_node(out / "places/gyeongam-railroad-village/index.html")
-    assert gy["containedInPlace"] == {"@id": "https://example.com/#gunsan", "@type": "City", "name": "군산시"}
-    home = next(n for n in nodes(out / "index.html") if n.get("@id") == "https://example.com/#gunsan")
+    assert gy["containedInPlace"] == {"@id": "https://example.com/#city", "@type": "City", "name": "군산시"}
+    home = next(n for n in nodes(out / "index.html") if n.get("@id") == "https://example.com/#city")
     assert home["@type"] == ["City", "TouristDestination"] and "description" not in home
     listing = scan_file(out / "places/index.html")
     items = next(n for n in nodes(out / "places/index.html") if n["@type"] == "ItemList")["itemListElement"]

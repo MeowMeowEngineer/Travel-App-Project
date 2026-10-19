@@ -1,4 +1,4 @@
-"""주간 갱신 한 번에 — TourAPI 다시 받기 → 공식 페이지 확인값 → 공개 사이트 빌드(public/, production) → 품질 리포트.
+"""주간 갱신 한 번에 — TourAPI 다시 받기 → 공개 사이트 빌드(public/, production) → 품질 리포트.
 
     python tools/refresh.py                 # 캐시 우선: 캐시에 없는 응답만 호출(실행당 상한 400회)
     python tools/refresh.py --fresh         # 응답을 새로 받는다(TourAPI 캐시 refresh 모드, 상한 --max-calls)
@@ -6,20 +6,20 @@
     python tools/refresh.py --dry-run       # 할 일만 출력하고 아무것도 실행하지 않는다
 
 단계(모두 저장소 루트에서 실행)
-0. TourAPI 연결 확인: `python tools/tourapi_doctor.py --json`. 안 되면 공급자 메시지를 키만 가려 그대로 보여 주고,
+0. TourAPI 연결 확인: `python tools/tourapi_doctor.py --data <data> --json`. 안 되면 공급자 메시지를 키만 가려 그대로 보여 주고,
    1단계를 캐시 전용(--offline)으로 돌린다(--offline이면 건너뜀).
 1. `python tools/tourapi_bulk.py --data <data> --details --add-new --events --max-calls 400 [--refresh | --offline]`
    — --fresh일 때만 --refresh(캐시 무시). 확인일은 응답을 받은 날짜라 캐시로 다시 돌려도 바뀌지 않는다.
    캐시 우선은 캐시에 없는 응답만 받는다: 행사 목록(searchFestival2)은 연도별로 캐시되므로 새 행사·바뀐 일정과
    바뀐 운영 정보를 받으려면 --fresh(행사 먼저, 그다음 대표·질문 장소 순으로 상한까지).
-   실패해도 멈추지 않고 지금 데이터(마지막으로 받은 캐시 결과)로 2~4단계를 계속한다.
-2. `python tools/round3_official.py --data <data>` — 시설 공식 페이지에서 확인한 값 재적용(멱등).
-3. `python tools/build_public.py --data <data> --out public` — 공개(production) 빌드·검증·IndexNow 키 파일
-   (2026-10-08 공개 전환 뒤. 새로 들어온 장소는 draft라 공개 승인 전까지 나가지 않는다 — tools/approve_publication.py).
-4. `python tools/quality_report.py --data <data> --out public --md reports/quality_latest.md`.
+   실패해도 멈추지 않고 지금 데이터(마지막으로 받은 캐시 결과)로 2~3단계를 계속한다.
+2. `python tools/build_public.py --data <data> --out public` — 공개(production) 빌드·검증·IndexNow 키 파일
+   (새로 들어온 장소는 draft라 공개 승인 전까지 나가지 않는다 — tools/approve_publication.py).
+3. `python tools/quality_report.py --data <data> --out public --md reports/quality_latest.md`.
+(시설 공식 페이지에서 확인한 값을 다시 적용하는 단계는 그 도시의 확인 도구가 생기면 1단계와 2단계 사이에 넣는다.)
 끝나면 요약을 출력한다. git·push·배포·IndexNow 전송은 하지 않는다 — 사람이 `git diff`와 reports/를 보고 정한다.
 
-종료 코드: 0 모두 정상 · 1 2~4단계 실패(미리보기 QA 오류 포함) · 2 TourAPI 단계만 실패·건너뜀(캐시로 재빌드는 완료)
+종료 코드: 0 모두 정상 · 1 2~3단계 실패(QA 오류 포함) · 2 TourAPI 단계만 실패·건너뜀(캐시로 재빌드는 완료)
 """
 from __future__ import annotations
 
@@ -95,18 +95,17 @@ def plan(a) -> list[tuple[str, list[str]]]:
         bulk.append("--offline")
     elif a.fresh:
         bulk.append("--refresh")
-    steps = [] if a.offline else [("doctor", ["tools/tourapi_doctor.py", "--json"])]
+    steps = [] if a.offline else [("doctor", ["tools/tourapi_doctor.py", "--data", data, "--json"])]
     return steps + [
         ("tourapi", bulk),
-        ("official", ["tools/round3_official.py", "--data", data]),
         ("preview", ["tools/build_public.py", "--data", data, "--out", str(a.out)]),
         ("quality", ["tools/quality_report.py", "--data", data, "--out", str(a.out),
                      "--md", str(Path(a.report_dir) / "quality_latest.md")]),
     ]
 
 
-LABELS = {"doctor": "TourAPI 연결 확인", "tourapi": "TourAPI 갱신", "official": "공식 페이지 확인값",
-          "preview": "공개 사이트 빌드(production)", "quality": "품질 리포트"}
+LABELS = {"doctor": "TourAPI 연결 확인", "tourapi": "TourAPI 갱신", "preview": "공개 사이트 빌드(production)",
+          "quality": "품질 리포트"}
 
 
 def print_plan(a, steps) -> None:
@@ -173,43 +172,31 @@ def run(a) -> int:
         summary.append(line)
         say(f"[TourAPI 갱신] {line}")
 
-    proc = _python(by_key["official"])
-    if proc.returncode != 0:
+    proc = _python(by_key["preview"])
+    rep = _json_line(proc.stdout)
+    if not rep:
         build_ok = False
-        say("[공식 페이지 확인값] 실패 — 이후 단계를 멈춘다.")
+        say("[공개 사이트 빌드] 빌드 실패")
         for line in _tail(proc):
             say(f"  {line}")
-        summary.append("공식 페이지 확인값: 실패 — 미리보기·품질 리포트를 만들지 않음")
+        summary.append("공개 사이트: 빌드 실패")
     else:
-        n = len([x for x in (proc.stdout or "").splitlines() if x.strip()])
-        summary.append(f"공식 페이지 확인값: {n}줄 재적용(tools/round3_official.py)")
-        say(f"[공식 페이지 확인값] {n}줄 재적용")
-
-        proc = _python(by_key["preview"])
-        rep = _json_line(proc.stdout)
-        if not rep:
+        qa = int(rep.get("qa_errors", 0) or 0)
+        build_ok = qa == 0
+        line = (f"공개 사이트({a.out}/, production): 장소 {rep.get('selected', 0)}곳 · 색인 {rep.get('indexable', 0)}곳"
+                f" · QA 오류 {qa}")
+        summary.append(line + ("" if qa == 0 else " — 위 ERROR 줄 확인, 오류가 있으면 배포하지 않는다"))
+        say(f"[공개 사이트 빌드] {line}")
+        proc = _python(by_key["quality"])
+        md = Path(a.report_dir) / "quality_latest.md"
+        if proc.returncode != 0:
             build_ok = False
-            say("[공개 사이트 빌드] 빌드 실패")
+            summary.append("품질 리포트: 실패")
             for line in _tail(proc):
                 say(f"  {line}")
-            summary.append("공개 사이트: 빌드 실패")
         else:
-            qa = int(rep.get("qa_errors", 0) or 0)
-            build_ok = qa == 0
-            line = (f"공개 사이트({a.out}/, production): 장소 {rep.get('selected', 0)}곳 · 색인 {rep.get('indexable', 0)}곳"
-                    f" · QA 오류 {qa}")
-            summary.append(line + ("" if qa == 0 else " — 위 ERROR 줄 확인, 오류가 있으면 배포하지 않는다"))
-            say(f"[공개 사이트 빌드] {line}")
-            proc = _python(by_key["quality"])
-            md = Path(a.report_dir) / "quality_latest.md"
-            if proc.returncode != 0:
-                build_ok = False
-                summary.append("품질 리포트: 실패")
-                for line in _tail(proc):
-                    say(f"  {line}")
-            else:
-                summary.append(f"품질 리포트: {md}")
-            say(f"[품질 리포트] {'실패' if proc.returncode else md}")
+            summary.append(f"품질 리포트: {md}")
+        say(f"[품질 리포트] {'실패' if proc.returncode else md}")
 
     say("")
     say("== 주간 갱신 요약 ==")
@@ -224,7 +211,7 @@ def run(a) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=Path("data/gunsan"))
+    ap.add_argument("--data", type=Path, default=Path("data/incheon"))
     ap.add_argument("--out", type=Path, default=Path("public"))
     ap.add_argument("--report-dir", type=Path, default=Path("reports"))
     ap.add_argument("--max-calls", type=int, default=DEFAULT_MAX_CALLS)

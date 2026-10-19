@@ -27,7 +27,7 @@ EN: dict[str, str | dict] = {
     "foot_tourapi": "Places, hours and photos:",
     "kto_tourapi": "Korea Tourism Organization TourAPI",
     "foot_official": "Official tourism site:",
-    "city_tourism": "Gunsan City Culture and Tourism",
+    "city_tourism": "{city_source}",
     "foot_maps": "Maps: Kakao Map",
     "about": "About",
     "about_site": "About this site",
@@ -81,7 +81,7 @@ EN: dict[str, str | dict] = {
     "kto_visitkorea": "Korea Tourism Organization (VisitKorea)",
     "kto_page": "Korea Tourism Organization page (in Korean)",
     "provider_kto": "Korea Tourism Organization",
-    "provider_city": "Gunsan City",
+    "provider_city": "{city_provider}",
     "provider_official": "Official website",
     "rechecked_with": "rechecked with {name}",
     "photo_alt": "{name} photo {i}",
@@ -198,8 +198,7 @@ EN: dict[str, str | dict] = {
                       "other": "{a} of {b} legs measured as straight lines between Korea Tourism Organization TourAPI "
                                "coordinates"},
     "courses_h1": "{r} travel courses",
-    "courses_lede": "The official courses of Gunsan City Culture and Tourism, stop by stop, with each stop's visit "
-                    "information.",
+    "courses_lede": "The official courses of {city_source}, stop by stop, with each stop's visit information.",
     "stops_of": "Stops of {name} in order",
     "plus_more": "+ {n} more",
     "n_stops": {"one": "{n} stops", "other": "{n} stops"},
@@ -257,11 +256,11 @@ EN: dict[str, str | dict] = {
     "about_sync": "Each English page is a translation of its Korean page. When the Korean page changes, its English page "
                   "is taken down until the translation is updated, so the two never say different things.",
     "about_how_1": "Opening hours, closed days, fees, parking, phone numbers, check-in times and menus come from the "
-                   "Korea Tourism Organization's TourAPI and from Gunsan City Culture and Tourism, and for some places "
+                   "Korea Tourism Organization's TourAPI and from {city_source}, and for some places "
                    "from their own official websites. Nothing is filled in from general knowledge.",
     "about_how_2": "Every value names its source. Where two sources give different values, the page shows both, each "
                    "with its source, and says \"{note}\". A value no source gives is listed once as \"{missing}\".",
-    "about_how_3": "Texts from Gunsan City Culture and Tourism are not copied; each place page links to its original "
+    "about_how_3": "Texts from {city_source} are not copied; each place page links to its original "
                    "page. Distances are straight lines between coordinates, not travel distances.",
     "about_photos": "Photos are from the Korea Tourism Organization under the Korea Open Government License (KOGL): {n1} "
                     "under {lic1} and {n3} under {lic3}. Type 3 photos are shown exactly as published: never cropped, "
@@ -277,7 +276,7 @@ EN: dict[str, str | dict] = {
     "the_operator": "the operator",
     "about_report": "If a value is wrong or out of date, write to {mail} with the page address and the source that shows "
                     "the correct value.",
-    "about_operator": "Operator: {op}. This site is run independently of Gunsan City.",
+    "about_operator": "Operator: {op}. This site is run independently of {city_admin}.",
     "official_sites": "Official sites",
     # home
     "home_title": "{site}: {r} Attractions, Food, Stays, Courses and Festivals",
@@ -357,7 +356,7 @@ INTL_ONLY: dict[str, str] = {
 
 NOTES: dict[str, str] = {
     "foot_tourapi": "Followed by the link 'Korea Tourism Organization TourAPI'.",
-    "foot_official": "Followed by the link 'Gunsan City Culture and Tourism'.",
+    "foot_official": "Followed by the link with the name of the city's official tourism site.",
     "source_word": "Hidden word read by screen readers before a footnote number.",
     "kf_differ": "{labels} is a list of fact labels (Hours, Fee …).",
     "about_how_2": "{note} is this language's 'sources differ' note, {missing} its 'Not listed'.",

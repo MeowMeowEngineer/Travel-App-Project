@@ -1,4 +1,4 @@
-"""WebforAI regional bridge-site pipeline (Gunsan v1).
+"""WebforAI regional bridge-site pipeline (city-neutral; the city is data/<region>/site.json, pipeline/city.py).
 
 Modules
 - textutil  : text cleaning, slugs, hashes

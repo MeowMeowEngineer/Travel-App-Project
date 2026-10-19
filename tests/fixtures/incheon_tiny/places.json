@@ -1,0 +1,219 @@
+[
+ {
+  "id": "test-0001",
+  "slug": "test-beach-a",
+  "name": "[테스트] 가상 해변 A",
+  "kind": "attraction",
+  "category": "관광지",
+  "themes": [],
+  "tier": "basic",
+  "status": "draft",
+  "summary": "",
+  "facts": {
+   "address": "인천광역시 중구 테스트로 1 (운서동)",
+   "usetime": "[테스트] 이용시간 값",
+   "parking": "[테스트] 주차 값"
+  },
+  "facts_source": {
+   "provider": "한국관광공사 TourAPI",
+   "contentid": "",
+   "checked_at": "2026-10-19"
+  },
+  "fact_sources": {
+   "address": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "usetime": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "parking": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   }
+  },
+  "official": {},
+  "original": {},
+  "map_ids": {
+   "naver_place_id": "",
+   "google_place_id": ""
+  },
+  "images": [],
+  "tourapi": {},
+  "geo": {
+   "lat": 37.5,
+   "lng": 126.5,
+   "source": "TourAPI"
+  }
+ },
+ {
+  "id": "test-0002",
+  "slug": "test-food-b",
+  "name": "[테스트] 가상 식당 B",
+  "kind": "food",
+  "category": "음식점",
+  "themes": [],
+  "tier": "basic",
+  "status": "draft",
+  "summary": "",
+  "facts": {
+   "address": "인천광역시 연수구 테스트대로 2",
+   "menu": "[테스트] 메뉴 값",
+   "infocenter": "[테스트] 문의처 값"
+  },
+  "facts_source": {
+   "provider": "한국관광공사 TourAPI",
+   "contentid": "",
+   "checked_at": "2026-10-19"
+  },
+  "fact_sources": {
+   "address": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "menu": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "infocenter": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   }
+  },
+  "official": {},
+  "original": {},
+  "map_ids": {
+   "naver_place_id": "",
+   "google_place_id": ""
+  },
+  "images": [],
+  "tourapi": {},
+  "geo": {
+   "lat": 37.4,
+   "lng": 126.6,
+   "source": "TourAPI"
+  }
+ },
+ {
+  "id": "test-0003",
+  "slug": "test-stay-c",
+  "name": "[테스트] 가상 숙소 C",
+  "kind": "stay",
+  "category": "숙박",
+  "themes": [],
+  "tier": "basic",
+  "status": "draft",
+  "summary": "",
+  "facts": {
+   "address": "인천광역시 강화군 테스트길 3",
+   "checkin": "15:00",
+   "parking": "[테스트] 주차 값"
+  },
+  "facts_source": {
+   "provider": "한국관광공사 TourAPI",
+   "contentid": "",
+   "checked_at": "2026-10-19"
+  },
+  "fact_sources": {
+   "address": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "checkin": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   },
+   "parking": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   }
+  },
+  "official": {},
+  "original": {},
+  "map_ids": {
+   "naver_place_id": "",
+   "google_place_id": ""
+  },
+  "images": [],
+  "tourapi": {}
+ },
+ {
+  "id": "test-0004",
+  "slug": "test-park-d",
+  "name": "[테스트] 가상 공원 D",
+  "kind": "attraction",
+  "category": "관광지",
+  "themes": [],
+  "tier": "basic",
+  "status": "draft",
+  "summary": "",
+  "facts": {
+   "address": "인천광역시 중구 테스트로 4"
+  },
+  "facts_source": {
+   "provider": "한국관광공사 TourAPI",
+   "contentid": "",
+   "checked_at": "2026-10-19"
+  },
+  "fact_sources": {
+   "address": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   }
+  },
+  "official": {},
+  "original": {},
+  "map_ids": {
+   "naver_place_id": "",
+   "google_place_id": ""
+  },
+  "images": [],
+  "tourapi": {}
+ },
+ {
+  "id": "test-0005",
+  "slug": "test-market-e",
+  "name": "[테스트] 가상 시장 E",
+  "kind": "attraction",
+  "category": "관광지",
+  "themes": [],
+  "tier": "basic",
+  "status": "draft",
+  "summary": "",
+  "facts": {
+   "address": "테스트로 5"
+  },
+  "facts_source": {
+   "provider": "한국관광공사 TourAPI",
+   "contentid": "",
+   "checked_at": "2026-10-19"
+  },
+  "fact_sources": {
+   "address": {
+    "provider": "한국관광공사 TourAPI",
+    "checked_at": "2026-10-19",
+    "contentid": ""
+   }
+  },
+  "official": {},
+  "original": {},
+  "map_ids": {
+   "naver_place_id": "",
+   "google_place_id": ""
+  },
+  "images": [],
+  "tourapi": {},
+  "district": "제물포구"
+ }
+]

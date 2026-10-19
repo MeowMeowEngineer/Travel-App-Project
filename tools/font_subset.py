@@ -2,7 +2,7 @@
 
     npm pack pretendard@1.3.9 --ignore-scripts      # 저장소 밖 임시 폴더에서 받고 압축을 푼다
     python tools/build_public.py --out /tmp/prod     # 공개(production) 빌드: 방문자가 보는 페이지
-    python -m pipeline.build --data data/gunsan --out dist-preview --mode preview   # 아직 draft인 페이지까지
+    python -m pipeline.build --data data/incheon --out dist-preview --mode preview   # 아직 draft인 페이지까지
     python tools/font_subset.py --src <압축 푼 폴더>/package/dist/web/static/woff2 \\
         --corpus /tmp/prod --corpus dist-preview --out templates/assets/vendor/pretendard
 

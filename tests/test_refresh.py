@@ -29,7 +29,6 @@ class Fake:
     def __init__(self, **answers):
         self.calls = []
         self.answers = {"tourapi_doctor.py": (0, DOCTOR_OK, ""), "tourapi_bulk.py": (0, "목록\n" + BULK_OK + "\n", ""),
-                        "round3_official.py": (0, "근대역사박물관 usetime\n금강미래체험관 usetime\n", ""),
                         "build_public.py": (0, json.dumps({"status": "built", "selected": 416, "qa_errors": 0}) + "\n", ""),
                         "quality_report.py": (0, "", ""), **answers}
 
@@ -59,9 +58,10 @@ def test_dry_run_prints_plan_and_runs_nothing(monkeypatch, capsys):
     monkeypatch.setattr(refresh, "_python", lambda args: pytest.fail("dry run must not run anything"))
     assert refresh.main(["--dry-run"]) == 0
     out = capsys.readouterr().out
-    assert ("python tools/tourapi_bulk.py --data data/gunsan --details --add-new --events --max-calls 400" in out
+    assert ("python tools/tourapi_bulk.py --data data/incheon --details --add-new --events --max-calls 400" in out
             and "--refresh" not in out)
-    assert "tools/round3_official.py" in out and "build_public.py --data data/gunsan --out public" in out
+    assert "tools/tourapi_doctor.py --data data/incheon --json" in out
+    assert "build_public.py --data data/incheon --out public" in out
     assert "--md reports/quality_latest.md" in out
     assert refresh.main(["--dry-run", "--fresh", "--max-calls", "50"]) == 0
     assert "--max-calls 50 --refresh" in capsys.readouterr().out
@@ -71,8 +71,7 @@ def test_cache_first_runs_every_step_in_order_without_git(monkeypatch, capsys):
     fake = Fake()
     monkeypatch.setattr(refresh, "_python", fake)
     assert refresh.main([]) == 0
-    assert fake.names() == ["tourapi_doctor.py", "tourapi_bulk.py", "round3_official.py", "build_public.py",
-                            "quality_report.py"]
+    assert fake.names() == ["tourapi_doctor.py", "tourapi_bulk.py", "build_public.py", "quality_report.py"]
     bulk = fake.args("tourapi_bulk.py")
     assert bulk[bulk.index("--max-calls") + 1] == "400" and {"--details", "--add-new", "--events"} <= set(bulk)
     assert "--refresh" not in bulk and "--offline" not in bulk
@@ -99,7 +98,7 @@ def test_unreachable_tourapi_shows_provider_message_masked_and_rebuilds_from_cac
     assert "SERVICE_KEY_IS_NOT_REGISTERED_ERROR" in out and KEY not in out and "«KEY»" in out
     bulk = fake.args("tourapi_bulk.py")
     assert "--offline" in bulk and "--refresh" not in bulk
-    assert fake.names()[2:] == ["round3_official.py", "build_public.py", "quality_report.py"]
+    assert fake.names()[2:] == ["build_public.py", "quality_report.py"]
 
 
 def test_bulk_failure_keeps_going_with_current_data(monkeypatch, capsys):
@@ -111,21 +110,21 @@ def test_bulk_failure_keeps_going_with_current_data(monkeypatch, capsys):
     assert refresh.main([]) == 2
     out = capsys.readouterr().out
     assert "areaBasedList2: 네트워크 오류" in out and KEY not in out and "File \"x.py\"" not in out
-    assert fake.names()[-3:] == ["round3_official.py", "build_public.py", "quality_report.py"]
+    assert fake.names()[-2:] == ["build_public.py", "quality_report.py"]
 
 
 def test_preview_qa_errors_fail_but_quality_report_still_runs(monkeypatch):
     fake = Fake(**{"build_public.py": (1, json.dumps({"status": "built_with_qa_errors", "selected": 3, "qa_errors": 2}), "")})
     monkeypatch.setattr(refresh, "_python", fake)
     assert refresh.main(["--offline"]) == 1
-    assert fake.names() == ["tourapi_bulk.py", "round3_official.py", "build_public.py", "quality_report.py"]
+    assert fake.names() == ["tourapi_bulk.py", "build_public.py", "quality_report.py"]
 
 
-def test_official_step_failure_stops_the_build(monkeypatch):
-    fake = Fake(**{"round3_official.py": (1, "", "KeyError: '근대역사박물관'\n")})
+def test_build_failure_stops_before_the_quality_report(monkeypatch):
+    fake = Fake(**{"build_public.py": (1, "", "중단: TourAPI 수집 전: data/incheon/places.json에 장소가 없습니다.\n")})
     monkeypatch.setattr(refresh, "_python", fake)
     assert refresh.main([]) == 1
-    assert "build_public.py" not in fake.names()
+    assert "quality_report.py" not in fake.names()
 
 
 # ---- 확인일: 캐시에서 다시 합쳐도 날짜가 오르지 않는다(aeo_geo_spec P0-4)

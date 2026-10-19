@@ -38,7 +38,7 @@ _LIAISON = {1: ("", "g"), 2: ("", "kk"), 3: ("k", "s"), 4: ("", "n"), 5: ("n", "
             26: ("", "p"), 27: ("", "")}
 _K, _T, _P = {1, 2, 3, 9, 24}, {7, 19, 20, 22, 23, 25, 27}, {14, 17, 18, 26}
 _L = {8, 11, 12, 13, 15}
-_ADMIN = {"동": "dong", "읍": "eup", "면": "myeon", "리": "ri"}
+_ADMIN = {"동": "dong", "읍": "eup", "면": "myeon", "리": "ri", "구": "gu", "군": "gun"}
 
 
 def _boundary(f: int, i: int, v: int) -> tuple[str, str]:
@@ -132,13 +132,26 @@ def _rr_cap(text: str) -> str:
 
 # ------------------------------------------------------------------ English address (road-name / lot address)
 _ROAD = re.compile(r"^(?P<base>[가-힣]+?)(?P<num>[0-9][0-9.]*)?(?P<sfx>대로|로|길)$")
-_ADDR = re.compile(
-    r"^전북특별자치도\s+(?:군산시\s+)?(?:(?P<em>[가-힣]+[읍면])\s+)?(?:(?P<ri>[가-힣0-9]+리)\s+)?"
-    r"(?P<road>[가-힣]+[0-9.]*(?:대로|로|길))(?:\s?(?P<rn>\d+)번길)?\s?(?P<no>\d+(?:-\d+)?)"
-    r"(?:\s?\((?P<dong>[가-힣0-9]+동)\))?$")
-_LOT = re.compile(r"^전북특별자치도\s+군산시\s+(?:(?P<em>[가-힣]+[읍면])\s*)?(?:(?P<ri>[가-힣0-9]+[리동])"
-                  r"(?:\s+(?P<san>산)?(?P<no>\d+(?:-\d+)?))?)?$")
-_TAIL = "Gunsan-si, Jeonbuk State"
+
+
+def _address_rx() -> tuple[re.Pattern, re.Pattern, str] | None:
+    """The road- and lot-address patterns and the English tail of the active city (site.json city.intl.en.address
+    {prefix: [words the address starts with — the first required, the rest optional in a road address], tail}), a
+    광역시's 구·군 read after them; None when the city has no English address form."""
+    from . import city
+    cfg = (city.current().intl("en").get("address") or {})
+    prefix, tail = [str(x) for x in cfg.get("prefix") or [] if str(x)], str(cfg.get("tail") or "")
+    if not (prefix and tail):
+        return None
+    head = re.escape(prefix[0]) + r"\s+" + "".join(rf"(?:{re.escape(w)}\s+)?" for w in prefix[1:])
+    head_lot = "".join(rf"{re.escape(w)}\s+" for w in prefix)
+    gu = r"(?:(?P<gu>[가-힣]+[구군])\s+)?"
+    addr = re.compile(rf"^{head}{gu}(?:(?P<em>[가-힣]+[읍면])\s+)?(?:(?P<ri>[가-힣0-9]+리)\s+)?"
+                      r"(?P<road>[가-힣]+[0-9.]*(?:대로|로|길))(?:\s?(?P<rn>\d+)번길)?\s?(?P<no>\d+(?:-\d+)?)"
+                      r"(?:\s?\((?P<dong>[가-힣0-9]+동)\))?$")
+    lot = re.compile(rf"^{head_lot}{gu}(?:(?P<em>[가-힣]+[읍면])\s*)?(?:(?P<ri>[가-힣0-9]+[리동])"
+                     r"(?:\s+(?P<san>산)?(?P<no>\d+(?:-\d+)?))?)?$")
+    return addr, lot, tail
 
 
 def _admin(word: str) -> str:
@@ -153,26 +166,30 @@ def _road(word: str) -> str:
 
 
 def address_en(address: str | None) -> str:
-    """'전북특별자치도 군산시 월명공원1길 26' -> '26 Wolmyeonggongwon 1-gil, Gunsan-si, Jeonbuk State'.
-    '' when the address has parts this does not read (floors, business names, '일원' …): the translator writes it."""
+    """'<province> <시> 월명공원1길 26' -> '26 Wolmyeonggongwon 1-gil, <tail>' (the city's English address form,
+    site.json city.intl.en.address). '' when the address has parts this does not read (floors, business names,
+    '일원' …) or the city has no English form: the translator writes it."""
+    rx = _address_rx()
+    if not rx:
+        return ""
+    addr_rx, lot_rx, tail = rx
     a = display_address(address)
-    m = _ADDR.match(a)
+    m = addr_rx.match(a)
     if m:
         road = _road(m.group("road"))
         if m.group("rn"):
             road += f" {m.group('rn')}beon-gil"
         parts = [f"{m.group('no')} {road}" + (f" ({_admin(m.group('dong'))})" if m.group("dong") else "")]
-        parts += [_admin(m.group(k)) for k in ("ri", "em") if m.group(k)]
-        return ", ".join(parts + [_TAIL])
-    m = _LOT.match(a)
+        parts += [_admin(m.group(k)) for k in ("ri", "em", "gu") if m.group(k)]
+        return ", ".join(parts + [tail])
+    m = lot_rx.match(a)
     if m and (m.group("em") or m.group("ri")):
         parts = []
         if m.group("ri"):
             lot = (("San " if m.group("san") else "") + m.group("no") + " ") if m.group("no") else ""
             parts.append(lot + _admin(m.group("ri")))
-        if m.group("em"):
-            parts.append(_admin(m.group("em")))
-        return ", ".join(parts + [_TAIL])
+        parts += [_admin(m.group(k)) for k in ("em", "gu") if m.group(k)]
+        return ", ".join(parts + [tail])
     return ""
 
 
@@ -226,7 +243,7 @@ class Glossary:
         for ko, en in self.terms.items():
             if ko in skip or ko not in hay:
                 continue
-            if any(ko in t for t in taken):  # '선유도' inside an already listed '선유도해수욕장'
+            if any(ko in t for t in taken):  # 'X도' inside an already listed 'X도해수욕장'
                 if hay.count(ko) <= sum(hay.count(t) for t in taken if ko in t):
                     continue
             taken.append(ko)

@@ -1,7 +1,7 @@
 """QA for a built site. Run after every build.
 
-    python -m pipeline.validate --data data/gunsan --out dist                      # 공개 기준(엄격)
-    python -m pipeline.validate --data data/gunsan --out dist-preview --mode preview
+    python -m pipeline.validate --data data/incheon --out dist                      # 공개 기준(엄격)
+    python -m pipeline.validate --data data/incheon --out dist-preview --mode preview
     python -m pipeline.validate --data data/sample --out dist-sample --mode sample
 
 Writes reports/qa_report.md. Exit code 1 when any ERROR exists.
@@ -909,7 +909,7 @@ def validate_intl(S, site, data_dir: Path, out: Path, strict: bool, E, W, sitema
                 E(rel, f"글자·언어: {problem}")
             for blk in ("summary", "details", "faq"):
                 prose = p.blocks.get(blk, "")
-                for note in p.notes:   # a citation line ('出典：群山市文化観光') is a label of names, not prose
+                for note in p.notes:   # a citation line ('出典：○○市文化観光') is a label of names, not prose
                     if note.strip():
                         prose = prose.replace(note, " ")
                 for problem in LC.script_problems(HANGUL.sub(" ", prose), code, prose=True):
@@ -1273,6 +1273,8 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
         if code not in S.intl.sites and (out / code).exists():
             E(f"/{code}/", "data/<지역>/en 없이 영어 페이지가 있음" if code == "en" else
               f"data/<지역>/{code} 없이(또는 화면 문구가 모자라 만들지 않을) {LANG_KO[code]} 페이지가 있음")
+    for code in S.intl.no_names:
+        W(f"/{code}/", f"site.json city.intl.{code}에 사이트 이름·도시 이름이 없어 이 언어 페이지를 만들지 않음")
     for code, missing in S.intl.skipped.items():
         W(f"/{code}/", f"data/<지역>/{code}/strings.json에 화면 문구(chrome.*) {len(missing)}개가 없어 이 언어 페이지를 "
                        f"만들지 않음 (예: {missing[:3]})")

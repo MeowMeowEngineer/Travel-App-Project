@@ -1,4 +1,4 @@
-/* 군산 여행 — behaviour (progressive enhancement). Loaded with `defer` on every page; every page is complete without
+/* Site behaviour (progressive enhancement). Loaded with `defer` on every page; every page is complete without
    it. <html class="js"> is set inline in <head>, so JS-only furniture is laid out from the first paint (style.css:
    css/65-states.css and the class rules of the shared macros) and nothing shifts when this runs. Scroll-linked motion lives in motion.js, which this file attaches after
    the window 'load' event (or 4s) unless the reader prefers reduced motion.
@@ -660,7 +660,7 @@
     player.focus();
   });
 
-  // ------------------------------------------------------------ article preview pictures (해외에서 본 군산)
+  // ------------------------------------------------------------ article preview pictures (해외에서 본 <city>)
   // .ab-thumb holds the outlet's own og:image from its address; if the outlet stops serving it, the row falls back to
   // text only instead of showing a broken picture.
   function dropThumb(img) {
@@ -688,7 +688,7 @@
   $all(".ab-thumb img").forEach(function (im) { if (im.complete && !im.naturalWidth) dropThumb(im); });
   $all("img.nc-og").forEach(function (im) { if (im.complete && !im.naturalWidth) dropNewsImg(im); });
 
-  // ------------------------------------------------------------ social post embeds (해외에서 본 군산)
+  // ------------------------------------------------------------ social post embeds (해외에서 본 <city>)
   // [data-embed=instagram|threads|x|facebook][data-url] holds our note and a link; nothing is requested from the
   // service until the card comes near the screen (or [data-embed-load] is pressed — no IntersectionObserver, or the
   // visitor asked to save data). Then the service's own embed markup — with the post's photo — goes into
@@ -748,7 +748,7 @@
   // cards added later (the highlights viewer) are watched the same way; with Save-Data their button does it
   win.gsEmbedWatch = function (card) { if (embedIO) embedIO.observe(card); };
 
-  // ------------------------------------------------------------ highlights row (해외에서 본 군산)
+  // ------------------------------------------------------------ highlights row (해외에서 본 <city>)
   // The circles' pictures wait in data-src / data-srcset until the page has loaded (never competing with its LCP); one
   // that fails is removed and the badge under it shows. The viewer arrives on the first press: its markup
   // (window.gsHlData, fetched from the row's data-hl address) and highlights.js load together, and highlights.js opens

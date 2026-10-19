@@ -1,7 +1,7 @@
 """Resized AVIF/WebP derivatives of KOGL-1 photos — only those a page crops, zooms or shows full-bleed.
 
-    python tools/kogl1_media.py --data data/gunsan              # download what is missing, encode, write manifest
-    python tools/kogl1_media.py --data data/gunsan --dry-run    # list what would be made, change nothing
+    python tools/kogl1_media.py --data data/incheon              # download what is missing, encode, write manifest
+    python tools/kogl1_media.py --data data/incheon --dry-run    # list what would be made, change nothing
 
 Which photos (pipeline/media.py wanted()): the home opening slides, the story chapters, the KOGL-1 island gallery
 cards, and every place whose lead photo is KOGL-1 (the full-bleed place opening). KOGL-3 (공공누리 제3유형,
@@ -35,7 +35,7 @@ from pipeline import media  # noqa: E402
 
 WIDTHS = {"cover": (480, 940, 1280), "hero": (480, 940), "k1": (480, 940)}   # cover: the full-bleed home photo
 QUALITY = {"cover": {"avif": 60, "webp": 78}, "hero": {"avif": 44, "webp": 66}, "k1": {"avif": 56, "webp": 74}}
-UA = "Mozilla/5.0 (compatible; gunsan-kogl1-media)"
+UA = "Mozilla/5.0 (compatible; webforai-kogl1-media)"
 
 
 def stem_of(url: str) -> str:
@@ -137,7 +137,7 @@ def run(data_dir: Path, out: Path = media.MEDIA_DIR, cache: Path = ROOT / "data"
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=ROOT / "data" / "gunsan")
+    ap.add_argument("--data", type=Path, default=ROOT / "data" / "incheon")
     ap.add_argument("--out", type=Path, default=media.MEDIA_DIR)
     ap.add_argument("--cache", type=Path, default=ROOT / "data" / "cache" / "kogl1-src")
     ap.add_argument("--max-downloads", type=int, default=200)

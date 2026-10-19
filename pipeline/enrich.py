@@ -1,11 +1,11 @@
 """Phase: match entities to TourAPI and fill facts / geo / nearby / images (and events).
 
-    python -m pipeline.enrich --data data/gunsan                 # all entities
-    python -m pipeline.enrich --data data/gunsan --tier full     # full tier first (quota)
-    python -m pipeline.enrich --data data/gunsan --limit 3       # smoke test
-    python -m pipeline.enrich --data data/gunsan --events        # also collect events nearby
-    python -m pipeline.enrich --data data/gunsan --offline       # cache only, no network
-    python -m pipeline.enrich --data data/gunsan --refresh       # ignore cache (weekly re-check)
+    python -m pipeline.enrich --data data/incheon                 # all entities
+    python -m pipeline.enrich --data data/incheon --tier full     # full tier first (quota)
+    python -m pipeline.enrich --data data/incheon --limit 3       # smoke test
+    python -m pipeline.enrich --data data/incheon --events        # also collect events nearby
+    python -m pipeline.enrich --data data/incheon --offline       # cache only, no network
+    python -m pipeline.enrich --data data/incheon --refresh       # ignore cache (weekly re-check)
 
 Rules
 - Values come from TourAPI as-is (HTML stripped). Nothing is guessed.

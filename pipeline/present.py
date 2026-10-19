@@ -24,7 +24,7 @@ from urllib.parse import quote
 
 from markupsafe import Markup, escape
 
-from . import art, jsonld, media
+from . import art, city, jsonld, media
 from .enrich import haversine_m
 from .maplinks import kakao_route_url
 from .schema import FACT_ALIASES, FACT_LABELS, KEY_FACTS, KEY_FACTS_BY_CATEGORY, KIND_LABELS, designations
@@ -39,19 +39,26 @@ NAV = (("관광지", "/places/", "attraction"), ("숙소", "/stays/", "stay"), (
        ("영상", "/videos/", "videos"), ("코스", "/courses/", "courses"), ("가이드", "/guides/", "guides"),
        ("행사", "/events/", "events"), ("지도", "/map/", "map"), ("해외에서 본 {region}", "/abroad/", "abroad"))
 
-# 권역 (map page, list groups): the nearest of five anchor places by straight-line distance; beyond FAR_M of
-# every anchor a place is '먼 섬'; without coordinates it follows the 권역 most places of its 읍·면·동 fall in,
-# and with no 읍·면·동 either it is '권역 미정'. The map page states this rule.
-REGIONS = (("원도심", "근대역사박물관"), ("은파", "은파호수공원"), ("고군산", "선유도"),
-           ("새만금·비응", "새만금비응공원"), ("금강", "금강미래체험관"))
-FAR_M = 12000
-FAR_LABEL, NONE_LABEL = "먼 섬", "권역 미정"
-# each 권역's AI art band on /map/, area.<key> (pipeline/art.py): the English 권역 names (data/<region>/en/strings.json
-# REGIONS.n, FAR_LABEL) in lower case with hyphens, as the owner's picture list writes them ('Saemangeum and Bieung' →
-# saemangeum-bieung, 'Geumgang River' → geumgang). '권역 미정' is not a place group: no picture.
-REGION_ART = {"원도심": "old-downtown", "은파": "eunpa", "고군산": "gogunsan", "새만금·비응": "saemangeum-bieung",
-              "금강": "geumgang", FAR_LABEL: "outlying-islands"}
-DIST_ANCHORS = ("근대역사박물관", "은파호수공원", "새만금비응공원", "선유도")
+# 권역 (map page, list groups) and the places a page measures distances to come from the city's configuration
+# (site.json city.travel_regions, city.distance_anchors; pipeline/city.py). Two rules exist:
+# - nearest_anchor: the nearest of the anchor places by straight-line distance; beyond far_m of every anchor a place
+#   is far_label ('먼 섬'); without coordinates it follows the 권역 most places of its 읍·면·동 fall in, and with no
+#   읍·면·동 either it is none_label ('권역 미정').
+# - district: by the 구·군 the address names (else the one TourAPI's statutory code gave) and, where a match lists
+#   them, its 법정동; an address no region matches is none_label.
+# The map page states the rule in force. Each 권역's AI art band on /map/ is area.<art> (pipeline/art.py).
+
+
+def far_label() -> str:
+    return city.current().far_label
+
+
+def none_label() -> str:
+    return city.current().none_label
+
+
+def region_art() -> dict:
+    return city.current().region_art
 
 # Type labels: plain names; generic source buckets ('음식점', '기타') are not shown as a type.
 STAY_TYPE = {"여관/모텔": "모텔·여관", "숙박": "숙박업소", "기타": "그 밖의 숙소", "": "그 밖의 숙소",
@@ -299,13 +306,13 @@ def time_set(raw: str | None) -> set:
 
 PRICE = r"(?:[\d,]+원(?:\s*\([\d,]+원\))?|무료)"
 FEE_RX = re.compile(rf"^(?P<who>[^\d\[\]][^:]*?)\s*:?\s*(?P<price>{PRICE})$")
-# a 군산시 fee table flattened into one line: '개인 단체(20인 이상) 성인 (군산시민) 1,000 (500) 700 (300) …'
+# a city fee table flattened into one line: '개인 단체(20인 이상) 성인 (시민) 1,000 (500) 700 (300) …'
 GRID_ROW = re.compile(r"(?P<who>[^\d()]+?)\s*\((?P<sub>[^)]+)\)\s*(?P<a>[\d,]+)\s*\((?P<asub>[\d,]+)\)\s*"
                       r"(?P<b>[\d,]+)\s*\((?P<bsub>[\d,]+)\)")
 
 
 def fee_grid(raw: str | None):
-    """The flattened two-column fee table (진포해양공원): columns, the bracketed sub-group, rows. None unless
+    """The flattened two-column fee table (a park's two-column table): columns, the bracketed sub-group, rows. None unless
     the whole text parses."""
     t = squash_ws(raw)
     m = re.match(r"^(?P<c1>[가-힣]+)\s+(?P<c2>[가-힣]+(?:\([^)]*\))?)\s+(?P<rest>.+)$", t)
@@ -495,7 +502,7 @@ class ChapterNotes:
             return None
         if s.startswith("http"):
             name = self.labels.get(s) or ("한국관광공사 대한민국 구석구석" if "visitkorea" in s
-                                          else self.default if "gunsan.go.kr" in s else url_domain(s))
+                                          else self.default if city.current().official_url(s) else url_domain(s))
             item = {"url": s, "name": name}
         else:
             item = {"url": "", "name": s}
@@ -505,12 +512,8 @@ class ChapterNotes:
 
 
 def short_provider(p: str | None) -> str:
-    p = squash_ws(p)
-    if "TourAPI" in p or "한국관광공사" in p:
-        return "한국관광공사"
-    if "군산시" in p:
-        return "군산시"
-    return p
+    """'한국관광공사', the city's short name for its official site (site.json city.official), else the name as given."""
+    return city.current().short_provider(squash_ws(p))
 
 
 def src_of(e: dict, k: str) -> dict:
@@ -602,7 +605,7 @@ def fact_rows(e: dict, keys, notes: Notes, tel: tuple = ("", "")) -> list[dict]:
         out.append(row)
     # 문의 and 예약 안내 with the same text collapse into one row ('문의·예약'); a homepage and a booking page
     # that display the same way into '홈페이지·예약' — only when they also link to the same address (one row has one
-    # link: 'gunsanhotel.co.kr:4446/' and 'gunsanhotel.co.kr' display alike but are two pages)
+    # link: 'hotel.example.kr:4446/' and 'hotel.example.kr' display alike but are two pages)
     for a_key, b_key, merged in (("infocenter", "reservation", "문의·예약"), ("homepage", "reservationurl", "홈페이지·예약")):
         ra = next((r for r in out if r["key"] == a_key), None)
         rb = next((r for r in out if r["key"] == b_key), None)
@@ -968,7 +971,7 @@ KF_LIST_COLS = {"attraction": (("hours", "이용시간"), ("closed", "쉬는 날
 
 
 def slot_provider(p: str | None) -> str:
-    """The short provider name a slot shows beside a contested value: 한국관광공사 · 군산시 · 공식 홈페이지."""
+    """The short provider name a slot shows beside a contested value: 한국관광공사 · <the city> · 공식 홈페이지."""
     p = squash_ws(p)
     if "홈페이지" in p or "누리집" in p:
         return "공식 홈페이지"
@@ -1256,7 +1259,7 @@ def photo(im: dict, name: str, sizes: dict) -> dict:
 
 
 def photos(e: dict, sizes: dict) -> list[dict]:
-    """Only TourAPI photos under KOGL-1/KOGL-3 (CLAUDE.md 3.4); 군산시 photos are never shown."""
+    """Only TourAPI photos under KOGL-1/KOGL-3 (CLAUDE.md 3.4); the city tourism site's photos are never shown."""
     return [photo(i, e["name"], sizes) for i in e.get("_images") or []
             if i.get("source") == "TourAPI" and i.get("license") in LIC]
 
@@ -1288,44 +1291,80 @@ def prepare(S, data_dir: Path) -> None:
         e["_line"] = distinct_line(e.get("summary"))
     media.attach(S)  # ph.avif / ph.webp: same-origin derivatives of KOGL-1 photos (tools/kogl1_media.py)
     assign_regions(S)
-    # same building, two pages (빈해원 and 군산 빈해원): cross-linked by name without the city prefix
-    region = S.site.get("region", "")
+    # the places a place page measures straight-line distances to (city.distance_anchors), resolved from the data
+    S.dist_anchors = []
+    for key in city.current().distance_anchors:
+        a = find_place(S, key)
+        if a and a.get("_geo"):
+            S.dist_anchors.append(a)
+        else:
+            S.warnings.append(f"거리 기준 장소 없음(좌표 포함): {key} — 장소 페이지의 그 거리 생략")
+    # same building, two pages ('X' and '<city> X'): cross-linked by name without the city in front
+    C = city.current()
     by_norm = defaultdict(list)
     for e in S.entities:
-        by_norm[normalize_name(re.sub(rf"^{re.escape(region)}\s*", "", e["name"]) if region else e["name"])].append(e)
+        by_norm[normalize_name(C.without_city(e["name"]))].append(e)
     for xs in by_norm.values():
         for e in xs:
             e["_twins"] = [x for x in xs if x is not e]
     S.course_vms = {c["slug"]: course_vm(S, c) for c in S.courses}
 
 
+def find_place(S, key: str) -> dict | None:
+    """A place named in the city's configuration, by slug or else by name (spacing, brackets and the city in front
+    ignored: '인천 X' = 'X'); None when the collected data does not have it (or has two such names)."""
+    e = S.ent_by_slug.get(key)
+    if e:
+        return e
+    C = city.current()
+    want = normalize_name(C.without_city(key))
+    hits = [x for x in S.entities if normalize_name(C.without_city(x.get("name", ""))) == want]
+    return hits[0] if len(hits) == 1 else None
+
+
 def assign_regions(S) -> None:
-    """e['_region'] and e['_region_basis'] ('좌표', '읍·면·동' or ''). An anchor place missing from the build
-    (or without coordinates) is skipped with a warning; with no anchor at all every place is '권역 미정'."""
+    """e['_district'] (the 구·군 of a 광역시 address), e['_region'] and e['_region_basis'] ('좌표', '읍·면·동',
+    '주소' or ''), S.anchors (the nearest_anchor rule's anchor places found in the data), S.region_names (the 권역
+    in display order, the leftover labels last). An anchor place missing from the build (or without coordinates) is
+    skipped with a warning; with no anchor at all, or no rule, every place is none_label."""
+    C = city.current()
     S.anchors = []
-    for name, slug in REGIONS:
-        a = S.ent_by_slug.get(slug)
+    for e in S.entities:
+        e["_district"] = C.district_of((e.get("facts") or {}).get("address"), e.get("district") or "")
+        e["_region"], e["_region_basis"] = C.none_label, ""
+    if C.region_method == "district":
+        for e in S.entities:
+            r = C.district_region(e["_district"], e.get("_area") or "")
+            if r:
+                e["_region"], e["_region_basis"] = r, "주소"
+        S.region_names = [r.name for r in C.regions] + [C.none_label]
+        return
+    if C.region_method != "nearest_anchor":
+        S.region_names = [C.none_label]
+        return
+    for r in C.regions:
+        a = find_place(S, r.anchor)
         if not (a and a.get("_geo")):
-            S.warnings.append(f"권역 기준점 없음(좌표 포함): {slug} — {name} 권역 생략")
+            S.warnings.append(f"권역 기준점 없음(좌표 포함): {r.anchor} — {r.name} 권역 생략")
             continue
-        S.anchors.append({"name": name, "slug": slug, "place": a["name"], "path": a["_path"], "geo": a["_geo"],
-                          "id": "r-" + frag(name)})
+        S.anchors.append({"name": r.name, "slug": a["slug"], "place": a["name"], "path": a["_path"], "geo": a["_geo"],
+                          "id": "r-" + frag(r.name)})
+    far_m = C.far_m
     by_area: dict[str, Counter] = defaultdict(Counter)
     for e in S.entities:
-        e["_region"], e["_region_basis"] = NONE_LABEL, ""
         if e.get("_geo") and S.anchors:
             d = {a["name"]: hav(e["_geo"], a["geo"]) for a in S.anchors}
             best = min(d, key=d.get)
-            e["_region"] = best if d[best] <= FAR_M else FAR_LABEL
+            e["_region"] = best if not far_m or d[best] <= far_m else C.far_label
             e["_region_basis"] = "좌표"
-            if e.get("_area") and e["_region"] != FAR_LABEL:
+            if e.get("_area") and e["_region"] != C.far_label:
                 by_area[e["_area"]][best] += 1
     for e in S.entities:
         if not e.get("_geo"):
             c = by_area.get(e.get("_area") or "")
             if c:
                 e["_region"], e["_region_basis"] = c.most_common(1)[0][0], "읍·면·동"
-    S.region_names = [a["name"] for a in S.anchors] + [FAR_LABEL, NONE_LABEL]
+    S.region_names = [a["name"] for a in S.anchors] + ([C.far_label] if far_m else []) + [C.none_label]
 
 
 # ----------------------------------------------------------------------------- courses
@@ -1336,7 +1375,7 @@ STOP_KIND_LABELS = {"meal": "식사", "lodging": "숙박", "activity": "일정"}
 
 
 def split_course_name(name: str) -> tuple[str, str]:
-    """'A코스 | 근대~고군산' -> ('A코스', '근대~고군산'); a name without a code -> ('', name)."""
+    """'A코스 | 원도심~섬' -> ('A코스', '원도심~섬'); a name without a code -> ('', name)."""
     m = re.match(r"^\s*(\S*코스)\s*\|\s*(.+)$", name or "")
     return (m.group(1), m.group(2).strip()) if m else ("", squash_ws(name))
 
@@ -1503,7 +1542,7 @@ MAP_MIN_SHARE = 0.5  # a course map is drawn only when at least half of its stop
 
 def map_name(s: dict) -> str:
     """A stop's name as its board in the stop list prints it: the short name, then the bracket after one space
-    ('군산신흥동일본식가옥 (히로쓰가옥)'); English stops have no short name and keep theirs."""
+    ('OO동일본식가옥 (히로쓰가옥)'); English stops have no short name and keep theirs."""
     if s.get("short"):
         return f"{s['short']} {s['paren']}" if s.get("paren") else s["short"]
     return s["name"]
@@ -1544,13 +1583,9 @@ FIT = ("babycarriage", "pet", "kidsfacility", "expagerange", "useseason", "acces
 
 
 def city_line(S, e: dict) -> str:
-    """P1-2: '전북특별자치도 군산시 장미동'; without a 동 in the address, the road name ('… 군산시 해망로')."""
-    city = f"{S.site.get('region_admin', '')} {S.site.get('locality', '')}".strip()
-    if e.get("_area"):
-        return f"{city} {e['_area']}"
-    if e.get("_road"):
-        return f"{city} {e['_road']}"
-    return city
+    """P1-2: '<province> <시> <동>' or '<광역시> <구> <동>' (the 구·군 is kept: it is location information); without a
+    동 in the address, the road name."""
+    return city.current().place_where(e.get("_district") or "", e.get("_area") or e.get("_road") or "")
 
 
 def route_links(links: list[dict]) -> dict:
@@ -1576,18 +1611,28 @@ def route_links(links: list[dict]) -> dict:
 
 
 # ----------------------------------------------------------------------------- nearby public parking and bus stops
-# data/<region>/parking_lots.json (군산시 공영주차장, 전국주차장정보표준데이터) and nearby.json ({place_id: {parking:
+# data/<region>/parking_lots.json (the city's public lots, 전국주차장정보표준데이터) and nearby.json ({place_id: {parking:
 # [{lot_id, meters}], bus: [{stop_name, meters, routes}]}). Shown on the place page below the first screen, after the
 # map: about public lots and stops near the place, never the place's own parking (its facts row stays as it is) and
 # never counted by the index criteria (schema.index_groups reads facts only). pipeline.validate.access_problems checks
 # every shown row against the two files.
-CITY_PREFIX = re.compile(r"^(?:전북특별자치도|전라북도)\s*군산시\s*")
 LOT_TYPE = {"노외": "노외주차장", "노상": "노상주차장"}
-ACCESS_SOURCES = {  # what the block's source line names (provider names only, no dates — owner, 2026-10-09)
-    "standard": "공공데이터포털 전국주차장정보표준데이터", "ordinance": "군산시 주차장 조례",
-    "tourapi": "한국관광공사 TourAPI", "gunsan_tour": "군산시 문화관광",
-    "stops": "공공데이터포털 군산시 버스정류장현황", "timetable": "군산시 시내버스 시간표"}
-FEE_SOURCE = {"ordinance": "군산시 주차장 조례 도서지역 요금", "tourapi": "한국관광공사 선유도해수욕장 안내"}
+# what the block's source line names (provider names only, no dates — owner, 2026-10-09): the national datasets here,
+# the city's own (its parking ordinance, its tourism site, its bus-stop list and timetable) from site.json
+# city.access_sources; a key the city does not name reads as the generic dataset name
+ACCESS_BASE = {"standard": "공공데이터포털 전국주차장정보표준데이터", "tourapi": "한국관광공사 TourAPI",
+               "ordinance": "주차장 조례", "stops": "공공데이터포털 버스정류장현황", "timetable": "시내버스 시간표"}
+
+
+def access_sources() -> dict:
+    C = city.current()
+    return {**ACCESS_BASE, "city_tour": C.official["name"], **(C.get("access_sources") or {})}
+
+
+def fee_source(v: dict) -> str:
+    """A parking fee version's source: the city's name for that key (site.json city.fee_sources), else the version's
+    own source_name."""
+    return (city.current().get("fee_sources") or {}).get(v.get("source")) or v.get("source_name", "")
 
 
 def tidy_brackets(text: str | None) -> str:
@@ -1596,10 +1641,10 @@ def tidy_brackets(text: str | None) -> str:
 
 
 def lot_address(raw: str | None) -> str:
-    """'전북특별자치도 군산시 구영7길 69 (신창동 )' -> '구영7길 69 (신창동)': the city prefix goes (the page is in Gunsan)
-    and the bracket spaces (tidy_brackets); every word and number stays as the source wrote it (a spacing slip such as
-    '동 국사길19' is kept — such lots show their 지번 too)."""
-    return tidy_brackets(CITY_PREFIX.sub("", squash_ws(raw)))
+    """'<city> 구영7길 69 (신창동 )' -> '구영7길 69 (신창동)': the city prefix goes (the page is in the city; a 구·군
+    after it stays) and the bracket spaces (tidy_brackets); every word and number stays as the source wrote it (a
+    spacing slip such as '동 국사길19' is kept — such lots show their 지번 too)."""
+    return tidy_brackets(city.current().strip_prefix(raw))
 
 
 def won(n) -> str:
@@ -1626,21 +1671,22 @@ def fee_text(v: dict) -> str:
 
 def lot_row(S, lot: dict, meters: int, place: str) -> dict:
     """One '근처 공영주차장' row: name, type, address (+ 지번 when the road address is blank or has a source spacing slip),
-    straight-line metres, spaces (both values when 군산시 문화관광 gives another), 무료/유료 and, for a paid lot, each
+    straight-line metres, spaces (both values when the city tourism site gives another), 무료/유료 and, for a paid lot, each
     fee version with its source, '방문 전 전화 확인' when the sources differ, and the city's paid-parking desk."""
     road = lot_address(lot.get("address"))
     jibun = lot_address(lot.get("address_jibun"))
     alt = lot.get("alt") or {}
     alt_spaces = (alt.get("spaces") or {}).get("value")
     fee = lot.get("fee") or {}
-    fees = [{"src": FEE_SOURCE.get(v["source"], v.get("source_name", "")), "text": fee_text(v), "key": v["source"]}
+    fees = [{"src": fee_source(v), "text": fee_text(v), "key": v["source"]}
             for v in fee.get("versions") or []]
     differ = (["면수"] if alt_spaces is not None and alt_spaces != lot.get("spaces") else []) + \
         (["요금"] if fee.get("differs") else [])
     desk = next((c for c in S.parking_contacts if c.get("phone") == fee.get("contact")), None) if fee else None
     contact = ""
     if desk:
-        unit = re.sub(r"^군산시\s+\S+국\s+", "군산시 ", squash_ws(desk.get("unit")))  # '군산시 교통행정과 교통기획계'
+        loc = city.current().locality   # '<시> 교통국 교통행정과 교통기획계' -> '<시> 교통행정과 교통기획계'
+        unit = re.sub(rf"^{re.escape(loc)}\s+\S+국\s+", f"{loc} ", squash_ws(desk.get("unit"))) if loc else squash_ws(desk.get("unit"))
         contact = f"{unit} {desk['phone']}"
     geo = lot.get("lat") is not None and lot.get("lng") is not None
     return {
@@ -1648,7 +1694,7 @@ def lot_row(S, lot: dict, meters: int, place: str) -> dict:
         "addr": road or jibun, "jibun": jibun if road and lot.get("address_note") else "",
         "m": int(meters), "spaces": lot.get("spaces"), "paid": lot.get("paid") or "",
         "alt_name": squash_ws((alt.get("name") or {}).get("value")), "alt_spaces": alt_spaces,
-        "alt_src": ACCESS_SOURCES["gunsan_tour"] if alt else "",
+        "alt_src": access_sources()["city_tour"] if alt else "",
         "fees": fees, "confirm": bool(differ), "differ": "·".join(differ), "contact": contact,
         "contact_html": tel_markup(contact, place) if contact else "",
         "map": f"https://map.kakao.com/link/map/{quote(lot['name'], safe='')},{lot['lat']},{lot['lng']}" if geo else "",
@@ -1679,13 +1725,14 @@ def access_vm(S, e: dict) -> dict | None:
     if any(f["key"] == "tourapi" for l in lots for f in l["fees"]):
         used.append("tourapi")
     if any(l["alt_src"] for l in lots):
-        used.append("gunsan_tour")
+        used.append("city_tour")
     if stops:
         used.append("stops")
     if any(s["routes"] for s in stops):
         used.append("timetable")
     meta = getattr(S, "nearby_meta", None) or {}
-    return {"lots": lots, "stops": stops, "sources": [ACCESS_SOURCES[k] for k in used],
+    names = access_sources()
+    return {"lots": lots, "stops": stops, "sources": [names[k] for k in used],
             "radius": (meta.get("parking") or {}).get("radius_m") or 500,
             "bus_radius": (meta.get("bus") or {}).get("radius_m") or 500}
 
@@ -1724,9 +1771,8 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
     near.sort(key=lambda x: x["m"])
     anchors = []
     if e["_geo"]:
-        for slug in DIST_ANCHORS:
-            a = S.ent_by_slug.get(slug)
-            if a and a is not e and a["_geo"]:
+        for a in getattr(S, "dist_anchors", None) or []:
+            if a is not e and a["_geo"]:
                 m = hav(e["_geo"], a["_geo"])
                 anchors.append({"name": a["name"], "path": a["_path"], "m": m, "d": dist(m), "geo": a["_geo"]})
         anchors = sorted(anchors, key=lambda x: x["m"])[:3]
@@ -1752,7 +1798,7 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
             kicker.append((t["name"], f"/themes/{t['slug']}/"))
     orig = ctx["orig"]
     labels = ctx["src_labels"]
-    default_src = orig.get("source_name") or "군산시 문화관광"
+    default_src = orig.get("source_name") or city.current().official["name"]
     dn = ChapterNotes(labels, default_src)
     details = [{"heading": squash_ws(d.get("heading")), "text": squash_ws(d.get("text")),
                 "html": tel_markup(squash_ws(d.get("text"))), "source": squash_ws(d.get("source")),
@@ -1774,6 +1820,7 @@ def place_vm(S, e: dict, ctx: dict) -> dict:
                    for p in e["_photos"][:6] if p.get("th") and p["th"].get("w")],
         "e": e, "kind": kind, "kind_label": KIND_LABELS[kind], "name": e["name"], "list_path": LIST_PATH[kind],
         "type": e["_type"], "region": e["_region"], "dong": e["_area"], "city": city_line(S, e), "kicker": kicker,
+        "where": city.current().place_short(e.get("_district") or "", e["_area"] or ""),   # '<시> (<구·군>) <동>'
         "alt_names": ctx["alt_names"], "status": status,
         # official designations (schema.designations): chips under the answer, the '지정' row of the facts card
         "designations": designations(e),
@@ -1920,7 +1967,7 @@ def list_vm(S, kind: str, theme: dict | None = None) -> dict:
         f = e.get("facts") or {}
         cells = [{"key": k, "label": lab, **cell(e, k)} for k, lab in cfg["cols"]]
         web = web_url(f.get("homepage") or "")
-        if web and (B._url_key(web) in S.shared_homepages or url_domain(web).endswith("gunsan.go.kr")):
+        if web and (B._url_key(web) in S.shared_homepages or city.current().official_url(web)):
             web = ""
         rest = f"{squash_ws(f.get('restdate'))} {squash_ws(f.get('usetime_restdate'))}".strip()
         # '월요일 영업 표기': every source's text states its closed days (or 연중무휴) and Monday is not one
@@ -1987,45 +2034,14 @@ def answer_row(key: str, href: str, answer: str, fig: str = "", unit: str = "", 
             "fig_label": fig_label}
 
 
-# Short answers in 개조식 (noun endings), one per guide (Apple direction, approved 2026-10-08). Every figure in them is
-# checked against the guide's own text at build time (guide_answer): a mismatch falls back to the guide's first
-# heading with a warning, so a data edit can never leave a stale number on the page. {free} = the attractions whose
-# 이용요금 reads '무료' (and no other source says otherwise). The content track may move them into guides.json as the
-# field `answer`, which then wins.
-ANSWER_COPY = {
-    "guide-01": {"answer": "토·일 예약제 시티투어 버스(그 주 목요일 17:00까지 10명 이상이면 출발) · 그 밖의 날은 원도심 7곳 걷기와 시내버스",
-                 "fig": "09:30", "unit": "토·일 첫 출발"},
-    "guide-02": {"answer": "근대역사박물관·진포해양공원·테디베어박물관은 서로 직선 1km 안 · 월요일에도 여는 곳은 테디베어박물관·킹콩놀이터",
-                 "fig": "1km", "unit": "직선"},
-    "guide-03": {"answer": "해망로 실내 전시관 4곳은 서로 직선 350m 안 · 그중 3곳은 통합권 한 장(성인 3,000원)",
-                 "closed": "월요일엔 전시관 8곳 휴관 · 여는 곳은 테디베어박물관·군산항1981·국립군산대학교 박물관",
-                 "fig": "4", "unit": "곳"},
-    "guide-04": {"answer": "객실 1개로 등록된 숙소 2곳(등불의 집·오블로모프), 둘 다 취사·주차 가능 · ‘펜션형’ 객실은 옥구읍 유로빌리지(25실)",
-                 "fig": "2", "unit": "곳"},
-    "guide-05": {"answer": "「8월의 크리스마스」는 초원사진관·동국사, 「남자가 사랑할 때」는 경암동 철길마을 · 영화 속 군산 코스는 9곳",
-                 "fig": "9", "unit": "곳 코스"},
-    "guide-06": {"answer": "짬뽕 메뉴가 있는 곳 21곳, 그중 9곳은 장미동 동령길 특화거리 · 꽃게장 12곳, 박대 3곳",
-                 "closed": "21곳 중 8곳은 매주 월요일 휴무", "fig": "21", "unit": "곳"},
-    "guide-07": {"answer": "공식 1박 2일 코스 3가지(A·B·C)와 2박 3일 1가지 · 숙소는 첫날이 끝나는 곳에 맞춰 섬은 옥도면, C코스는 나운동",
-                 "fig": "3", "unit": "가지"},
-    "guide-08": {"answer": "선유도는 배 없이 차로 · 다리로 이어진 네 섬은 무녀도→선유도→장자도→대장도, 직선 약 3.6km · 주차는 선유2구(331대)·선유도 공영·장자도",
-                 "fig": "3.6km", "unit": "네 섬 직선"},
-    "guide-09": {"answer": "호남관세박물관에서 동국사까지 8곳, 구간 직선거리 합 약 1.7km · 3곳은 통합권(성인 3,000원) 한 장",
-                 "closed": "8곳 중 6곳은 매주 월요일 휴관 · 화~일요일에 걷기", "fig": "1.7km", "unit": "직선 합"},
-    "guide-10": {"answer": "이용요금 ‘무료’로 등록된 관광지 {free}곳 · 박물관·근대 건축·옛 유적·공원·섬 · 월요일에 여는 실내는 군산항1981·국립군산대학교 박물관",
-                 "fig": "{free}", "unit": "곳"},
-    "guide-11": {"answer": "해가 진 뒤에도 들어가는 4곳: 은파호수공원·말랭이마을·새만금비응공원·비응 마파지길(모두 상시 개방) · 군산밤 푸드존은 23:00까지",
-                 "closed": "군산밤 푸드존은 화요일 휴무", "fig": "4", "unit": "곳"},
-    "guide-12": {"answer": "서울 센트럴시티에서 고속버스 2시간30분(금호고속 하루 23회, 첫차 07:20) · 인천공항 1터미널에서 직행 시외버스 3시간 · 익산역에서 군산행 시외버스 하루 20회",
-                 "fig": "2시간30분", "unit": "서울 고속버스"},
-    # the hub guides (2026-10-08, linked from the list pages and the home answer bar)
-    "guide-13": {"answer": "짬뽕 20곳(장미동 동령길 특화거리 9곳) · 게장 12곳 · 아귀(아구) 9곳 · 떡갈비·칼국수 6곳씩 · 콩나물국밥 4곳",
-                 "fig": "20", "unit": "곳"},
-    "guide-14": {"answer": "여관·모텔 56곳 · 호텔 15곳 · 게스트하우스 9곳 · 펜션형 객실은 유로빌리지(25실)·링스모텔",
-                 "fig": "90", "unit": "곳"},
-    "guide-15": {"answer": "원도심 41곳 · 금강 43곳 · 고군산 36곳 · 은파 27곳 · 새만금·비응 8곳 · 이용요금 무료 59곳",
-                 "fig": "161", "unit": "곳"},
-}
+# Short answers in 개조식 (noun endings), one per guide (Apple direction, approved 2026-10-08), written per city in
+# site.json city.home.answer_copy {guide id: {answer, fig, unit, closed}}. Every figure in them is checked against the
+# guide's own text at build time (guide_answer): a mismatch falls back to the guide's first heading with a warning, so
+# a data edit can never leave a stale number on the page. {free} = the attractions whose 이용요금 reads '무료' (and no
+# other source says otherwise). The content track may move them into guides.json as the field `answer`, which then
+# wins.
+def answer_copy() -> dict:
+    return city.current().home("answer_copy", {}) or {}
 
 
 def guide_text(g: dict) -> str:
@@ -2042,17 +2058,17 @@ def free_attractions(S) -> int:
 
 def guide_answer(g: dict, S=None) -> dict:
     """The guide's short answer: the data field `answer` ({answer, fig, unit, closed}) when the content track
-    wrote one; else (with the build state S) ANSWER_COPY when every figure in it is written in the guide; else the
-    guide's first declarative heading with the first figure written in it. A figure the answer sentence does not
-    contain word for word carries the copy's unit as its label (fig_label: '09:30 토·일 첫 출발')."""
+    wrote one; else (with the build state S) the city's answer copy when every figure in it is written in the guide;
+    else the guide's first declarative heading with the first figure written in it. A figure the answer sentence does
+    not contain word for word carries the copy's unit as its label (fig_label: '09:30 토·일 첫 출발')."""
     a = g.get("answer")
     if isinstance(a, dict) and squash_ws(a.get("answer")):
         return {"answer": squash_ws(a["answer"]), "fig": squash_ws(a.get("fig")), "unit": squash_ws(a.get("unit")),
                 "closed": squash_ws(a.get("closed")), "fig_label": squash_ws(a.get("fig_label"))}
-    copy = ANSWER_COPY.get(g.get("id")) if S is not None else None
+    copy = answer_copy().get(g.get("id")) if S is not None else None
     if copy:
         free = str(free_attractions(S))
-        c = {k: v.replace("{free}", free) for k, v in copy.items()}
+        c = {k: str(v).replace("{free}", free) for k, v in copy.items()}
         mine = figures(c["answer"]) | figures(c.get("closed")) | figures(c["fig"])
         bad = sorted(mine - (figures(guide_text(g)) | {free}))
         if not bad:
@@ -2082,109 +2098,91 @@ def guide_rows(S) -> list[dict]:
 
 
 # ----------------------------------------------------------------------------- home
-HOME_ANSWERS = (("차 없이", "guide-01"), ("아이와 함께", "guide-02"), ("비 오는 날", "guide-03"))
-
-# Home focus (owner 2026-10-13: the 짬뽕 tile outlived the 짬뽕 festival): what the home leads with is one rule over the
+# The home's city content is configuration (site.json city.home; pipeline/city.py): the answer rows (answers: [[key,
+# guide id]], answer_default: the last row when no dish leads), the dish focus (focus_dishes), the search example,
+# the story chapters, the photo picks (pipeline/media.py), the gallery, the teaser course, the video topics and the
+# answer bar's hub rows. Every place it names is looked up in the collected data and the block is left out with a
+# warning when it is missing; a new city without these keys gets a home built from its data alone.
+#
+# Home focus (owner 2026-10-13: the dish tile outlived its festival): what the home leads with is one rule over the
 # data on the build date, not fixed copy. A dish leads only while a festival named after it is running or starts
-# within FOCUS_DAYS — then it heads the 맛집 tile (HUB_SHORT row + lead below), takes the home's last answer row and
+# within focus_days — then it heads the 맛집 tile (hub_short row + lead below), takes the home's last answer row and
 # comes first in the search example. Otherwise the 맛집 tile leads with the hub's restaurant count and every dish is an
-# equal pill (largest count first), the last answer row is how to get to the city and the search example names places.
+# equal pill (largest count first), the last answer row is answer_default and the search example names places.
 # Every figure is still checked against the guide's own text.
 FOCUS_DAYS = 21
-FOCUS_DISHES = {  # dish: (words in the event name, guide-13 row while it leads, the figure's lead, home answer row)
-    "짬뽕": (("짬뽕",), ("맛집", "짬뽕 요리 20곳 · 게장 12곳 · 아귀 9곳 · 떡갈비 6곳", "게장 12곳 · 아귀 9곳", "20", "곳"),
-             "짬뽕 요리", ("짬뽕", "guide-06")),
-}
-HOME_ANSWER_DEFAULT = ("가는 법", "guide-12")
-SEARCH_EXAMPLE = ("선유도", "철길마을", "주차")
+
+
+def home_answers() -> list[tuple[str, str]]:
+    return [(str(k), str(g)) for k, g in city.current().home("answers", []) or []]
+
+
+def home_answer_default() -> tuple[str, str] | None:
+    d = city.current().home("answer_default")
+    return (str(d[0]), str(d[1])) if d else None
+
+
+def focus_dishes() -> dict:
+    """{dish: (words in the event name, hub row while it leads, the figure's lead, home answer row)}."""
+    out = {}
+    for dish, v in (city.current().home("focus_dishes", {}) or {}).items():
+        out[dish] = (tuple(v.get("words") or (dish,)), tuple(v["row"]), v.get("lead", ""), tuple(v["answer"]))
+    return out
 
 
 def home_focus(S) -> dict | None:
     """The dish the home leads with today, or None: the festival (an edition whose name has the dish's word) that is
-    running or starts soonest within FOCUS_DAYS of the build date (S.today)."""
+    running or starts soonest within focus_days of the build date (S.today)."""
+    dishes = focus_dishes()
+    if not dishes:
+        return None
     today = dt.date.fromisoformat(S.today)
+    window = int(city.current().home("focus_days", FOCUS_DAYS))
     best = None
     for ev in S.events:
         r = event_row(ev)
         if not r["start"] or not r["last"] or r["last"] < S.today:
             continue
         days = (dt.date.fromisoformat(r["start"]) - today).days
-        if days > FOCUS_DAYS:
+        if days > window:
             continue
         name = squash_ws(ev.get("name"))
-        for dish, (words, row, lead, answer) in FOCUS_DISHES.items():
+        for dish, (words, row, lead, answer) in dishes.items():
             if any(w in name for w in words) and (best is None or days < best["days"]):
                 best = {"dish": dish, "row": row, "lead": lead, "answer": answer, "event": ev, "days": days}
     return best
 
 
 def search_example(S) -> str:
-    """The home search field's example: the focus dish first while there is one (home_focus), then places."""
+    """The home search field's example: the focus dish first while there is one (home_focus), then the city's
+    configured words (city.home.search_example); '' without either."""
     focus = home_focus(S)
-    words = [focus["dish"], SEARCH_EXAMPLE[0], SEARCH_EXAMPLE[-1]] if focus else list(SEARCH_EXAMPLE)
-    return "예: " + ", ".join(words)
-HOME_OLDTOWN = ("호남관세박물관", "군산근대건축관", "구-일본-제18은행-군산지점", "초원사진관", "군산신흥동일본식가옥", "동국사")
-HOME_ISLANDS = (("선유도", 0), ("장자도", 1), ("대장도", 0), ("무녀도", 0))
+    words = list(city.current().home("search_example", []) or [])
+    if focus:
+        words = [focus["dish"], *words[:1], *words[-1:]]
+    return ("예: " + ", ".join(dict.fromkeys(words))) if words else ""
 
 
 def home_vm(S) -> dict:
-    """The home page. Every hard-wired place is looked up and skipped with a warning when missing, so a data
-    edit never breaks the build; the 1899/1908 sentences print only while the place summaries still say so."""
+    """The home page: answer rows, events, courses, 권역, the photo slots and the showcase (home_showcase). Every place
+    the city's configuration names is looked up and skipped with a warning when missing, so a data edit never breaks
+    the build."""
     from . import build as B
     warn = S.warnings
-
-    def need(slug):
-        e = S.ent_by_slug.get(slug)
-        if not e:
-            warn.append(f"홈: 장소 없음 {slug} — 그 블록 생략")
-        return e
-
-    port, customs, seonyu = need("군산내항"), need("구-군산세관-본관"), need("선유도")
-    h1 = ""
-    if port and "1899년에 개항" in (port.get("summary") or ""):
-        h1 = f"{S.site.get('region') or S.site.get('locality', '')}, 1899년에 개항한 항구 도시"
-    elif port:
-        warn.append("홈 H1: 군산내항 요약에 '1899년에 개항'이 없어 기본 제목 사용")
-    within = []
-    if customs and customs["_geo"]:
-        within = sorted([e for e in S.lists["attraction"] if e["_geo"] and e is not customs
-                         and hav(customs["_geo"], e["_geo"]) <= 1000], key=lambda e: hav(customs["_geo"], e["_geo"]))
-    d_seonyu = hav(customs["_geo"], seonyu["_geo"]) if customs and seonyu and customs["_geo"] and seonyu["_geo"] else None
-    lede, notes = "", []
-    sup = lambda n: Markup(f'<sup class="fn"><span class="vh"> 근거 </span>{n}</sup>')  # noqa: E731
-    h1_html = Markup(str(escape(h1)).replace("1899년에", "1899년에" + sup(1))) if h1 else Markup("")
-    lede_html = Markup("")
-    summary = (customs or {}).get("summary") or ""
-    if customs and all(w in summary for w in ("장미동", "대한제국", "1908년", "세관 청사", "붉은 벽돌")):
-        first = "장미동의 구 군산세관 본관은 대한제국 때인 1908년에 세관 청사로 지은 붉은 벽돌 건물입니다."
-        if d_seonyu and not all(w in (seonyu.get("summary") or "") for w in ("고군산군도", "다리로 이어")):
-            warn.append("홈 첫 문단: 선유도 요약에 '고군산군도'·'다리로 이어'가 없어 선유도 거리 문장 생략")
-            d_seonyu = None
-        second = f"이 건물에서 직선 1km 안에 관광지 {len(within)}곳이 있" + (
-            f"고, 다리로 이어진 고군산군도의 선유도까지는 직선으로 약 {round(d_seonyu / 1000)}km입니다." if d_seonyu else "습니다.")
-        lede = f"{first} {second}"
-        lede_html = escape(first) + sup(2) + Markup(" ") + escape(second) + (sup(3) if d_seonyu else Markup(""))
-        notes = [{"n": 1, "text": "군산내항 장소 정보", "href": port["_path"]} if port and h1 else None,
-                 {"n": 2, "text": "구 군산세관 본관 장소 정보", "href": customs["_path"]},
-                 {"n": 3, "text": "한국관광공사 TourAPI 좌표 사이 직선거리", "href": ""} if d_seonyu else None]
-        notes = [x | {"html": Markup(f'<a href="{escape(x["href"])}">{escape(x["text"])}</a>') if x["href"]
-                      else escape(x["text"])} for x in notes if x]
-    elif customs:
-        warn.append("홈 첫 문단: 구 군산세관 본관 요약의 사실(1908년 등)이 바뀌어 요약 첫 문장 사용")
-        lede = sentences(summary)[0] if summary else ""
-        lede_html = escape(lede)
-    lead = next((p for p in (customs or {}).get("_photos", []) if p["type"] == 1), None)
     gmap = {x["id"]: x for x in S.guides}
     stays = S.lists["stay"]
     checkins = Counter(squash_ws(e["facts"]["checkin"]) for e in stays
                        if (e.get("facts") or {}).get("checkin") and not contested(e, "checkin"))
     day = [S.course_vms[c["slug"]] for c in S.courses if c.get("duration") == "당일"]
+    official = city.current().official["short"]
     answers = []
     if day:
-        answers.append(answer_row("당일", "/courses/#g-당일", "군산시 공식 당일 코스: " + " · ".join(cv["display"] for cv in day),
+        answers.append(answer_row("당일", "/courses/#g-당일", f"{official} 공식 당일 코스: ".lstrip()
+                                  + " · ".join(cv["display"] for cv in day),
                                   str(len(day)), "개", "공식 당일 코스", "", warn))
     focus = home_focus(S)
-    for key, gid in (*HOME_ANSWERS, focus["answer"] if focus else HOME_ANSWER_DEFAULT):
+    last = focus["answer"] if focus else home_answer_default()
+    for key, gid in [*home_answers(), *([last] if last else [])]:
         g = gmap.get(gid)
         if not g:
             warn.append(f"홈 답 줄: {gid} 없음 — 줄 생략")
@@ -2207,113 +2205,100 @@ def home_vm(S) -> dict:
     events = [event_row(ev) for ev in upcoming]
     months = sorted({r["start"][:7] for r in events})
     ev_head = (" · ".join(f"{int(m[:4])}년 {int(m[5:])}월" for m in months) + " 행사") if months else "행사"
-
-    def entry(slug, n=0, photo_ok=True):
-        e = S.ent_by_slug.get(slug)
-        if not e:
-            warn.append(f"홈: 장소 없음 {slug} — 항목 생략")
-            return None
-        ph = e["_photos"]
-        return {"e": e, "name": e["name"], "path": e["_path"], "dong": e["_area"], "type": e["_type"],
-                "line": e["_line"], "status": status_items(e), "photo": ph[min(n, len(ph) - 1)] if (photo_ok and ph) else None}
-
-    radius = None
-    if customs and customs["_geo"]:
-        radius = {"self": {"lat": customs["_geo"]["lat"], "lng": customs["_geo"]["lng"], "name": customs["name"]},
-                  "near": [{"lat": e["_geo"]["lat"], "lng": e["_geo"]["lng"], "name": e["name"], "url": e["_path"],
-                            "d": dist(hav(customs["_geo"], e["_geo"])), "kind": "attraction"} for e in within],
-                  "radius": 1000}
     lines = [S.course_vms[c["slug"]] for grp in ("당일", "1박 2일", "2박 3일") for c in S.courses if c.get("duration") == grp]
+    C = city.current()
     regions = []
-    for a in S.anchors:
-        members = [e for e in S.entities if e["_region"] == a["name"]]
+    for rname in S.region_names:
+        if rname == C.none_label or (rname == C.far_label and C.region_method == "nearest_anchor"):
+            continue
+        members = [e for e in S.entities if e["_region"] == rname]
+        if not members:
+            continue
         dongs = Counter(e["_area"] for e in members if e["_area"]).most_common(4)
-        regions.append({"name": a["name"], "n": len(members), "k": Counter(e["kind"] for e in members),
-                        "dongs": [d for d, _ in dongs], "anchor": a, "id": a["id"]})
+        anchor = next((a for a in S.anchors if a["name"] == rname), None)
+        regions.append({"name": rname, "n": len(members), "k": Counter(e["kind"] for e in members),
+                        "dongs": [d for d, _ in dongs], "anchor": anchor, "id": "r-" + frag(rname)})
     annual_n = sum(1 for ev in S.events if not ev.get("start_date") and "매년" in str(ev.get("period_text") or ""))
-    h = {"h1": h1, "lede": lede, "notes": notes, "port": port, "customs": customs, "lead_photo": lead,
-         "within": within, "answers": answers, "search_example": search_example(S), "guides": S.guides, "events": events, "ev_head": ev_head,
-         "annual_n": annual_n, "h1_html": h1_html, "lede_html": lede_html,
-         "last_event": event_row(past[0]) if past and not events else None,
-         "oldtown": {"lead": entry("근대역사박물관", 0),
-                     "rest": [x for x in (entry(s, photo_ok=False) for s in HOME_OLDTOWN) if x]},
-         "islands": [x for x in (entry(s, n) for s, n in HOME_ISLANDS) if x],
-         "rail": entry("경암동-철길마을", 2), "text_plate": entry("군산내항", photo_ok=False), "radius": radius,
+    h = {"answers": answers, "search_example": search_example(S), "guides": S.guides, "events": events,
+         "ev_head": ev_head, "annual_n": annual_n, "last_event": event_row(past[0]) if past and not events else None,
          "lines": lines, "course_total": len(S.courses), "regions": regions,
+         "region_rule": region_rule_vm(S),
          "counts": {k: len(v) for k, v in S.lists.items()}, "official": S.site.get("official_links") or [],
          "slots": media.slot_photos(S)}  # hero / story / gallery photos (pipeline/media.py, licence-checked)
     h.update(home_showcase(S, h))
     return h
 
 
+def region_rule_vm(S) -> dict:
+    """The 권역 rule as the pages print it (map page, home): method, the anchors (nearest_anchor) or the district lines
+    and note (district), the far threshold and the leftover labels."""
+    C = city.current()
+    return {"method": C.region_method if S.region_names != [C.none_label] else "none", "anchors": S.anchors,
+            "lines": C.region_rule_lines(), "note": C.region_rule_note, "far_m": C.far_m,
+            "far_label": C.far_label, "none_label": C.none_label}
+
+
 # ----------------------------------------------------------------------------- home: the Apple layer
 # Every figure and date below is read from the data or computed from it (CINEMATIC.md §6, kept by the Apple
-# direction). Hard-wired places are looked up and skipped with a warning when missing.
+# direction). Places the configuration names are looked up and skipped with a warning when missing.
 FEATURED_MIN_COURSES = 7  # 대표 장소: attractions on at least this many official courses (the rule is printed)
-TEASER_COURSE = "gunsan-course-m2135-2"  # B코스: every stop has coordinates, so its map shows the whole course
-VIDEO_ROW_TOPICS = ("근대역사", "섬·바다", "먹거리")
-# The answer bar's purposes after 당일: (desktop line, phone line, figure, unit); every figure is checked against
-# the guide's own text at build time (a mismatch drops the row with a warning).
-ANSWER_SHORT = {
-    "guide-01": ("차 없이", "토·일 시티투어 첫 출발 · 성인 5,000원", "토·일 시티투어 첫 출발", "09:30", ""),
-    "guide-02": ("아이와 함께", "어린이박물관·군함·테디베어가 서로 직선 1km 안", "어린이박물관·군함·테디베어", "1", "km 안"),
-    "guide-03": ("비 오는 날", "해망로 실내 전시관 · 3곳 통합권 성인 3,000원", "해망로 실내 전시관", "4", "곳"),
-}
-
-
-# The hub guides lead the answer bar (owner, 2026-10-08: 맛집 · 숙소·펜션 · 가볼만한 곳 first on the home; build.PURPOSES).
-HUB_SHORT = {
-    "guide-13": ("맛집", "음식점 172곳 · 짬뽕 20곳 · 게장 12곳 · 아귀 9곳 · 떡갈비 6곳", "짬뽕 20곳 · 게장 12곳", "172", "곳"),
-    "guide-14": ("숙소·펜션", "여관·모텔 56곳 · 호텔 15곳 · 게스트하우스 9곳", "모텔 56곳 · 호텔 15곳", "90", "곳"),
-    "guide-15": ("가볼만한 곳", "원도심·고군산·은파·새만금·금강 · 무료 관광지 59곳", "무료 관광지 59곳", "5", "권역"),
-}
-PURPOSE_ORDER = ("맛집", "숙소·펜션", "가볼만한 곳", "당일", "아이와 함께", "비 오는 날", "차 없이", "숙소 찾기")
-# The accent bento (owner, 2026-10-09, after masstige.io): the three hub guides on lime · lavender · sky with their type
-# icon, the official 당일 courses as the one black card with a lime pill; every other tile stays Apple grey.
-# (tone, icon): the tone is a class (45-accent.css), the icon a ui.icon name.
-# Role names (review 2026-10-14: no lime / lavender / sky / black left): the lead tile and two pale sea tints, the
+# The answer bar's order and its accent bento (owner, 2026-10-09, after masstige.io): the hub guides' tiles take the
+# city's accent tones (city.home.accent_tones {guide id: [tone, icon]}), the official 당일 courses the one dark card;
+# every other tile stays Apple grey. Role names (review 2026-10-14): the lead tile and two pale sea tints, the
 # official courses' tile in the brand sea.
-ACCENT_TONES = {"guide-13": ("lead", "bowl"), "guide-14": ("tint", "bed"), "guide-15": ("mist", "map")}
+PURPOSE_ORDER = ("맛집", "숙소·펜션", "가볼만한 곳", "당일", "아이와 함께", "비 오는 날", "차 없이", "숙소 찾기")
 ACCENT_DARK = {"tone": "sea", "icon": "route"}
-# A hub figure that counts one part of the guide names that part in front of it (review 2026-10-09: '20곳 맛집' read as
-# 20 restaurants in all; it is the 20 with 짬뽕 on the menu). The desktop line's other parts become the tile's pills
-# (ui.bento: '게장 12곳' …), so the tile says what each figure counts. guide-13 counts 짬뽕 요리 (짬뽕라멘 in, 짬뽕빵 out:
-# 20곳), guide-06 counts every menu with 짬뽕 in it (짬뽕빵 too: 21곳) — the lead says '짬뽕 요리' so the two figures on
-# the home read as two different counts (2026-10-09).
-HUB_LEAD = {"guide-13": "음식점"}   # while a dish festival is on, home_focus swaps in that dish's row and lead
+
+
+def _rows(key: str) -> dict:
+    """{guide id: (key, desktop line, phone line, figure, unit)} from city.home.<key> (hub_short, answer_short)."""
+    return {gid: tuple(v) for gid, v in (city.current().home(key, {}) or {}).items()}
+
+
+def accent_tones() -> dict:
+    return {gid: tuple(v) for gid, v in (city.current().home("accent_tones", {}) or {}).items()}
+
+
+def hub_lead() -> dict:
+    """A hub figure that counts one part of the guide names that part in front of it (review 2026-10-09: a dish count
+    read as all restaurants): {guide id: lead}; the desktop line's other parts become the tile's pills."""
+    return dict(city.current().home("hub_lead", {}) or {})
 
 
 def purposes_vm(S) -> list[dict]:
-    """The home answer bar's purposes: the hub guides 맛집 · 숙소·펜션 · 가볼만한 곳 (HUB_SHORT), 당일 (the official 당일
-    courses), 아이와 함께, 비 오는 날, 차 없이 (ANSWER_SHORT; every figure checked against its guide) and, only when
-    there is no 숙소·펜션 hub, 숙소 찾기 (the most common 체크인 time among the stays that state one), in the owner's
-    order (PURPOSE_ORDER). Row: {key, href, short (desktop), tiny (phones), fig, unit, tone / icon / pill (the accent
-    bento: ACCENT_TONES, ACCENT_DARK; '' = an Apple grey tile), lead + pills (HUB_LEAD: what the figure counts, and the
-    desktop line's other parts as pills)}."""
+    """The home answer bar's purposes: the hub guides (city.home.hub_short), 당일 (the official 당일 courses), the
+    other answer rows (city.home.answer_short; every figure checked against its guide) and, only when there is no
+    숙소·펜션 hub, 숙소 찾기 (the most common 체크인 time among the stays that state one), in PURPOSE_ORDER (or
+    city.home.purpose_order). Row: {key, href, short (desktop), tiny (phones), fig, unit, tone / icon / pill (the
+    accent bento; '' = an Apple grey tile), lead + pills (hub_lead: what the figure counts, and the desktop line's
+    other parts as pills)}."""
     out = []
+    official = city.current().official["short"]
     day = [S.course_vms[c["slug"]] for c in S.courses if c.get("duration") == "당일"]
     if day:
         letters = "·".join(cv["letter"] for cv in day if cv["letter"])
-        out.append({"key": "당일", "href": "/courses/#g-당일", "short": "군산시 공식 당일 코스" + (f" {letters}" if letters else ""),
-                    "tiny": "군산시 공식 코스", "fig": str(len(day)), "unit": "코스", "track": "course_click",
-                    **ACCENT_DARK, "pill": "공식 코스"})
+        out.append({"key": "당일", "href": "/courses/#g-당일",
+                    "short": f"{official} 공식 당일 코스".lstrip() + (f" {letters}" if letters else ""),
+                    "tiny": f"{official} 공식 코스".lstrip(), "fig": str(len(day)), "unit": "코스",
+                    "track": "course_click", **ACCENT_DARK, "pill": "공식 코스"})
     gmap = {g["id"]: g for g in S.guides}
     focus = home_focus(S)
-    hub_short, hub_lead = dict(HUB_SHORT), dict(HUB_LEAD)
-    if focus:
-        hub_short["guide-13"], hub_lead["guide-13"] = focus["row"], focus["lead"]
-    for gid, (key, short, tiny, fig, unit) in [*hub_short.items(), *ANSWER_SHORT.items()]:
+    hub_short, leads, answer_short, tones = _rows("hub_short"), hub_lead(), _rows("answer_short"), accent_tones()
+    if focus and hub_short:
+        food_hub = next(iter(hub_short))
+        hub_short[food_hub], leads[food_hub] = focus["row"], focus["lead"]
+    for gid, (key, short, tiny, fig, unit) in [*hub_short.items(), *answer_short.items()]:
         g = gmap.get(gid)
         if not g:
-            if gid in ANSWER_SHORT:
+            if gid in answer_short:
                 S.warnings.append(f"답 막대: {gid} 없음 — 줄 생략")
             continue
         bad = sorted((figures(short) | figures(tiny) | figures(fig)) - figures(guide_text(g)))
         if bad:
             S.warnings.append(f"답 막대 {gid}: 가이드 본문에 없는 숫자 {bad} — 줄 생략")
             continue
-        tone, icon = ACCENT_TONES.get(gid, ("", ""))
-        lead = hub_lead.get(gid, "")
+        tone, icon = tones.get(gid, ("", ""))
+        lead = leads.get(gid, "")
         out.append({"key": key, "href": g["_path"], "short": short, "tiny": tiny, "fig": fig, "unit": unit,
                     "track": "guide_click", "tone": tone, "icon": icon, "lead": lead,
                     "pills": [x for x in short.split(" · ") if not x.startswith(lead)] if lead else []})
@@ -2325,7 +2310,8 @@ def purposes_vm(S) -> list[dict]:
         out.append({"key": "숙소 찾기", "href": "/stays/", "fig": str(len(stays)), "unit": "곳",
                     "short": f"체크인 시간이 나온 {sum(checkins.values())}곳 중 {top_n}곳이 {top_in}",
                     "tiny": f"{top_n}곳이 {top_in} 체크인"})
-    rank = {k: i for i, k in enumerate(PURPOSE_ORDER)}
+    order = tuple(city.current().home("purpose_order", PURPOSE_ORDER))
+    rank = {k: i for i, k in enumerate(order)}
     return sorted(out, key=lambda r: rank.get(r["key"], len(rank)))
 
 
@@ -2384,71 +2370,93 @@ def sentence_with(e: dict | None, needle: str) -> str:
     return next((x for x in sentences((e or {}).get("summary")) if needle in x), "") if e else ""
 
 
-def home_story(S, within: list) -> list[dict]:
-    """The home story (the black showcase): 1899 개항 · 1908 세관 · 1909–1936 근대 · 오늘 섬 — every sentence is a
-    place summary sentence; the 오늘 figures are computed (attractions within 1km of 구 군산세관 본관, the straight
-    line to 선유도). A chapter whose sentence is gone from the data is skipped with a warning. Chapter: {id, big,
-    kicker, title, text [sentences], steps [{y, name, path, text}], figs [{n, unit, label}], src [(name, path)],
-    photo (media.slot_photos story: KOGL-1 may be zoomed in the stage, KOGL-3 is shown whole)}."""
-    by = S.ent_by_slug
+def _story_line(S, spec: dict) -> tuple[str, dict | None]:
+    """One configured story sentence: the first whole summary sentence of the place that contains the needle
+    (with the place's name in front when `subject` asks for it and the sentence lacks it)."""
+    e = find_place(S, spec.get("place", ""))
+    t = sentence_with(e, spec.get("needle", "")) if e and spec.get("needle") else ""
+    if t and spec.get("subject") and not t.startswith(e["name"]):
+        t = josa(e["name"], "은/는") + " " + t
+    return t, e
+
+
+def _story_fig(S, spec: dict) -> dict | None:
+    """A computed story figure: 'within' (attractions within m metres of a place, straight line) or 'between' (the
+    straight line between two places, in km). None when a place or its coordinates are missing."""
+    if spec.get("kind") == "within":
+        e = find_place(S, spec.get("place", ""))
+        if not (e and e.get("_geo")):
+            return None
+        m = float(spec.get("m") or 1000)
+        n = sum(1 for x in S.lists["attraction"] if x is not e and x["_geo"] and hav(e["_geo"], x["_geo"]) <= m)
+        return {"n": str(n), "unit": "곳", "label": spec.get("label", ""), "src": e}
+    if spec.get("kind") == "between":
+        a, b = find_place(S, spec.get("a", "")), find_place(S, spec.get("b", ""))
+        if not (a and b and a.get("_geo") and b.get("_geo")):
+            return None
+        return {"n": str(round(hav(a["_geo"], b["_geo"]) / 1000)), "unit": "km", "label": spec.get("label", ""),
+                "src": None}
+    return None
+
+
+def home_story(S) -> list[dict]:
+    """The home story (city.home.story): chapters whose every sentence is a place summary sentence and whose figures
+    are computed from coordinates. A chapter: {id, big, kicker, title, lines [{place, needle, required, subject}],
+    steps [{place, needle, year}], figs [{kind within|between, …, label}], photo [place, n]}. A required sentence
+    gone from the data drops its chapter with a warning; a chapter with nothing left is dropped too. Output chapter:
+    {id, big, kicker, title, text [sentences], steps [{y, name, path, text}], figs [{n, unit, label}], src
+    [(name, path)], photo (media.slot_photos story: KOGL-1 may be zoomed in the stage, KOGL-3 is shown whole)}."""
     ph = media.slot_photos(S)["story"]
-    port, customs, museum = by.get("군산내항"), by.get("구-군산세관-본관"), by.get("호남관세박물관")
-    temple, imp, seonyu = by.get("동국사"), by.get("군산-임피역사"), by.get("선유도")
     out = []
-    a, b = sentence_with(port, "1899년에 개항"), sentence_with(port, "1979년")
-    if a:
-        out.append({"id": "ch-1899", "big": "1899", "kicker": "개항", "title": "1899년, 군산항이 열리다",
-                    "text": [a] + ([b] if b else []), "steps": [], "figs": [], "src": [(port["name"], port["_path"])],
-                    "photo": ph.get(media.STORY_PHOTOS[0][0])})
-    else:
-        S.warnings.append("홈 이야기: 군산내항 요약에 '1899년에 개항'이 없어 1899 장 생략")
-    a = sentence_with(customs, "1908년")
-    if a:
-        third = sentence_with(museum, "3대 건축물")
-        if third and "옛 군산세관 본관" in ((museum or {}).get("summary") or "") and not third.startswith("옛 군산세관"):
-            third = "옛 군산세관 본관은 " + third
-        extra = [x for x in (sentence_with(customs, "붉은 벽돌"), third) if x and x != a]
-        src = [(customs["name"], customs["_path"])] + ([(museum["name"], museum["_path"])] if third else [])
-        out.append({"id": "ch-1908", "big": "1908", "kicker": "세관", "title": "1908년, 붉은 벽돌 세관",
-                    "text": [a] + extra, "steps": [], "figs": [], "src": src, "photo": ph.get(media.STORY_PHOTOS[1][0])})
-    else:
-        S.warnings.append("홈 이야기: 구 군산세관 본관 요약에 '1908년'이 없어 1908 장 생략")
-    steps = []
-    for e, y in ((temple, "1909년"), (imp, "1936년")):
-        t = sentence_with(e, y)
-        if t:
-            steps.append({"y": y[:4], "name": e["name"], "path": e["_path"], "text": t})
-    if steps:
-        out.append({"id": "ch-1909", "big": steps[0]["y"], "kicker": "근대",
-                    "title": f"{steps[0]['y']}–{steps[-1]['y']}, 근대 도시의 흔적" if len(steps) > 1 else f"{steps[0]['y']}년",
-                    "text": [], "steps": steps, "figs": [], "src": [(x["name"], x["path"]) for x in steps],
-                    "photo": ph.get(media.STORY_PHOTOS[2][0])})
-    a = sentence_with(seonyu, "다리로 이어져")
-    if a and not a.startswith(seonyu["name"]):
-        a = josa(seonyu["name"], "은/는") + " " + a
-    figs = []
-    if within:
-        figs.append({"n": str(len(within)), "unit": "곳", "label": "구 군산세관 본관에서 직선 1km 안의 관광지"})
-    if customs and seonyu and customs.get("_geo") and seonyu.get("_geo"):
-        figs.append({"n": str(round(hav(customs["_geo"], seonyu["_geo"]) / 1000)), "unit": "km",
-                     "label": "구 군산세관 본관에서 선유도까지 직선"})
-    if a or figs:
-        out.append({"id": "ch-today", "big": "오늘", "kicker": "오늘", "title": "다리로 이어진 섬까지",
-                    "text": [a] if a else [], "steps": [], "figs": figs,
-                    "src": [(seonyu["name"], seonyu["_path"])] if a else [], "photo": ph.get(media.STORY_PHOTOS[3][0])})
+    for c in city.current().home("story", []) or []:
+        cid = c.get("id") or f"ch-{len(out) + 1}"
+        text, src, missing = [], [], ""
+        for spec in c.get("lines") or []:
+            t, e = _story_line(S, spec)
+            if not t:
+                if spec.get("required"):
+                    missing = f"{spec.get('place')} 요약에 '{spec.get('needle')}'이(가) 없음"
+                    break
+                continue
+            if t not in text:
+                text.append(t)
+            if (e["name"], e["_path"]) not in src:
+                src.append((e["name"], e["_path"]))
+        if missing:
+            S.warnings.append(f"홈 이야기: {missing} — {cid} 장 생략")
+            continue
+        steps = []
+        for spec in c.get("steps") or []:
+            t, e = _story_line(S, spec)
+            if t:
+                steps.append({"y": str(spec.get("year") or ""), "name": e["name"], "path": e["_path"], "text": t})
+                src.append((e["name"], e["_path"]))
+        figs = [f for f in (_story_fig(S, spec) for spec in c.get("figs") or []) if f]
+        if not (text or steps or figs):
+            S.warnings.append(f"홈 이야기: {cid} 장에 쓸 문장·수치가 데이터에 없음 — 생략")
+            continue
+        title = str(c.get("title") or "")
+        if steps:
+            title = title.format(first=steps[0]["y"], last=steps[-1]["y"]) if "{" in title else title
+        out.append({"id": cid, "big": str(c.get("big") or (steps[0]["y"] if steps else "")),
+                    "kicker": str(c.get("kicker") or ""), "title": title, "text": text, "steps": steps,
+                    "figs": [{k: f[k] for k in ("n", "unit", "label")} for f in figs], "src": src,
+                    "photo": ph.get(cid)})
     return out
 
 
 def home_showcase(S, h: dict) -> dict:
-    """The Apple home's view model, added to home_vm: hero (KOGL-1 slides), cover (the full-bleed opening photo of
-    both homes, media.HOME_COVER), opening + news + services (the Korean opening's kicker, its one-card news carousel
-    and its round service icons: home_opening, home_news, home_services), purposes + next_event (the answer bar),
-    featured (대표 장소 cards, featured_min), events_ranked (3) + n_upcoming, regions2 + region_map (권역 tiles and the
-    anchors map), chapters (the story), gallery (island cards) + n_gogun + gogun_km, teaser {cv, map} + day_lines
-    (the 당일 course on a map), vfeat / vrows / vchips / n_videos (영상으로 보는 군산), region_word (the black band's
-    oversized word: the region in Revised Romanization, upper case)."""
+    """The Apple home's view model, added to home_vm: hero (KOGL-1 slides), cover (the full-bleed opening photo,
+    city.home.photos.cover), opening + news + services (the Korean opening's kicker, its one-card news carousel and
+    its round service icons: home_opening, home_news, home_services), purposes + next_event (the answer bar),
+    featured (대표 장소 cards, featured_min), events_ranked (3) + n_upcoming, regions2 + region_map (권역 tiles and,
+    under the anchor rule, the anchors map), chapters (the story), gallery (city.home.gallery: its cards, its 권역 and
+    the count of attractions in it, the story's km figure), teaser {cv, map} + day_lines (the 당일 course on a map),
+    vfeat / vrows / vchips / n_videos (영상으로 보는 <city>), region_word (the region in Revised Romanization, upper
+    case)."""
     from . import build as B
     from .en_source import romanize
+    C = city.current()
     by = S.ent_by_slug
     slots = h.get("slots") or media.slot_photos(S)
     used = {p["url"] for p in slots["hero"]}
@@ -2464,8 +2472,9 @@ def home_showcase(S, h: dict) -> dict:
             if st["t"] and st["t"].get("kind") == "attraction":
                 cnt[st["t"]["slug"]] += 1
     featured = []
+    featured_min = int(C.home("featured_min_courses", FEATURED_MIN_COURSES))
     for slug, k in sorted(cnt.items(), key=lambda kv: (-kv[1], name_key(by[kv[0]]["name"]))):
-        if k < FEATURED_MIN_COURSES:
+        if k < featured_min:
             break
         e = by[slug]
         ph = next((p for p in e["_photos"] if p["url"] not in used), e["_photos"][0] if e["_photos"] else None)
@@ -2474,28 +2483,33 @@ def home_showcase(S, h: dict) -> dict:
     regions2 = [{**r, "dongs": r["dongs"][:3]} for r in h.get("regions") or []]
     region_map = {"anchors": [{"lat": r["anchor"]["geo"]["lat"], "lng": r["anchor"]["geo"]["lng"], "name": r["name"],
                                "label": r["name"], "n": r["n"], "url": f"/map/#{r['id']}", "place": r["anchor"]["place"]}
-                              for r in regions2]}
-    cv = S.course_vms.get(TEASER_COURSE)
-    if not cv:
-        S.warnings.append(f"홈 코스: {TEASER_COURSE} 없음 — 코스 지도 생략")
-    gogun = [e for e in S.lists["attraction"] if e["_region"] == "고군산"]
+                              for r in regions2 if r.get("anchor")]}
+    teaser = C.home("teaser_course", "")
+    cv = S.course_vms.get(teaser) if teaser else None
+    if teaser and not cv:
+        S.warnings.append(f"홈 코스: {teaser} 없음 — 코스 지도 생략")
+    gcfg = C.home("gallery", {}) or {}
+    g_region = gcfg.get("region", "")
+    n_gal = sum(1 for e in S.lists["attraction"] if g_region and e["_region"] == g_region)
     vg = B.video_groups(S.videos) if getattr(S, "videos", None) else []
     by_t = {g["title"]: g for g in vg}
     vfeat = by_t["여행 코스"]["items"][0] if "여행 코스" in by_t else (vg[0]["items"][0] if vg else None)
-    chapters = home_story(S, h.get("within") or [])
+    chapters = home_story(S)
+    km = next(({"n": f["n"], "label": f["label"]} for c in chapters for f in c["figs"] if f["unit"] == "km"), None)
     return {"hero": slots["hero"], "cover": slots.get("cover"), "purposes": purposes_vm(S),
             "opening": home_opening(S), "news": home_news(S), "services": home_services(S, len(ranked)),
             "next_event": pick_next_event(ranked),
             "events_ranked": ranked[:3], "n_upcoming": len(ranked), "featured": featured,
-            "featured_min": FEATURED_MIN_COURSES, "regions2": regions2, "region_map": region_map,
-            "chapters": chapters, "gallery": gallery, "n_gogun": len(gogun),
-            "gogun_km": next((f["n"] for c in chapters for f in c["figs"] if f["unit"] == "km"), ""),
+            "featured_min": featured_min, "regions2": regions2, "region_map": region_map,
+            "chapters": chapters, "gallery": gallery,
+            "gallery_head": {"kicker": gcfg.get("kicker", ""), "title": gcfg.get("title", ""), "region": g_region,
+                             "n": n_gal, "km": km},
             "teaser": {"cv": cv, "map": course_map(cv["stops"])} if cv else None,
             "day_lines": [S.course_vms[c["slug"]] for c in S.courses if c.get("duration") == "당일"],
             "vfeat": vfeat, "n_videos": len(getattr(S, "videos", []) or []),
-            "region_word": romanize(S.site.get("region", "")).upper(),   # the black band's oversized word (GUNSAN)
+            "region_word": romanize(S.site.get("region", "")).upper(),   # the black band's oversized word
             "vrows": [{"topic": t, "v": by_t[t]["items"][0], "n": len(by_t[t]["items"]), "id": "v-" + frag(t),
-                       "path": by_t[t].get("_path", "")} for t in VIDEO_ROW_TOPICS if t in by_t],
+                       "path": by_t[t].get("_path", "")} for t in C.home("video_row_topics", []) or [] if t in by_t],
             "vchips": [{"title": g["title"], "n": len(g["items"]), "id": "v-" + frag(g["title"]), "path": g.get("_path", "")}
                        for g in vg]}
 
@@ -2504,13 +2518,13 @@ def home_showcase(S, h: dict) -> dict:
 # Owner 2026-10-13 ('첫 화면 디자인도 이런 식으로 개편하자. 카드 알아서 넘어가게, 최신 소식들 담아서'): news cards that
 # advance by themselves, then a row of round service icons. Owner 2026-10-13 night ('첫 메인 화면이 너무 알록달록하고 …
 # 차라리 고화질 실사로 배경을 넣고, 글자 우측에 카드로 소식 하나씩 넘기는 형태가 낫지 않나?'; docs/handover/specs/
-# home_redesign.md): the official KOGL-1 photo full-bleed (media.HOME_COVER, as the English home), the kicker · H1 · lede
+# home_redesign.md): the official KOGL-1 photo full-bleed (city.home.photos.cover, as the English home), the kicker · H1 · lede
 # and the question box at the left, ONE news card at a time at the right (below the opening on phones). The season's
 # field and illustration are gone (art.json home.hero.* is '개편 뒤 연결'). Everything is computed from the data and the
 # build date (S.today); the site is rebuilt daily, so the home changes by itself.
 #
 # home_news(S) — THE RANKING RULE (this comment is its record; the page prints the cards, not the rule):
-#   1. focus: the dish festival home_focus() leads with (running, or starting within FOCUS_DAYS) — one card, chip 축제
+#   1. focus: the dish festival home_focus() leads with (running, or starting within focus_days) — one card, chip 축제
 #   2. events: ranked_events() rows running now or starting within NEWS_EVENT_DAYS, in that order (today → tomorrow →
 #      this week → later → running ones by the day they end), the focus festival left out; at most 3
 #   3. abroad: /abroad/ articles dated within NEWS_ABROAD_DAYS of the build date, newest first (date, then id); at most 3
@@ -2538,7 +2552,7 @@ PLACE_SPLIT = re.compile(r"\s*(?:,|/|·|및|\s와\s|\s과\s)\s*")
 
 def event_places(S, ev: dict) -> list[dict]:
     """The places an event edition is held at: its place_slugs (and place_slug), then each part of place_name
-    ('군산회관, 군산항1981'; brackets and a trailing 일원·일대 dropped) matched to a place name, then its TourAPI
+    ('X회관, Y1981'; the city in front, brackets and a trailing 일원·일대 dropped) matched to a place name, then its TourAPI
     contentid."""
     out: list[dict] = []
 
@@ -2550,7 +2564,7 @@ def event_places(S, ev: dict) -> list[dict]:
     by_name = getattr(S, "_ent_by_name", None)
     if by_name is None:
         by_name = S._ent_by_name = {normalize_name(e["name"]): e for e in S.entities}
-    raw = re.sub(r"^전북특별자치도?\s+(군산시\s+)?", "", squash_ws(ev.get("place_name")))
+    raw = city.current().strip_prefix(ev.get("place_name"))
     for part in PLACE_SPLIT.split(raw):
         part = re.sub(r"\([^)]*\)|\s*(?:일원|일대)$", "", part).strip()
         if part:
@@ -2702,8 +2716,8 @@ def romanize_slug(word: str) -> str:
 
 
 def home_opening(S) -> dict:
-    """The opening's words that follow the build date: the kicker '지금 군산 · 10월' (the photo is media.HOME_COVER,
-    h.cover)."""
+    """The opening's words that follow the build date: the kicker '지금 <region> · 10월' (the photo is the configured
+    cover, h.cover)."""
     region = S.site.get("region") or S.site.get("locality", "")
     return {"kicker": f"지금 {region} · {int(S.today[5:7])}월"}
 
@@ -2712,6 +2726,7 @@ def home_services(S, n_events: int = 0) -> list[dict]:
     """The round service icons under the opening: each list or page this build has, with its count where it has
     one ({label, href, icon, n, unit, track})."""
     gm = {g["id"]: g for g in S.guides}
+    way = home_answer_default()   # the city's 'how to get here' guide (city.home.answer_default)
     lists = S.lists
     abroad = sum(a.get("kind") == "article" for a in getattr(S, "abroad", None) or [])
     rows = [("맛집", "/food/", "bowl", len(lists.get("food") or []), "곳", "", bool(lists.get("food"))),
@@ -2723,8 +2738,8 @@ def home_services(S, n_events: int = 0) -> list[dict]:
             ("영상", "/videos/", "play", len(getattr(S, "videos", None) or []), "편", "", bool(getattr(S, "videos", None))),
             (f"해외에서 본 {S.site.get('region', '')}", "/abroad/", "globe", abroad, "건", "",
              bool(getattr(S, "abroad", None) or getattr(S, "abroad_videos", None))),
-            ("가는 법", gm[HOME_ANSWER_DEFAULT[1]]["_path"] if HOME_ANSWER_DEFAULT[1] in gm else "", "bus", 0, "",
-             "guide_click", HOME_ANSWER_DEFAULT[1] in gm)]
+            ("가는 법", gm[way[1]]["_path"] if way and way[1] in gm else "", "bus", 0, "",
+             "guide_click", bool(way and way[1] in gm))]
     pics = {"/food/": "icon-food", "/stays/": "icon-stay", "/places/": "icon-sights", "/courses/": "icon-course",
             "/events/": "icon-events", "/map/": "icon-map", "/videos/": "icon-video", "/abroad/": "icon-abroad"}
     return [{"label": label, "href": href, "icon": icon, "n": n, "unit": unit, "track": track,
@@ -2762,7 +2777,7 @@ def event_row(ev: dict) -> dict:
         if not ev.get("end_date") and re.fullmatch(r"\d{4}-\d{2}", ev.get("end_month") or ""):
             rng += f"–{int(ev['end_month'][5:])}월"
     last = (B.event_last_day(ev) if ev.get("start_date") else end) or ""
-    place = re.sub(r"^전북특별자치도?\s+(군산시\s+)?", "", squash_ws(ev.get("place_name"))).strip()
+    place = city.current().strip_prefix(ev.get("place_name")).strip()
     time, fee = dash_times(squash_ws(ev.get("playtime"))), squash_ws(ev.get("fee"))
     # a value another source gives differently is not picked in a one-line row (CLAUDE.md 3.2): the row reads
     # '<label> 출처마다 다름' and the event page shows both values with their sources
@@ -2812,15 +2827,18 @@ def events_vm(S) -> dict:
 
 
 def short_src(name: str | None) -> str:
+    """An event source's short name: 한국관광공사, the city's press releases (city.official.press), 행사 누리집, the
+    city (city.official.short), else the name as given."""
     n = squash_ws(name)
+    C = city.current()
     if "TourAPI" in n or "한국관광공사" in n:
         return "한국관광공사"
     if "보도자료" in n:
-        return "군산시 보도자료"
+        return C.official["press"]
     if "누리집" in n or "홈페이지" in n:
         return "행사 누리집"
-    if "군산시" in n:
-        return "군산시"
+    if C.is_official(n):
+        return C.official["short"]
     return n
 
 
@@ -2949,7 +2967,7 @@ def event_vm(S, sr: dict) -> dict:
     # programme highlight as a second lede
     rk = next((x for x in ranked_events(S) if x["ev"] is ev), None)
     by_field = {r["field"]: r for r in rows}
-    place_short = re.sub(r"^전북특별자치도?\s+(군산시\s+)?", "", squash_ws(ev.get("place_name"))).strip()
+    place_short = city.current().strip_prefix(ev.get("place_name")).strip()
 
     def tile(label, field, html):
         r = by_field.get(field)
@@ -2987,7 +3005,9 @@ def event_vm(S, sr: dict) -> dict:
             "videos": [v for v in sr.get("videos") or [] if v.get("youtube_id")], "program": program, "usual": usual,
             "other_alts": other_alts, "flagged": flagged or bool(other_alts),
             "confirm_line": ORGANISER_LINE if (flagged or other_alts) else "",
-            "area": B.area_from_address(ev.get("address"))}
+            "area": B.area_from_address(ev.get("address")),
+            "where": city.current().place_short(city.current().district_of(ev.get("address")),
+                                                B.area_from_address(ev.get("address")))}
 
 
 # ----------------------------------------------------------------------------- guide reading layer
@@ -3264,7 +3284,7 @@ def guide_vm(S, g: dict) -> dict:
               for it in items if it["t"] and it["t"]["_geo"]]
     ss = sentences(g.get("summary"))
     unique = list({it["t"]["slug"]: it["t"] for it in items if it["t"]}.values())
-    fq = ChapterNotes({}, "군산시 문화관광")
+    fq = ChapterNotes({}, city.current().official["name"])
     faqs = [{"q": f["q"], "a": f["a"], "html": tel_markup(squash_ws(f["a"])), "n": fq.ref(f.get("source"))}
             for f in g.get("faq") or [] if f.get("q") and f.get("a")]
     # the reading layer: the summary as the page and the JSON-LD show it (decaution), cut into the answer line and
@@ -3290,31 +3310,35 @@ def guide_vm(S, g: dict) -> dict:
 
 # ----------------------------------------------------------------------------- map page
 def map_vm(S) -> dict:
-    """/map/: 권역 → 읍·면·동 groups (CLAUDE.md 7: the 읍·면·동 grouping with a 권역 view added), anchors with
-    counts, the far threshold. Ids carry no spaces. A group's art: the key of its AI art band (REGION_ART)."""
+    """/map/: 권역 → 읍·면·동 groups (CLAUDE.md 7: the 읍·면·동 grouping with a 권역 view added; in a 광역시 the 동
+    carries its 구·군: '중구 신포동'), the rule in force (region_rule_vm: anchors with counts and the far threshold, or
+    the district lines). Ids carry no spaces. A group's art: the key of its AI art band (city region art)."""
     kind_order = {"attraction": 0, "stay": 1, "food": 2}
+    arts = region_art()
     regions = []
     for rname in S.region_names:
         members = [e for e in S.entities if e["_region"] == rname]
         if not members:
             continue
         dongs: dict[str, list] = defaultdict(list)
-        for e in members:
-            dongs[e["_area"] or ""].append(e)
+        for e in members:   # a 광역시: '중구 운서동', or the 구·군 alone when the address names no 동
+            dongs[" ".join(x for x in (e.get("_district"), e["_area"]) if x)].append(e)
         dong_groups = []
         for d, xs in sorted(dongs.items(), key=lambda kv: (kv[0] == "", -len(kv[1]), kv[0])):
             xs.sort(key=lambda e: (kind_order.get(e["kind"], 9), name_key(e["name"])))
             dong_groups.append({"name": d or "주소에 읍·면·동 없음", "id": f"d-{frag(rname)}-{frag(d or '없음')}",
                                 "members": xs, "k": Counter(e["kind"] for e in xs)})
-        regions.append({"name": rname, "id": "r-" + frag(rname), "art": REGION_ART.get(rname, ""),
+        regions.append({"name": rname, "id": "r-" + frag(rname), "art": arts.get(rname, ""),
                         "anchor": next((a for a in S.anchors if a["name"] == rname), None), "members": members,
                         "k": Counter(e["kind"] for e in members), "geo": sum(1 for e in members if e["_geo"]),
                         "dongs": dong_groups,
                         "basis": Counter(e["_region_basis"] for e in members)})
     n_by = {r["name"]: len(r["members"]) for r in regions}
-    return {"regions": regions, "anchors": [{**a, "n": n_by.get(a["name"], 0)} for a in S.anchors], "far_m": FAR_M,
-            "far_label": FAR_LABEL, "none_label": NONE_LABEL, "n_geo": sum(1 for e in S.entities if e["_geo"]),
-            "n_all": len(S.entities), "n_dong": len({e["_area"] for e in S.entities if e["_area"]})}
+    rule = region_rule_vm(S)
+    return {"regions": regions, "anchors": [{**a, "n": n_by.get(a["name"], 0)} for a in S.anchors],
+            "far_m": rule["far_m"], "far_label": rule["far_label"], "none_label": rule["none_label"], "rule": rule,
+            "n_geo": sum(1 for e in S.entities if e["_geo"]), "n_all": len(S.entities),
+            "n_dong": len({(e.get("_district"), e["_area"]) for e in S.entities if e["_area"]})}
 
 
 # ----------------------------------------------------------------------------- search
@@ -3337,7 +3361,7 @@ def search_index(S) -> list[dict]:
         if m:
             row["m"] = m
         ds = designations(e)
-        if ds:  # '모범음식점', '군산맛집' find the places on those lists
+        if ds:  # '모범음식점', the city's own list name find the places on those lists
             row["g"] = " · ".join(d["label"] for d in ds)
         st = [x["text"] for x in status_items(e) if x.get("cls") != "st-missing"][:3]
         if st:

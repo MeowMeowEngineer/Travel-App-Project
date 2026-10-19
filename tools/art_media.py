@@ -1,6 +1,6 @@
 """AVIF/WebP renditions of the AI art (owner decision 2026-10-13, CLAUDE.md 4; pipeline/art.py).
 
-    python tools/art_media.py              # encode what is missing for every picture in data/gunsan/art.json
+    python tools/art_media.py              # encode what is missing for every picture in data/incheon/art.json
     python tools/art_media.py --dry-run    # list what would be made, change nothing
     python tools/art_media.py --force      # re-encode every picture whose original is on this computer
 
@@ -134,7 +134,7 @@ def over_budget(art_id: str, entry: dict) -> int | None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=ROOT / "data" / "gunsan")
+    ap.add_argument("--data", type=Path, default=ROOT / "data" / "incheon")
     ap.add_argument("--src", type=Path, default=SRC_DIR, help="where the originals are (git-ignored)")
     ap.add_argument("--out", type=Path, default=art.ART_DIR)
     ap.add_argument("--dry-run", action="store_true")

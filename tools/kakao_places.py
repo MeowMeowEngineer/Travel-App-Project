@@ -6,8 +6,10 @@ pipeline/maplinks.py가 이 ID로 링크를 만든다.
 
 검색: https://dapi.kakao.com/v2/local/search/keyword.json (머리글 Authorization: KakaoAK <키>)
 - 좌표가 있는 장소: query=이름, x/y=우리 좌표, radius=1000, sort=accuracy. 받아들일 후보가 없으면
-  '군산 ' + 이름, 괄호 안 이름·별칭(alternate_names) 순으로 한 번씩 더 묻는다.
-- 좌표가 없는 장소: query='군산 ' + 이름(좌표 없이), 없으면 이름만.
+  '<지역> ' + 이름, 괄호 안 이름·별칭(alternate_names) 순으로 한 번씩 더 묻는다.
+- 좌표가 없는 장소: query='<지역> ' + 이름(좌표 없이), 없으면 이름만.
+- <지역>·지역어는 그 지역 site.json에서 읽는다(pipeline/city.py: region·locality, city.kakao_safe_extras·
+  city.kakao_admin_words — 이름 앞에 붙어도 같은 곳으로 보는 도 이름·별칭).
 - 응답 원문은 data/cache/kakao/에 저장한다(git 제외). 다시 실행하면 호출하지 않는다. 실행당 호출 상한 --max-calls.
 - 키는 환경 변수 KAKAO_REST_KEY 또는 --key-file로만 받는다. 오류 메시지에서는 키만 «KEY»로 가리고 공급자
   메시지는 그대로 보인다.
@@ -15,17 +17,17 @@ pipeline/maplinks.py가 이 ID로 링크를 만든다.
 같은 곳일 때만 받아들인다(추측하지 않는다):
 - 이름: 정규화한 이름(공백·문장부호·괄호 제거)이 같거나(괄호 안 이름·alternate_names 포함), 한쪽이 다른 쪽을
   포함하고 남는 부분이
-  · 지역어('군산'·'군산시'·'전북'·'호남'·'본점')면 그대로 통과('호남관세박물관' / '관세박물관'),
+  · 지역어(<지역>·<시 이름>·city.kakao_safe_extras·'본점')면 그대로 통과('○○관세박물관' / '관세박물관'),
   · 업종어·지점명·설명어('식당'·'모텔'·'게스트하우스'·'○○점'·'짬뽕전문점' 등)면 도로명 건물번호(없으면 지번)가
-    같을 때만 통과. 업종어 위치만 다른 이름('호텔파라다이스'/'파라다이스 호텔')과 가운데 '군산'만 다른 이름도 같다,
+    같을 때만 통과. 업종어 위치만 다른 이름('호텔파라다이스'/'파라다이스 호텔')과 가운데 <지역>만 다른 이름도 같다,
   · 그 밖('주차장'·'입구'·'2호점'·'신관'·'대웅전'·'해수욕장' 등 다른 대상을 가리키는 말)이면 탈락.
 - 유형: 우리 숙소가 카카오 음식점·카페이거나 우리 음식점이 카카오 숙박이면 탈락('달' 게스트하우스 ≠ 같은 건물 카페 '달').
 - 거리: 우리 좌표에서 150m 이내. 섬·공원·해수욕장·산·항구처럼 넓은 곳(우리 분류·이름 또는 카카오 분류)은 400m.
 - 주소: 양쪽 모두 도로명 주소가 있으면 도로명과 건물번호가 같아야 한다. 우리 주소가 지번뿐이면 지번
-  (동·리 + 번지)을 비교하고, 넓은 곳이 아니면 달라도 탈락이다. 카카오 주소는 군산시여야 한다.
+  (동·리 + 번지)을 비교하고, 넓은 곳이 아니면 달라도 탈락이다. 카카오 주소는 그 지역(region — 카카오는 '인천 중구 …'처럼 줄여 쓴다) 안이어야 한다.
   예외 하나: 이름이 정확히 같고 우리 연락처(facts.infocenter)의 전화번호가 카카오 전화번호와 같으면 건물번호가
   달라도 받는다('중화반점' 동령길 27 / 29, 둘 다 063-452-4044). 우리 좌표가 없으면 도로명은 같아야 한다.
-- 좌표가 없는 장소: 이름 + 군산 + 건물번호(지번 주소면 번지) 일치(또는 위 전화 예외)가 모두 있어야 한다.
+- 좌표가 없는 장소: 이름 + 그 지역 + 건물번호(지번 주소면 번지) 일치(또는 위 전화 예외)가 모두 있어야 한다.
 - 통과 후보가 여럿이면, 이름이 정확히 같은 후보가 하나뿐이고 그것이 가장 가까울 때만 받는다. 아니면 보류.
 - 우리 장소 둘이 같은 카카오 ID에 붙으면, 본래 이름으로 정확히 맞은 쪽만 남기고 나머지는 보류.
 
@@ -33,9 +35,9 @@ pipeline/maplinks.py가 이 ID로 링크를 만든다.
 checked_at, matched_name, distance_m, basis, url, query}. 이 도구가 전에 쓴 ID가 다시 확인되지 않으면 지우고,
 사람이 넣은 ID(출처 없음)는 그대로 둔다. 결과 전체는 --report(JSON)에 남긴다.
 
-  KAKAO_REST_KEY=... python tools/kakao_places.py --data data/gunsan            # 미리보기(dry-run)
-  python tools/kakao_places.py --data data/gunsan --key-file <파일> --apply      # places.json에 반영
-  python tools/kakao_places.py --data data/gunsan --offline --apply             # 캐시만으로 다시 반영
+  KAKAO_REST_KEY=... python tools/kakao_places.py --data data/incheon            # 미리보기(dry-run)
+  python tools/kakao_places.py --data data/incheon --key-file <파일> --apply      # places.json에 반영
+  python tools/kakao_places.py --data data/incheon --offline --apply             # 캐시만으로 다시 반영
 """
 from __future__ import annotations
 
@@ -66,29 +68,53 @@ DEFAULT_MAX_CALLS = 1500
 NEAR_M, LARGE_M, SEARCH_RADIUS = 150, 400, 1000
 
 # ----------------------------------------------------------------------------- names
-# What may be left over when one normalised name contains the other.
-SAFE_EXTRAS = {"군산", "군산시", "전북", "전북군산", "전라북도군산", "호남", "본점"}
+# What may be left over when one normalised name contains the other: '본점' and the city's own words
+# (safe_extras(): its names and site.json city.kakao_safe_extras).
+SAFE_EXTRAS = {"본점"}
+
+
+def _city():
+    from pipeline import city
+    return city.current()
+
+
+def city_words() -> list[str]:
+    """The city's names, normalised, longest first ('인천광역시', '인천')."""
+    return sorted({norm(x) for x in _city().names if norm(x)}, key=len, reverse=True)
+
+
+def safe_extras() -> set[str]:
+    return SAFE_EXTRAS | set(city_words()) | {norm(x) for x in _city().get("kakao_safe_extras", []) or []}
+
+
+def region_prefix() -> re.Pattern:
+    """A province word (city.kakao_admin_words) and then the city's name at the start of a normalised name."""
+    admins = sorted({norm(x) for x in _city().get("kakao_admin_words", []) or [] if norm(x)}, key=len, reverse=True)
+    names = city_words()
+    if not names:
+        return re.compile(r"(?!)")
+    head = f"(?:{'|'.join(map(re.escape, admins))})?" if admins else ""
+    return re.compile(rf"^{head}(?:{'|'.join(map(re.escape, names))})")
 # Business-type words, descriptors and branch names: the same place only when the building number (or 지번)
 # agrees too ('유락식당' / '유락', '링스모텔' / '링스모텔 장미점', '보천사' / '대한불교조계종 보천사').
 WEAK_WORDS = ("식당", "음식점", "카페", "커피", "펜션", "모텔", "호텔", "관광호텔", "비즈니스호텔", "민박", "게스트하우스",
               "하우스", "스테이", "리조트", "여관", "횟집", "회집", "회센터", "반점", "중화요리", "레스토랑", "베이커리",
               "제과", "제과점", "빵집", "식육식당", "숯불갈비", "갈비", "한우", "꽃게장", "게장", "명가", "본가",
               "농장", "농원", "도예", "공방", "대한불교조계종", "대한불교태고종", "점")
-# a branch: up to five characters + 점 ('경암점', '군산미장점', '비응본점') — but not a kind of shop ('정육점')
+# a branch: up to five characters + 점 ('경암점', '○○미장점', '비응본점') — but not a kind of shop ('정육점')
 BRANCH_RE = re.compile(r"^[가-힣a-z0-9]{1,5}점$")
 NOT_BRANCH = re.compile(r"(정육|음식|편의|제과|할인|철물|판매|대리|직영|소매|도매|잡화|문구|꽃|과일|상|매|분)점$")
 DESCRIPTOR_RE = re.compile(r"^[가-힣]{1,4}전문점$")         # '짬뽕전문점'
 # Generic lodging/food words dropped from both names before a last comparison ('호텔파라다이스' / '파라다이스 호텔',
 # '리츠프라자 관광호텔' / '리츠프라자호텔'): equal cores are a weak match (address must agree).
 GENERIC_WORDS = re.compile(r"관광호텔|비즈니스호텔|호텔|모텔|게스트하우스|펜션|여관|리조트|식당|카페")
-REGION_PREFIX = re.compile(r"^(?:전라북도|전북특별자치도|전북)?(?:군산시|군산)")
 # Leftovers that name a different thing: always rejected.
 BAD_EXTRA = re.compile(
     r"주차장|주차타워|주차|정류장|정류소|승강장|터미널|입구|출구|정문|후문|매표소|화장실|관리사무소|사무소|안내소|"
     r"안내센터|관리동|충전소|atm|\d+호점|신관|별관|\d+관$|분점|직영점|임시|공사|해수욕장|캠핑장|선착장|전망대|"
     r"등산로|산책로|둘레길|광장|쉼터|휴게소|매점|편의점|약국|병원|학교|교회|아파트|빌라|오피스텔")
 
-LARGE_CATEGORIES = {"섬여행", "산", "관광명소 > 공원", "금강", "골프장"}
+LARGE_CATEGORIES = {"섬여행", "산", "관광명소 > 공원", "골프장"}   # + the city's own (site.json city.kakao_large_categories)
 LARGE_NAME = re.compile(r"(공원|해수욕장|해변|섬|산|봉|항|포구|호수|저수지|숲|휴양림|수목원|유원지|방조제|"
                         r"갯벌|습지|관광지|관광단지|생태지|철새조망대|금강하구둑|하굿둑|마을|길|도)$")
 LARGE_KAKAO = re.compile(r"섬|공원|해수욕장|해변|산$|산,|봉우리|항구|항$|포구|저수지|호수|댐|숲|휴양림|수목원|유원지|"
@@ -126,15 +152,15 @@ def _extra_class(extra: str) -> str:
         return "exact"
     if BAD_EXTRA.search(extra):
         return "bad"
-    if extra in SAFE_EXTRAS:
+    if extra in safe_extras():
         return "safe"
 
     def weak(x):
         return x in WEAK_WORDS or DESCRIPTOR_RE.match(x) or (BRANCH_RE.match(x) and not NOT_BRANCH.search(x))
     if weak(extra):
         return "weak"
-    # '군산' + a weak word ('군산점', '군산미장점') stays weak
-    for prefix in ("군산시", "군산"):
+    # the city's name + a weak word ('<city>점', '<city>미장점') stays weak
+    for prefix in city_words():
         if extra.startswith(prefix) and weak(extra[len(prefix):]):
             return "weak"
     return "other"
@@ -147,9 +173,12 @@ def _relation(n: str, k: str) -> dict | None:
     """How our normalised name n relates to the Kakao name k, or None when unrelated."""
     if n == k:
         return {"cls": "exact", "extra": ""}
-    nr, kr = REGION_PREFIX.sub("", n), REGION_PREFIX.sub("", k)
-    if nr == kr and len(nr) >= 2:                      # '군산어린이교통공원' / '군산시 어린이교통공원'
-        return {"cls": "safe", "extra": "군산"}
+    rp = region_prefix()
+    words = city_words()
+    region = words[-1] if words else ""
+    nr, kr = rp.sub("", n), rp.sub("", k)
+    if nr == kr and len(nr) >= 2:                      # '<city>어린이교통공원' / '<city>시 어린이교통공원'
+        return {"cls": "safe", "extra": region}
     if n in k or k in n:
         longer, shorter = (k, n) if n in k else (n, k)
         parts = [x for x in longer.split(shorter, 1) if x]
@@ -159,8 +188,8 @@ def _relation(n: str, k: str) -> dict | None:
         if len(shorter) < 2 and not (cls == "weak" and all(x in WEAK_WORDS for x in parts)):
             return None
         return {"cls": cls, "extra": "+".join(parts)}
-    if n.replace("군산", "") == k.replace("군산", "") and len(n.replace("군산", "")) >= 2:
-        return {"cls": "weak", "extra": "군산(가운데)"}  # '라라코스트 수송점' / '라라코스트 군산수송점'
+    if region and n.replace(region, "") == k.replace(region, "") and len(n.replace(region, "")) >= 2:
+        return {"cls": "weak", "extra": f"{region}(가운데)"}  # 'X 수송점' / 'X <city>수송점'
     nc, kc = GENERIC_WORDS.sub("", nr), GENERIC_WORDS.sub("", kr)
     if nc == kc and len(nc) >= 2 and (nc != nr or kc != kr):
         return {"cls": "weak", "extra": "업종어 위치"}    # '호텔파라다이스' / '파라다이스 호텔'
@@ -186,21 +215,20 @@ def name_relation(ours: list[tuple[str, str]], kakao_name: str) -> dict:
 
 
 # ----------------------------------------------------------------------------- addresses
-_PREFIX = re.compile(r"^(?:전북특별자치도|전라북도|전북)\s*(?:군산시)?\s*")
-
-
 def _addr_body(addr: str | None) -> str:
     s = unicodedata.normalize("NFKC", addr or "")
     s = re.sub(r"\s+", " ", s).strip()
-    s = _PREFIX.sub("", s)
-    s = re.sub(r"^군산시\s*", "", s)
+    s = _city().strip_prefix(s)           # the province / city in front (site.json city.address_prefixes)
+    loc = _city().locality
+    if loc and s.startswith(loc):
+        s = s[len(loc):].lstrip()
     # '축산 1길 8' -> '축산1길 8', '번영로 12번길 3' -> '번영로12번길 3'
     s = re.sub(r"([가-힣])\s+(\d+(?:번)?(?:로|길))", r"\1\2", s)
     return s
 
 
 def parse_road(addr: str | None) -> tuple[str, str] | None:
-    """('동령길', '39') from '전북특별자치도 군산시 동령길 39(장미동)'; None for a 지번 address. A 동 named '…로N가'
+    """('동령길', '39') from '<도> <시> 동령길 39(장미동)'; None for a 지번 address. A 동 named '…로N가'
     ('중앙로1가 12-3') is not a road: the number must end the token."""
     s = _addr_body(addr)
     m = re.search(r"(?:^|\s)([가-힣A-Za-z0-9]+(?:로|길))\s*(\d+(?:-\d+)?)(?=$|[\s(,]|번지)", s)
@@ -255,7 +283,7 @@ def is_large(p: dict, doc: dict | None = None) -> bool:
     """Islands, parks, beaches, mountains, ports and the like: 400 m instead of 150 m."""
     if p.get("kind") != "attraction":
         return False
-    if p.get("category") in LARGE_CATEGORIES:
+    if p.get("category") in LARGE_CATEGORIES | set(_city().get("kakao_large_categories", []) or []):
         return True
     if LARGE_NAME.search(norm(p.get("name"))):
         return True
@@ -291,15 +319,16 @@ def judge(p: dict, doc: dict) -> dict:
     out = {"ok": False, "reason": "", "name": rel, "dist": dist, "addr": addr, "large": large,
            "limit": (LARGE_M if large else NEAR_M) if geo else None,
            "phone": (doc.get("phone") or "") if phone_ok else ""}
-    in_gunsan = "군산" in (doc.get("address_name") or "") + (doc.get("road_address_name") or "")
+    where = _city().region or _city().locality   # Kakao writes the 시도 short ('인천 중구 …'), a 시 in full
+    in_city = bool(where) and where in (doc.get("address_name") or "") + (doc.get("road_address_name") or "")
     if rel["cls"] == "none":
         out["reason"] = "이름 불일치"
     elif rel["cls"] in ("bad", "other"):
         out["reason"] = f"이름 일부만 같음(다른 대상: '{rel['extra']}')"
     elif doc.get("category_group_code") in KIND_CONFLICT.get(p.get("kind"), ()):
         out["reason"] = f"유형 불일치(우리 {p.get('kind')}, 카카오 {doc.get('category_group_name')})"
-    elif not in_gunsan:
-        out["reason"] = "군산시 밖"
+    elif not in_city:
+        out["reason"] = f"{where or '지역'} 밖"
     elif geo and dist is None:
         out["reason"] = "카카오 좌표 없음 — 거리 확인 불가"
     elif geo and dist > out["limit"]:
@@ -318,7 +347,7 @@ def judge(p: dict, doc: dict) -> dict:
 def basis_text(j: dict) -> str:
     rel, addr = j["name"], j["addr"]
     label = "이름 일치" if rel["cls"] == "exact" else f"이름 포함(+{rel['extra']})"
-    if rel["extra"] in ("군산(가운데)", "업종어 위치"):
+    if rel["extra"].endswith("(가운데)") or rel["extra"] == "업종어 위치":
         label = f"이름 일치({rel['extra']} 차이)"
     bits = [label + {"bracket": "·괄호 안 이름", "alternate": "·별칭"}.get(rel["how"], "")]
     if j["dist"] is not None:
@@ -352,7 +381,8 @@ def decide(p: dict, docs: list[dict]) -> dict:
         return {"status": "none", "reason": "검색 결과 없음", "candidates": cands}
     if not passing:
         # the most telling reason: a candidate whose name matched comes first
-        order = ("거리 초과", "건물번호 불일치", "지번 불일치", "이름에 업종", "좌표 없음", "유형 불일치", "군산시 밖",
+        order = ("거리 초과", "건물번호 불일치", "지번 불일치", "이름에 업종", "좌표 없음", "유형 불일치",
+                 f"{_city().region or _city().locality or '지역'} 밖",
                  "이름 일부만", "이름 불일치")
         reasons = [j["reason"] for _, j in judged]
         top = min(reasons, key=lambda r: next((i for i, o in enumerate(order) if r.startswith(o)), 99))
@@ -467,17 +497,19 @@ def queries(p: dict) -> list[str]:
     name = re.sub(r"\s+", " ", p.get("name") or "").strip()
     base = re.sub(r"\s*\(.*?\)\s*", " ", name).strip()
     geo = place_geo(p)
-    qs = [base] if geo else [base if "군산" in base else f"군산 {base}", base]
-    if geo and "군산" not in base:
-        qs.append(f"군산 {base}")
-    if " " in base:  # Kakao's keyword search may miss '금강호 시민공원' but find '금강호시민공원'
+    r = _city().region
+    with_r = lambda q: q if not r or r in q else f"{r} {q}"   # noqa: E731
+    qs = [base] if geo else [with_r(base), base]
+    if geo and r and r not in base:
+        qs.append(f"{r} {base}")
+    if " " in base:  # Kakao's keyword search may miss '○○호 시민공원' but find '○○호시민공원'
         tight = base.replace(" ", "")
-        qs.append(tight if geo or "군산" in tight else f"군산 {tight}")
+        qs.append(tight if geo else with_r(tight))
     for inner in re.findall(r"\(([^)]*)\)", name):
         inner = inner.strip()
         if inner.endswith("점"):   # '현대옥(미장점)': a branch is searched with its name ('현대옥 미장점')
             inner = f"{base} {inner}"
-        qs.append(inner if geo or "군산" in inner else f"군산 {inner}")
+        qs.append(inner if geo else with_r(inner))
     for alt in p.get("alternate_names") or []:
         qs.append(alt.strip())
     out = []
@@ -560,6 +592,8 @@ def read_key(key_file: Path | None) -> str:
 
 def run(data: Path, key: str, max_calls: int, offline: bool, refresh: bool, do_apply: bool, report: Path | None,
         cache_dir: Path, only: set[str] | None = None) -> int:
+    from pipeline import city
+    city.activate_dir(data)   # the region's words for names, addresses and queries
     path = data / "places.json"
     places = json.loads(path.read_text("utf-8"))
     targets = [p for p in places if p.get("status") == "published" and (not only or p["id"] in only)]
@@ -609,7 +643,7 @@ def run(data: Path, key: str, max_calls: int, offline: bool, refresh: bool, do_a
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--data", type=Path, default=Path("data/gunsan"))
+    ap.add_argument("--data", type=Path, default=Path("data/incheon"))
     ap.add_argument("--key-file", type=Path, help="키가 든 파일(없으면 환경 변수 KAKAO_REST_KEY)")
     ap.add_argument("--max-calls", type=int, default=DEFAULT_MAX_CALLS, help="실행당 실제 호출 상한")
     ap.add_argument("--cache", type=Path, default=Path("data/cache/kakao"))

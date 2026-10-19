@@ -46,7 +46,7 @@ def index_errors(data, out, mode="production"):
 def test_index_groups_match_quality_report():
     assert schema.INDEX_GROUPS == qr.GROUPS
     assert schema.INDEX_KIND_GROUPS == qr.KIND_GROUPS
-    assert schema.INDEX_TAUT == qr.TAUT
+    assert qr.TAUT is schema.taut_pattern   # one stock-phrase rule, the active city's (pipeline/city.py)
 
 
 def test_index_status_reasons():

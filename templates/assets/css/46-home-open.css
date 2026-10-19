@@ -13,7 +13,7 @@
                the 3D icon menu (_pic.html.j2 pictures; one row from 1024px, 4 columns on phones).
    3. .hk-conv the conversation (chat.js dock): hidden until the reader asks; its height is fixed here.
    4. the sections below in the reference's parts: sea eyebrow label + big bold title, white cards with a hairline
-      border and radius 24, soft tinted panels instead of colour blocks; 군산 이야기 is light now.
+      border and radius 24, soft tinted panels instead of colour blocks; <city> 이야기 is light now.
    Contrast (00-tokens.css head): ink on g0/white ≥ 15; ink-2 9.36; sea-deep on tint 7.13; white on sea 4.96; sea on
    white 4.96 (eyebrows, figures); ink-3 on white 5.62 / g0 5.22. Targets ≥ 44px below 1024px; visible focus. */
 .hk { display: block; }
@@ -192,7 +192,7 @@ html.js .hk-nojs { display: none; }
   .hk-head { grid-column: 1; grid-row: 1 / span 3; grid-template-columns: 64px minmax(0, 1fr); align-items: start; align-self: center; margin: 0; }
   .hk-mascot img { align-self: start; width: 64px; height: 64px; }
   .hk-h { font-size: 23px; line-height: 1.28; word-break: keep-all; }
-  .hk-hn { white-space: nowrap; }   /* two lines read as the name, then the ask: '군산 여행 도우미에게 / 물어보세요' */
+  .hk-hn { white-space: nowrap; }   /* two lines read as the name, then the ask: '<city> 여행 도우미에게 / 물어보세요' */
   .hk-sub { font-size: 14.5px; }
   .hk-note { grid-column: 2; margin-top: 6px; }
   .hk-box, .hk-nojs, .hk-pills { grid-column: 2; }
@@ -218,7 +218,7 @@ html.js .hk-nojs { display: none; }
 .pg-ko-home .nums-row { padding-inline: clamp(18px, 3vw, 36px); }
 .pg-ko-home .nums .num { color: var(--sea-deep); }
 .pg-ko-home .nums a { color: var(--ink); }
-/* 군산 이야기: light — the black band is gone (ui4_mapping: soft tinted panels instead of loud colour blocks) */
+/* <city> 이야기: light — the black band is gone (ui4_mapping: soft tinted panels instead of loud colour blocks) */
 .pg-ko-home .story { background: linear-gradient(180deg, #fff 0, var(--g0) 100%); color: var(--ink);
   --ink: #172033; --ink-2: #3E4757; --ink-3: #5F6878; --hair: #D8E0EA; --tile: #fff; --bg-2: #F4F7FB; --bg-3: #E7EDF4;
   --link: var(--sea-hi); --red: #C9252C; --focus: var(--sea); }

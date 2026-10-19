@@ -15,7 +15,7 @@
 }
 
 /* ---------------------------------------------------------------- official designations (schema.designations): chips under
-   the answer, each linking to its list (whole labels: '군산맛집(2026, 군산시 지정)'); the '지정' row of the facts card
+   the answer, each linking to its list (whole labels: '○○맛집(2026, ○○시 지정)'); the '지정' row of the facts card
    (label, the list as a link, 확인일); one short chip on a list record */
 .dz { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin: 16px auto 0; max-width: 40em; font-size: 13px; line-height: 1.3; }
 .dz-k { font-weight: 700; color: var(--ink-3); }
@@ -36,7 +36,7 @@
 /* ---------------------------------------------------------------- place: facts card extras */
 .pl-side .need + .need { border-top: 0; padding-top: 0; }
 .withheld { font-size: 14px; color: var(--ink-2); }
-/* a licensed original shown verbatim (sample data only: Gunsan originals are linked, never copied) */
+/* a licensed original shown verbatim (sample data only: a city tourism site's originals are linked, never copied) */
 .orig { margin: 0; padding: 0 0 0 14px; border-left: 3px solid var(--hair); font-size: 15px; line-height: 1.65; color: var(--ink-2); }
 .src-dl dd .note { margin-top: 6px; }
 .pl-src .src-dl a { min-height: 44px; }

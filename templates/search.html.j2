@@ -11,7 +11,7 @@
 <section class="pg-hero band-s list-head" aria-labelledby="h-list">
   <div class="wrap">
     <h1 id="h-list" class="h-list">{{ site.region }}에서 찾기</h1>
-    {{ ui.search_form('q', '', '장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', '예: 짬뽕, 철길, 장미동', true) }}
+    {{ ui.search_form('q', '', '장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', search_hint or '장소 이름·메뉴·동 이름', true) }}
     <div class="results" data-results aria-live="polite"></div>
     <div class="empty-mascot" data-empty-art hidden>{{ mm.pic('mascot-search', 'small', 120) }}</div>
   </div>

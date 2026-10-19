@@ -1,7 +1,7 @@
 """Generate a read-only human review checklist for draft preview pages.
 
-    python tools/make_review_list.py --data data/gunsan --out reports/review_list.md
-    python tools/make_review_list.py --data data/gunsan --base-url https://preview.example
+    python tools/make_review_list.py --data data/incheon --out reports/review_list.md
+    python tools/make_review_list.py --data data/incheon --base-url https://preview.example
 
 Only an explicitly supplied --base-url creates absolute preview links. The
 configured production site_url is never used as an inferred preview address.

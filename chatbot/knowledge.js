@@ -10,8 +10,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-export const SITE = "https://gunsan.webforai.kr";
-
 const table = (obj) => Object.assign(Object.create(null), obj && typeof obj === "object" ? obj : {});
 
 // tokens(): pipeline/chat_index.py tokens() for queries — Hangul / kana / CJK runs as bigrams (one syllable alone as
@@ -75,7 +73,7 @@ function otherNames(d) {
 }
 
 /** A doc's title as the model reads it in search_site and get_pages results: with the place's other names, so a
- *  building and the museum in it read as one place ('구 일본 제18은행 군산지점 (다른 이름 군산근대미술관)'). Link
+ *  building and the museum in it read as one place ('구 ○○은행 지점 (다른 이름 ○○미술관)'). Link
  *  titles the reader sees stay the page's own title. */
 function shownTitle(d) {
   const a = otherNames(d);
@@ -85,7 +83,7 @@ function shownTitle(d) {
 export class Knowledge {
   constructor({ catalog, docs, index }) {
     this.catalog = String(catalog || "");
-    this.site = (docs && docs.site) || SITE;
+    this.site = String((docs && docs.site) || "").replace(/\/+$/, "");   // the public address (site.json site_url)
     this.docs = table(docs && docs.docs);
     this.alias = table(docs && docs.alias);
     // outside addresses the data links to, by their compared form → the address as the data has it (https first)
@@ -101,7 +99,7 @@ export class Knowledge {
       const t = this.docs[k].t;
       this.byTitle.set(t, this.byTitle.has(t) ? null : k);   // a title two pages share names neither
     }
-    // a place's other names find its page too ('군산근대미술관' → 구 일본 제18은행 군산지점), unless a title or another
+    // a place's other names find its page too (a museum's name → the building it is in), unless a title or another
     // place's other name is the same
     const other = new Map();
     for (const k of this.keys) {
@@ -131,9 +129,9 @@ export class Knowledge {
   keyFor(raw) {
     let s = decode(String(raw ?? "").trim()).normalize("NFC");
     if (!s) return "";
-    if (s.startsWith(this.site)) {
+    if (this.site && s.startsWith(this.site)) {
       const rest = s.slice(this.site.length);
-      if (rest && !"/?#".includes(rest[0])) return "";   // gunsan.webforai.kr.example.com is another site
+      if (rest && !"/?#".includes(rest[0])) return "";   // <site host>.example.com is another site
       s = rest || "/";
     }
     if (this.docs[s]) return s;

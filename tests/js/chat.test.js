@@ -12,14 +12,30 @@ import path from "node:path";
 import { test } from "node:test";
 
 import { Knowledge, QUERY_CHARS, loadKnowledge, tokens } from "../../chatbot/knowledge.js";
-import { EFFORT, MODEL, NO_THINKING_NOTE, RULES, TOOLS, buildSystem, continueText, dataBlock, neutralise, questionLang,
-  seoulNow } from "../../chatbot/prompt.js";
-import { LIMITS, allowedOrigins, cleanRequest, clientIp, clientKey, createHandler, createLimiter, normLang, priorAnswer,
-  trimOverlap } from "../../chatbot/server.js";
+import { EFFORT, MODEL, NO_THINKING_NOTE, TOOLS, buildSystem as buildSystemFor, continueText as continueTextFor, dataBlock,
+  neutralise, questionLang, rules, seoulNow } from "../../chatbot/prompt.js";
+import { LIMITS, allowedOrigins as allowedOriginsFor, cleanRequest as cleanRequestFor, clientIp, clientKey,
+  createHandler as createHandlerFor, createLimiter, normLang, priorAnswer as priorAnswerFor, trimOverlap }
+  from "../../chatbot/server.js";
+import { loadSite, siteFrom } from "../../chatbot/site.js";
 
+// The test site: a Gunsan-shaped fixture (the knowledge below is the sample's kind of data). The assistant reads its
+// site from public/chat/site.json (chatbot/site.js); here every call gets this one.
 const SITE = "https://gunsan.webforai.kr";
-// the public address until 2026-10-14: its pages go to SITE (vercel.json 308), /api/chat/ there stays
+// a previous public address: its pages go to SITE (vercel.json 308), /api/chat/ there stays (site.json city.chat.origins)
 const PREVIOUS = "https://all-about-gunsan.vercel.app";
+// <project>-<scope>.vercel.app shows the production deployment (Vercel 'Generated URLs') and is in no system variable
+const ALIAS = "https://all-about-gunsan-hoon7624g-webs-projects.vercel.app";
+const SITE_CFG = siteFrom({ url: SITE, name: "군산 여행의 모든 것", origins: [PREVIOUS, ALIAS],
+  city: { ko: "군산", en: "Gunsan", ja: "群山", "zh-Hans": "群山", "zh-Hant": "群山", de: "Gunsan", fr: "Gunsan", es: "Gunsan",
+    ru: "Кунсан" } });
+const RULES = rules(SITE_CFG);
+const buildSystem = (catalog, opts) => buildSystemFor(catalog, { ...opts, site: SITE_CFG });
+const continueText = (tail, lang) => continueTextFor(tail, lang, SITE_CFG);
+const allowedOrigins = (env) => allowedOriginsFor(env, SITE_CFG);
+const cleanRequest = (body) => cleanRequestFor(body, SITE_CFG);
+const priorAnswer = (text) => priorAnswerFor(text, SITE);
+const createHandler = (deps) => createHandlerFor({ site: SITE_CFG, ...deps });
 const QUESTION = "선유도 가는 법 알려 줘 (비밀 문장 7781)";
 
 // ------------------------------------------------------------------ a small knowledge base (the Python layout)
@@ -485,7 +501,7 @@ test("rules: corrections only on new evidence, exact source addresses, dates by 
     "the catalog's '다른 이름' and the page's own lines say which place is meant",
     "read in this turn, with get_pages, the page the earlier answer linked for it",
     "if you have not read it, or it confirms the earlier answer, leave the earlier answer alone",
-    "never just '확인일'", "a fee category (어린이, 청소년, 경로, 군산시민) that the page gives no age or rule for",
+    "never just '확인일'", "a fee category (어린이, 청소년, 경로, 시민) that the page gives no age or rule for",
     "that exact address next to the value", "never say an address is missing before you have read the page",
     "say which value is the safe one to plan around", "출처 확인일", "페이지 검수", "시행일",
     // the way back from a stop on the way out (the review: '선유도 21:15' read as a time one cannot get on)
@@ -728,9 +744,6 @@ const PROD = { VERCEL_ENV: "production", VERCEL_URL: "gunsan-abc123-team.vercel.
   VERCEL_PROJECT_PRODUCTION_URL: "gunsan.webforai.kr" };
 const PREVIEW = { VERCEL_ENV: "preview", VERCEL_URL: "gunsan-def456-team.vercel.app",
   VERCEL_BRANCH_URL: "gunsan-git-local-harden-team.vercel.app", VERCEL_PROJECT_PRODUCTION_URL: "gunsan.webforai.kr" };
-// <project>-<scope>.vercel.app shows the production deployment (Vercel 'Generated URLs') and is in no system variable
-const ALIAS = "https://all-about-gunsan-hoon7624g-webs-projects.vercel.app";
-
 async function statusOf(env, opts) {
   const { handle } = setup([textRound("네")], { env });
   return (await handle(post(ask(), opts))).status;
@@ -1214,4 +1227,30 @@ test("the pinned SDK exposes what server.js calls", { skip: false }, async (t) =
   assert.ok(proto);
   assert.equal(typeof sdk.APIError, "function");
   assert.ok(new sdk.BadRequestError(400, undefined, "x", new Headers()).status === 400);
+});
+
+// ------------------------------------------------------------------ the site comes from the build (chatbot/site.js)
+test("site: public/chat/site.json names the site and the city; nothing city-specific is built in", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "chat-site-"));
+  assert.deepEqual(loadSite(dir), { url: "", name: "", city: {}, origins: [] });   // no file: no address, no city
+  await writeFile(path.join(dir, "site.json"), JSON.stringify({ url: "https://travel.example.kr/", name: "테스트 여행",
+    city: { ko: "테스트시", en: "Testcity", ru: "" }, origins: ["https://old.example.kr", "http://plain.example", "evil/x"] }));
+  const site = loadSite(dir);
+  assert.deepEqual(site, { url: "https://travel.example.kr", name: "테스트 여행", city: { ko: "테스트시", en: "Testcity" },
+    origins: ["https://old.example.kr"] });
+  const r = rules(site);
+  assert.ok(r.startsWith("You are 테스트시 여행 도우미 (the Testcity travel helper), the assistant of the travel website "
+    + "테스트 여행 (https://travel.example.kr)"), r.slice(0, 160));
+  assert.ok(r.includes("Stay on travel in Testcity and this site") && r.includes("[page name](https://travel.example.kr/places/"));
+  for (const word of ["군산", "Gunsan", "gunsan", "群山", "Кунсан"]) {
+    assert.ok(!rules({}).includes(word) && !r.includes(word), word);
+    for (const lang of ["ko", "en", "ja", "zh-Hans", "zh-Hant", "de", "fr", "es", "ru"]) {
+      assert.ok(!continueTextFor("x", lang, site).includes(word) && !continueTextFor("x", lang, {}).includes(word), lang);
+    }
+  }
+  assert.match(continueTextFor("x", "en", site), /travel in Testcity/);
+  assert.match(continueTextFor("x", "ru", site), /Testcity/);              // no Russian name: the English one
+  assert.deepEqual([...allowedOriginsFor({}, site)], ["https://travel.example.kr", "https://old.example.kr"]);
+  assert.deepEqual([...allowedOriginsFor({}, loadSite(path.join(dir, "none")))], []);
+  assert.equal(priorAnswerFor("[a](https://travel.example.kr/places/%EA%B0%80/)", site.url), "[a](/places/가/)");
 });

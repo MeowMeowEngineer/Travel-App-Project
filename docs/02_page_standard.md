@@ -49,7 +49,7 @@
 
 | 필드 | 설명 | 예 |
 |---|---|---|
-| `id` | 불변 고유 ID | `gunsan-0001` |
+| `id` | 불변 고유 ID | `incheon-0001`, TourAPI에서 새로 들어온 곳은 `tourapi-<contentid>` |
 | `slug` | URL. 임포트 때 한 번 정하고 공개 후 바꾸지 않음 | `경암동-철길마을` |
 | `name`, `kind` | 명칭, 유형 `attraction`/`stay`/`food` | |
 | `category`, `themes` | 원본 분류, 테마 slug 목록 | `["alleys-culture"]` |
@@ -58,9 +58,9 @@
 | `summary` | 블록1 (우리 작성) | |
 | `facts` | 블록2 값(출처 값 그대로). 키: address, usetime, usetime_restdate(영업시간·정기휴일이 한 칸인 출처), restdate, usefee, parking, parking_seats(주차·좌석이 한 칸인 출처), parkingfee, spendtime, checkin, checkout, menu, infocenter, homepage, babycarriage, pet, expagerange, useseason, accessible_parking, wheelchair, accessible_toilet, accessible_route | |
 | `facts_source` | `{provider, contentid, checked_at}` — **정보 확인일** | |
-| `fact_sources` | 항목별 출처 `{키: {provider, checked_at, url?, contentid?, confirmed_by?, raw?, note?}}`. 표기를 고친 값(도 이름 보정, 붙어 있던 전화번호 분리)은 원래 값을 `raw`, 사유를 `note`에 남긴다 | `{"address": {"raw": "군산시 미장남로 111-5(미장동)", …}}` |
+| `fact_sources` | 항목별 출처 `{키: {provider, checked_at, url?, contentid?, confirmed_by?, raw?, note?}}`. 표기를 고친 값(도 이름 보정, 붙어 있던 전화번호 분리)은 원래 값을 `raw`, 사유를 `note`에 남긴다 | `{"address": {"raw": "○○시 ○○로 111-5(○○동)", …}}` |
 | `fact_alternatives` | 다른 출처의 값 `{키: [{value, provider, checked_at, relation?}]}`. `relation: "also"`는 보완 값(둘째 메뉴·안내소 전화), 없으면 충돌 값 | |
-| `designations[]` | 공식 지정 목록(군산맛집·모범음식점·백년가게·향토음식점·짬뽕 특화거리·착한가격업소·안심식당) `{type, label, year, source_name, url, checked_at, match: {row_ref, confidence, basis}, confirmed_by?}`. 매칭 신뢰도 high·medium이고 `needs_check`가 없을 때만 화면에 나간다(`schema.designations`). 장소 첫 화면 칩(목록 링크)·방문 전 확인의 '지정' 줄(목록 링크·확인일)·목록 칩 하나·검색·llms.txt·JSON-LD `award`. 색인 기준에는 넣지 않는다 | `{"type": "gunsan_matjip", "label": "군산맛집(2026, 군산시 지정)", …}` |
+| `designations[]` | 공식 지정 목록(시가 운영하는 목록 — site.json `city.designations` — 과 모범음식점·백년가게·향토음식점·착한가격업소·안심식당) `{type, label, year, source_name, url, checked_at, match: {row_ref, confidence, basis}, confirmed_by?}`. 매칭 신뢰도 high·medium이고 `needs_check`가 없을 때만 화면에 나간다(`schema.designations`). 장소 첫 화면 칩(목록 링크)·방문 전 확인의 '지정' 줄(목록 링크·확인일)·목록 칩 하나·검색·llms.txt·JSON-LD `award`. 색인 기준에는 넣지 않는다 | `{"type": "mobeom", "label": "모범음식점(○○구 지정)", …}` |
 | `geo` | `{lat, lng, source}` | |
 | `map_ids` | `{naver_place_id, google_place_id}` — 있으면 정확 링크 | |
 | `official` | `{source_url, visitkorea_url, homepage}` | |
@@ -73,7 +73,7 @@
 | `reviewed_at`, `reviewer` | **검수일**, 검수자 | |
 | `locks` | 자동 보강이 덮어쓰지 않을 필드 | `["facts"]` |
 | `fact_conflicts` | 같은 출처 안에서 값이 서로 다른 항목 `{키: 설명}`. 그 키는 facts에 넣지 않고 화면에 사유만 표시 | `{"usetime": "상세 정보표 …와 본문 …이 다름"}` |
-| `duplicate_of` | 같은 장소를 다른 게시판에서 다시 수집한 기록이면 대표 기록의 `id`. 빌드에서 제외 | `gunsan-433883` |
+| `duplicate_of` | 같은 장소를 다른 게시판에서 다시 수집한 기록이면 대표 기록의 `id`. 빌드에서 제외 | `incheon-0042` |
 | `tourapi` | `{contentid, contenttypeid, match_score, overview, modifiedtime}` (overview는 작성 참고용, 화면 미표시) | |
 
 ### 4-2. 가이드 `guides.json`
@@ -93,7 +93,7 @@
 
 1. **정확한 장소 링크 우선**: 구글은 `query_place_id`/`destination_place_id`, 네이버는 `map.naver.com/p/entry/place/{ID}`, 카카오는 좌표 링크. 없으면 검색 링크를 쓰고 라벨에 "(검색)"을 붙인다.
 2. **역할 없는 링크 금지**: 무관한 기관·다른 지역 사이트 일괄 링크, 상호 링크 교환("링크해 주면 링크해 주겠다")은 하지 않는다.
-3. **공식 사이트를 우리가 링크하는 것 ≠ 공식 기관이 우리를 인정하는 것**. 대외 표현에서 구분한다. 공신력 신호는 '받는 링크'(예: 군산시 관련 사이트 등재)에서 생긴다.
+3. **공식 사이트를 우리가 링크하는 것 ≠ 공식 기관이 우리를 인정하는 것**. 대외 표현에서 구분한다. 공신력 신호는 '받는 링크'(예: 시 관련 사이트 등재)에서 생긴다.
 4. 제3자 콘텐츠(네이버 플레이스·블로그·인스타·리뷰)는 복제하지 않고 링크만.
 5. 지도·공식 안내·숙소·음식점 링크에는 `data-track` 속성을 붙여 GA4 이벤트로 측정한다(6절).
 
@@ -113,13 +113,13 @@
 | 코스 | `TouristTrip`(`itinerary` = 경유지 `ItemList`, 연결된 경유지는 장소 `@id`, `isBasedOn` = 원문 코스 URL) |
 | 행사 | 회차 묶음 페이지의 최신 회차 하나만 `Event`(시작·종료일, 장소·주소, 주최는 화면에 있을 때, `isAccessibleForFree`는 요금이 정확히 "무료"일 때, `eventStatus`·이미지 없음) |
 | 목록·테마 | `WebPage` + 카드 순서대로 절대 URL `ItemList` |
-| 홈 | `WebSite` + `Organization`(url·sameAs는 `site.operator`에 사람이 채운 값만) + 군산 노드 `["City","TouristDestination"]`(`@id` …/#gunsan, `includesAttraction`). 장소의 `containedInPlace`가 이 노드를 가리킨다 |
+| 홈 | `WebSite` + `Organization`(url·sameAs는 `site.operator`에 사람이 채운 값만) + 도시 노드 `["City","TouristDestination"]`(`@id` …/#city, `includesAttraction`). 장소의 `containedInPlace`가 이 노드를 가리킨다 |
 
 **구조화 데이터 = 화면**: 모든 문자열 값은 화면 본문이나 `<title>`에 보여야 하고(앞 25자 비교, 날짜는 본문 또는 `<time datetime>`, 전화는 국내 표기로 비교), `validate.jsonld_visibility`가 모든 페이지에서 오류로 막는다. 참/거짓 값은 화면의 해당 칸(`<dt>`/`<dd>`)과 맞아야 한다: `isAccessibleForFree`는 요금 칸 값이 정확히 "무료"(주차요금 칸은 해당 없음), `amenityFeature`·`petsAllowed`는 주차·유모차 대여·반려동물 동반 칸 값이 같은 참/거짓, 영업시간의 opens·closes는 화면에 그 시각이 있어야 한다. 타입이 있는 값은 출처 문자열이 정확히 맞을 때만: `isAccessibleForFree`(요금이 "무료", 다른 출처 충돌 없음), `openingHoursSpecification`(`HH:MM~HH:MM` + `연중무휴`/`매주 X요일`, 충돌 없음, 시각은 00:00~23:59 — `00:00~24:00` 같은 값과 그 밖은 `additionalProperty`), `amenityFeature`·`petsAllowed`(가능/불가·없음 같은 예/아니요 값), `telephone`(`+82-…`, 번호가 여럿이면 배열). 주소는 도 이름만 `전북특별자치도`로 바꿔 보여 주고(`textutil.display_address`) `PostalAddress`를 도·시·나머지로 나눈다. 여러 장소가 함께 쓰는 홈페이지(시 관광 포털 등)는 `sameAs`에 넣지 않는다. 평점·리뷰 수는 넣지 않는다.
 
 ## 8. 메타 태그
 
-- title: `{군산이 들어간 이름} {있는 정보 라벨 최대 3개} | 군산 여행` — 예 `군산근대역사박물관 이용시간·쉬는 날·요금 | 군산 여행`. 라벨은 화면에 있는 핵심 정보(이용시간·영업시간·쉬는 날·요금·주차·체크인·메뉴)에서만, 없으면 `방문 정보·지도`. 코스: `군산 {이름}({N코스}) — 경유지 n곳 | 군산 여행 코스`
+- title: `{지역 이름이 들어간 이름} {있는 정보 라벨 최대 3개} | {site_name}` — 예 `인천 ○○박물관 이용시간·쉬는 날·요금 | 인천 여행의 모든 것`. 라벨은 화면에 있는 핵심 정보(이용시간·영업시간·쉬는 날·요금·주차·체크인·메뉴)에서만, 없으면 `방문 정보·지도`. 코스: `{지역} {이름}({N코스}) — 경유지 n곳 | {site_name}`
 - description: 요약 첫 문장(40자 미만이면 다음 문장까지) + 다른 출처와 충돌 없는 짧은(30자 이하) 사실 최대 2개, 160자 이하. 상투 꼬리 문장 없음
 - og:image: 장소는 공공누리 1유형 사진 우선(3유형만 있으면 첫 사진 — 미리보기 자르기 허용 여부는 사람 결정), 목록·테마·가이드는 사진 있는 첫 카드, 코스는 표지, 홈은 첫 대표 사진
 - `canonical`, `og:*`(locale ko_KR), `geo.position`·`ICBM`(좌표 있을 때), `html lang="ko"`

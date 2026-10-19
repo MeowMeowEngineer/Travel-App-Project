@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from pipeline import art, present
+from pipeline import art, city, present
 from pipeline import locales as LC
 from pipeline.build import ART_SLOT_CSS, VIDEO_TOPIC_ART, VIDEO_TOPICS, build, make_env, site_css, slugify
 from pipeline.validate import validate
@@ -52,8 +52,9 @@ def _doc_slots() -> dict[str, tuple[str, str]]:
 
 def test_slot_name_tables_cover_their_data():
     assert list(VIDEO_TOPIC_ART) == list(VIDEO_TOPICS)
-    assert set(present.REGION_ART) == {name for name, _ in present.REGIONS} | {present.FAR_LABEL}
-    for slug in present.REGION_ART.values():
+    C = city.current()   # the sample city's 권역 (data/sample/site.json city.travel_regions)
+    assert set(present.region_art()) == {r.name for r in C.regions} | {C.far_label}
+    for slug in present.region_art().values():
         assert art.known_slot(f"area.{slug}")
     for name, words in (("saemangeum-and-bieung", "area"), ("travel-course", "videos.head"), ("13", "events.month"),
                         ("en", "og"), ("course", "home.card"), ("empty", "chat"), ("season.spring", "home")):
@@ -252,7 +253,7 @@ PICTURES = {   # id: (slot, w, h, langs, extra fields)
     "en-camp-test": ("en.guide.banner.guide-sample-1", 1536, 1024, ["en"], {"text": ["A car-free day trip"]}),
     "about-test": ("about.head", 1536, 1024, ["ko", "en", "ja"], {}),
 }
-REGIONS = (("원도심", "gyeongam-railroad-village"), ("은파", "eunpa-lake-park"))
+REGIONS = (("원도심", "gyeongam-railroad-village"), ("은파", "eunpa-lake-park"))   # 권역 anchors of the test world
 
 
 def _entry(art_id: str) -> dict:
@@ -275,6 +276,8 @@ def _write_world(data: Path) -> None:
     from test_intl_site import NAME, PROSE, QUESTION, WORD, write_translations
     site = json.loads((data / "site.json").read_text("utf-8"))
     site["operator"]["contact"] = "corrections@test.invalid"      # the sample's contact is a Korean placeholder
+    arts = {r["name"]: r.get("art", "") for r in site["city"]["travel_regions"]["regions"]}
+    site["city"]["travel_regions"]["regions"] = [{"name": n, "anchor": a, "art": arts.get(n, "")} for n, a in REGIONS]
     (data / "site.json").write_text(json.dumps(site, ensure_ascii=False), "utf-8")
     places = json.loads((data / "places.json").read_text("utf-8"))
     for p in places:
@@ -330,7 +333,6 @@ def world(tmp_path_factory):
     (data / "art.json").write_text(json.dumps({"images": {k: _entry(k) for k in PICTURES}}, ensure_ascii=False), "utf-8")
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(art, "ART_DIR", art_dir)
-        mp.setattr(present, "REGIONS", REGIONS)
         build(data, tmp / "with", "sample")
         errors, warnings, _ = validate(data, tmp / "with", "sample")
         problems = art.data_problems(data)

@@ -2,7 +2,8 @@
 // 3.10). createHandler(deps) takes everything it uses from outside — {client, knowledge, env, now, log, limiter} — so
 // the tests run it with a fake client that replays scripted stream events; the deployed function (api/chat.js) passes
 // nothing and gets the real Anthropic client (created on first use, so without ANTHROPIC_API_KEY it answers 503 at
-// once) and the knowledge bundled from public/chat/.
+// once), the knowledge bundled from public/chat/ and the site it answers for (public/chat/site.json, chatbot/site.js:
+// its public address, name and the city's names — nothing city-specific is written in this file).
 //
 // One question = one request: the browser sends the conversation (it keeps it in sessionStorage; nothing is stored
 // here). The model answers from the cached catalog and two tools in a manual streaming loop (the Claude API skill's
@@ -25,11 +26,12 @@
 // rate-limit rule and the Anthropic Console spend limit.
 import { isIP } from "node:net";
 
-import { QUERY_CHARS, SITE, defaultKnowledge } from "./knowledge.js";
+import { QUERY_CHARS, defaultKnowledge } from "./knowledge.js";
 import {
   EFFORT, LANGS, MODEL, NO_THINKING_NOTE, TOOLS, TOOLS_PLAIN, buildSystem, continueText, dataBlock, errorText, questionLang,
   neutralise, statusText,
 } from "./prompt.js";
+import { loadSite } from "./site.js";
 
 export const LIMITS = {
   bodyBytes: 64 * 1024,
@@ -81,23 +83,15 @@ function json(status, body, headers = {}) {
 // ------------------------------------------------------------------ request checks
 const LOCAL = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const DAY = 24 * 60 * 60 * 1000;
-// The project's production alias '<project>-<scope>.vercel.app' (Vercel 'Generated URLs': it "will point to the
-// production deployment"; in the project's domain list, 2026-10-13): no system variable carries it, and the project
-// name and team are fixed.
-const PRODUCTION_ALIASES = ["https://all-about-gunsan-hoon7624g-webs-projects.vercel.app"];
-// The previous public address (until the move to SITE, 2026-10-14): vercel.json sends its pages to SITE (308) but
-// leaves /api/chat/ there, so a page still open on it keeps its assistant — a POST redirected to another origin would
-// arrive with Origin 'null'. gunsan-seven.vercel.app is not needed: every page there has been redirected since
-// 2026-10-09, before the assistant existed.
-const PREVIOUS_SITES = ["https://all-about-gunsan.vercel.app"];
-
 /** The origins a page may ask from — configuration only, never the request's own Host or X-Forwarded-Host (a proxy
- *  in front of this function sets those): the public site, its previous address and the project's production alias,
- *  and this deployment's own addresses from Vercel's system environment variables (host names without https://):
- *  VERCEL_URL (this deployment), VERCEL_BRANCH_URL (its Git branch address) and VERCEL_PROJECT_PRODUCTION_URL (the
- *  production domain; set in previews too). */
-export function allowedOrigins(env = {}) {
-  const out = new Set([SITE, ...PREVIOUS_SITES, ...PRODUCTION_ALIASES]);
+ *  in front of this function sets those): the public site (site.url) and the further origins the owner lists
+ *  (site.origins — a previous address whose pages redirect but whose /api/chat/ stays, the project's Vercel production
+ *  alias '<project>-<scope>.vercel.app', which no system variable carries), and this deployment's own addresses from
+ *  Vercel's system environment variables (host names without https://): VERCEL_URL (this deployment),
+ *  VERCEL_BRANCH_URL (its Git branch address) and VERCEL_PROJECT_PRODUCTION_URL (the production domain; set in
+ *  previews too). */
+export function allowedOrigins(env = {}, site = {}) {
+  const out = new Set([site.url, ...(site.origins || [])].filter(Boolean));
   for (const name of ["VERCEL_URL", "VERCEL_BRANCH_URL", "VERCEL_PROJECT_PRODUCTION_URL"]) {
     const host = String(env[name] || "").trim().toLowerCase();
     if (/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host)) out.add(`https://${host}`);
@@ -110,7 +104,7 @@ export function allowedOrigins(env = {}) {
  *  or a LAN address (vercel dev opened from a phone on the same Wi-Fi), that is an Origin whose host is an IP
  *  address and the very host the request was sent to. Never a host name the request names for itself: a
  *  DNS-rebinding page (its name pointed at the developer's machine) sends its own name as both Origin and Host. */
-export function originAllowed(request, env = {}) {
+export function originAllowed(request, env = {}, site = {}) {
   if ((request.headers.get("sec-fetch-site") || "").toLowerCase() === "cross-site") return false;
   const origin = request.headers.get("origin");
   if (!origin) return false;
@@ -120,7 +114,7 @@ export function originAllowed(request, env = {}) {
   } catch {
     return false;
   }
-  if (allowedOrigins(env).has(o.origin)) return true;
+  if (allowedOrigins(env, site).has(o.origin)) return true;
   if (env.VERCEL_ENV === "production" || !/^https?:$/.test(o.protocol)) return false;
   if (LOCAL.has(o.hostname)) return true;
   return isIP(o.hostname.replace(/^\[(.*)\]$/, "$1")) !== 0 && o.host === requestHost(request);
@@ -264,13 +258,14 @@ export function normLang(v) {
   return LANGS.find((l) => l.toLowerCase() === s) || alias[s] || LANGS.find((l) => l === s.split("-")[0]) || "ko";
 }
 
-// a link into this site as the browser checked it (https://gunsan.webforai.kr/places/%EA…/): read back as the
-// page path (/places/근대역사박물관/) — the path the catalog gives, a third of the length
-const SITE_URL = new RegExp(`${SITE.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}(/[^\\s)\\]>"'<]*)`, "g");
+// a link into this site as the browser checked it (https://<site>/places/%EA…/): read back as the page path
+// (/places/장소/) — the path the catalog gives, a third of the length
 const MD_LINK = /\[[^\]\n]{1,200}\]\(\s*<?[^)\s>]+>?\s*\)/g;
 
-function readablePaths(text) {
-  return text.replace(SITE_URL, (all, p) => {
+function readablePaths(text, siteUrl) {
+  if (!siteUrl) return text;
+  const rx = new RegExp(`${siteUrl.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}(/[^\\s)\\]>"'<]*)`, "g");
+  return text.replace(rx, (all, p) => {
     try {
       return decodeURI(p);
     } catch {
@@ -282,8 +277,8 @@ function readablePaths(text) {
 /** An earlier answer as the model reads it: site links as paths, cut to LIMITS.assistantChars — and when the cut drops
  *  links, the links of the dropped part follow the cut (within the same length), so the pages the answer used stay
  *  readable with get_pages. */
-export function priorAnswer(text) {
-  const s = readablePaths(text);
+export function priorAnswer(text, siteUrl = "") {
+  const s = readablePaths(text, siteUrl);
   const chars = [...s];
   const cap = LIMITS.assistantChars;
   if (chars.length <= cap) return s;
@@ -312,7 +307,7 @@ function partialAnswer(text) {
  *  last question, and the server adds the request to go on (prompt.js continueText) as the last, user, message;
  *  cont.partial is that cut answer. `language` is the language the question is written in (prompt.js questionLang),
  *  the one every request to go on is written in. */
-export function cleanRequest(body) {
+export function cleanRequest(body, site = {}) {
   if (!body || typeof body !== "object" || !Array.isArray(body.messages)) throw new HttpError(400, "bad_request");
   const cont = body.continue === true;
   const merged = [];
@@ -343,7 +338,7 @@ export function cleanRequest(body) {
       const chars = [...m.content];
       content = chars.length > LIMITS.userChars ? `${chars.slice(0, LIMITS.userChars).join("")} …` : m.content;
     } else {
-      content = cont && i === messages.length - 1 ? partialAnswer(m.content) : priorAnswer(m.content);
+      content = cont && i === messages.length - 1 ? partialAnswer(m.content) : priorAnswer(m.content, site.url);
     }
     return { role: m.role, content: neutralise(content) };
   });
@@ -353,7 +348,7 @@ export function cleanRequest(body) {
   if (cont) {
     partial = messages[messages.length - 1].content;
     const chars = [...partial];
-    messages.push({ role: "user", content: neutralise(continueText(chars.slice(-160).join(""), language)) });
+    messages.push({ role: "user", content: neutralise(continueText(chars.slice(-160).join(""), language, site)) });
   }
   let page = typeof body.page === "string" ? body.page.trim() : "";
   page = page.startsWith("/") && page.length <= LIMITS.pageChars ? page.split(/[?#]/)[0] : "";
@@ -377,7 +372,7 @@ export function trimOverlap(prev, next) {
     if (frag && next.startsWith(frag[1]) && next.length > frag[1].length) rest = next.slice(frag[1].length);
   }
   if (rest && /[.!?。]$/u.test(tail) && !/^\s/u.test(rest)) {
-    // not a sentence end: a cut inside an address ('(https://www.gunsan.go.' + 'kr/…', '…view/305285?' + 's_idx=2)')
+    // not a sentence end: a cut inside an address ('(https://www.example.go.' + 'kr/…', '…view/305285?' + 's_idx=2)')
     // or a decimal number ('약 12.' + '5km')
     if (/(?:https?:\/\/|\]\()[^\s)]*$/u.test(tail)) return rest;
     if (/^(?:[-*•]\s|\d+\.\s|#{1,6}\s|\|)/u.test(rest)) return `\n${rest}`;
@@ -412,11 +407,11 @@ function apiStatus(err) {
 }
 
 /** Runs one question to the end, writing SSE events through send(). Returns the log record's numbers. */
-export async function answer({ client, kb, messages, lang, page, send, signal, now, cont = null, language = "" }) {
+export async function answer({ client, kb, messages, lang, page, send, signal, now, cont = null, language = "", site = {} }) {
   // the language a request to go on is written in: the question's (cleanRequest), else the interface's
   const qlang = language || lang;
   const t0 = Date.now();
-  const system = buildSystem(kb.catalog, { now, page: kb.describePage(page), lang });
+  const system = buildSystem(kb.catalog, { now, page: kb.describePage(page), lang, site });
   const convo = messages.map((m) => ({ role: m.role, content: m.content }));
   const rec = { rounds: 0, tools: [], in: 0, out: 0, cache_read: 0, cache_write: 0, stop: "", fallback: false,
     cont: !!cont, rescue: false, more: false };
@@ -551,7 +546,7 @@ export async function answer({ client, kb, messages, lang, page, send, signal, n
       rec.more = true;
       more = true;
       convo.push({ role: "assistant", content: message.content });
-      convo.push({ role: "user", content: neutralise(continueText([...(before + text)].slice(-160).join(""), qlang)) });
+      convo.push({ role: "user", content: neutralise(continueText([...(before + text)].slice(-160).join(""), qlang, site)) });
       pending = "";
       call -= 1;   // not a tool round
       continue;
@@ -608,6 +603,7 @@ export function createHandler(deps = {}) {
   const log = deps.log ?? ((rec) => console.log(JSON.stringify(rec)));
   const limiter = deps.limiter ?? createLimiter();
   const knowledge = deps.knowledge ?? defaultKnowledge;
+  const site = deps.site ?? loadSite();   // the public address, the site's and the city's names (chatbot/site.js)
   let client = deps.client ?? null;
 
   async function getClient() {
@@ -625,7 +621,7 @@ export function createHandler(deps = {}) {
       done("method");
       return json(405, { code: "method_not_allowed" }, { Allow: "POST" });
     }
-    if (!originAllowed(request, env)) {
+    if (!originAllowed(request, env, site)) {
       done("forbidden_origin");
       return json(403, { code: "forbidden_origin" });
     }
@@ -644,7 +640,7 @@ export function createHandler(deps = {}) {
     if (!gate.ok) return refuse(gate);
     let req;
     try {
-      req = cleanRequest(await readBody(request, LIMITS.bodyBytes));
+      req = cleanRequest(await readBody(request, LIMITS.bodyBytes), site);
     } catch (err) {
       // anything else a body can make fail here (the client gone mid-upload, a value no check foresaw) is still the
       // request's fault: 400, never an unhandled error — and never counted against anyone's limit
@@ -680,7 +676,7 @@ export function createHandler(deps = {}) {
           controller.enqueue(enc.encode(`data: ${JSON.stringify(ev)}\n\n`));
         };
         try {
-          const rec = await answer({ client: api, kb, ...req, send, signal: ac.signal, now: now() });
+          const rec = await answer({ client: api, kb, ...req, send, signal: ac.signal, now: now(), site });
           done(rec.status, { rounds: rec.rounds, tools: rec.tools, in: rec.in, out: rec.out,
             cache_read: rec.cache_read, cache_write: rec.cache_write, stop: rec.stop, fallback: rec.fallback || undefined,
             cont: rec.cont || undefined, rescue: rec.rescue || undefined, more: rec.more || undefined,

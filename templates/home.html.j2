@@ -16,7 +16,7 @@
     head, one question box with one button '물어보기', without JS the form searches; the site search itself is in the
     header), the recommended questions (ask.json) as '#' tags, and the 3D icon menu (present.home_services, pictures
     by ID through _pic.html.j2). The conversation opens right under the card (askm.panel, chat.js dock mode). Below: 목적별 가이드 → 대표 장소 → 다가오는 행사
-    → 다섯 여행 권역 → 군산 이야기 (light now) → 섬 갤러리 → 공식 코스 → 영상 → 공식 안내, restyled with the
+    → 여행 권역 → <city> 이야기 (light now) → 갤러리 → 공식 코스 → 영상 → 공식 안내, restyled with the
     reference's parts (css/46-home-open.css). Every figure comes from present.home_vm (h) or the list counts; a section
     whose data is missing is left out. Nothing on the first screen starts hidden. -#}
 {% set SLIDE_SIZES = '(min-width: 1024px) 640px, calc(100vw - 32px)' %}
@@ -28,7 +28,7 @@
 {% set N = h.news|length %}
 {% set ASK = ask_starters is defined and ask_starters is not none %}
 <div class="hk"{% if ASK %} data-chat-dock{% endif %}>
-{#- the opening photo (owner 2026-10-14: '고화질 실사 배경'): media.HOME_COVER, an official KOGL-1 photo (cropping allowed,
+{#- the opening photo (owner 2026-10-14: '고화질 실사 배경'): the city's configured cover (site.json city.home.photos.cover), an official KOGL-1 photo (cropping allowed,
     CLAUDE.md 3.4), full-bleed behind the opening under a navy scrim, its credit at the bottom right -#}
 {% set cv = h.cover if h.cover and h.cover.type == 1 and h.cover.avif else none %}
 <section class="ho{% if cv %} ho-ph{% endif %}" aria-labelledby="h-home">
@@ -153,7 +153,7 @@
 </section>
 {% endif %}
 
-{# 다섯 여행 권역: counts by 권역, the rule that drew them, and the anchors on a small map #}
+{# 여행 권역: counts by 권역, the rule that drew them, and (anchor rule) the anchors on a small map #}
 {% if h.regions2 %}
 {% set T.i = T.i + 1 %}
 <section class="sec sec-reg{{ ' tone-2' if T.i is odd }}" aria-labelledby="h-reg">
@@ -166,15 +166,16 @@
           <li><a href="/map/#{{ r.id }}"><span class="rg-name">{{ r.name }}</span><span class="rg-n"><b class="num tn">{{ r.n }}</b><small>곳</small></span><span class="rg-k tn">관광지 {{ r.k.attraction or 0 }} · 숙소 {{ r.k.stay or 0 }} · 음식점 {{ r.k.food or 0 }}</span>{% if r.dongs %}<span class="rg-d">{{ r.dongs|join('·') }}</span>{% endif %}<span class="arr" aria-hidden="true">›</span></a></li>
           {% endfor %}
         </ol>
-        <p class="rule-note">권역은 기준점 {{ h.regions2|length }}곳({% for r in h.regions2 %}{{ r.anchor.place }}{% if not loop.last %}·{% endif %}{% endfor %}) 가운데 직선거리로 가장 가까운 곳으로 묶었습니다.</p>
+        {% if h.region_rule.method == 'nearest_anchor' %}<p class="rule-note">권역은 기준점 {{ h.region_map.anchors|length }}곳({% for a in h.region_map.anchors %}{{ a.place }}{% if not loop.last %}·{% endif %}{% endfor %}) 가운데 직선거리로 가장 가까운 곳으로 묶었습니다.</p>
+        {% elif h.region_rule.method == 'district' %}<p class="rule-note">권역은 주소의 구·군(일부는 법정동)으로 나눴습니다. <a href="/map/#h-rule">나눈 기준</a></p>{% endif %}
       </div>
-      {{ ui.mapfig(h.region_map, site.region ~ ' 여행 권역 기준점 지도', 'reg-map', '권역 기준점 ' ~ h.regions2|length ~ '곳') }}
+      {% if h.region_map.anchors %}{{ ui.mapfig(h.region_map, site.region ~ ' 여행 권역 기준점 지도', 'reg-map', '권역 기준점 ' ~ h.region_map.anchors|length ~ '곳') }}{% endif %}
     </div>
   </div>
 </section>
 {% endif %}
 
-{# 군산 이야기 — the page's one black section, also the accent black band (owner 2026-10-09): the oversized word over a
+{# <city> 이야기 — the page's one black section, also the accent black band (owner 2026-10-09): the oversized word over a
    hairline and the eyebrow as a lime pill. Desktop with motion: a CSS sticky stage (motion.js story); phones, reduced
    motion and no JS: dark tiles in DOM order. Every sentence is a place summary sentence (present.home_story). #}
 {% if h.chapters %}
@@ -213,18 +214,20 @@
 </section>
 {% endif %}
 
-{# 섬 갤러리: an Apple carousel of island cards — KOGL-1 covers drift inside their frames, KOGL-3 stays whole #}
-{% if h.gallery %}
+{# 갤러리 (site.json city.home.gallery: its heading and 권역; the cards are city.home.photos.gallery): an Apple
+   carousel of place cards — KOGL-1 covers drift inside their frames, KOGL-3 stays whole #}
+{% set GH = h.gallery_head %}
+{% if h.gallery and GH.title %}
 {% set T.i = T.i + 1 %}
 <section class="gallery{{ ' tone-2' if T.i is odd }}" aria-labelledby="h-isl" data-gallery>
   <div class="wrap gal-head">
-    {{ ui.sec_head('고군산군도', '다리로 이어진 섬들', 'h-isl', '', '', '', true) }}
-    <p class="gal-fact">{% if h.gogun_km %}구 군산세관 본관에서 선유도까지 직선 <b class="tn">{{ h.gogun_km }}km</b> · {% endif %}고군산 권역 관광지 <b class="tn">{{ h.n_gogun }}곳</b></p>
+    {{ ui.sec_head(GH.kicker, GH.title, 'h-isl', '', '', '', true) }}
+    {% if GH.km or GH.n %}<p class="gal-fact">{% if GH.km %}{{ GH.km.label }} <b class="tn">{{ GH.km.n }}km</b>{% if GH.n %} · {% endif %}{% endif %}{% if GH.n %}{{ GH.region }} 권역 관광지 <b class="tn">{{ GH.n }}곳</b>{% endif %}</p>{% endif %}
   </div>
   <div class="car-view" data-gal-view>
     <ol class="gal-track car-track">
       {% for c in h.gallery %}<li>{{ ui.card(c, '', '(min-width: 1024px) 360px, 300px') }}</li>{% endfor %}
-      <li class="gal-all"><a href="/places/?region=고군산">고군산 권역 관광지 <span class="tn">{{ h.n_gogun }}</span>곳 모두<span class="arr" aria-hidden="true">›</span></a></li>
+      {% if GH.n %}<li class="gal-all"><a href="/places/?region={{ GH.region|urlencode }}">{{ GH.region }} 권역 관광지 <span class="tn">{{ GH.n }}</span>곳 모두<span class="arr" aria-hidden="true">›</span></a></li>{% endif %}
     </ol>
   </div>
   <div class="wrap car-foot">{{ ui.carnav('장소') }}</div>
@@ -262,7 +265,7 @@
 </section>
 {% endif %}
 
-{# 영상으로 보는 군산: one featured video (thumbnail facade — nothing loads from YouTube before the press), the top video
+{# 영상으로 보는 <city>: one featured video (thumbnail facade — nothing loads from YouTube before the press), the top video
    of three topics, every topic with its count and its own page #}
 {% if h.vfeat %}
 {% set T.i = T.i + 1 %}

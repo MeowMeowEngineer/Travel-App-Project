@@ -1,4 +1,4 @@
-/* 군산 여행 — style partials (templates/assets/css/*.css), Apple direction (approved by the owner 2026-10-08:
+/* Style partials (templates/assets/css/*.css), Apple direction (approved by the owner 2026-10-08:
    "정보가 뼈대, 모션은 문장부호", re-skinned after apple.com/kr).
    pipeline/build.py joins every partial here in file-name order into ONE request, /assets/style.css
    (comments stripped, whitespace collapsed — see build.site_css()). Edit the partials, never the built file.
@@ -25,7 +25,7 @@
                     bullets, bold figures (.gk), FAQ accordion, compact sources
 
    Look (UI4, owner 2026-10-14, after the AIO2O proposal demo for KT Skylife — its design language only): a light
-   page, white cards with a hairline border on soft sea-blue tints, one brand colour, 군산 바다 파랑 (Gunsan sea blue, the
+   page, white cards with a hairline border on soft sea-blue tints, one brand colour, 바다 파랑 (sea blue, the
    family of the mascot's blue scarf), in the reference's green roles — buttons, key numbers, small eyebrow labels,
    highlights, focus. Calm, never neon. The lime / lavender / sky accents are retired (their names now point at the sea
    tints, so a rule not yet rewritten reads calm). Pretendard 400 + 700; radii 12 · 18 · 24 · 28; pill buttons.
@@ -50,7 +50,7 @@
    tint 4.98 / g1 4.74 · red on #fff 5.55 · white on ink 16.27. Never: small sea text on tint (4.39), g1 (4.18) or g2
    (3.72) — blue text on a pale blue is always sea-deep; ink-3 on g2 (4.21). Big figures (>= 24px 700) may be sea. */
 :root {
-  /* 군산 바다 파랑 (UI4) */
+  /* 바다 파랑 (UI4) */
   --sea: #2F6FC9; --sea-hi: #255DAF; --sea-deep: #1D4F96; --tint: #EAF2FC; --tint2: #D9E7F8;
   --g0: #F2F7FD; --g1: #E2EDFA; --g2: #CFE1F6; --chick: #FFD54A; --sand: #F6EFE4; --field: #858FA1;
   --bg: #ffffff; --bg-2: #F4F7FB; --bg-3: #E7EDF4; --tile: #F4F7FB;

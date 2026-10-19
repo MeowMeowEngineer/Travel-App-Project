@@ -10,7 +10,7 @@ the panel (announced once) while nothing above the panel moves and nothing below
 floating panel is never built there; the panel's own box asks the next question into the same conversation; a starter
 asks (with a modifier key it stays a link); an Enter the input method keeps (a conversion) and an empty box ask
 nothing, in either box, while the Enter that ends a Korean syllable asks at once — on the page served as the public
-host https://gunsan.webforai.kr too (the 2026-10-14 bug: that Enter was swallowed); the button stops an answer; the
+host (site.json site_url) too (the 2026-10-14 bug: that Enter was swallowed); the button stops an answer; the
 header's search goes to /search/?q= (desktop: its field; phones: '검색' opens it over the bar; without JS a link);
 Korean + not_configured lands on /search/?q=…; without
 chat.js the box searches and a starter follows its link; the launcher is there from the first paint (390 and 1440),
@@ -36,7 +36,7 @@ sync_api = pytest.importorskip("playwright.sync_api")
 
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = ROOT / "data" / "sample"
-SITE = "https://gunsan.webforai.kr"
+SITE = json.loads((SAMPLE / "site.json").read_text("utf-8"))["site_url"]   # the public address chat.js reads (data-chat-site)
 STARTERS = {"starters": [{"q": {"ko": "차 없이 하루 여행", "en": "A day without a car"}, "guide": "guide-sample-1"},
                          {"q": {"ko": "이번 달 행사", "en": "Events this month"}, "page": "events"}]}
 ANSWER = ("은파호수공원은 쉬는 날 없이 열려 있습니다. [은파호수공원](/places/eunpa-lake-park/)\n\n"
@@ -45,7 +45,7 @@ DONE = {"type": "done", "links": [{"title": "은파호수공원", "url": f"{SITE
         "fix": {"/places/eunpa-lake-park/": f"{SITE}/places/eunpa-lake-park/", "/places/nowhere/": None}}
 API = {"mode": "ok", "gap": 0.06, "calls": []}
 BUILT = {}
-PUBLIC = "https://gunsan.webforai.kr"   # the public host (owner 2026-10-14); served here through page routes
+PUBLIC = SITE   # the public host (site.json site_url); served here through page routes
 SHIFTS = """window.__ls = []; new PerformanceObserver(l => { for (const e of l.getEntries()) window.__ls.push({v: e.value,
   input: e.hadRecentInput, t: e.startTime, src: (e.sources || []).map(s => s.node && s.node.className || '')}); })
   .observe({type: 'layout-shift', buffered: true});"""
@@ -208,7 +208,7 @@ def open_public(browser, width, height, js=True):
 @pytest.mark.parametrize("width,height", [(390, 844), (1440, 900)])
 def test_enter_asks_on_the_public_host(browser, site, width, height):
     """Owner 2026-10-14: '궁금한 것을 적어주세요 칸에 뭘 입력하고 엔터를 쳤을 때도 반응이 없고'. On the page served as
-    https://gunsan.webforai.kr: typed words + Enter ask (a same-origin POST to /api/chat/, the Origin the server's
+    the public host: typed words + Enter ask (a same-origin POST to /api/chat/, the Origin the server's
     allow-list checks) and the answer is drawn under the card; then a Korean question whose last syllable is still
     composing when Enter goes down asks at once — the case the old 50 ms guard after compositionend swallowed."""
     ctx, page, errors, requests = open_public(browser, width, height)

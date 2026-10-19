@@ -1,4 +1,4 @@
-/* 군산 여행 — the site assistant (owner decision 2026-10-13, CLAUDE.md 3.10). site.js loads this file and chat.css on
+/* The site assistant (owner decision 2026-10-13, CLAUDE.md 3.10). site.js loads this file and chat.css on
    the first press of [data-chat-open] (or after load when this tab left the chat open), or — on a page with the centre
    question card — when the reader touches the card: never in the first paint.
    window.gsChat = {open(opener), restore(), close(), ask(q), stop(), busy(), dock}.
@@ -27,7 +27,11 @@
      search (/search/?q=), so the card keeps working as search; other languages show the message and their starters
      then follow their links. In both views a completed answer is announced once (polite; the message list itself is
      not a live region) and nothing is sent by an Enter the input method keeps (imeEnter: Korean, Japanese, Chinese).
-   - UI strings in nine languages from <html lang>; the assistant answers in the language of the question.
+   - UI strings in nine languages from <html lang>; the assistant answers in the language of the question. The city's
+     words come from the launcher (_chat.html.j2, from site.json): data-chat-site (the public address: a link to it
+     opens on the deployment the reader is on), data-chat-city ({lang: the city's name}, which fills the title and the
+     box's placeholder; a language without a name uses the city-free wording) and data-chat-chips ({lang: [starter
+     questions]}, none: no starters).
    - GA4 like track.js (gtag, else the GTM dataLayer): chat_open, chat_send (no text), chat_link_click (data-track),
      each with chat_where 'panel' | 'dock'. */
 (function () {
@@ -35,14 +39,18 @@
   if (window.gsChat) return;
   var doc = document, root = doc.documentElement, win = window;
   var KEY = "gs-chat", API = "/api/chat/", MAX_Q = 800, KEEP = 24, SEND_PRIOR = 12, ANSWER_CHARS = 2000;
-  var SITE = "https://gunsan.webforai.kr";
+  var FAB = doc.querySelector("[data-chat-site]");
+  var SITE = (FAB && FAB.getAttribute("data-chat-site")) || win.location.origin;
+  function pageJSON(name) {
+    try { return JSON.parse((FAB && FAB.getAttribute(name)) || "{}") || {}; } catch (e) { return {}; }
+  }
 
   var STR = {
     ko: {
-      title: "군산 여행 도우미", note: "AI가 이 사이트 정보로 답합니다 · 방문 전 확인", about: "/about/#chatbot",
+      title: ["{c} 여행 도우미", "여행 도우미"], note: "AI가 이 사이트 정보로 답합니다 · 방문 전 확인", about: "/about/#chatbot",
       intro: "장소·맛집·숙소·코스·행사를 이 사이트에 실린 정보로 찾아 드려요. 답마다 해당 페이지를 링크합니다.",
-      chips: ["선유도 가는 법", "월요일에 여는 음식점", "비 오는 날 갈 곳", "군산 짬뽕 어디서 먹나요?", "이번 달 행사·축제"],
-      placeholder: "군산 여행, 무엇이 궁금하세요?", label: "질문", send: "보내기", stop: "멈추기", newChat: "새 대화", conv: "대화",
+      chips: [],
+      placeholder: ["{c} 여행, 무엇이 궁금하세요?", "여행, 무엇이 궁금하세요?"], label: "질문", send: "보내기", stop: "멈추기", newChat: "새 대화", conv: "대화",
       close: "닫기", retry: "다시 시도", stopped: "답을 멈췄습니다.", cut: "답이 길어 여기서 끊겼습니다.", more: "이어서 보기",
       thinking: "답을 찾는 중…", you: "질문", ai: "답", pages: "관련 페이지", newTab: "(새 창)",
       foot: "이름·전화번호 같은 개인정보는 쓰지 마세요. 대화는 저장하지 않습니다.", search: "/search/", searchLabel: "사이트 검색으로 찾기",
@@ -55,12 +63,11 @@
         error: "답을 가져오지 못했습니다." },
     },
     en: {
-      title: "Gunsan travel helper", note: "AI answers from this site's information · check before you go",
+      title: ["{c} travel helper", "Travel helper"], note: "AI answers from this site's information · check before you go",
       about: "/en/about/#chatbot",
       intro: "Ask about places, food, stays, courses and events. Answers come from this site's pages, with links to them.",
-      chips: ["How do I get to Seonyudo?", "Restaurants open on Mondays", "Where to go on a rainy day",
-        "Where can I eat jjamppong?", "Events this month"],
-      placeholder: "Ask about travelling in Gunsan", label: "Question", send: "Send", stop: "Stop", newChat: "New chat", conv: "Conversation",
+      chips: [],
+      placeholder: ["Ask about travelling in {c}", "Ask about your trip"], label: "Question", send: "Send", stop: "Stop", newChat: "New chat", conv: "Conversation",
       close: "Close", retry: "Try again", stopped: "Answer stopped.", cut: "The answer was cut off here.", more: "Continue",
       thinking: "Looking it up…", you: "You", ai: "Answer", pages: "Pages", newTab: "(new tab)",
       foot: "Don't type personal details such as names or phone numbers. Chats are not stored.", search: "", searchLabel: "",
@@ -73,10 +80,10 @@
         error: "Could not get an answer." },
     },
     ja: {
-      title: "群山旅行アシスタント", note: "AIがこのサイトの情報で答えます・訪問前にご確認を",
+      title: ["{c}旅行アシスタント", "旅行アシスタント"], note: "AIがこのサイトの情報で答えます・訪問前にご確認を",
       intro: "観光地・グルメ・宿・コース・イベントを、このサイトの情報で探します。答えには該当ページのリンクが付きます。",
-      chips: ["仙遊島への行き方", "月曜日に開いている飲食店", "雨の日に行ける所", "群山のチャンポンはどこで食べられる？", "今月のイベント・祭り"],
-      placeholder: "群山旅行について質問してください", label: "質問", send: "送信", stop: "停止", newChat: "新しい会話", conv: "会話", close: "閉じる",
+      chips: [],
+      placeholder: ["{c}旅行について質問してください", "旅行について質問してください"], label: "質問", send: "送信", stop: "停止", newChat: "新しい会話", conv: "会話", close: "閉じる",
       retry: "もう一度", stopped: "回答を停止しました。", cut: "回答はここで途切れました。", more: "続きを表示", thinking: "調べています…", you: "質問",
       ai: "回答", pages: "関連ページ", newTab: "（新しいタブ）",
       foot: "名前や電話番号などの個人情報は入力しないでください。会話は保存されません。",
@@ -88,10 +95,10 @@
         truncated: "回答が長すぎて止まりました。質問を分けてください。", network: "接続が切れました。", error: "回答を取得できませんでした。" },
     },
     "zh-Hans": {
-      title: "群山旅行助手", note: "AI根据本站信息回答 · 出发前请确认",
+      title: ["{c}旅行助手", "旅行助手"], note: "AI根据本站信息回答 · 出发前请确认",
       intro: "用本站的信息查找景点、美食、住宿、路线和活动，每个回答都附有相关页面链接。",
-      chips: ["怎么去仙游岛", "周一营业的餐厅", "下雨天去哪里", "群山炒码面在哪里吃？", "本月活动·节庆"],
-      placeholder: "关于群山旅行，想问什么？", label: "问题", send: "发送", stop: "停止", newChat: "新对话", conv: "对话", close: "关闭",
+      chips: [],
+      placeholder: ["关于{c}旅行，想问什么？", "关于旅行，想问什么？"], label: "问题", send: "发送", stop: "停止", newChat: "新对话", conv: "对话", close: "关闭",
       retry: "重试", stopped: "已停止回答。", cut: "回答在这里被截断。", more: "继续回答", thinking: "正在查找…", you: "提问", ai: "回答",
       pages: "相关页面", newTab: "（新标签页）", foot: "请勿输入姓名、电话号码等个人信息。对话不会被保存。",
       kinds: { place: "景点", guide: "指南", course: "路线", event: "活动", video: "视频", abroad: "文章", page: "页面" },
@@ -101,10 +108,10 @@
         truncated: "回答过长被截断，请把问题拆开提问。", network: "连接已断开。", error: "未能获取回答。" },
     },
     "zh-Hant": {
-      title: "群山旅行助手", note: "AI根據本站資訊回答 · 出發前請確認",
+      title: ["{c}旅行助手", "旅行助手"], note: "AI根據本站資訊回答 · 出發前請確認",
       intro: "用本站的資訊查找景點、美食、住宿、路線和活動，每個回答都附有相關頁面連結。",
-      chips: ["怎麼去仙遊島", "週一營業的餐廳", "下雨天去哪裡", "群山炒碼麵在哪裡吃？", "本月活動·節慶"],
-      placeholder: "關於群山旅行，想問什麼？", label: "問題", send: "傳送", stop: "停止", newChat: "新對話", conv: "對話", close: "關閉",
+      chips: [],
+      placeholder: ["關於{c}旅行，想問什麼？", "關於旅行，想問什麼？"], label: "問題", send: "傳送", stop: "停止", newChat: "新對話", conv: "對話", close: "關閉",
       retry: "重試", stopped: "已停止回答。", cut: "回答在這裡被截斷。", more: "繼續回答", thinking: "正在查找…", you: "提問", ai: "回答",
       pages: "相關頁面", newTab: "（新分頁）", foot: "請勿輸入姓名、電話號碼等個人資訊。對話不會被儲存。",
       kinds: { place: "景點", guide: "指南", course: "路線", event: "活動", video: "影片", abroad: "文章", page: "頁面" },
@@ -114,11 +121,10 @@
         truncated: "回答過長被截斷，請把問題拆開提問。", network: "連線已中斷。", error: "未能取得回答。" },
     },
     de: {
-      title: "Gunsan-Reisehelfer", note: "KI antwortet mit den Angaben dieser Website · vor dem Besuch prüfen",
+      title: ["{c}-Reisehelfer", "Reisehelfer"], note: "KI antwortet mit den Angaben dieser Website · vor dem Besuch prüfen",
       intro: "Fragen Sie nach Orten, Essen, Unterkünften, Routen und Veranstaltungen. Die Antworten stammen von den Seiten dieser Website, mit Links.",
-      chips: ["Wie komme ich nach Seonyudo?", "Restaurants, die montags geöffnet haben", "Was tun bei Regen?",
-        "Wo gibt es Jjamppong?", "Veranstaltungen in diesem Monat"],
-      placeholder: "Ihre Frage zu Gunsan", label: "Frage", send: "Senden", stop: "Stopp", newChat: "Neuer Chat", conv: "Unterhaltung",
+      chips: [],
+      placeholder: ["Ihre Frage zu {c}", "Ihre Frage zur Reise"], label: "Frage", send: "Senden", stop: "Stopp", newChat: "Neuer Chat", conv: "Unterhaltung",
       close: "Schließen", retry: "Erneut versuchen", stopped: "Antwort gestoppt.", cut: "Die Antwort wurde hier abgeschnitten.", more: "Weiterschreiben",
       thinking: "Suche …", you: "Frage", ai: "Antwort", pages: "Seiten", newTab: "(neuer Tab)",
       foot: "Bitte keine persönlichen Daten wie Namen oder Telefonnummern eingeben. Chats werden nicht gespeichert.",
@@ -131,11 +137,10 @@
         error: "Keine Antwort erhalten." },
     },
     fr: {
-      title: "Assistant voyage Gunsan", note: "L'IA répond avec les informations de ce site · vérifiez avant de partir",
+      title: ["Assistant voyage {c}", "Assistant voyage"], note: "L'IA répond avec les informations de ce site · vérifiez avant de partir",
       intro: "Posez vos questions sur les lieux, restaurants, hébergements, circuits et événements : les réponses viennent des pages de ce site, avec des liens.",
-      chips: ["Comment aller à Seonyudo ?", "Restaurants ouverts le lundi", "Où aller par temps de pluie",
-        "Où manger du jjamppong ?", "Événements de ce mois-ci"],
-      placeholder: "Votre question sur Gunsan", label: "Question", send: "Envoyer", stop: "Arrêter", newChat: "Nouvelle conversation", conv: "Conversation",
+      chips: [],
+      placeholder: ["Votre question sur {c}", "Votre question sur le voyage"], label: "Question", send: "Envoyer", stop: "Arrêter", newChat: "Nouvelle conversation", conv: "Conversation",
       close: "Fermer", retry: "Réessayer", stopped: "Réponse arrêtée.", cut: "La réponse a été coupée ici.", more: "Continuer", thinking: "Recherche…",
       you: "Question", ai: "Réponse", pages: "Pages", newTab: "(nouvel onglet)",
       foot: "N'indiquez pas de données personnelles (nom, téléphone). Les conversations ne sont pas enregistrées.",
@@ -148,11 +153,10 @@
         error: "Aucune réponse reçue." },
     },
     es: {
-      title: "Asistente de viaje de Gunsan", note: "La IA responde con la información de este sitio · confirme antes de ir",
+      title: ["Asistente de viaje de {c}", "Asistente de viaje"], note: "La IA responde con la información de este sitio · confirme antes de ir",
       intro: "Pregunte por lugares, comida, alojamiento, rutas y eventos: las respuestas salen de las páginas de este sitio, con enlaces.",
-      chips: ["¿Cómo llegar a Seonyudo?", "Restaurantes abiertos los lunes", "Qué visitar si llueve",
-        "¿Dónde comer jjamppong?", "Eventos de este mes"],
-      placeholder: "Su pregunta sobre Gunsan", label: "Pregunta", send: "Enviar", stop: "Detener", newChat: "Nueva conversación", conv: "Conversación",
+      chips: [],
+      placeholder: ["Su pregunta sobre {c}", "Su pregunta sobre el viaje"], label: "Pregunta", send: "Enviar", stop: "Detener", newChat: "Nueva conversación", conv: "Conversación",
       close: "Cerrar", retry: "Reintentar", stopped: "Respuesta detenida.", cut: "La respuesta se cortó aquí.", more: "Continuar", thinking: "Buscando…",
       you: "Pregunta", ai: "Respuesta", pages: "Páginas", newTab: "(nueva pestaña)",
       foot: "No escriba datos personales como nombres o teléfonos. Las conversaciones no se guardan.",
@@ -165,11 +169,10 @@
         error: "No se obtuvo respuesta." },
     },
     ru: {
-      title: "Помощник по Кунсану", note: "ИИ отвечает по данным этого сайта · проверьте перед поездкой",
+      title: ["Помощник в поездке: {c}", "Помощник в поездке"], note: "ИИ отвечает по данным этого сайта · проверьте перед поездкой",
       intro: "Спрашивайте о местах, еде, жилье, маршрутах и событиях — ответы берутся со страниц этого сайта, со ссылками.",
-      chips: ["Как добраться до Сонъюдо?", "Рестораны, открытые в понедельник", "Куда пойти в дождь",
-        "Где поесть чжамппон?", "События в этом месяце"],
-      placeholder: "Ваш вопрос о Кунсане", label: "Вопрос", send: "Отправить", stop: "Остановить", newChat: "Новый чат", conv: "Диалог",
+      chips: [],
+      placeholder: ["Ваш вопрос о поездке", "Ваш вопрос о поездке"], label: "Вопрос", send: "Отправить", stop: "Остановить", newChat: "Новый чат", conv: "Диалог",
       close: "Закрыть", retry: "Повторить", stopped: "Ответ остановлен.", cut: "Ответ оборвался здесь.", more: "Продолжить", thinking: "Ищу…",
       you: "Вопрос", ai: "Ответ", pages: "Страницы", newTab: "(новая вкладка)",
       foot: "Не вводите личные данные, например имя или телефон. Переписка не сохраняется.",
@@ -193,6 +196,15 @@
   var lang = pickLang(root.getAttribute("lang"));
   var T = Object.assign({}, STR.en, STR[lang]);
   if (lang !== "ko" && lang !== "en") T.about = STR.en.about;
+  (function cityWords() {   // [with the city's name, without] -> one string; the starters from the page
+    var names = pageJSON("data-chat-city"), city = names[lang] || "";
+    ["title", "placeholder"].forEach(function (k) {
+      var v = T[k];
+      if (Array.isArray(v)) T[k] = city ? v[0].replace("{c}", city) : v[1];
+    });
+    var chips = pageJSON("data-chat-chips")[lang];
+    T.chips = Array.isArray(chips) ? chips.filter(function (q) { return typeof q === "string" && q; }) : [];
+  })();
   var sheetMQ = win.matchMedia("(max-width: 639px), (max-height: 520px)");
   // the centre question card (_ask.html.j2): on its page the conversation lives in the card, never in the panel
   var dockEl = doc.querySelector("[data-chat-dock]");
@@ -403,7 +415,7 @@
     var chips = h("ul", { class: "chat-chips" }, T.chips.map(function (q) {
       return h("li", {}, [h("button", { type: "button", class: "chat-chip", text: q })]);
     }));
-    var hello = h("div", { class: "chat-hello" }, [h("p", { text: T.intro }), chips]);
+    var hello = h("div", { class: "chat-hello" }, T.chips.length ? [h("p", { text: T.intro }), chips] : [h("p", { text: T.intro })]);
     var list = h("ol", { class: "chat-msgs" });
     var log = h("div", { class: "chat-log" }, [hello, list]);
     var live = h("p", { class: "vh", "aria-live": "polite", "data-chat-live": true });

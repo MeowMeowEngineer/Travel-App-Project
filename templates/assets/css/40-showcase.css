@@ -236,7 +236,7 @@
   .co-teaser .map { height: 340px; }
 }
 
-/* ---------------------------------------------------------------- HOME 9: 영상으로 보는 군산 */
+/* ---------------------------------------------------------------- HOME 9: 영상으로 보는 <city> */
 .vgrid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--g); align-items: start; }
 .v-feat { grid-column: 1 / span 7; }
 .v-feat .vid { background: var(--tile); border-radius: var(--r-xl); overflow: hidden; }

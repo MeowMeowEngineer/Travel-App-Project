@@ -4,8 +4,9 @@ KOGL-1 (공공누리 제1유형) photos may be resized and re-encoded as long as
 KOGL-3 (제3유형, 변경금지) photos never are: a page always shows the provider's own file, whole.
 
 Derivatives exist only for KOGL-1 photos that a page crops, zooms or shows full-bleed:
-  - the home opening slides (HERO_SLIDES), the KOGL-1 story chapter photos (STORY_PHOTOS) and the KOGL-1 cards of
-    the island gallery (GALLERY) — slots whose treatment needs KOGL-1 go through pick_photo(..., need_k1=True);
+  - the home's photo slots the city's configuration picks (site.json city.home.photos: hero slides, the full-bleed
+    cover, the gallery cards; city.home.story[].photo: the story chapters) — slots whose treatment needs KOGL-1 go
+    through pick_photo(..., need_k1=True);
   - every place whose lead photo is KOGL-1 (the full-bleed place opening; it is that page's LCP image).
 tools/kogl1_media.py writes them to templates/assets/media/ with manifest.json; the build copies the folder with
 the other assets and present.prepare() calls attach(), so every photo dict carries:
@@ -28,17 +29,26 @@ MEDIA_DIR = ROOT / "templates" / "assets" / "media"
 MANIFEST = MEDIA_DIR / "manifest.json"
 URL_PREFIX = "/assets/media/"
 
-# Home photo slots of the Apple direction (approved 2026-10-08): (place slug, index into that place's licensed
-# TourAPI photos). The opening slides are cropped 3:2 and pushed in with the scroll: KOGL-1 only. The story's four
-# chapters (1899 개항 · 1908 세관 · 1909 근대 · 오늘 섬) take either licence — a KOGL-1 photo may settle 1.08 → 1 in
-# the stage, a KOGL-3 one (군산항's photo of the inner-port 부잔교, captioned 군산항) is shown whole. The island
-# gallery cards crop KOGL-1 and show KOGL-3 whole.
-# 대장도·해망굴·동국사 got a gallery lead photo in front (2026-10-13): their indexes moved by one, same photos as before.
-HERO_SLIDES = (("고군산대교", 0), ("대장도", 5), ("해망굴", 4))
-# the home opening (owner 2026-10-10): one KOGL-1 photo full-bleed behind the H1 — cropped to the screen, so KOGL-1 only
-HOME_COVER = ("고군산군도", 0)
-STORY_PHOTOS = (("군산항", 0), ("구-군산세관-본관", 0), ("동국사", 1), ("대장도", 3))
-GALLERY = (("선유도", 4), ("장자도", 3), ("대장도", 1), ("무녀도", 3), ("대장봉-전망대", 0), ("고군산섬잇길", 0))
+# Home photo slots (Apple direction, approved 2026-10-08): [place slug or name, index into that place's licensed TourAPI
+# photos], picked per city in site.json (city.home.photos {hero, cover, gallery}; city.home.story[].photo). The opening
+# slides are cropped 3:2 and pushed in with the scroll, the cover fills the screen behind the H1: KOGL-1 only. The
+# story chapters take either licence — a KOGL-1 photo may settle 1.08 → 1 in the stage, a KOGL-3 one is shown whole.
+# The gallery cards crop KOGL-1 and show KOGL-3 whole. Without picks (a new city before the owner chooses) the slots
+# are empty and the home leaves them out.
+
+
+def _picks(key: str) -> list[tuple[str, int]]:
+    from . import city
+    raw = (city.current().home("photos", {}) or {}).get(key) or []
+    if key == "cover":
+        raw = [raw] if raw else []
+    return [(str(x[0]), int(x[1]) if len(x) > 1 else 0) for x in raw if x]
+
+
+def _story_picks() -> dict[str, tuple[str, int]]:
+    from . import city
+    return {c["id"]: (str(c["photo"][0]), int(c["photo"][1]) if len(c["photo"]) > 1 else 0)
+            for c in city.current().home("story", []) or [] if c.get("id") and c.get("photo")}
 
 
 def load_manifest(path: Path = MANIFEST) -> dict:
@@ -79,14 +89,15 @@ def attach(S, manifest: dict | None = None) -> None:
 
 
 def _pick(S, slug: str, n: int, need_k1: bool) -> tuple[dict | None, str]:
-    e = S.ent_by_slug.get(slug)
+    from .present import find_place
+    e = find_place(S, slug)
     photos = (e or {}).get("_photos") or []
     if not photos:
         return None, f"사진 자리: {slug}에 쓸 수 있는 사진 없음 — 그 자리 생략"
     ph = photos[min(n, len(photos) - 1)]
     if need_k1 and ph.get("type") != 1:
         return None, f"사진 자리: {slug} #{n}은 공공누리 제{ph.get('type')}유형 — 자르거나 확대하는 자리에 쓰지 않음"
-    return {**ph, "place": e["name"], "path": e["_path"], "slug": slug, "kind": e.get("kind", "")}, ""
+    return {**ph, "place": e["name"], "path": e["_path"], "slug": e.get("slug", slug), "kind": e.get("kind", "")}, ""
 
 
 def pick_photo(S, slug: str, n: int = 0, need_k1: bool = True) -> dict | None:
@@ -99,12 +110,14 @@ def pick_photo(S, slug: str, n: int = 0, need_k1: bool = True) -> dict | None:
 
 
 def slot_photos(S) -> dict:
-    """The home's photo slots: hero (KOGL-1 only), cover (the full-bleed opening photo, KOGL-1 only), story ({slug: photo} in chapter order, either licence, None for a
-    missing one) and gallery (either licence; templates crop KOGL-1 cards and show KOGL-3 cards whole)."""
-    return {"hero": [x for x in (pick_photo(S, s, n, True) for s, n in HERO_SLIDES) if x],
-            "cover": pick_photo(S, *HOME_COVER, True),
-            "story": {s: pick_photo(S, s, n, False) for s, n in STORY_PHOTOS},
-            "gallery": [x for x in (pick_photo(S, s, n, False) for s, n in GALLERY) if x]}
+    """The home's photo slots: hero (KOGL-1 only), cover (the full-bleed opening photo, KOGL-1 only), story ({chapter
+    id: photo}, either licence, None for a missing one) and gallery (either licence; templates crop KOGL-1 cards and
+    show KOGL-3 cards whole). Empty when the city's configuration picks none."""
+    cover = _picks("cover")
+    return {"hero": [x for x in (pick_photo(S, s, n, True) for s, n in _picks("hero")) if x],
+            "cover": pick_photo(S, *cover[0], True) if cover else None,
+            "story": {cid: pick_photo(S, s, n, False) for cid, (s, n) in _story_picks().items()},
+            "gallery": [x for x in (pick_photo(S, s, n, False) for s, n in _picks("gallery")) if x]}
 
 
 def wanted(S) -> dict:
@@ -112,7 +125,8 @@ def wanted(S) -> dict:
     1280w, a fuller encode — it fills a wide screen), 'hero' (the opening product shots: a lighter encode, small on
     phones) or 'k1'. Used by tools/kogl1_media.py."""
     out: dict[str, str] = {}
-    for slot, n_slot in (("cover", (HOME_COVER,)), ("hero", HERO_SLIDES), ("k1", STORY_PHOTOS + GALLERY)):
+    for slot, n_slot in (("cover", _picks("cover")), ("hero", _picks("hero")),
+                         ("k1", list(_story_picks().values()) + _picks("gallery"))):
         for s, n in n_slot:
             ph, _ = _pick(S, s, n, True)
             if ph:
