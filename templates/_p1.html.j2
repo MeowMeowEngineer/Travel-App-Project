@@ -137,9 +137,14 @@
 {% if not it.photo %}<span class="rec-ic">{{ ui.type_icon(it.e, 48) }}</span>{% endif %}
 {% if it.photo %}<img class="rec-th t{{ it.photo.type }}" src="{{ it.photo.url }}"{% if it.photo.w and it.photo.h %} width="{{ it.photo.w }}" height="{{ it.photo.h }}"{% endif %} alt="" loading="lazy" decoding="async" data-kogl="{{ it.photo.type }}">{% endif %}
 </div>
-{#- a card with none of its values says so once (CLAUDE.md 3.1; QA 2026-10-19 QA-27: '확인 필요' four times a card) -#}
-{% if it.slots and not (it.slots|rejectattr('missing')|list) %}<p class="rec-need">확인 필요: {{ it.slots|map(attribute='label')|join('·') }}</p>
-{%- else %}<dl class="rec-cells">{% for c in it.slots %}<div class="c-{{ c.key }}{% if c.conflict %} is-conflict{% endif %}"><dt>{{ c.label }}</dt><dd>{{ ui.kfv(c, '', false, it.e.id) }}</dd></div>{% endfor %}</dl>{% endif %}
+{#- the values a card lacks are said once, in one line at its end — '확인 필요: 쉬는 날·요금' (CLAUDE.md 3.1 '블록마다 한
+    번'; QA 2026-10-19 QA-27: '확인 필요' four times a card with no value, QA-77: once per empty cell, 571 times on
+    /places/). Its cells keep only values (a missing cell with a note under it — '좌석 30석' — keeps the note); with a
+    gap, each cell says its ledger column (data-c, css 30-info: the desktop columns stay under their heads). -#}
+{% set miss = it.slots|selectattr('missing')|list %}
+{% if it.slots and miss|length == it.slots|length and not (miss|selectattr('sub')|list) %}<p class="rec-need">확인 필요: {{ it.slots|map(attribute='label')|join('·') }}</p>
+{%- else %}<dl class="rec-cells">{% for c in it.slots %}{% if not c.missing or c.sub %}<div class="c-{{ c.key }}{% if c.conflict %} is-conflict{% endif %}"{% if miss %} data-c="{{ loop.index + 1 }}"{% endif %}><dt>{{ c.label }}</dt><dd>{% if c.missing %}<span class="kf-sub tn">{{ c.sub|nwt }}</span>{% else %}{{ ui.kfv(c, '', false, it.e.id) }}{% endif %}</dd></div>{% endif %}{% endfor %}</dl>
+{%- if miss %}<p class="rec-need">확인 필요: {{ miss|map(attribute='label')|join('·') }}</p>{% endif %}{% endif %}
 {% if it.slots|selectattr('conflict')|list %}<p class="rec-call">방문 전 전화 확인</p>{% endif %}
 </li>
 {%- endmacro %}

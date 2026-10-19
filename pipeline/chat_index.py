@@ -101,6 +101,12 @@ def _clean(text) -> str:
     return squash_ws(str(text or "").replace("\n", " "))
 
 
+def _by_weekday(value) -> dict:
+    """{'w': [7 texts, Sunday first]} when an hours value gives its hours by weekday (present.day_hours), else {}."""
+    w = present.day_hours(value)
+    return {"w": [month_ranges(x) for x in w]} if w else {}
+
+
 def _short_line(text: str, limit: int = LINE_MAX) -> str:
     """A catalog summary: the sentence whole when it is short, else cut after a clause (' …') — never inside a value."""
     s = _clean(text)
@@ -387,8 +393,11 @@ class Knowledge:
                 continue
             row = B.fact_row(e, slot["src_key"]) if slot["src_key"] in FACT_ORDER + FIT_ORDER else None
             if row and row["value"] and slot["key"] == "hours":
-                texts = [{"p": row["source"].get("provider", ""), "t": month_ranges(_clean(row["value"]))}]
-                texts += [{"p": a.get("provider", ""), "t": month_ranges(_clean(a["value"]))}
+                # w: the value's hours by weekday (Sunday first) when it gives them so — checkPlan reads the trip day's
+                # group, not the first range of the whole text (QA 2026-10-19 QA-67: a Saturday read the 평일 hours)
+                texts = [{"p": row["source"].get("provider", ""), "t": month_ranges(_clean(row["value"])),
+                          **_by_weekday(row["value"])}]
+                texts += [{"p": a.get("provider", ""), "t": month_ranges(_clean(a["value"])), **_by_weekday(a["value"])}
                           for a in row["alternatives"] if not a["also"]]
             else:   # closed days as the first screen splits them, and hours a combined field gives
                 texts = [{"p": v.get("provider") or slot.get("provider") or "",

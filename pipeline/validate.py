@@ -1494,7 +1494,8 @@ def list_closed_problems(ko_html: str, l_html: str) -> list[str]:
         out = {}
         for m in LIST_ROW.finditer(h):
             pid = re.search(r'data-place="([^"]+)"', m.group(1))
-            cell = re.search(r'<div class="c-closed( is-conflict)?">(.*?)</div>', m.group(1), re.S)
+            # (a Korean card with an empty cell leaves it out and says its columns: data-c — QA 2026-10-19 QA-77)
+            cell = re.search(r'<div class="c-closed( is-conflict)?"(?: data-c="\d")?>(.*?)</div>', m.group(1), re.S)
             if pid and cell:
                 out[pid.group(1)] = (bool(cell.group(1)), 'class="kf-na"' in cell.group(2))
         return out

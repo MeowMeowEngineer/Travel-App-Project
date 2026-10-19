@@ -764,8 +764,9 @@ export class Knowledge {
     });
     // the hours that hold on the date: the season whose months cover it (a value with 하절기/동절기 and no months is
     // not read), then the weekday's own hours when the value gives hours by weekday; {seg, open, close, last} or
-    // {seg, why} when the date's hours cannot be read from it
-    const hoursFor = (raw) => {
+    // {seg, why} when the date's hours cannot be read from it. own: raw is already that weekday's group (h.w) — its
+    // label is not read again ('평일 / 일요일 11:30–23:00' on a Monday)
+    const hoursFor = (raw, own = false) => {
       const text = spell(raw);
       let seg = text;
       const ranges = [...text.matchAll(/(1[0-2]|[1-9])월\s*~\s*(1[0-2]|[1-9])월/gu)];
@@ -784,7 +785,7 @@ export class Knowledge {
       const TIME = /(\d{1,2}):(\d{2})\s*[~–-]\s*(\d{1,2}):(\d{2})/u;
       const byDay = [...seg.matchAll(/([월화수목금토일](?:\s*[·,、]\s*[월화수목금토일])*)\s*요일\s*[:：]?\s*(\d{1,2}:\d{2}\s*[~–-]\s*\d{1,2}:\d{2})/gu)];
       let range = TIME.exec(seg);
-      if (byDay.length && day) {
+      if (byDay.length && day && !own) {
         const hit = byDay.find((m) => m[1].includes(WD[wd]));
         if (!hit) return { seg, why: `${WD[wd]}요일 시간이 이 값에 없음` };
         range = TIME.exec(hit[2]);
@@ -873,7 +874,11 @@ export class Knowledge {
         }
         const unread = [];   // hours values with no time the check can read ('※ 시설별 상이하므로 홈페이지 참고')
         for (const h of todayHours ? [{ p: "날짜별 공지", t: "", r: todayHours }] : f.h || []) {
-          const r = h.r || hoursFor(h.t);
+          // a value by weekday (w, Sunday first — pipeline present.day_hours): that day's group alone, so a Saturday
+          // reads '[토요일] 12:00~24:00', never the first range of the whole text (QA 2026-10-19 QA-67)
+          const r = h.r || (Array.isArray(h.w) && h.w.length === 7
+            ? (h.w[wd] ? hoursFor(h.w[wd], true) : { seg: h.t, why: `${WD[wd]}요일 시간이 이 값에 없음` })
+            : hoursFor(h.t));
           if (r.why) {
             notes.push(`이용시간 — ${h.p}: '${h.t}' (그날 시각을 하나로 읽지 않음: ${r.why} — 확인 필요)`);
             unread.push(h.t);

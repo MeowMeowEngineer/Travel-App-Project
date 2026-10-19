@@ -505,7 +505,16 @@
     if (!value) return null;
     return h("li", { class: cls || "" }, [h("span", { class: "trp-fl", text: label }), h("span", { text: value })]);
   }
-  function stopCard(s, n) {
+  // the hours a stop's card shows: that weekday's group where the place gives its hours by weekday (places.json hd,
+  // Sunday first — the group checkPlan read), labelled '시간' under '그날 운영'; else the place's hours as its page's first
+  // screen sums them, labelled '이용시간' — never as if they were that day's (QA 2026-10-19 QA-67: a Saturday showed
+  // '평일 11:30–23:00 · 금요일 12:00–24:00')
+  function dayHours(p, date) {
+    var d = /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? new Date(date + "T12:00:00Z").getUTCDay() : -1;
+    var own = d >= 0 && p.hd && p.hd.length === 7 ? p.hd[d] : "";
+    return own ? factRow("시간", own) : factRow("이용시간", p.h);
+  }
+  function stopCard(s, n, date) {
     var p = (places || {})[s.path] || {};
     var ph;
     if (p.img) {
@@ -519,7 +528,7 @@
     var st = s.day || "unknown";
     var facts = h("ul", { class: "trp-facts" }, [
       h("li", { class: "trp-day trp-day-" + st }, [h("span", { class: "trp-fl", text: "그날" }), h("span", { text: LABEL.day[st].replace("그날 ", "") })]),
-      factRow("시간", p.h), factRow("쉬는 날", p.c, p.cx ? "trp-closed" : ""),   // '연중무휴' is no closure (QA-31)
+      dayHours(p, date), factRow("쉬는 날", p.c, p.cx ? "trp-closed" : ""),   // '연중무휴' is no closure (QA-31)
       factRow(p.k === "food" || p.k === "cafe" ? "메뉴" : "요금", p.k === "food" || p.k === "cafe" ? p.m : p.f), factRow("주차", p.p),
       s.role === "stay" ? factRow("체크인", p.ci) : null]);
     var notes = (s.flags || []).map(function (f) { return h("li", { class: "bad", text: f }); })
@@ -1120,7 +1129,7 @@
     var tl = h("ol", { class: "trp-tl" });
     (day.hubs || []).filter(function (x) { return x.dir === "from"; }).forEach(function (hb) { tl.append(hubRow(hb, c.move)); });
     day.stops.forEach(function (s, i) {
-      tl.append(stopCard(s, i + 1));
+      tl.append(stopCard(s, i + 1, day.date));
       var l = (day.legs || []).filter(function (x) { return x.from === i; })[0];
       if (l) tl.append(legRow(l, c.move));
     });
