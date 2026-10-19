@@ -978,5 +978,565 @@
     240
    ]
   ]
+ },
+ "cond-parking": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "cond-parking-64.avif",
+    64
+   ],
+   [
+    "cond-parking-128.avif",
+    128
+   ],
+   [
+    "cond-parking-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "cond-parking-64.webp",
+    64
+   ],
+   [
+    "cond-parking-128.webp",
+    128
+   ],
+   [
+    "cond-parking-240.webp",
+    240
+   ]
+  ]
+ },
+ "cond-stroller": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "cond-stroller-64.avif",
+    64
+   ],
+   [
+    "cond-stroller-128.avif",
+    128
+   ],
+   [
+    "cond-stroller-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "cond-stroller-64.webp",
+    64
+   ],
+   [
+    "cond-stroller-128.webp",
+    128
+   ],
+   [
+    "cond-stroller-240.webp",
+    240
+   ]
+  ]
+ },
+ "cond-wheelchair": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "cond-wheelchair-64.avif",
+    64
+   ],
+   [
+    "cond-wheelchair-128.avif",
+    128
+   ],
+   [
+    "cond-wheelchair-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "cond-wheelchair-64.webp",
+    64
+   ],
+   [
+    "cond-wheelchair-128.webp",
+    128
+   ],
+   [
+    "cond-wheelchair-240.webp",
+    240
+   ]
+  ]
+ },
+ "icon-plan": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "icon-plan-64.avif",
+    64
+   ],
+   [
+    "icon-plan-128.avif",
+    128
+   ],
+   [
+    "icon-plan-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "icon-plan-64.webp",
+    64
+   ],
+   [
+    "icon-plan-128.webp",
+    128
+   ],
+   [
+    "icon-plan-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-attraction": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-attraction-64.avif",
+    64
+   ],
+   [
+    "kind-attraction-128.avif",
+    128
+   ],
+   [
+    "kind-attraction-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-attraction-64.webp",
+    64
+   ],
+   [
+    "kind-attraction-128.webp",
+    128
+   ],
+   [
+    "kind-attraction-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-experience": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-experience-64.avif",
+    64
+   ],
+   [
+    "kind-experience-128.avif",
+    128
+   ],
+   [
+    "kind-experience-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-experience-64.webp",
+    64
+   ],
+   [
+    "kind-experience-128.webp",
+    128
+   ],
+   [
+    "kind-experience-240.webp",
+    240
+   ]
+  ]
+ },
+ "kind-museum": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "kind-museum-64.avif",
+    64
+   ],
+   [
+    "kind-museum-128.avif",
+    128
+   ],
+   [
+    "kind-museum-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "kind-museum-64.webp",
+    64
+   ],
+   [
+    "kind-museum-128.webp",
+    128
+   ],
+   [
+    "kind-museum-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-budget": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-budget-64.avif",
+    64
+   ],
+   [
+    "plan-budget-128.avif",
+    128
+   ],
+   [
+    "plan-budget-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-budget-64.webp",
+    64
+   ],
+   [
+    "plan-budget-128.webp",
+    128
+   ],
+   [
+    "plan-budget-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-dur-1n2d": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-dur-1n2d-64.avif",
+    64
+   ],
+   [
+    "plan-dur-1n2d-128.avif",
+    128
+   ],
+   [
+    "plan-dur-1n2d-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-dur-1n2d-64.webp",
+    64
+   ],
+   [
+    "plan-dur-1n2d-128.webp",
+    128
+   ],
+   [
+    "plan-dur-1n2d-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-dur-2n3d": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-dur-2n3d-64.avif",
+    64
+   ],
+   [
+    "plan-dur-2n3d-128.avif",
+    128
+   ],
+   [
+    "plan-dur-2n3d-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-dur-2n3d-64.webp",
+    64
+   ],
+   [
+    "plan-dur-2n3d-128.webp",
+    128
+   ],
+   [
+    "plan-dur-2n3d-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-dur-day": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-dur-day-64.avif",
+    64
+   ],
+   [
+    "plan-dur-day-128.avif",
+    128
+   ],
+   [
+    "plan-dur-day-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-dur-day-64.webp",
+    64
+   ],
+   [
+    "plan-dur-day-128.webp",
+    128
+   ],
+   [
+    "plan-dur-day-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-swap": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-swap-64.avif",
+    64
+   ],
+   [
+    "plan-swap-128.avif",
+    128
+   ],
+   [
+    "plan-swap-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-swap-64.webp",
+    64
+   ],
+   [
+    "plan-swap-128.webp",
+    128
+   ],
+   [
+    "plan-swap-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-with-couple": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-with-couple-64.avif",
+    64
+   ],
+   [
+    "plan-with-couple-128.avif",
+    128
+   ],
+   [
+    "plan-with-couple-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-with-couple-64.webp",
+    64
+   ],
+   [
+    "plan-with-couple-128.webp",
+    128
+   ],
+   [
+    "plan-with-couple-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-with-parents": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-with-parents-64.avif",
+    64
+   ],
+   [
+    "plan-with-parents-128.avif",
+    128
+   ],
+   [
+    "plan-with-parents-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-with-parents-64.webp",
+    64
+   ],
+   [
+    "plan-with-parents-128.webp",
+    128
+   ],
+   [
+    "plan-with-parents-240.webp",
+    240
+   ]
+  ]
+ },
+ "plan-with-solo": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "plan-with-solo-64.avif",
+    64
+   ],
+   [
+    "plan-with-solo-128.avif",
+    128
+   ],
+   [
+    "plan-with-solo-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "plan-with-solo-64.webp",
+    64
+   ],
+   [
+    "plan-with-solo-128.webp",
+    128
+   ],
+   [
+    "plan-with-solo-240.webp",
+    240
+   ]
+  ]
+ },
+ "pref-photo": {
+  "px": [
+   64,
+   128,
+   240
+  ],
+  "avif": [
+   [
+    "pref-photo-64.avif",
+    64
+   ],
+   [
+    "pref-photo-128.avif",
+    128
+   ],
+   [
+    "pref-photo-240.avif",
+    240
+   ]
+  ],
+  "webp": [
+   [
+    "pref-photo-64.webp",
+    64
+   ],
+   [
+    "pref-photo-128.webp",
+    128
+   ],
+   [
+    "pref-photo-240.webp",
+    240
+   ]
+  ]
  }
 }

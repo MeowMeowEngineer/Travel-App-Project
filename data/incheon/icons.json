@@ -200,6 +200,71 @@
    "glyph": "wave",
    "label": "섬·바다 안내 마스코트",
    "group": "mascot"
+  },
+  "icon-plan": {
+   "glyph": "spark",
+   "label": "AI 코스 만들기",
+   "group": "plan"
+  },
+  "plan-dur-day": {
+   "glyph": "sun",
+   "label": "당일치기",
+   "group": "plan"
+  },
+  "plan-dur-1n2d": {
+   "glyph": "moon",
+   "label": "1박 2일",
+   "group": "plan"
+  },
+  "plan-dur-2n3d": {
+   "glyph": "bag",
+   "label": "2박 3일",
+   "group": "plan"
+  },
+  "plan-with-solo": {
+   "glyph": "user",
+   "label": "혼자",
+   "group": "plan"
+  },
+  "plan-with-couple": {
+   "glyph": "heart",
+   "label": "연인·친구",
+   "group": "plan"
+  },
+  "plan-with-parents": {
+   "glyph": "cup",
+   "label": "부모님과",
+   "group": "plan"
+  },
+  "pref-photo": {
+   "glyph": "camera",
+   "label": "사진 명소",
+   "group": "plan"
+  },
+  "cond-stroller": {
+   "glyph": "family",
+   "label": "유모차",
+   "group": "plan"
+  },
+  "cond-wheelchair": {
+   "glyph": "access",
+   "label": "휠체어",
+   "group": "plan"
+  },
+  "cond-parking": {
+   "glyph": "car",
+   "label": "주차 편한 곳",
+   "group": "plan"
+  },
+  "plan-budget": {
+   "glyph": "wallet",
+   "label": "입장료 예산",
+   "group": "plan"
+  },
+  "plan-swap": {
+   "glyph": "swap",
+   "label": "일정 바꾸기",
+   "group": "plan"
   }
  }
 }
