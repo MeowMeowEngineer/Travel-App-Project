@@ -1,0 +1,53 @@
+/* ---------------------------------------------------------------- English pages (/en/, templates/en/; the other versions share them).
+   Only what the shared components do not already cover; the English pages use the Korean pages' classes. */
+
+/* the language links of the global bar: the language menu, 77-lang.css */
+
+/* key facts where two sources differ: the source's name above its value, a second line under it */
+html[lang="en"] .kf-alt .kf-src { display: block; margin: 0 0 2px; }
+html[lang="en"] .kf-alt .kf-sub { display: block; margin: 2px 0 0; }
+/* the place page: the rest of the summary under the route row; the Korean address under the English one */
+.lede-more { margin: 18px auto 0; max-width: 36em; font-size: clamp(16px, 1.25vw, 18px); line-height: 1.55; color: var(--ink-2); letter-spacing: -.01em; }
+.v-ko { margin-top: 4px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+
+/* home: the start tiles are the colour bento of 45-accent.css (no counts line: it also restyled the Korean home's
+   slide counter, .op-dots .op-count) */
+
+/* guides index and home: answer tiles with the guide title above its first sentence */
+.en-guides .ans-q { display: block; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+/* the home's three guide tiles (not a carousel): one column on phones, so 'places' and long words never overflow 360 */
+@media (max-width: 699px) { .en-guides.answers-2 { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
+
+/* course: stop heading (number, name, straight line to the next stop) and the grid without the Korean stop band */
+.en-stop-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font: 700 clamp(19px, 1.7vw, 24px)/1.25 var(--font); letter-spacing: -.02em; }
+.en-stop-h .code { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 9px; border-radius: 16px; background: var(--ink); color: #fff; font-size: 14px; letter-spacing: 0; }
+.en-stop-nm { min-width: 0; }
+.en-stop-d { margin-left: auto; font-size: 14px; font-weight: 400; color: var(--ink-3); letter-spacing: 0; }
+.en-co-grid .p2-stops { grid-column: 1 / span 7; min-width: 0; }
+.en-co-grid .p2-stops .h-sec { margin-bottom: 20px; }
+.en-co-grid .co-map { grid-column: 8 / -1; }
+.en-co-grid.no-map .p2-stops { grid-column: 1 / -1; }
+@media (min-width: 1024px) { .en-co-grid.no-map .stop-body.has-ph { grid-template-columns: minmax(0, 4fr) minmax(0, 5fr); } }
+@media (max-width: 1023px) { .en-stop-d { margin-left: 0; flex-basis: 100%; } }
+
+/* events: one tile per series */
+.en-jump { display: flex; flex-wrap: wrap; gap: 0 22px; margin-top: 8px; }
+.en-jump a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 17px; }
+.en-evs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--g); margin-top: 24px; align-items: start; }
+.en-ev { min-width: 0; padding: 24px 26px 22px; border-radius: var(--r); background: var(--bg-2); scroll-margin-top: calc(var(--bar) + 16px); }
+.en-ev-date { display: flex; flex-wrap: wrap; align-items: baseline; font: 700 clamp(24px, 2.2vw, 30px)/1.1 var(--font); letter-spacing: -.03em; }
+.en-ev-y { margin-left: 10px; font-size: 15px; font-weight: 400; color: var(--ink-3); letter-spacing: 0; }
+.en-ev-name { margin-top: 8px; font: 700 clamp(19px, 1.6vw, 22px)/1.3 var(--font); letter-spacing: -.02em; }
+.en-ev-facts { margin-top: 14px; }
+.en-ev .h-sub { margin-top: 18px; }
+.en-ev-notes, .en-ev-hl { margin-top: 10px; padding-left: 1.15em; list-style: disc; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.en-ev-hl li + li, .en-ev-notes li + li { margin-top: 4px; }
+.en-ev-usual, .en-ev-eds, .en-ev-pl { margin-top: 12px; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.en-ev-usual b, .en-ev-eds b, .en-ev-pl b { color: var(--ink); }
+.en-ev-src { margin-top: 14px; font-size: 13.5px; line-height: 1.55; }
+.en-ev-more summary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 8px; font-size: 15px; font-weight: 700; color: var(--link); cursor: pointer; list-style: none; }
+.en-ev-more summary::-webkit-details-marker { display: none; }
+@media (max-width: 1023px) {
+  .en-evs { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .en-ev { padding: 18px 18px 16px; border-radius: 18px; }
+}

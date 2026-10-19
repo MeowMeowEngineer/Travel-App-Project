@@ -1,0 +1,58 @@
+/* ---------------------------------------------------------------- the language menu and the other versions' type
+   (templates/_lang.html.j2, pipeline/en_site.py, locale table pipeline/locales.py).
+
+   The menu: a globe + the current version's name in the global bar of every page (Korean, English and the other
+   versions), a <details> that opens a small white list without JavaScript (site.js closes it on an outside click,
+   a followed link or Escape). Phones show the globe alone (the name stays for screen readers). Every row is a 44px
+   target with the shared focus ring; the current version is bold. On the home opening (transparent bar over the
+   photo, 46-hero.css) the globe turns white like the rest of the bar; the list keeps dark text on white.
+
+   Type: Pretendard 400/700 (vendor/pretendard) holds every Latin accent (ä ö ü ß é è ç ñ á í ó ú …), Cyrillic and kana
+   (checked against its unicode-range), so German, French, Spanish and Russian stay in one face with no extra download.
+   Han characters are not in it: Japanese and Chinese put the system CJK fonts first (each draws its own kana and Han,
+   so a line never mixes two faces), then the site stack (Hangul in a lang="ko" span still falls through to
+   Pretendard). CJK prose breaks between characters (Korean keeps whole words: keep-all), with strict kinsoku;
+   German, French, Spanish and Russian prose hyphenates. */
+.lang-menu { position: relative; flex: none; margin-left: 2px; }
+.lang-btn { list-style: none; display: flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 0 10px; color: #333336; font: 400 14px/1 var(--font); letter-spacing: -.01em; white-space: nowrap; cursor: pointer; border-radius: 980px; }
+.lang-btn::-webkit-details-marker { display: none; }
+.lang-btn::marker { content: ""; }
+.lang-btn:hover { color: #000; }
+.lang-ico { flex: none; width: 18px; height: 18px; }
+.lang-list { position: absolute; right: 0; top: calc(100% + 4px); z-index: 70; min-width: 200px; padding: 6px; background: #fff; border-radius: 14px; box-shadow: 0 12px 36px rgba(0, 0, 0, .16), 0 0 0 1px rgba(0, 0, 0, .06); }
+.lang-menu .mast-lang { display: flex; align-items: center; min-height: 44px; margin: 0; padding: 0 14px; border-radius: 10px; color: var(--ink); font: 400 15px/1.25 var(--font); letter-spacing: 0; text-decoration: none; white-space: nowrap; }
+.lang-menu .mast-lang:hover { background: var(--bg-2); color: var(--ink); text-decoration: none; }
+.lang-menu .mast-lang[aria-current] { font-weight: 700; }
+.lang-menu .mast-lang[aria-current]::after { content: ""; width: 7px; height: 7px; margin-left: auto; padding-left: 0; border-radius: 50%; background: var(--blue); }
+html:not(.is-scrolled) .pg-en-home .mast .lang-btn { color: #fff; }
+html:not(.is-scrolled) .pg-en-home .mast:has(.menu[open]) .lang-btn { color: var(--ink); }   /* the phone menu turns the bar white */
+html:not(.is-scrolled) .pg-en-home .mast .lang-menu .lang-list a.mast-lang { color: var(--ink); }   /* beats 46-hero's :is() list */
+@media (max-width: 1023px) {
+  .lang-btn { justify-content: center; padding: 0; }
+  .lang-cur { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .lang-ico { width: 20px; height: 20px; }
+}
+
+/* the other versions: key-fact source names on their own line (as English, 75-en.css) */
+html:not([lang="ko"]):not([lang="en"]) .kf-alt .kf-src { display: block; margin: 0 0 2px; }
+html:not([lang="ko"]):not([lang="en"]) .kf-alt .kf-sub { display: block; margin: 2px 0 0; }
+
+/* Japanese and Chinese: system CJK fonts first, then the site stack; break between characters */
+:lang(ja) { --font: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, "Noto Sans JP", 'Pretendard', 'Pretendard Fallback Noto', 'Pretendard Fallback WQY', 'Pretendard Fallback Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+:lang(zh-Hans) { --font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", 'Pretendard', 'Pretendard Fallback Noto', 'Pretendard Fallback WQY', 'Pretendard Fallback Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+:lang(zh-Hant) { --font: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", 'Pretendard', 'Pretendard Fallback Noto', 'Pretendard Fallback WQY', 'Pretendard Fallback Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+/* each language name in the menu in its own script's fonts (Русский on a Japanese page is not drawn by a Japanese font) */
+.lang-list :is(:lang(ko), :lang(en), :lang(de), :lang(fr), :lang(es), :lang(ru)) { --font: 'Pretendard', 'Pretendard Fallback Noto', 'Pretendard Fallback WQY', 'Pretendard Fallback Inter', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif; }
+html:is([lang="ja"], [lang="zh-Hans"], [lang="zh-Hant"]) body { word-break: normal; line-break: strict; }
+html:is([lang="ja"], [lang="zh-Hans"], [lang="zh-Hant"]) [lang="ko"] { word-break: keep-all; }
+/* German, French, Spanish, Russian prose: hyphenate long words instead of leaving ragged gaps */
+:is(:lang(de), :lang(fr), :lang(es), :lang(ru)) :is(p, li, dd, h1, h2, h3) { hyphens: auto; -webkit-hyphens: auto; }
+
+/* A Japanese or Chinese title or outlet name inside a page of another language (the /abroad/ blocks on place pages,
+   review 2026-10-14): drawn in the system CJK face directly, not in Pretendard — Pretendard has no Han, so its kana
+   beside system Han mixed two faces, and its kana subsets (≈53 KB) pushed a place page's first-visit fonts past 300 KB. */
+html:not(:lang(ja)) [lang="ja"] { font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, "Noto Sans JP", "Noto Sans CJK JP", system-ui, sans-serif; }
+html:not(:lang(zh)) [lang|="zh"] { font-family: "PingFang SC", "PingFang TC", "Microsoft YaHei", "Microsoft JhengHei", "Noto Sans SC", "Noto Sans CJK SC", system-ui, sans-serif; }
+/* …and broken between characters as Japanese and Chinese are (the Korean page's keep-all would hold a whole Japanese
+   sentence — the /abroad/ quotations, 2026-10-14 — on one line until overflow-wrap cut it anywhere) */
+html:not(:lang(ja)) [lang="ja"], html:not(:lang(zh)) [lang|="zh"] { word-break: normal; line-break: strict; }

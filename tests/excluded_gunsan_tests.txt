@@ -1,0 +1,59 @@
+# 군산 저장소에서 옮기지 않은 시험 (2026-10-19 엔진 복사 때)
+# 이유는 셋 중 하나다: (A) 옮기지 않은 군산 전용 도구를 시험한다, (B) 군산 실데이터(data/gunsan)·군산 그림·군산 문서
+# (docs/handover)를 입력으로 군산의 사실을 확인한다, (C) 군산 주소 이전 설정을 시험한다.
+# 원본은 군산 저장소 tests/에 그대로 있다. (B)의 불변식 시험(모든 공개 레코드가 챗봇 지식에 있다, 모든 값이 출처 주소와
+# 확인일을 단다, 영어판 hreflang 등)은 data/incheon에 데이터가 생기면 인천 데이터로 다시 쓴다.
+
+## 파일째 옮기지 않음
+tests/test_archive_gunsan_static.py (13)        A  tools/archive_gunsan_static.py — 군산시 전용 수집 도구(옮기지 않음)
+tests/test_collect_gunsan.py (24)               A  tools/collect_gunsan.py — 군산시 전용 수집 도구
+tests/test_collect_gunsan_details.py (10)       A  tools/collect_gunsan_details.py — 군산시 전용 수집 도구
+tests/test_collect_gunsan_full.py (19)          A  tools/collect_gunsan_full.py — 군산시 전용 수집 도구
+tests/test_gunsan_parse.py (25)                 A  tools/gunsan_parse.py — 군산시 사이트 HTML 해석기
+tests/test_gunsan_scope.py (11)                 A  tools/gunsan_scope.py — 군산시 사이트 메뉴 목록
+tests/test_gunsan_static.py (34)                A  tools/gunsan_static.py — 군산시 사이트 정적 배치 추출
+tests/test_import_gunsan_courses.py (8)         A  tools/import_gunsan_courses.py — 군산 코스 가져오기
+tests/test_import_gunsan_full.py (8)            A  tools/import_gunsan_full.py — 군산 상세 가져오기
+tests/test_round3_festivals.py (2)              A  tools/round3_festivals.py — 군산 3차 회차 스크립트
+tests/test_domain_move.py (5)                   C  군산 이전 주소 308 규칙(vercel.json)·data/gunsan/site.json
+
+## 함수만 옮기지 않음 (나머지 시험은 그대로 돈다)
+tests/test_aeo_geo.py::test_most_specific_types_from_the_source_category                 B  data/gunsan/places.json 분류
+tests/test_art.py::test_gunsan_art_json_matches_the_renditions_on_disk                   B  군산 그림 art.json·templates/assets/art 파생본
+tests/test_art.py::test_every_picture_has_a_slot_and_illustration_alt_texts              B  군산 그림 art.json 내용
+tests/test_art.py::test_the_season_hero_is_not_a_slot_any_more (일부)                     B  군산 계절 그림 4장의 '개편 뒤 연결' 기록 확인 — 나머지는 시험용 art.json으로 돈다
+tests/test_art_slots.py::test_every_slot_of_the_owners_list_is_a_place_the_site_has      B  docs/handover/image_prompts_round2_2026-10-13.md·data/gunsan
+tests/test_art_slots.py::test_the_owners_list_holds_back_only_pictures_without_a_place   B  같은 군산 그림 목록 문서
+tests/test_art_slots.py::test_event_kind_is_the_owners_table                             B  같은 군산 그림 목록 문서(K표)
+tests/test_art_slots.py::test_event_kind_over_the_current_data                           B  data/gunsan/events.json
+tests/test_ask.py::test_repo_starters_are_clean_and_resolve_to_published_guides          B  data/gunsan/ask.json·guides.json
+tests/test_ask.py::test_repo_starters_speak_every_language_as_the_chat_chips_do          B  data/gunsan/ask.json
+tests/test_chat_index.py (14: test_every_published_record_is_in_the_catalog_and_the_docs, test_place_lines_carry_the_first_screen_facts_and_both_values_where_sources_differ, test_every_fact_names_its_source_address_and_check_date, test_dates_by_kind_and_timetables_with_their_effective_date, test_the_guide_gives_each_stop_its_way_back, test_other_names_and_the_combined_ticket_s_places, test_the_about_doc_says_what_the_chat_sends_where, test_search_tokens_leave_out_web_addresses, test_english_pages_are_known_for_link_mapping, test_no_tourapi_overview_and_no_gunsan_original_text, test_outside_links_are_the_data_s_own_addresses, test_bytes_do_not_depend_on_the_build_date, test_catalog_token_budget, test_search_tokens_cover_names_and_menus)
+                                                                                         B  data/gunsan에서 만든 챗봇 지식(fixture 'real')
+tests/test_chat_node.py (CHAT_KB_DIR 부분)                                                B  data/gunsan 지식으로 돌던 chat.test.js 'real knowledge' 2개 — 지금은 CHAT_KB_DIR 없이 돌고 그 2개는 설계대로 건너뜀
+tests/test_designations.py::test_gunsan_designations_are_sourced_and_matched             B  data/gunsan 지정 업소(군산맛집·모범음식점)
+tests/test_designations.py::test_official_phones_and_differing_values_keep_their_source_and_never_overwrite   B  data/gunsan 군산시 공식 전화
+tests/test_en_content.py::test_promotional_word_inside_a_place_name_is_a_name            B  data/gunsan/en/names.json(tools/en_content.py DATA)
+tests/test_en_site.py (10: test_english_routes_and_counts, test_lang_and_no_hangul_outside_lang_ko, test_hreflang_pairs_are_reciprocal, test_sitemap_has_only_indexable_english_urls, test_conflicting_values_show_both_with_the_note, test_designations_in_english_with_list_link_and_no_checked_date, test_english_photos_carry_creator_and_licence_page, test_stale_record_is_not_rendered, test_validator_catches_a_missing_english_designation_or_a_shown_date, test_production_validate_passes)
+                                                                                         B  data/gunsan 복사본으로 영어판 빌드
+tests/test_guide_reading.py (5: test_every_guide_sentence_is_on_its_page_verbatim_and_in_order, test_answer_card_toc_sections_and_faq_markup, test_again_rows_and_english_bullets, test_hub_answer_card_shows_a_dozen_places_and_points_to_the_rest, test_one_place_count_and_one_card_per_place)
+                                                                                         B  data/gunsan 가이드
+tests/test_icons.py::test_registry_holds_every_fixed_id_with_a_known_glyph (일부)          B  ID가 군산 프롬프트 문서(docs/handover/gpt_image_prompts_3d_2026-10-14.md)에 있는지 — 등록부·glyph 확인은 그대로
+tests/test_intl_content.py::test_prepare_lang_writes_the_language_batches                B  data/gunsan
+tests/test_intl_site.py (7: test_routes_lang_and_names[9개 언어], test_hreflang_every_version_and_reciprocal, test_language_menu_links_counterparts_or_homes, test_conflicts_formats_and_fallback_names, test_index_rule_sitemap_and_llms, test_validator_catches_wrong_script_on_a_page, test_production_validate_passes)
+                                                                                         B  data/gunsan 복사본으로 다국어판 빌드
+tests/test_media_behaviour.py::test_manifest_holds_only_kogl1_photos_with_files_within_budget   B  군산 장소 사진 파생본(templates/assets/media)·data/gunsan
+tests/test_present.py (37: test_display_value_never_drops_or_changes_a_word, test_every_parsed_form_prints_the_display_words_in_order, test_no_value_passes_the_row_check_that_the_old_probe_failed, test_every_dropped_character_is_caught, test_preview_build_validates_with_the_row_check, test_binhaewon_hours_conflict_shows_both_sources_flag_first, test_modern_history_museum_fee_table_and_season_hours, test_free_parking_value_reads_the_same_in_page_status_and_markup, test_status_keeps_the_label_of_a_bare_open_value, test_status_line_is_never_empty_and_shows_no_check_date, test_0507_numbers_stay_whole_and_tel_dials_the_visible_number, test_contested_phone_is_never_the_call_number, test_alternative_homepages_are_linked, test_glued_weekday_closures_are_read, test_monday_open_filter_needs_every_source_to_say_so, test_stay_ask_line_only_where_it_can_differ, test_menu_search_finds_binhaewon_and_alternate_names, test_regions_follow_the_five_anchors, test_events_split_upcoming_past_and_undated, test_event_places_split_the_place_name_and_match_contentid, test_event_rows_do_not_settle_contested_values, test_two_night_course_meals_and_activities_are_not_stations, test_measured_course_shows_its_sum_and_a_computed_lede, test_course_map_needs_half_the_stops_and_numbers_them_as_the_list, test_course_page_shows_the_lede_that_jsonld_describes, test_every_licensed_photo_has_its_measured_size, test_home_opening_markup_carousel_and_links, test_home_news_ranking_on_fixed_dates, test_home_news_pictures_are_allowed_ones, test_home_news_row_turns_by_itself_and_stops_for_the_reader, test_home_focus_follows_dish_festivals, test_home_accent_points, test_home_answer_figures_have_a_referent, test_home_survives_missing_places, test_homes_ask_in_place, test_launcher_and_quick_menu_are_there_at_load, test_english_home_keeps_its_photo_opening)
+                                                                                         B  data/gunsan 실데이터(빈해원·근대역사박물관·군산 홈 이야기 등)
+tests/test_round2.py::test_course_stop_links_keep_compound_stops_unlinked                A  tools/round2_data.py(군산 2차 회차 스크립트)
+tests/test_round2.py::test_content_checker_flags_copying_commentary_and_unsourced_facts  A  tools/round2_content.py(군산 2차 회차 스크립트)
+tests/test_round2.py::test_time_conflict_and_area_helpers (일부 → test_area_helpers)      A  time_conflict는 tools/round2_data.py — 주소 도움 함수 확인은 그대로
+tests/test_tourapi_details.py::test_guide_checker_recomputes_straight_line_distances     A  tools/round3_content.py(군산 3차 회차 스크립트)
+tests/test_uiux.py::test_empty_real_data_has_honest_working_visitor_choices              B  data/gunsan 복사본
+
+## 고쳐서 옮김 (군산 그림·키가 시험 재료였던 것 — 같은 단언을 시험용 재료로)
+tests/test_art.py: test_a_picture_without_its_renditions_is_an_empty_slot, test_figure_macro_draws_the_picture_without_a_label_and_passes_the_page_rules, test_build_publishes_only_the_renditions_pages_use, test_without_art_files_the_site_is_the_same, test_connected_art_is_published_without_a_label_and_valid — 시험용 그림 묶음(art_set)
+tests/test_mascot.py: 마스코트 없음(지금 상태)과 시험용 마스코트(fake_mascot) 둘 다 시험
+tests/test_chat_ui.py: 시작 버튼의 얼굴 — 마스코트가 있으면 그림, 없으면 대화 glyph
+tests/test_kakao_map.py: SITE를 data/sample/site.json(가짜 시험 키)에서 읽는다
+tests/test_icons.py: 등록부를 data/incheon/icons.json(pipeline/icons.py REGISTRY)에서 읽는다

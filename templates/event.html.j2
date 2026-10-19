@@ -1,0 +1,127 @@
+{% extends "base.html.j2" %}
+{% import "_p2.html.j2" as p2 %}
+{#- One event series (Apple direction): the newest dated edition in the place-page skeleton. First screen: the date
+    big, the relative chip, the name, the tiles (기간 · 시간 · 요금 · 장소 · 문의; a value another source gives
+    differently reads '출처마다 다름'), '확인 필요' once, the route row and one programme fact. Below: the facts card
+    (both values with their providers + '방문 전 주최 측 확인'), the programme, '보통 언제 열리나', the map, where it
+    is held, earlier editions with their sources, values that differ in earlier editions, other sources' schedule
+    notes and the videos (thumbnail facade). V = present.event_vm; ev = the newest edition record.
+    The programme highlights and a contested phone's other values print as plain text: pipeline.validate finds them
+    verbatim in the page text, and a tap-to-call link inside would split that text. -#}
+{% set fn = V.notes|length > 1 %}
+{% block bodyclass %}pg-event{% endblock %}
+{% block main_class %}{% endblock %}
+{% block lnav %}
+{% set links = [('정보', '#h-facts')] %}
+{% if V.program %}{% set _ = links.append(('프로그램', '#h-prog')) %}{% endif %}
+{% if V.point %}{% set _ = links.append(('지도', '#h-map')) %}{% endif %}
+{% if V.past %}{% set _ = links.append(('지난 회차', '#h-past')) %}{% endif %}
+{% if V.videos %}{% set _ = links.append(('영상', '#h-media')) %}{% endif %}
+{{ ui.lnav(V.sr.name, links, {'url': V.route, 'label': '길찾기', 'ext': true, 'track': 'route_click', 'provider': 'kakao_route'} if V.route else {'url': '#h-facts', 'label': '일정·장소'}) }}
+{% endblock %}
+{% block content %}
+<article class="place event">
+  <header class="pl-hero ev-hero">
+    <div class="wrap pl-hero-in">
+      <div class="pl-head">
+        <p class="kicker"><a href="/events/">행사·축제</a>{% if V.area %}<span>{{ site.locality }} {{ V.area }}</span>{% endif %}{% if V.chip %}<span class="chip chip-inv">{{ V.chip }}</span>{% endif %}</p>
+        {% if V.dp and V.dp.a %}<p class="ev-big" aria-hidden="true"><span class="num tn">{{ V.dp.a.md }}</span><span class="wd">{{ V.dp.a.wd }}</span>{% if V.dp.b %}<span class="num dash">–</span><span class="num tn">{{ V.dp.b.md }}</span><span class="wd">{{ V.dp.b.wd }}</span>{% elif V.dp.end_month %}<span class="num dash">–</span><span class="wd wd-m">{{ V.dp.end_month|int }}월</span>{% endif %}</p>{% endif %}
+        <h1 class="d1 vt-title">{{ V.title }}</h1>
+        <dl class="kf kf-hero kf-ev">{% for x in V.slots %}<div class="kf-i kf-{{ x.field }}{% if x.flag %} is-conflict{% endif %}"><dt>{{ x.label }}</dt><dd><span class="kf-main">{{ x.html|dbr }}</span></dd></div>{% endfor %}</dl>
+        <div class="kf-notes">
+          {% if V.slots|selectattr('flag')|list %}<p class="kf-call"><a href="#h-facts"><span class="flag">{% for x in V.slots if x.flag %}{{ x.label }}{% if not loop.last %}·{% endif %}{% endfor %} 출처마다 다름</span></a> · 방문 전 주최 측 확인</p>{% endif %}
+          {% if V.need %}<p class="kf-need">확인 필요: {{ V.need|join('·') }}</p>{% endif %}
+          {% if ev.source_name or ev.checked_at %}<p class="kf-prov">출처 {{ ev.source_name or '주최 측 안내' }}</p>{% endif %}
+        </div>
+        {% if V.route %}{{ ui.route({'url': V.route, 'role': 'route', 'key': 'kakao_route', 'label': '카카오맵 길찾기', 'precise': true}, V.front, [], '', 'h-dir', V.sr.name) }}{% endif %}
+        {% if V.lede2 %}<p class="ev-lede">{{ V.lede2 }}</p>{% endif %}
+      </div>
+    </div>
+  </header>
+
+  <div class="pl-band tone-2"><div class="wrap pl-grid">
+    <section class="pl-side" aria-labelledby="h-facts" data-sticky>
+      <h2 id="h-facts" class="h-side"><span class="nm">{{ V.title }}</span> 일정·장소</h2>
+      <p class="p2-ev-ans" data-block="summary">{{ ev._title }} 기간: {{ p2.period(ev, '~') }}{% if ev.place_name %} · 장소: {{ ev.place_name|squash }}{% endif %}</p>
+      <dl class="facts">{% for r in V.rows %}
+        <div class="fr{% if r.blocks or r.text|length > 26 %} wide{% endif %}{% if r.flag %} conflict{% endif %}"><dt>{{ r.label }}</dt><dd>
+        {% if r.blocks %}
+        <table class="tt tt-src"><tbody>{% for b in r.blocks %}<tr class="src-row"><th colspan="2" scope="rowgroup">{{ b.provider_full or b.provider }}{% if fn %}{{ b.n|sup }}{% endif %}</th></tr><tr><td colspan="2" class="whole">{{ b.text if (r.field == 'tel' and not loop.first) else b.html }}</td></tr>{% endfor %}</tbody></table>
+        <p class="flag-line"><span class="flag">출처마다 다름</span> · 방문 전 주최 측 확인{% if r.tel and r.tel[1] %} <a class="tel" href="tel:{{ r.tel[1] }}" data-track="tel_click">{{ r.tel[0] }}</a>{% endif %}</p>
+        {% else %}<div class="v">{{ r.html }}{% if fn %}{{ r.n|sup }}{% endif %}</div>{% endif %}
+        </dd></div>{% endfor %}</dl>
+      {% if V.lede %}<p class="prog-note">{{ V.lede }}</p>{% endif %}
+      {% if ev.summary %}<p class="prog-note">{{ ev.summary }}</p>{% endif %}
+      {% if not (V.program and not V.program.basis) %}{% for n in V.ev_notes %}<p class="prog-note">{{ n|tel }}</p>{% endfor %}{% endif %}{# the programme block prints these notes when it is the newest edition's own #}
+      {{ ui.notes(V.notes) }}
+    </section>
+    <div class="pl-main">
+      {% if V.program %}
+      <section class="block" aria-labelledby="h-prog">
+        <h2 id="h-prog" class="h-sec"><span class="nm">{{ V.sr.name }}</span> 주요 프로그램</h2>
+        {% if V.program.basis %}<p class="h-sub">{{ V.program.basis }} 기준</p>{% endif %}
+        <ul class="prog">{% for x in V.program['items'] %}<li>{{ x }}</li>{% endfor %}</ul>
+        {% for n in V.program.notes %}<p class="prog-note">{{ n|tel }}</p>{% endfor %}
+        <p class="prog-src">출처: {% for s in V.program.src %}{{ p2.src(s.name, s.url) }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+      </section>
+      {% endif %}
+      {% if V.usual %}
+      <section class="block" aria-labelledby="h-usual">
+        <h2 id="h-usual" class="h-sec"><span class="nm">{{ V.sr.name|josa('은/는') }}</span> 보통 언제 열리나</h2>
+        <ul class="usual">{% for u in V.usual %}<li><span class="u-t">{{ u.text }}{% if u.place %} · 장소: {{ u.place }}{% endif %}</span>{% if u.name or u.url %}<span class="u-s">{{ p2.src(u.src or u.name, u.url, u.checked) }}</span>{% endif %}</li>{% endfor %}</ul>
+      </section>
+      {% endif %}
+      {% if V.point %}
+      <section class="block" aria-labelledby="h-map">
+        <h2 id="h-map" class="h-sec"><span class="nm">{{ V.sr.name }}</span> 장소 지도</h2>
+        {{ ui.mapfig(V.point, V.sr.name ~ ' 장소 지도', 'place-map', '행사 장소 좌표') }}
+      </section>
+      {% endif %}
+      {% if V.places %}
+      <section class="block" aria-labelledby="h-at">
+        <h2 id="h-at" class="h-sec"><span class="nm">{{ V.sr.name|josa('이/가') }}</span> 열리는 곳</h2>
+        <ol class="near">{% for e in V.places %}<li><a href="{{ e._path }}" data-track="nearby_click" data-place="{{ e.id }}">{{ e.name }}</a><span class="near-t">{{ e._type or '관광지' }}</span><span class="near-d">{{ e._area }}</span></li>{% endfor %}</ol>
+      </section>
+      {% endif %}
+      {% if sr.past %}
+      <section class="block" aria-labelledby="h-past">
+        <h2 id="h-past" class="h-sec"><span class="nm">{{ V.sr.name }}</span> 지난 회차</h2>
+        <ol class="p2-eds">{% for x in sr.past %}
+          <li><p class="p2-ed-d tn">{{ p2.period(x) }}</p><p class="p2-ed-n">{{ x.name }}</p><p class="p2-ed-m">{% if x.place_name %}<span>{{ x.place_name|squash }}</span>{% endif %}{% for n in x.notes or [] %}<span>{{ n }}</span>{% endfor %}</p><p class="p2-ed-s">출처: {{ p2.src(x.source_name, x.source_url, x.checked_at) }}{% for a in x.also_sources or [] %} · {{ p2.src(a.name, a.url, a.checked_at) }}{% endfor %}</p></li>
+        {% endfor %}</ol>
+      </section>
+      {% endif %}
+      {% if sr.alternatives %}
+      {# every edition's values that differ between sources, each with its full source name (the facts
+         card above shows the newest edition's in place) #}
+      <section class="block" aria-labelledby="h-alt">
+        <h2 id="h-alt" class="h-sec"><span class="nm">{{ V.sr.name }}</span> 출처마다 다르게 적힌 값</h2>
+        <ul class="p2-alts">{% for r in sr.alternatives %}{% set x = r.ev %}
+          <li><p class="p2-alt-k">{{ x.name }} · {{ r.label }}</p>
+            <ul>
+              <li><span class="p2-alt-v">{% if r.field == 'period' %}{{ p2.period(x) }}{% elif r.field == 'address' %}{{ x.address|address }}{% else %}{{ x[r.field]|squash }}{% endif %}</span><span class="p2-alt-s">{{ p2.src(x.source_name, x.source_url, x.checked_at) }}</span></li>
+              {% for a in r['values'] %}<li><span class="p2-alt-v">{{ a.value|squash }}</span><span class="p2-alt-s">{{ p2.src(a.source_name, a.source_url, a.checked_at) }}</span></li>{% endfor %}
+            </ul>
+          </li>
+        {% endfor %}</ul>
+        <p class="flag-line"><span class="flag">출처마다 다름</span> · 방문 전 주최 측 확인</p>
+      </section>
+      {% endif %}
+      {% if V.undated %}
+      <section class="block" aria-labelledby="h-und">
+        <h2 id="h-und" class="h-sec"><span class="nm">{{ V.sr.name }}</span> 다른 출처의 일정 안내</h2>
+        <ul class="usual">{% for r in V.undated %}<li><span class="u-t">{{ r.period_text or r.title }}{% if r.place %} · 장소: {{ r.place }}{% endif %}</span><span class="u-s">{{ p2.src(r.source, r.source_url, r.checked) }}</span></li>{% endfor %}</ul>
+      </section>
+      {% endif %}
+      {% if V.videos %}
+      <section class="block" data-block="media" aria-labelledby="h-media">
+        <h2 id="h-media" class="h-sec"><span class="nm">{{ V.sr.name }}</span> 영상</h2>
+        <ul class="vids">{% for v in V.videos %}{{ ui.video(v, '', [], false, 'li') }}{% endfor %}</ul>
+        {% if has_videos %}<p class="p2-more"><a class="ch-link" href="/videos/">영상 모아 보기<span class="arr" aria-hidden="true">›</span></a></p>{% endif %}
+      </section>
+      {% endif %}
+      <p class="p2-more"><a class="ch-link" href="/events/">{{ site.region }} 행사·축제 전체 일정<span class="arr" aria-hidden="true">›</span></a></p>
+    </div>
+  </div></div>
+</article>
+{% endblock %}

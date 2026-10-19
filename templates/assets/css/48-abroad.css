@@ -1,0 +1,61 @@
+/* ================================================================ 해외에서 본 군산 (/abroad/ and the place page's media
+   block; owner 2026-10-13). Rows of text, not cards: outlet · date (small, grey), the article's own headline as the link,
+   our one-line note, the places it mentions; with the outlet's own preview picture (og:image) beside it when there is
+   one. A social post's embed loads into .ab-embed when the card nears the screen or '게시물 불러오기' is pressed
+   (site.js [data-embed]); the link to the post is always there. */
+.ab-wrap { padding-block: 8px clamp(48px, 6vw, 88px); }
+.ab-sec + .ab-sec { margin-top: clamp(40px, 5vw, 64px); }
+.ab-h { margin: 0 0 16px; font: 700 clamp(22px, 2.4vw, 28px)/1.25 var(--font); letter-spacing: -.02em; }
+.ab-h .tn { color: var(--ink-3); font-weight: 400; margin-left: 4px; }
+.ab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.ab-item { padding: 18px 0; border-top: 1px solid var(--hair); }
+.ab-item:last-child { border-bottom: 1px solid var(--hair); }
+/* An article with the outlet's own preview picture: picture left, text right (phones: a smaller picture, same row).
+   The box is 3:2 with the picture filling it, like any link preview; the credit line names the outlet. */
+.ab-item.has-thumb { display: grid; grid-template-columns: clamp(104px, 28vw, 240px) minmax(0, 1fr); gap: 0 clamp(14px, 2vw, 24px);
+  align-items: start; }
+.ab-body { min-width: 0; }
+.ab-thumb { display: block; aspect-ratio: 3 / 2; max-width: 100%; overflow: hidden; border-radius: 10px;
+  background: var(--bg-2); }
+.ab-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ab-credit { margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: var(--ink-3); }
+.ab-meta { margin: 0 0 6px; font-size: 13px; line-height: 1.4; color: var(--ink-3); }
+.ab-src { font-weight: 700; color: var(--ink); }
+.ab-title { margin: 0 0 6px; font: 700 17px/1.4 var(--font); letter-spacing: -.01em; }
+.ab-title a { color: inherit; text-decoration: none; }
+.ab-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ab-title .arr { margin-left: 4px; color: var(--ink-3); }
+.ab-note { margin: 0; font-size: 15px; line-height: 1.6; max-width: 44em; }
+/* a highlight's quotation of the original (owner 2026-10-14) under our note: the original's own words in its language */
+.ab-q { margin: 10px 0 0; padding: 0 0 0 12px; border-left: 3px solid var(--sea); max-width: 44em; }
+.ab-q p { margin: 0; font-size: 15px; font-weight: 400; line-height: 1.6; color: var(--ink-2); overflow-wrap: break-word; }
+.ab-places { margin: 8px 0 0; font-size: 14px; color: var(--ink-3); }
+.ab-places a { display: inline-flex; align-items: center; min-height: 32px; }
+.ab-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 10px 0 0; font-size: 14px; }
+.ab-act a { display: inline-flex; align-items: center; min-height: 44px; }
+.ab-load { min-height: 44px; padding: 0 16px; border: 1px solid var(--hair); border-radius: 999px; background: transparent;
+  color: inherit; font: 700 14px/1 var(--font); cursor: pointer; }
+.ab-load:hover { border-color: currentColor; }
+.ab-embed:empty { display: none; }
+.ab-embed { margin-top: 12px; max-width: 540px; }
+.ab-embed iframe { max-width: 100%; border: 0; }
+.ab-sub { margin: 24px 0 4px; font: 700 16px/1.4 var(--font); }
+.ab-in .ab-title { font-size: 16px; }
+.ab-src-note { margin-top: 32px; }
+
+/* /abroad/: the articles as a grid of cards (owner 2026-10-13: '바둑판 형식으로'). 1 column on phones, 2 from 640px, 3 from
+   1024px. A card with the outlet's preview picture shows it on top (16:10); a card without one is a tinted text card —
+   no empty cover. The place pages keep the compact rows (.ab-in). */
+.ab-list.ab-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: clamp(14px, 1.6vw, 22px);
+  margin-bottom: clamp(28px, 3vw, 40px); }
+.ab-grid .ab-item, .ab-grid .ab-item:last-child { display: flex; flex-direction: column; padding: 0; border: 1px solid var(--hair);
+  border-radius: 18px; overflow: hidden; background: var(--bg); }
+.ab-grid .ab-item.has-thumb { display: flex; }
+.ab-grid .ab-item:not(.has-thumb) { background: var(--bg-2); border-color: transparent; }
+.ab-grid .ab-thumb { aspect-ratio: 16 / 10; border-radius: 0; }
+.ab-grid .ab-body { display: flex; flex-direction: column; flex: 1; padding: 16px 18px 18px; }
+.ab-grid .ab-title { font-size: 17px; }
+.ab-grid .ab-note { font-size: 15px; }
+.ab-grid .ab-credit { margin-top: auto; padding-top: 10px; }
+.ab-grid .ab-item:not(.has-thumb) .ab-title { font-size: 19px; line-height: 1.35; }
+.ab-sub { margin-top: 8px; }

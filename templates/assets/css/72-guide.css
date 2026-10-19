@@ -1,0 +1,213 @@
+/* ================================================================ guide reading layer (owner 2026-10-09: "줄글이라 사람이
+   읽기 불편 — 강조 포인트도, 모션도 없다"). guide.html.j2 + en/guide.html.j2; macros ui.mini / ui.shelf / ui.gtoc.
+   Every sentence stays in the page; this partial only makes it scannable:
+     .gd-ans        the answer card: the summary's first sentence big (.gd-ans-l, sized by length a-xl … a-s), the
+                    guide's places as mini cards (.gd-picks, moved above the rest of the summary by `order`; the DOM
+                    keeps the summary contiguous), the rest of the summary (.gd-ans-r)
+     .gd-toc        one nav: chips under the answer card below 1280px, a sticky side list from 1280px
+                    ([aria-current] = the section being read, site.js)
+     .gd-sec        number, heading, sentence bullets (.gd-pts; li.own keeps the data's own list mark), the section's
+                    mini cards (.mcs-sec)
+     .gk            a figure of the guide's text (present.rich: times, prices, distances, counts, ages, weekdays):
+                    bold only (the lime marker band under it was taken out by the owner 2026-10-09)
+     .gl            a guide place named in a sentence, linked (underlined: colour is not the only cue)
+     .mc            mini card: thumbnail (KOGL-1 cropped to the square, KOGL-3 whole in a padded frame) or type icon,
+                    name (link over the card), meta, two key-fact chips (values whole, wrapped, never cut)
+     .faq-acc       the FAQ as <details>: first open, every answer in the DOM
+     .src-compact   the sources in columns
+   Motion (motion.js, below the first screen only): bullets and shelves rise in, section headings rise by line
+   ([data-split]), the answer card's figures roll in digit by digit ([data-numroll] → .rl/.rl-i), the sticky map
+   follows the section being read (map.js gs:focus: .mk-num.on / .dim). Nothing here starts hidden. */
+
+/* the icon sprite (ui.sprite): drawn once, never laid out */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* ---------------------------------------------------------------- the answer card */
+.gd-ans { --pad: clamp(18px, 2.6vw, 36px); display: flex; flex-direction: column; margin-top: clamp(18px, 2.4vw, 32px); padding: var(--pad); border-radius: var(--r-xl); background: var(--bg-2); }
+.gd-ans .summary { display: contents; }
+.gd-ans-l { order: 1; margin: 0; max-width: 32em; font-weight: 700; color: var(--ink); letter-spacing: -.03em; text-wrap: pretty; }
+.gd-ans-l.a-xl { font-size: clamp(26px, 3.1vw, 42px); line-height: 1.22; letter-spacing: -.035em; }
+.gd-ans-l.a-l { font-size: clamp(23px, 2.5vw, 34px); line-height: 1.28; }
+.gd-ans-l.a-m { font-size: clamp(20px, 1.9vw, 27px); line-height: 1.4; letter-spacing: -.025em; }
+.gd-ans-l.a-s { font-size: clamp(18px, 1.55vw, 22px); line-height: 1.55; letter-spacing: -.02em; }
+.gd-picks { order: 2; margin-top: clamp(18px, 2vw, 26px); min-width: 0; }
+.gd-ans-r { order: 3; margin-top: clamp(18px, 2vw, 26px); max-width: 46em; font-size: 17px; line-height: 1.7; color: var(--ink-2); }
+.gd-picks-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 6px; font: 700 15px/1.4 var(--font); color: var(--ink); letter-spacing: -.01em; }
+.gd-picks-h a { position: relative; font-weight: 400; font-size: 15px; }
+.gd-picks-h a::after { content: "↓"; margin-left: 4px; }
+@media (max-width: 1023px) { .gd-picks-h a::before { content: ""; position: absolute; left: -12px; right: -12px; top: 50%; height: 44px; transform: translateY(-50%); } }
+.gd-ans .mcs-view { margin: 0 calc(var(--pad) * -1); padding-left: var(--pad); padding-right: var(--pad); scroll-padding-left: var(--pad); }
+
+/* ---------------------------------------------------------------- figures and place names in the text */
+.gk { font-weight: 700; color: var(--ink); font-variant-numeric: lining-nums; }
+.gd-sec .gl { color: var(--link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; text-decoration-color: rgba(0, 102, 204, .45); }
+.gd-sec .gl:hover { text-decoration-color: currentColor; }
+/* a figure rolling in (motion.js numRolls): each digit rises inside its own clip. The clip is the digit's band, not
+   the line: a 1em box on the baseline (Pretendard: its bottom .15em under the baseline, the digits' ink ~.04em under
+   it), cut .09em up, so a digit never shows below its baseline while it rises (no subscripts between the lines) */
+.rl { display: inline-block; line-height: 1; vertical-align: baseline; clip-path: inset(-.3em -.08em .09em -.08em); }
+.rl-i { display: inline-block; will-change: transform; }
+
+/* ---------------------------------------------------------------- body sections */
+.gd-sec { min-width: 0; }
+/* the first paint: the grid of sections starts right under the answer card, inside the browser's look-ahead margin,
+   so its own .cv (css/60-motion.css) does not skip it; each section and the table of contents are skipped on their
+   own until the first frame is painted (site.js then sets html.gd-open; html.cv-off at 'load' lifts it too) — the
+   first layout is the answer card, not the whole guide (2026-10-09, tools/perf_check conditions: the food hub's
+   first paint ~120 ms earlier). Without JS they stay content-visibility: auto (rendered as they near the screen). */
+.gd-sec { content-visibility: auto; contain-intrinsic-size: auto 1000px; }
+.gd-toc { content-visibility: auto; contain-intrinsic-size: auto 132px; }
+@media (min-width: 1280px) { .gd-toc { contain-intrinsic-size: auto 560px; } }
+html.gd-open .gd-sec, html.gd-open .gd-toc, html.cv-off .gd-sec, html.cv-off .gd-toc { content-visibility: visible; }
+.gd-sec + .gd-sec { margin-top: clamp(52px, 5.4vw, 80px); }
+.gd-sec .h-sec { scroll-margin-top: calc(var(--bar) + 24px); text-wrap: pretty; }
+.gd-sec-n { font: 700 13px/1 var(--font); color: var(--ink-3); letter-spacing: .06em; margin-bottom: 12px; }
+.gd-pts { display: grid; gap: 12px; }
+.gd-pts + .gd-pts, .gd-p + .gd-pts, .gd-pts + .gd-p, .gd-p + .gd-p { margin-top: 18px; }
+.gd-pts li, .gd-sec .gd-p { position: relative; max-width: 38em; font-size: 17px; line-height: 1.68; color: var(--ink-2); }
+.gd-pts li { padding-left: 22px; }
+.gd-pts li::before { content: ""; position: absolute; left: 3px; top: .72em; width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.gd-pts li.own { padding-left: 0; }
+.gd-pts li.own::before { content: none; }
+.gd-sec .mcs-box { margin-top: 20px; }
+@media (max-width: 760px) {
+  .gd-pts li, .gd-sec .gd-p { font-size: 16.5px; line-height: 1.66; }
+  .gd-pts li { padding-left: 18px; }
+  .gd-pts li::before { left: 1px; width: 6px; height: 6px; }
+}
+
+/* ---------------------------------------------------------------- mini cards and their shelf */
+.mcs-box { position: relative; min-width: 0; }
+/* 6px above and below (and beside, ≥1024px): a focused card's ring (2px + 2px offset) is never cut by the row */
+.mcs-view { overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; padding-top: 6px; padding-bottom: 6px; }
+.mcs-view::-webkit-scrollbar { display: none; }
+.mcs { display: flex; gap: 10px; width: max-content; }
+.mc { position: relative; flex: none; width: min(236px, 68vw); scroll-snap-align: start; display: grid; grid-template-columns: 52px minmax(0, 1fr); grid-template-rows: auto auto 1fr; align-content: start; column-gap: 12px; padding: 14px; border-radius: var(--r); background: var(--bg); transition: box-shadow .3s var(--ease); }
+.mc:hover { box-shadow: 0 4px 22px rgba(0, 0, 0, .08); }
+.mc-th, .mc > .type-ico { grid-row: 1 / span 2; width: 52px; height: 52px; border-radius: 12px; }
+.mc-th { display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg-3); }
+.mc-th img { display: block; }
+.mc-th.t1 img { width: 100%; height: 100%; object-fit: cover; }
+/* KOGL-3: the whole photo, never cropped or enlarged (only scaled down), inside the padded frame */
+.mc-th.t3 { padding: 3px; background: var(--bg-2); }
+.mc-th.t3 img { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+.mc-nm { grid-column: 2; align-self: end; font: 700 16px/1.3 var(--font); letter-spacing: -.02em; color: var(--ink); text-wrap: pretty; }
+.mc-nm a { color: var(--ink); text-decoration: none; }
+.mc-nm a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.mc-nm a:focus-visible { outline: 0; }
+.mc:has(.mc-nm a:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mc:hover .mc-nm a { color: var(--link); }
+.gd-sec .mc-meta, .mc-meta { grid-column: 2; margin-top: 2px; font-size: 13px; line-height: 1.35; color: var(--ink-3); }
+/* a card with no type or area: the name sits level with the thumbnail */
+.mc:not(:has(.mc-meta)) .mc-nm { grid-row: 1 / span 2; align-self: center; }
+.mc-kf { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 12px; align-self: start; }
+.mck { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; padding: 6px 10px; border-radius: 10px; background: var(--bg-2); }
+.mck dt { flex: none; font-size: 12px; line-height: 1.5; color: var(--ink-3); }
+.mck dd { min-width: 0; font-size: 14px; line-height: 1.4; color: var(--ink); }
+.mck .kf-main { font-weight: 700; }
+.mck .kf-main.closed::before { width: 8px; height: 8px; }
+.mck .kf-sub { display: inline; margin: 0 0 0 4px; font-size: 12.5px; }
+.mck .kf-more { font-size: 12.5px; color: var(--ink-3); }
+.gd-sec .mc-need, .mc-need { grid-column: 1 / -1; margin-top: 12px; font-size: 13px; line-height: 1.45; color: var(--ink-3); }
+.mcs-foot { display: flex; align-items: center; gap: 12px; margin-top: 6px; min-height: 0; }
+.gd-sec .mcs-credit, .mcs-credit { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ink-3); }
+.mcs-foot .car-nav { margin-left: auto; gap: 10px; }
+.mcs-foot .gal-btn { width: 36px; height: 36px; }
+.mcs-box.no-scroll .car-nav { display: none; }
+/* the foot keeps the buttons' height whether they are in the HTML, made by site.js ([data-gal-make]) or hidden
+   (.no-scroll): nothing below moves */
+@media (min-width: 761px) { .mcs-foot:has(.car-nav) { min-height: 36px; } }
+@media (min-width: 761px) and (max-width: 1023px) { .mcs-foot:has(.car-nav) { min-height: 44px; } }
+/* the last tile of a row that shows only part of the guide's places: how many more, and the way to the full list */
+.mcs-more { flex: none; display: flex; width: min(180px, 46vw); scroll-snap-align: start; }
+.mcs-more a { display: flex; flex-direction: column; justify-content: center; gap: 6px; width: 100%; min-height: 120px; padding: 18px; border-radius: var(--r); background: var(--bg); color: var(--ink); text-decoration: none; transition: box-shadow .3s var(--ease); }
+.mcs-more a:hover { box-shadow: 0 4px 22px rgba(0, 0, 0, .08); text-decoration: none; }
+.mcs-more-n { font: 700 22px/1.2 var(--font); letter-spacing: -.02em; }
+.mcs-more-t { font-size: 15px; line-height: 1.4; color: var(--link); }
+.mcs-more-t::after { content: " ↓"; }
+/* on the white page the section rows are grey tiles with white chips (the answer card is the other way round) */
+.mcs-sec .mc { background: var(--bg-2); }
+.mcs-sec .mck { background: var(--bg); }
+.mcs-sec .mc-th.t3 { background: var(--bg); }
+@media (max-width: 1023px) {
+  .mcs-foot .gal-btn { width: 44px; height: 44px; }
+  .gd-sec .mcs-view { margin: 0 calc(var(--m) * -1); padding-left: var(--m); padding-right: var(--m); scroll-padding-left: var(--m); }
+}
+@media (min-width: 1024px) { .gd-sec .mcs-view { margin: 0 -6px; padding-left: 6px; padding-right: 6px; scroll-padding-left: 6px; } }
+@media (max-width: 760px) { .mcs-foot .car-nav { display: none; } }
+
+/* ---------------------------------------------------------------- a section's places already shown as a card above:
+   one line each, name (link over the row) + one short fact (ui.again). Phones: one row that scrolls sideways (one
+   line high, like the cards' row); from 761px the rows wrap */
+.gd-sec .mcr { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.mcr li { position: relative; flex: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; min-height: 44px; max-width: 100%; padding: 11px 14px; border-radius: 12px; background: var(--bg-2); transition: background-color .2s var(--fb); }
+.mcr a, .mcr b { font: 700 15px/1.45 var(--font); letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
+.mcr a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.mcr a:focus-visible { outline: 0; }
+.mcr li:has(a:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mcr-kf { font-size: 13.5px; line-height: 1.45; color: var(--ink); white-space: nowrap; }
+.mcr-l { color: var(--ink-3); margin-right: 3px; }
+.mcr .kf-main { font-weight: 700; }
+.mcr .kf-main.closed::before { width: 8px; height: 8px; }
+@media (hover: hover) { .mcr li:hover { background: var(--bg-3); } .mcr li:hover a { color: var(--link); } .mcr li:hover .mcr-l { color: var(--ink-2); } }
+@media (max-width: 760px) {
+  .gd-sec .mcr { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; margin: 12px calc(var(--m) * -1) 0; padding: 6px var(--m); scroll-padding-left: var(--m); }
+  .gd-sec .mcr::-webkit-scrollbar { display: none; }
+  /* one line when it fits; a long English name wraps inside its row (the fact keeps its line), never wider than
+     the screen */
+  .mcr li { scroll-snap-align: start; max-width: min(300px, 80vw); }
+}
+
+/* ---------------------------------------------------------------- table of contents: chips below 1280px */
+.gd-toc { min-width: 0; }
+.gd-toc-h { font: 700 13px/1.3 var(--font); color: var(--ink-3); letter-spacing: .04em; margin-bottom: 10px; }
+.gd-toc-l a { display: grid; grid-template-columns: 1.9em minmax(0, 1fr); align-items: baseline; gap: 2px; color: var(--ink-2); text-decoration: none; font-size: 14px; line-height: 1.42; letter-spacing: -.01em; transition: background-color .2s var(--fb), color .2s var(--fb); }
+.gd-toc-l a:hover { text-decoration: none; }
+@media (hover: hover) { .gd-toc-l a:hover { color: var(--ink); } .gd-toc-l a:hover .toc-n { color: var(--ink-2); } }
+.toc-n { font-weight: 700; font-size: 12.5px; color: var(--ink-3); }
+.gd-toc-l a[aria-current] { color: var(--ink); font-weight: 700; }
+.gd-toc-l a[aria-current] .toc-n { color: var(--link); }
+@media (max-width: 1279px) {
+  .gd-grid.has-toc .gd-toc { grid-column: 1 / -1; grid-row: 1; order: -2; margin: 0 calc(var(--m) * -1) clamp(28px, 3vw, 40px); }
+  .gd-grid.has-toc .gd-body, .gd-grid.has-toc .gd-map { grid-row: 2; }
+  .gd-toc-h { padding: 0 var(--m); margin-bottom: 4px; }
+  .gd-toc-l { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; padding: 6px var(--m) 6px; scroll-padding-left: var(--m); }
+  .gd-toc-l::-webkit-scrollbar { display: none; }
+  .gd-toc-l li { flex: none; display: flex; width: min(244px, 64vw); scroll-snap-align: start; }
+  .gd-toc-l a { width: 100%; min-height: 44px; padding: 11px 14px 12px; border-radius: 14px; background: var(--bg-2); color: var(--ink); }
+}
+@media (max-width: 1279px) and (hover: hover) { .gd-toc-l a:hover { background: var(--bg-3); } }
+/* ---------------------------------------------------------------- wide screens: side list | body | sticky map */
+@media (min-width: 1280px) {
+  .gd-grid.has-toc .gd-toc { grid-column: 1 / span 3; grid-row: 1; position: sticky; top: calc(var(--bar) + 24px); max-height: calc(100vh - var(--bar) - 48px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin-left: -16px; padding: 0 12px 6px 6px; }
+  .gd-toc-h { padding-left: 10px; }
+  .gd-grid.has-toc .gd-body { grid-column: 4 / span 5; grid-row: 1; }
+  .gd-grid.has-toc .gd-map { grid-column: 9 / -1; grid-row: 1; }
+  .gd-grid.has-toc:not(.has-map) .gd-body { grid-column: 4 / span 7; }
+  .gd-toc-l li + li { margin-top: 2px; }
+  .gd-toc-l a { padding: 8px 10px; border-radius: 10px; }
+  .gd-toc-l a:hover { background: var(--bg-2); }
+  .gd-toc-l a[aria-current] { background: var(--bg-2); }
+}
+
+/* ---------------------------------------------------------------- the map follows the section being read */
+.mk-num.dim { opacity: .58; }
+.mk-num.extra.on { background: var(--blue); border-color: var(--blue); }
+
+/* ---------------------------------------------------------------- FAQ accordion, compact sources */
+.faq-acc .qa { display: block; padding: 0; }
+.faq-acc .qa:first-child { padding-top: 0; }
+.faq-acc summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; min-height: 44px; padding: 18px 0; cursor: pointer; list-style: none; }
+.faq-acc .qa:first-child summary { padding-top: 4px; }
+.faq-acc summary::-webkit-details-marker { display: none; }
+.faq-acc summary h3 { flex: 1; }
+.faq-acc summary:hover h3 { color: var(--link); }
+.qa-i { position: relative; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--bg-2); }
+.qa-i::before, .qa-i::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 2px; border-radius: 1px; background: var(--ink); transform: translate(-50%, -50%); transition: transform .3s var(--ease); }
+.qa-i::after { transform: translate(-50%, -50%) rotate(90deg); }
+.faq-acc details[open] > summary .qa-i::after { transform: translate(-50%, -50%) rotate(0deg); }
+.faq-acc .qa p { margin: 0; padding: 0 46px 22px 0; max-width: 40em; }
+@media (max-width: 760px) { .faq-acc .qa p { padding-right: 0; } }
+.src-compact { columns: 2 260px; column-gap: 32px; }
+.src-compact li { break-inside: avoid; padding: 7px 0; border-top: 0; font-size: 14px; line-height: 1.45; }
+@media (max-width: 1023px) { .src-compact li { display: flex; align-items: center; min-height: 44px; padding: 4px 0; } }

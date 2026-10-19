@@ -1,0 +1,33 @@
+[
+  {
+    "id": "course-sample-1",
+    "slug": "day-course-a",
+    "name": "[샘플] 당일 코스 A — 근대~고군산",
+    "duration": "당일",
+    "status": "published",
+    "reviewed_at": "2026-10-08",
+    "summary": "[샘플] 원문 코스의 경유지를 순서대로 잇고, 경유지마다 장소 페이지와 지도를 연결합니다.",
+    "stops": [
+      {
+        "place_slug": "gyeongam-railroad-village",
+        "note": "[샘플] 원문 코스 설명"
+      },
+      {
+        "place_slug": "chowon-photo-studio",
+        "note": ""
+      },
+      {
+        "name": "선유도",
+        "note": "[샘플] 아직 공개 페이지가 없는 경유지는 이름과 지도 검색만 나갑니다."
+      }
+    ],
+    "original": {
+      "text": "[샘플] 공식 코스 원문이 수정 없이 들어갑니다. (이용조건 확인 후)",
+      "source_name": "군산시 문화관광",
+      "source_url": "https://www.gunsan.go.kr/tour",
+      "license": "KOGL-1",
+      "collected_at": "2026-10-07",
+      "sha256": "e3d900d89c9de76ab0ce9eb75477ef74b8e51aa086ef78b793d8a4fd741fefde"
+    }
+  }
+]

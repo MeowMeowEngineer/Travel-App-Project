@@ -1,0 +1,143 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{% import "_p2.html.j2" as p2 %}
+{#- A purpose guide (Apple direction + the reading layer, owner 2026-10-09: "줄글이라 사람이 읽기 불편"). Every sentence
+    of the guide is in the HTML, verbatim and in order; the page adds a layer to scan:
+    - the answer card: the summary's first sentence as the answer line (big), the guide's places as mini cards, then
+      the rest of the summary. The DOM keeps the summary contiguous (answer line, rest, cards; the cards are moved up
+      by CSS order), so the text the Article JSON-LD repeats reads as one run (pipeline.validate).
+    - the table of contents (ui.gtoc): chips under the answer card on phones and tablets, a sticky side list on wide
+      screens with the section being read marked (site.js); the sticky map follows that section (gs:focus).
+    - body sections: the heading (an answer sentence), its paragraphs as sentence bullets with figures emphasised
+      (bold + marker) and the guide's places linked (present.rich), then the mini cards of the places it names for
+      the first time on the page; a place whose card is already above gets a one-line row (ui.again: name + one
+      fact). The answer card's count is the place list's (a place without a published page is a row there, no card).
+    - the places' closed days by weekday, the full place list with reasons and key facts, the FAQ as an accordion
+      (first answer open, every answer in the DOM), the sources as a compact list (no 확인일·검수일 — operator decision 2026-10-09).
+    G = present.guide_vm. Prose goes through `decaution` (owner: no caution copy — '실제 이동 거리와 다릅니다' clauses
+    are dropped, facts and figures stay); the guide's JSON-LD repeats the same filtered text (build.py). -#}
+{% block bodyclass %}pg-guide{% endblock %}
+{% block main_class %}{% endblock %}
+{% block lnav %}
+{% set links = [] %}
+{% if G.route %}{% set _ = links.append(('걷는 순서', '#h-route')) %}{% endif %}
+{% if G.places %}{% set _ = links.append(('장소', '#h-items')) %}{% endif %}
+{% if G.faqs %}{% set _ = links.append(('질문', '#h-faq')) %}{% endif %}
+{% set _ = links.append(('출처', '#h-src')) %}
+{% if G.route %}{% set cta = {'url': '#h-route', 'label': '걷는 순서'} %}
+{% elif has_courses %}{% set cta = {'url': '/courses/', 'label': '코스 보기', 'track': 'course_click'} %}
+{% else %}{% set cta = none %}{% endif %}
+{{ ui.lnav(G.label or G.title, links, cta) }}
+{% endblock %}
+{% block content %}
+{% macro credit_ko(cards) -%}
+{% set ts = cards|selectattr('photo')|map(attribute='photo.type')|unique|sort|list %}{% if ts %}사진 출처: 한국관광공사 · 공공누리 {% for t in ts %}제{{ t }}유형{% if t == 3 %}(변경금지){% endif %}{% if not loop.last %}·{% endif %}{% endfor %}{% endif %}
+{%- endmacro %}
+{% set types = G.places|selectattr('photo')|map(attribute='photo.type')|unique|sort|list %}
+<article class="guide">
+{% if G.picks %}{{ ui.sprite(G.icons) }}{% endif %}
+  {% set camp = (art_slots or {}).get('guide.banner.' ~ G.g.id) %}
+  <header class="pg-hero gd-head{% if camp %} has-camp{% endif %}"><div class="wrap">{{ artm.banner(camp) }}
+    {#- the head picture: the mascot on the transport and the food hub guides (I19, 88px), the info desk on guide-30 -#}
+    {% set gp = {'guide-12': ('mascot-bus', 'bus', 88), 'guide-13': ('mascot-eat', 'bowl', 88), 'guide-30': ('info-center', 'info', 56)}.get(G.g.id) %}{% if gp %}<p class="hd-pic">{{ ui.kpic(gp[0], gp[1], gp[2]) }}</p>{% endif %}
+    <p class="kicker"><a href="/guides/">목적별 가이드</a>{% if G.label %}<span>{{ G.label }}</span>{% endif %}</p>
+    {#- a title with ' — ' reads as the question and, in grey on its own line, its list (Apple two-tone head); the
+        H1's text stays the whole title -#}
+    {% set tp = G.title.split(' — ', 1) %}
+    <h1 class="d1 d1-q vt-title">{% if tp|length == 2 %}{{ tp[0] }} <span class="d1-sub"><span class="vh">— </span>{{ p2.dotwrap(tp[1]) }}</span>{% else %}{{ G.title }}{% endif %}</h1>
+    {% if G.route %}
+    <dl class="datarow">
+      <div><dt>동선</dt><dd class="tn">{{ G.route.stops|length }}곳</dd></div>
+      {% if G.route.complete and G.route.measured %}<div><dt>지점 사이 직선 합</dt><dd class="tn">{{ G.route.total|pdist }}</dd></div>{% elif G.route.possible %}<div><dt>좌표 있는 구간</dt><dd class="tn">{{ G.route.measured }}/{{ G.route.possible }}</dd></div>{% endif %}
+      <div class="dr-wide"><dt>출발 → 끝</dt><dd>{{ G.route.stops[0].name }} → {{ G.route.stops[-1].name }}</dd></div>
+    </dl>
+    {% endif %}
+    <div class="gd-ans">
+      <div class="summary" data-block="summary">{% if G.ans.first %}<p class="lede gd-ans-l {{ G.ans.size }}">{{ G.ans.html }}</p>{% if G.ans.rest %}<p class="dek gd-ans-r">{{ G.ans.rest_html }}</p>{% endif %}{% else %}<p class="lede">방문 정보를 확인하며 가이드를 준비하고 있습니다.</p>{% endif %}</div>
+      {% if G.picks %}
+      <div class="gd-picks">
+        <p class="gd-picks-h"><span>이 가이드의 장소 <b class="tn">{{ G.picks_total }}</b>곳</span>{% if G.places %}<a href="#h-items">전체 목록</a>{% endif %}</p>
+        {% set more = {'n': '외 %d곳'|format(G.picks_more), 'text': '전체 목록 보기', 'href': '#h-items'} if G.picks_more and G.places else none %}
+        {{ ui.shelf(G.picks, '이 가이드의 장소', credit_ko(G.picks), more=more) }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  </header>
+
+  {% if G.route %}
+  <section class="wrap gd-route" aria-labelledby="h-route">
+    <h2 id="h-route" class="h-sec">걷는 순서</h2>
+    <ol class="strip-line" style="--n:{{ G.route.stops|length }}">
+      {% for s in G.route.stops %}<li>{% if s.path %}<a href="{{ s.path }}" data-track="nearby_click" data-place="{{ s.t.id }}">{% else %}<span class="p2-sl">{% endif %}<span class="sl-leg tn">{% if s.prev_m is not none %}{{ s.prev_m|pdist }}{% endif %}</span><i aria-hidden="true"></i><span class="sl-n tn">{{ s.n }}</span><span class="sl-nm">{{ s.name }}</span>{% if s.path %}</a>{% else %}</span>{% endif %}</li>{% endfor %}
+    </ol>
+    <p class="note">숫자: 앞 지점에서 직선거리</p>
+  </section>
+  {% endif %}
+
+  {% if G.sections or G.points %}
+  <div class="wrap gd-grid cv{% if G.points %} has-map{% endif %}{% if G.sections|length > 1 %} has-toc{% endif %}">
+    {% if G.sections|length > 1 %}{{ ui.gtoc(G.sections) }}{% endif %}
+    <div class="gd-body">
+      {% for s in G.sections %}
+      <section class="gd-sec" aria-labelledby="{{ s.id }}" data-sec="{{ s.id }}" data-pts="{{ s.pts|join(' ') }}">
+        <p class="gd-sec-n tn" aria-hidden="true">{{ '%02d'|format(s.n) }}</p>
+        <h2 id="{{ s.id }}" class="h-sec" data-split>{{ s.heading }}</h2>
+        {% for para in s.paras %}{% if para|length > 1 %}<ul class="gd-pts">{% for b in para %}<li{% if b.own %} class="own"{% endif %}>{{ b.html }}</li>{% endfor %}</ul>{% else %}<p class="gd-p">{{ para[0].html }}</p>{% endif %}{% endfor %}
+        {% if s.places %}{{ ui.shelf(s.places, '이 단락에 나온 장소 ' ~ s.places|length ~ '곳', credit_ko(s.places), cls='mcs-sec', nav_js=true) }}{% endif %}
+        {% if s.again %}{{ ui.again(s.again, '이 단락에 나온 장소 중 위 카드에 있는 ' ~ s.again|length ~ '곳') }}{% endif %}
+      </section>
+      {% endfor %}
+    </div>
+    {% if G.points %}
+    <aside class="gd-map" aria-label="가이드 장소 지도">
+      {{ ui.mapfig({'guide': G.points, 'route': G.route is not none}, G.title ~ ' 장소 지도', 'guide-mapfig', ('번호: 걷는 순서 · 점선: 직선 연결' if G.route else '번호: 아래 목록 순서')) }}
+    </aside>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if G.week %}
+  <section class="wrap chapter chapter-mid cv">
+    {{ ui.week(G.week, 'h-week', '이 가이드 장소의 요일별 쉬는 날') }}
+  </section>
+  {% endif %}
+
+  {% if G.places %}
+  <section class="wrap chapter cv" aria-labelledby="h-items">
+    {{ ui.chead('이 가이드의 장소 ' ~ G.places|length ~ '곳', 'h-items') }}
+    <ol class="gitems">
+      {% for it in G.places %}
+      <li class="gitem">
+        <span class="gi-n tn">{% if G.route %}{% if it.route_n %}{{ it.route_n }}{% else %}+{% endif %}{% else %}{{ it.n }}{% endif %}</span>
+        <div class="gi-main">
+          <p class="gi-name">{% if it.path %}<a href="{{ it.path }}" data-track="nearby_click" data-place="{{ it.t.id }}">{{ it.name }}</a>{% else %}<b>{{ it.name }}</b>{% endif %}{% set meta = [it.type, it.dong, '동선 밖' if G.route and not it.route_n else '']|select|list %}{% if meta %}<span class="gi-meta">{{ meta|join(' · ') }}</span>{% endif %}</p>
+          {% if it.reason %}<p class="gi-reason">{{ it.reason|decaution|tel }}</p>{% endif %}
+          {% if it.kf %}{{ ui.kfrows(it.kf, it.t.id) }}{% endif %}
+        </div>
+        {% if it.photo %}<img class="gi-th t{{ it.photo.type }}" src="{{ it.photo.url }}"{% if it.photo.w and it.photo.h %} width="{{ it.photo.w }}" height="{{ it.photo.h }}"{% endif %} alt="{{ it.alt }}" loading="lazy" decoding="async" data-kogl="{{ it.photo.type }}">{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% if types %}<p class="note">사진 출처: 한국관광공사 · 공공누리 {% for t in types %}제{{ t }}유형{% if t == 3 %}(변경금지){% endif %}{% if not loop.last %}·{% endif %}{% endfor %}</p>{% endif %}
+  </section>
+  {% endif %}
+
+  {% if G.faqs %}
+  <section class="wrap chapter ch-rail cv" aria-labelledby="h-faq">
+    <h2 id="h-faq" class="rail-label">자주 묻는 질문</h2>
+    {# an accordion: the first answer open, every answer in the DOM (FAQPage JSON-LD repeats them). Answers as plain
+       text (no tap-to-call links): a link inside the sentence would split the text the validator compares #}
+    <div class="rail-body"><div class="faq faq-acc">{% for f in G.faqs %}<details class="qa"{% if loop.first %} open{% endif %}><summary><h3>{{ f.q }}</h3><span class="qa-i" aria-hidden="true"></span></summary><p>{{ f.a|squash|decaution }}{% if G.faq_notes|length > 1 %}{{ f.n|csup }}{% endif %}</p></details>{% endfor %}</div>{{ ui.chnotes(G.faq_notes) }}</div>
+  </section>
+  {% endif %}
+
+  <section class="wrap chapter ch-rail ch-src cv" aria-labelledby="h-src">
+    <h2 id="h-src" class="rail-label">출처</h2>
+    <div class="rail-body">
+      {% if G.sources %}<ul class="src-list src-compact">{% for s in G.sources %}<li><a href="{{ s.url }}" rel="noopener" data-track="official_click">{{ s.name }}</a></li>{% endfor %}</ul>{% endif %}
+      <p class="note"><a href="/about/#correction">틀린 정보 알리기</a></p>
+    </div>
+  </section>
+</article>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{% import "_p2.html.j2" as p2 %}
+{#- /guides/: every purpose guide as an answer tile — the purpose, one figure the answer contains (or one with its own
+    label), the guide's question and its short answer (present.guide_rows; figures checked against the guide's text). -#}
+{% block bodyclass %}pg-guides{% endblock %}
+{% block main_class %}{% endblock %}
+{% block content %}
+<section class="pg-hero band-s" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('list.head.guides')) }}
+  <div class="wrap">
+    <p class="hd-pic">{{ ui.kpic('guide', 'book', 64) }}</p>
+    <p class="eyebrow">목적별 가이드</p>
+    <h1 id="h-list" class="h-list">{{ site.region }} 여행, 목적에 맞춰 고르기 <span class="count tn">{{ guide_rows|length }}편</span></h1>
+    <p class="list-lede">질문마다 이용시간·요금·직선거리로 답하고, 고른 장소와 이유를 데이터로 적었습니다.</p>
+  </div>
+</section>
+<div class="wrap">
+  <ol class="answers answers-full">
+    {% for x in guide_rows %}{{ p2.answer(x, x.g.title, x.g.id, 'guide_click') }}{% endfor %}
+  </ol>
+</div>
+{% endblock %}

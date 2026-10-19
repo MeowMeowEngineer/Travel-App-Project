@@ -1,0 +1,138 @@
+/* ================================================================ accent points (owner 2026-10-09: keep the Apple design,
+   bring in the accent points of masstige.io). Five points, nothing else changes:
+     1. the colour bento — the home answer bar's tiles (ui.bento): the three hub guides on lime / lavender / sky, the
+        official courses as the one black tile with a lime pill, the rest Apple grey; big figure + unit top-left
+        (never bigger than the H1), bold title, one fact line, a round arrow bottom-right (decorative, drawn here as
+        one mask; the whole tile is the link). The lime tile names what its figure counts (짬뽕 20곳) and shows the
+        other parts as outline pills between figure and title from 700px.
+     2. the big-numerals band (ui.nums): huge bold figures with small grey labels, each a link to its list
+     3. (the lime marker under one phrase of the home H1 — taken out by the owner 2026-10-09; ui.mark prints plain text)
+     4. the black band (.band-dk): a lime pill eyebrow and the oversized word (ui.bigword, aria-hidden), at most once
+        per page, homes only — the Korean story (the page's one black section), the English courses
+     5. the lime selected chip: the selected-state rules of the one-of-many chip rows (30-info .f-row, 50-layouts
+        .v-nav / .v-off) and the home's search examples (40-showcase .abar-q); the map's kind toggles, several on at
+        once, keep a quiet white chip with a dark ring (50-layouts .f-kinds)
+   Not copied from the reference: content hidden until a script runs, 3D or generated images (simple vector type
+   icons only). Nothing here starts hidden; reduced motion and no JS show the same final state.
+   Contrast (WCAG, text): #1d1d1f on lime #e4ff54 15.0 (hover #d6f53c 13.6) · on lavender #cbbcff 9.8 (hover #bba9fb
+   8.2) · on sky #8ee3ef 11.5 (hover #78d9e7 10.3); the fact line #3a3a3c on them 10.1 (9.2) · 6.6 (5.5) · 7.8 (7.0);
+   on the black tile #f5f5f7 19.3 (hover on #1d1d1f 15.5), fact #d2d2d7 13.9 (11.2), the pill #000 on lime 18.7; the
+   round arrow: #fff on #1d1d1f 16.8 (its disc 15.0 / 9.8 / 11.5 against the tile), #000 on the lime disc 18.7;
+   numerals labels #6e6e73 on #fff 5.1; the marker sits under #1d1d1f text (15.0 on lime, 16.8 on white); the home's
+   search button and 오늘 chip white on #1d1d1f 16.8 (hover #000 21). */
+
+/* ---------------------------------------------------------------- 1. the colour bento (p2.abar · en/home tiles) */
+.bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.bento > li { display: flex; min-width: 0; grid-column: span 4; }
+.bento a { position: relative; display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 16px 20px 14px; border-radius: var(--r-xl); background: var(--bg-2); color: var(--ink); text-decoration: none; text-align: left; transition: background-color .2s var(--fb); }
+.bento a:hover { background: var(--bg-3); text-decoration: none; }
+.ap-n { white-space: nowrap; line-height: 1; padding-right: 52px; }
+.ap-n b { font-size: 32px; line-height: .9; letter-spacing: -.045em; font-variant-numeric: lining-nums proportional-nums; }   /* display figures: no tabular gaps */
+.ap-n small { font: 700 15px/1 var(--font); margin-left: 3px; letter-spacing: -.01em; }
+.ap-n .ap-l { margin: 0 2px 0 0; font-size: 17px; letter-spacing: -.02em; }   /* what the figure counts: 짬뽕 요리 20곳 */
+.ap-k { display: block; padding: 6px 48px 0 0; font: 700 19px/1.25 var(--font); letter-spacing: -.025em; }
+.ap-v { display: block; margin-top: 3px; padding-right: 48px; font-size: 14px; line-height: 1.45; color: var(--ink-2); letter-spacing: -.01em; }
+.bt-go { --go: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E");
+  position: absolute; right: 16px; bottom: 14px; width: 40px; height: 40px; border-radius: 50%; background: var(--sea); color: #fff; transition: transform .2s var(--fb); }
+.bt-go::before { content: ""; position: absolute; inset: 0; margin: auto; width: 45%; height: 45%; background: currentColor; -webkit-mask: var(--go) center / contain no-repeat; mask: var(--go) center / contain no-repeat; }
+.bento a:hover .bt-go, .bento a:focus-visible .bt-go { transform: translateX(3px); }
+.bt-ico { position: absolute; top: 12px; right: 14px; line-height: 0; }
+.bt-pill { position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; height: 26px; padding: 0 11px; border-radius: 980px; background: var(--tint); color: var(--sea-deep); font: 700 13px/1 var(--font); letter-spacing: -.01em; white-space: nowrap; }
+.bt-pills { display: none; }
+.bt-lead a { background: var(--tint2); color: var(--ink); }
+.bt-lead a:hover { background: var(--g2); }
+.bt-tint a { background: var(--tint); color: var(--ink); }
+.bt-tint a:hover { background: var(--tint2); }
+.bt-mist a { background: var(--g1); color: var(--ink); }
+.bt-mist a:hover { background: var(--g2); }
+.bt-lead .ap-v, .bt-tint .ap-v, .bt-mist .ap-v { color: #3a3a3c; }
+.bt-sea a { background: var(--sea-deep); color: #fff; }
+.bt-sea a:hover { background: #17427F; }
+.bt-sea .ap-v { color: #E3ECF8; }
+.bt-sea .ap-n { padding-right: 96px; }   /* the pill's room */
+.bt-sea .bt-go { background: #fff; color: var(--sea-deep); }
+/* tablets and desktop: lime two rows tall on the left (figure top, pills in the middle, title at the foot), lavender
+   beside it, sky + black under lavender, the grey tiles in one row under all of them (3 or 4 across). Every other
+   tile keeps its title right under its figure, so titles line up across a row. */
+@media (min-width: 700px) {
+  .bento > .bt-lead { grid-column: 1 / span 6; grid-row: span 2; }
+  .bento > .bt-tint { grid-column: 7 / span 6; }
+  .bento > .bt-mist, .bento > .bt-sea, .bento.n8 > .bt-grey { grid-column: span 3; }
+  .bt-lead a { padding: 22px 28px 20px; }
+  .bt-lead .ap-n { padding-right: 88px; }
+  .bt-lead .ap-n b { font-size: clamp(40px, 5.2vw, 72px); }   /* ≤ the H1 (clamp(40px, 5.6vw, 80px)) at every width */
+  .bt-lead .ap-n small { font-size: clamp(17px, 1.6vw, 22px); }
+  .bt-lead .ap-l { font-size: clamp(18px, 1.8vw, 26px); }
+  .bt-lead .bt-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: auto 0; padding: 14px 0; }
+  .bt-pills span { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border-radius: 980px; box-shadow: inset 0 0 0 1.5px #1d1d1f; font: 700 15px/1.2 var(--font); letter-spacing: -.01em; white-space: nowrap; }
+  .bt-pills ~ .ap-v { display: none; }   /* the pills are the fact line here */
+  .bt-lead .ap-k { margin-top: auto; padding: 0 72px 0 0; font-size: clamp(22px, 2vw, 28px); }
+  .bt-pills + .ap-k { margin-top: 0; }
+  .bt-lead .ap-v { padding-right: 72px; font-size: 16px; }
+  .bt-lead .bt-ico { top: 20px; right: 24px; }
+  .bt-lead .bt-go { right: 20px; bottom: 20px; width: 52px; height: 52px; }
+  .bt-tint b, .bt-mist b, .bt-sea b { font-size: 40px; }
+}
+@media (min-width: 700px) and (max-width: 1023px) {   /* the 3-column tiles are ~165px wide here */
+  .bento a { padding: 14px 16px 12px; }
+  .bt-lead a { padding: 20px 24px 18px; }
+  .bt-tint b, .bt-mist b, .bt-sea b { font-size: 34px; }
+  .bt-grey b { font-size: 30px; }
+  .bt-mist .bt-ico { right: 14px; }
+  .bt-sea .bt-pill { right: 12px; height: 22px; padding: 0 8px; font-size: 11.5px; }
+  .bt-sea .ap-n { padding-right: 64px; }
+  .ap-k { font-size: 17px; padding-right: 0; }
+  .ap-v { font-size: 13px; padding-right: 40px; }
+  .bt-go { right: 12px; bottom: 12px; width: 34px; height: 34px; }
+  .bt-pills span { min-height: 30px; padding: 0 12px; font-size: 14px; }
+}
+/* phones: lime across the top, then two across (an even count leaves the last tile across) */
+@media (max-width: 699px) {
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+  .bento > li { grid-column: auto; }
+  .bento > .bt-lead, .bento > li:last-child:nth-child(even) { grid-column: 1 / -1; }
+  .bento a { padding: 12px 14px; border-radius: 20px; }
+  .ap-n { padding-right: 34px; }
+  .ap-n b { font-size: 28px; }
+  .ap-n small { font-size: 12px; margin-left: 2px; }
+  .ap-n .ap-l { font-size: 15px; }
+  .ap-k { padding: 8px 34px 0 0; font-size: 15px; }
+  .ap-v { margin-top: 1px; padding-right: 34px; font-size: 12.5px; line-height: 1.4; }
+  .bt-go { right: 10px; bottom: 10px; width: 30px; height: 30px; }
+  .bt-ico { top: 11px; right: 12px; }
+  .bt-pill { top: 10px; right: 10px; height: 22px; padding: 0 8px; font-size: 11.5px; }
+  .bt-sea .ap-n { padding-right: 0; }
+  .bt-lead a { padding: 14px 16px; }
+  .bt-lead .ap-n b { font-size: 38px; }   /* ≤ the H1 (40px on phones) */
+  .bt-lead .ap-n small { font-size: 15px; }
+  .bt-lead .ap-k { font-size: 17px; }
+  .bt-lead .ap-v { font-size: 13.5px; }
+  .bt-lead .bt-ico { top: 14px; right: 16px; }
+  .bt-lead .bt-go { width: 36px; height: 36px; right: 12px; bottom: 12px; }
+}
+/* the home's answer bar: the search button and the 오늘 chip in near-black, like the bento's arrow discs (one accent
+   colour family on the first screen; Apple blue stays for links and the focus ring); the photo under the bento a
+   little closer, so its top edge shows on a 1440 × 900 first screen */
+.pg-home .abar-search .btn, .pg-home .abar-ev .chip { background: #1d1d1f; color: #fff; }
+.pg-home .abar-search .btn:hover { background: #000; }
+.abar + .op-show { padding-top: clamp(20px, 1.8vw, 26px); }
+
+/* 2. the big-numerals band (ui.nums) was retired 2026-10-14 (owner: 'AI 같고 촌스럽다'); the counts sit under the
+   home menu's pictures (.hq-n, 46-home-open.css) */
+
+/* ---------------------------------------------------------------- 3. the lime marker (ui.mark): a band under the
+   lower part of the words; dark text stays dark on it, it wraps with the line (clone) */
+
+/* ---------------------------------------------------------------- 4. the black band: the oversized word over a
+   hairline, then the section head with its eyebrow as a lime pill. In the Korean story it sits above the stage,
+   centred like the story's head (left when the desktop stage is on, as its head is) */
+.band-dk { background: #000; }
+.dk-word { margin: 0 0 clamp(22px, 2.6vw, 36px); text-indent: -.05em; padding-bottom: clamp(14px, 1.8vw, 26px); border-bottom: 1px solid #424245; font: 700 clamp(56px, 20vw, 232px)/.82 var(--font); letter-spacing: -.055em; color: #f5f5f7; white-space: nowrap; overflow: hidden; }
+.st-word { padding-top: var(--sec); }
+.st-word .dk-word { margin-bottom: 0; text-align: center; text-indent: 0; }
+.st-word + .st-stage { padding-top: clamp(28px, 3.4vw, 48px); }
+.story.is-staged .st-word .dk-word { text-align: left; text-indent: -.05em; }
+.sh .pill-l { margin-bottom: 4px; }
+.st-head .pill-l { margin-bottom: 10px; }
+.pill-l span { display: inline-flex; align-items: center; min-height: 30px; padding: 0 14px; border-radius: 980px; background: var(--tint); color: var(--sea-deep); font: 700 14px/1.2 var(--font); letter-spacing: -.01em; }
+@media (max-width: 699px) { .pill-l span { min-height: 26px; padding: 0 11px; font-size: 13px; } }

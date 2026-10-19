@@ -1,0 +1,59 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- List pages <home>places/ food/ stays/ of every version but Korean: the Korean list's records that have pages here, grouped by
+    area (권역) in the same order, each with the kind's four key-fact cells ('Not listed' in place, both values of a
+    conflict). L = pipeline/en_site.Site.list_vm. No filter bar (the Korean filters are Korean-only script); the map
+    sits beside the list on desktop (folded when fewer than 30% of the places have coordinates). -#}
+{% import "en/_en.html.j2" as E with context %}
+{% set track = {'stay': 'stay_click', 'food': 'food_click'}.get(L.kind, 'nearby_click') %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-list kind-{{ L.kind }}{% endblock %}
+{% block content %}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('list.head.' ~ {'attraction': 'places', 'food': 'food', 'stay': 'stays'}.get(L.kind, '')), loc.code) }}
+  <div class="wrap band-grid">
+    <div>
+      <h1 id="h-list" class="h-list">{{ h1 }} <span class="count tn">{{ L.count }}</span></h1>
+      <p class="list-lede">{{ lead or (L.cols|map(attribute=1)|join(' · ')) }}</p>
+      {% if hub %}<p class="list-hub"><a href="{{ hub.path }}" data-track="guide_click">{{ t.f('guide_link', name=hub.label) }}<span class="arr" aria-hidden="true">›</span></a></p>{% endif %}
+    </div>
+    {% if L.groups|length > 1 %}<ol class="band-data only-wide" aria-label="{{ t.by_area }}">{% for g in L.groups %}<li><a href="#{{ g.id }}"><b class="num tn">{{ g.recs|length }}</b><span>{{ g.name }}</span></a></li>{% endfor %}</ol>{% endif %}
+  </div>
+</section>
+
+<div class="wrap list-grid{% if not L.map_open %} map-folded{% endif %}">
+  <div class="list-main">
+    <div class="ledger" data-ledger>
+      <div class="lg-head" aria-hidden="true"><span>{{ cfg.nav }}</span>{% for k, lab in L.cols %}<span>{{ lab }}</span>{% endfor %}</div>
+      {% for g in L.groups %}
+      <section class="lg-group{% if not loop.first %} cv{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h">
+        <h2 class="lg-g" id="{{ g.id }}-h">{{ g.name }} <span class="tn">{{ g.recs|length }}</span></h2>
+        <ol class="recs">{% for it in g.recs %}
+          <li class="rec" data-vt-scope id="{{ it.id }}">
+            <div class="rec-name">
+              <a class="rec-link" href="{{ it.path }}" data-track="{{ track }}" data-place="{{ it.e.id }}">{{ it.name }}</a>
+              <span class="rec-meta">{{ [it.type, it.area]|select|join(' · ') }}</span>
+              {% if it.photo %}<img class="rec-th t{{ it.photo.type }}" src="{{ it.photo.url }}"{% if it.photo.w and it.photo.h %} width="{{ it.photo.w }}" height="{{ it.photo.h }}"{% endif %} alt="" loading="lazy" decoding="async" data-kogl="{{ it.photo.type }}">{% endif %}
+            </div>
+            <dl class="rec-cells">{% for c in it.cells %}<div class="c-{{ c.key }}{% if c.conflict %} is-conflict{% endif %}"><dt>{{ c.label }}</dt><dd>{{ E.kfv(c, '', false, it.e.id) }}</dd></div>{% endfor %}</dl>
+            {% if it.cells|selectattr('conflict')|list %}<p class="rec-call">{{ t.rec_call }}</p>{% endif %}
+          </li>{% endfor %}
+        </ol>
+      </section>
+      {% endfor %}
+    </div>
+    {% if L.n_photo %}<p class="note list-foot">{{ t.f('photos_is', name=t.kto) }} · {{ L.lics|join(loc.list_sep) }}</p>{% endif %}
+  </div>
+  {% if L.n_geo %}
+  <aside class="list-map" id="list-map" aria-label="{{ t.sec_map }}">
+    {% set cap = t.sn('map_only_n', L.n_geo) %}
+    {% if L.map_open %}
+    {{ E.mapfig({'list': L.points}, t.s('list_map', name=h1), 'list-mapfig', cap) }}
+    {% else %}
+    <details class="map-fold"><summary>{{ t.show_map }} <span class="muted">{{ cap }}</span></summary>
+    {{ E.mapfig({'list': L.points}, t.s('list_map', name=h1), 'list-mapfig', cap) }}
+    </details>
+    {% endif %}
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

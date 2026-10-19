@@ -1,0 +1,60 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- <home>events/ of every version but Korean: one page for every festival series with a current record — upcoming or ongoing first (by
+    start date), then past ones (newest first). For each: the newest edition's facts from the English record (dates
+    as the source words them; the calendar dates from the Korean record), both values with their sources and the
+    record's note where sources differ, the program, the usual timing, earlier editions, sources. EV =
+    pipeline/en_site.Site.events_vm. Each series has an anchor (#<english-slug>) the Korean event pages link to. -#}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-events pg-en-events{% endblock %}
+{% macro md_(iso) -%}{{ loc.md(iso) }}{%- endmacro %}
+{% macro card(r, past=false) -%}
+<article class="en-ev{% if r.flag %} is-conflict{% endif %}" id="{{ r.anchor }}" data-record="event:{{ r.x.slug }}" aria-labelledby="{{ r.anchor }}-h">
+  <div class="en-ev-head">
+    {% if r.start %}<p class="en-ev-date tn"><time datetime="{{ r.start }}">{{ md_(r.start) }}</time>{% if r.end and r.end != r.start %}–<time datetime="{{ r.end }}">{{ md_(r.end) }}</time>{% endif %}<span class="en-ev-y">{{ (r.end or r.start)[:4] }}</span></p>{% endif %}
+    <h3 id="{{ r.anchor }}-h" class="en-ev-name">{{ r.name }}</h3>
+  </div>
+  <dl class="facts en-ev-facts">
+    {% for row in r.rows %}
+    <div class="fr{% if row.blocks %} conflict wide{% endif %}" data-key="{{ row.field }}"><dt>{{ row.label }}</dt><dd>
+      {% if row.blocks %}
+      <table class="tt tt-src"><tbody>{% for b in row.blocks %}<tr class="src-row"><th colspan="2" scope="rowgroup">{{ b.provider }}</th></tr><tr><td colspan="2" class="whole">{{ b.value|tel }}</td></tr>{% endfor %}</tbody></table>
+      {% set np = row.note.split(' — ', 1) %}<p class="flag-line"><span class="flag">{{ np[0] }}</span>{% if np|length > 1 %} — {{ np[1] }}{% endif %}</p>
+      {% elif row.field == 'tel' %}{{ row.value|tel }}
+      {% else %}{{ row.value }}{% endif %}
+    </dd></div>
+    {% endfor %}
+    {% if r.homepage %}<div class="fr" data-key="homepage"><dt>{{ t.website }}</dt><dd><a href="{{ r.homepage }}" rel="noopener" data-track="official_click">{{ r.homepage|replace('https://', '')|replace('http://', '') }}</a></dd></div>{% endif %}
+  </dl>
+  {% if r.notes %}<ul class="en-ev-notes">{% for n in r.notes %}<li>{{ n|tel }}</li>{% endfor %}</ul>{% endif %}
+  {% if r.highlights %}
+  {% if past %}<details class="en-ev-more"><summary>{{ t.program }} <span class="tn">{{ r.highlights|length }}</span></summary>{% else %}<h4 class="h-sub">{{ t.program }}</h4>{% endif %}
+  <ul class="en-ev-hl">{% for h in r.highlights %}<li>{{ h|tel }}</li>{% endfor %}</ul>
+  {% for n in r.program_notes %}<p class="note">{{ n }}</p>{% endfor %}
+  {% if past %}</details>{% endif %}
+  {% endif %}
+  {% if r.usual %}<p class="en-ev-usual"><b>{{ t.usually }}</b> {% for u in r.usual %}{{ u.text }}{% if u.place %} ({{ u.place }}){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+  {% if r.editions %}<p class="en-ev-eds"><b>{{ t.other_editions }}</b> {% for ed in r.editions %}{{ ed.name }}{% if ed.period_text %}{{ loc.list_sep }}{{ ed.period_text }}{% endif %}{% if ed.place_name %}{{ loc.list_sep }}{{ ed.place_name }}{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+  {% if r.places %}<p class="en-ev-pl"><b>{{ t.places_label }}</b> {% for p in r.places %}<a href="{{ p.path }}">{{ p.name }}</a>{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+  <p class="note en-ev-src">{{ t.sources_label }} {% for s in r.sources %}{% if s.url %}<a href="{{ s.url }}" rel="noopener" data-track="official_click">{{ s.name }}</a>{% else %}{{ s.name }}{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+</article>
+{%- endmacro %}
+{% block content %}
+<header class="pg-hero">{{ artm.band((art_slots or {}).get('list.head.events'), loc.code) }}<div class="wrap">
+<h1 class="h-list vt-title">{{ t.f('events_h1', r=region) }} <span class="count tn">{{ EV.n }}</span></h1>
+<p class="list-lede">{{ t.events_lede }}</p>
+<p class="en-jump">{% if EV.upcoming %}<a href="#h-up">{{ t.upcoming }} <span class="tn">{{ EV.upcoming|length }}</span></a>{% endif %}{% if EV.past %}<a href="#h-past">{{ t.past }} <span class="tn">{{ EV.past|length }}</span></a>{% endif %}</p>
+</div></header>
+{% if EV.upcoming %}
+<section class="wrap chapter" aria-labelledby="h-up">
+  <div class="ch-head"><p class="eyebrow">{{ t.festivals }}</p><h2 id="h-up">{{ t.upcoming }} <span class="count tn">{{ EV.upcoming|length }}</span></h2></div>
+  <div class="en-evs">{% for r in EV.upcoming %}{{ card(r) }}{% endfor %}</div>
+</section>
+{% endif %}
+{% if EV.past %}
+<section class="wrap chapter" aria-labelledby="h-past">
+  <div class="ch-head"><h2 id="h-past">{{ t.past_editions }} <span class="count tn">{{ EV.past|length }}</span></h2><p class="sh-note">{{ t.past_note }}</p></div>
+  <div class="en-evs">{% for r in EV.past %}{{ card(r, true) }}{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

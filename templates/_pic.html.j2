@@ -1,0 +1,22 @@
+{#- _pic.html.j2 — the site's 3D clay pictures (owner 2026-10-14: '사이트 전수점검해서 모든 부분을 GPT 생성 이미지로
+    마스코트도 고려해서 아기자기하게'). {% import "_pic.html.j2" as pk %} then pk.pic(id, glyph, size, alt).
+
+    pic(id, glyph, size=56, alt='', lazy=true, cls=''): the registered picture for id (pipeline/icons.py lookup: the
+    files tools/icon_media.py made from incoming/icons/<id>.png, listed in templates/assets/icons/manifest.json) at
+    size × size px — AVIF then WebP, a srcset of every made width so a 2× screen gets its sharper file, width/height
+    set (its room is there from the first paint). Without the files: the interim look — our line glyph (ui.icon(glyph);
+    glyph empty = the registry's, data/<region>/icons.json) drawn softly in sea-deep on a pale sea-blue (or sand) circle
+    with a subtle inner highlight and shadow (css/46-pic.css), the same size, so the picture drops in later without a
+    shift. Templates never name the files. Decorative by default (alt="": the words beside it say what it is); when a
+    picture carries the meaning alone, alt is '일러스트: …'. Never in a place-photo slot or in structured data. -#}
+{% macro pic(id, glyph='', size=56, alt='', lazy=true, cls='') -%}
+{%- import "_ui.html.j2" as ui -%}
+{%- set r = icon_pic(id) if icon_pic is defined else none -%}
+{%- if r -%}
+<span class="pic pic-3d{{ ' ' ~ cls if cls }}" data-pic="{{ id }}" style="--pic:{{ size }}px"><picture><source type="image/avif" srcset="{% for u, px in r.avif %}{{ u }} {{ px }}w{{ ', ' if not loop.last }}{% endfor %}" sizes="{{ size }}px"><img src="{{ r.webp[0][0] }}" srcset="{% for u, px in r.webp %}{{ u }} {{ px }}w{{ ', ' if not loop.last }}{% endfor %}" sizes="{{ size }}px" width="{{ size }}" height="{{ size }}" alt="{{ alt }}" loading="{{ 'lazy' if lazy else 'eager' }}" decoding="async"{% if not lazy %} fetchpriority="low"{% endif %}></picture></span>
+{%- elif id == 'icon-ask' and size >= 48 and (mascot_pic is not defined or mascot_pic('mascot-icon-3d')) -%}{#- the menu's 물어보기: the mascot's face; the 32px kicker of the ask card stays a glyph (text only, nothing to load) -#}
+<span class="pic pic-mascot{{ ' ' ~ cls if cls }}" data-pic="{{ id }}" style="--pic:{{ size }}px"{% if alt %} role="img" aria-label="{{ alt }}"{% else %} aria-hidden="true"{% endif %}><picture><source type="image/avif" srcset="/assets/mascot/mascot-icon-3d-64.avif 64w, /assets/mascot/mascot-icon-3d-128.avif 128w" sizes="{{ size }}px"><img src="/assets/mascot/mascot-icon-3d-64.webp" srcset="/assets/mascot/mascot-icon-3d-64.webp 64w, /assets/mascot/mascot-icon-3d-128.webp 128w" sizes="{{ size }}px" width="{{ size }}" height="{{ size }}" alt="" loading="{{ 'lazy' if lazy else 'eager' }}" decoding="async"></picture></span>
+{%- else -%}
+<span class="pic pic-tmp{{ ' ' ~ cls if cls }}" data-pic="{{ id }}" style="--pic:{{ size }}px"{% if alt %} role="img" aria-label="{{ alt }}"{% else %} aria-hidden="true"{% endif %}>{{ ui.icon(glyph or (icon_glyph(id) if icon_glyph is defined else 'pin'), 'icon pic-g') }}</span>
+{%- endif -%}
+{%- endmacro %}

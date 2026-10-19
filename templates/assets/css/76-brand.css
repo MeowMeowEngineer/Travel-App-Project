@@ -1,0 +1,3 @@
+/* 76-brand: the operator's logo (AIO2O wordmark, vector taken from the owner's CI file, drawn in the text colour) in the footers */
+.foot-op .op-logo{display:inline-block;vertical-align:-2px;margin-right:2px;line-height:0}
+.foot-op .op-logo svg{height:14px;width:auto;display:block}

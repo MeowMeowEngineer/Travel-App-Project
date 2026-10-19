@@ -1,0 +1,37 @@
+{#- 해외에서 본 군산 (owner 2026-10-13): shared by /abroad/ and the place page's media block.
+    article(a, places_on, quote_on): the outlet · date, the article's own headline (a citation, linked) and our one-line
+    note; with quote_on (/abroad/) and a highlight's quotation (a._quote, owner 2026-10-14), that passage of the
+    original in its own language under the note (<blockquote lang cite>; the card's outlet line and headline link are
+    its attribution); the places it mentions as links when places_on. With a.image, the outlet's own link-preview picture (og:image) sits
+    beside the text, loaded lazily from the outlet's address with no referrer; it repeats the headline link, so it is
+    hidden from screen readers and skipped by Tab.
+    post(a, places_on): a card with the service · account · date and our note; the service's official embed loads into
+    [data-embed-slot] when the card nears the screen or '게시물 불러오기' is pressed (assets/site.js [data-embed]); the
+    link always works. -#}
+{% macro when(d) -%}
+{% if d and d|length == 7 %}{{ d[:4] }}년 {{ d[5:]|int }}월{% elif d %}{{ d|ko_date }}{% endif %}
+{%- endmacro %}
+
+{% macro article(a, places_on=true, quote_on=true) -%}
+<li class="ab-item{% if a.image %} has-thumb{% endif %}">
+  {% if a.image %}<a class="ab-thumb" href="{{ a.url }}" rel="noopener" tabindex="-1" aria-hidden="true" data-track="abroad_click"><img src="{{ a.image }}" alt="" width="240" height="160" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a>{% endif %}
+  <div class="ab-body">
+  <p class="ab-meta"><span class="ab-src"{% if a.lang and a.lang not in ("ko", "en") %} lang="{{ a.lang }}"{% endif %}>{{ a.outlet }}</span>{% if a.date %} · <time datetime="{{ a.date }}" class="tn">{{ when(a.date) }}</time>{% endif %}{% if a.lang and a.lang != 'ko' %} · <span>{{ {'en': '영어', 'ja': '일본어', 'zh': '중국어'}.get(a.lang, a.lang) }}</span>{% endif %}</p>
+  <p class="ab-title"><a href="{{ a.url }}" rel="noopener"{% if a.lang %} lang="{{ a.lang }}"{% endif %} data-track="abroad_click">{{ a.title or a.outlet }}<span class="arr" aria-hidden="true">↗</span></a></p>
+  <p class="ab-note">{{ a.note }}</p>
+  {% if quote_on and a._quote %}<blockquote class="ab-q" lang="{{ a._quote.lang }}" cite="{{ a.url }}"><p>{{ a._quote.text }}</p></blockquote>{% endif %}
+  {% if places_on and (a._places or a._series) %}<p class="ab-places">관련 {% for x in a._places %}<a href="{{ x._path }}">{{ x.name }}</a>{% if not loop.last or a._series %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}{% for s in a._series %}<a href="{{ s._path }}">{{ s.name }}</a>{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}</p>{% endif %}
+  {% if a.image %}<p class="ab-credit">사진: {% if a.lang and a.lang not in ("ko", "en") %}<span lang="{{ a.lang }}">{{ a.outlet }}</span>{% else %}{{ a.outlet }}{% endif %} 미리보기 이미지</p>{% endif %}
+  </div>
+</li>
+{%- endmacro %}
+
+{% macro post(a, places_on=true) -%}
+<li class="ab-item ab-post" data-embed="{{ a.platform }}" data-url="{{ a.url }}">
+  <p class="ab-meta"><span class="ab-src">{{ a.platform_label }}</span>{% if a.author %} · <span>{{ a.author }}</span>{% endif %}{% if a.date %} · <time datetime="{{ a.date }}" class="tn">{{ when(a.date) }}</time>{% endif %}</p>
+  <p class="ab-note">{{ a.note }}</p>
+  <div class="ab-embed" data-embed-slot></div>
+  <p class="ab-act"><button type="button" class="ab-load" data-embed-load data-title="{{ a.platform_label }} 게시물">게시물 불러오기</button><a href="{{ a.url }}" rel="noopener" data-track="abroad_click">{{ a.platform_label }}에서 보기<span class="arr" aria-hidden="true">↗</span></a></p>
+  {% if places_on and a._places %}<p class="ab-places">관련 {% for x in a._places %}<a href="{{ x._path }}">{{ x.name }}</a>{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}</p>{% endif %}
+</li>
+{%- endmacro %}

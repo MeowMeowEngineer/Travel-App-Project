@@ -1,0 +1,24 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- <home>guides/ of every version but Korean: the three hub guides first (food by dish, places to stay, things to do), then the others. -#}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-guides{% endblock %}
+{% block content %}
+<header class="pg-hero">{{ artm.band((art_slots or {}).get('list.head.guides'), loc.code) }}<div class="wrap">
+<h1 class="h-list vt-title">{{ t.f('guides_h1', r=region) }} <span class="count tn">{{ rows|length }}</span></h1>
+<p class="list-lede">{{ t.guides_lede }}</p>
+</div></header>
+<section class="wrap chapter" aria-labelledby="h-gl">
+  <h2 id="h-gl" class="vh">{{ t.all_guides }}</h2>
+  <ol class="answers answers-2 en-guides">
+    {% for G in rows %}
+    <li><a class="ans" href="{{ G.x.path }}" data-track="guide_click">
+      <span class="ans-k">{{ G.label }}</span>
+      <span class="ans-n"><b class="num tn">{{ G.places|length }}</b><small>{{ t.n('places_unit', G.places|length) }}</small></span>
+      <span class="ans-v"><span class="ans-q">{{ G.title }}</span>{{ G.lede }}</span>
+      <span class="arr" aria-hidden="true">›</span>
+    </a></li>
+    {% endfor %}
+  </ol>
+</section>
+{% endblock %}

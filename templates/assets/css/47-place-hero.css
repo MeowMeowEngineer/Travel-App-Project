@@ -1,0 +1,43 @@
+/* ================================================================ place opening, light (ui4 2026-10-14, after the
+   owner's reference): on a pale sea-blue ground the kicker · name · one-line answer · key-fact cards (each with its
+   small picture) · routes on the left, and the lead photo big in a rounded frame on the right from 1024px (under the
+   routes on phones, ≤ 45% of the screen height). CLAUDE.md 7 order: 이름 → 한 줄 답 → 핵심 정보 줄. Text never sits on
+   the photo and the photo is never darkened (no scrim). Licences (CLAUDE.md 3.4): KOGL-1 may fill its rounded frame
+   (object-fit crop); KOGL-3 sits whole at most at its own size inside a padded tinted frame (the frame is rounded, the
+   photo is not), never cropped, enlarged or corrected, and only from 1024px (phones see the thumbnail row).
+   A place without a photo shows its small kind picture above the name (no large empty cover). */
+.pl-hero { background: linear-gradient(180deg, var(--g0) 0, var(--g0) 40%, #fff 100%); }
+.pl-head, .ev-hero .pl-head { margin: 0; text-align: left; }
+.pl-head .kicker, .pl-head .route-row, .pl-head .tlinks, .ev-hero .route-row { justify-content: flex-start; }
+.pl-head .lede { margin-left: 0; margin-right: 0; max-width: 40em; }
+.pl-head .kf-notes { text-align: left; }
+.pl-head .dz { margin-left: 0; margin-right: 0; justify-content: flex-start; }
+.pl-head .kicker, .pl-head .kicker a { color: var(--sea); }
+.pl-head .kicker > * + *::before { color: var(--ink-3); }
+.pl-kpic { margin: 0 0 10px; }
+
+.pv { margin: 22px 0 0; min-width: 0; }
+.pv-ph { position: relative; overflow: hidden; border-radius: var(--r-xl); background: var(--tint); aspect-ratio: 4 / 3; max-height: 45svh; width: 100%; }
+.pv-ph picture, .pv-ph img { display: block; width: 100%; height: 100%; max-width: none; }
+.pv-ph img { object-fit: cover; object-position: 50% 50%; }
+.pv3 { display: none; }
+.pv-k3 { padding: 14px; border-radius: var(--r-xl); background: var(--tint); }
+.pv-k3 img { display: block; margin: 0 auto; width: auto; max-width: min(100%, var(--nw, 940px)); height: auto; max-height: 460px; object-fit: contain; }
+.pv-cap { margin: 8px 2px 0; font-size: 12px; line-height: 1.5; min-height: 24px; color: var(--ink-3); }
+.pv-cap a { color: var(--sea); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; min-height: 24px; }
+.pv-cap a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+@media (min-width: 1024px) {
+  .pl-x.has-lead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 44%); gap: 0 clamp(32px, 4vw, 64px); align-items: start; }
+  .pl-x.has-lead > .pl-thumbs { grid-column: 1 / -1; }
+  .pl-x.has-lead .kf-hero { --kf-n: 2; }
+  .pl-x.has-lead .kf-hero:has(.is-conflict) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pv { margin-top: 6px; position: sticky; top: calc(var(--mh-s, 52px) + 24px); }
+  .pv-ph { aspect-ratio: 4 / 3.4; max-height: min(560px, 62vh); }
+  .pv3 { display: block; }
+}
+@media (min-width: 1280px) {
+  .pl-x.has-lead .kf-hero { --kf-n: 3; }
+  .pl-x.has-lead .kf-hero:has(.is-conflict) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1023px) { .pv-cap a { min-height: 44px; } }

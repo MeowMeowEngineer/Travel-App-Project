@@ -1,0 +1,68 @@
+{#- en/_chrome.html.j2 — the body chrome of every version but Korean (English, Japanese, Chinese, German, French,
+    Spanish, Russian), called by base.html.j2 when lang != 'ko' (the head is shared). t = the version's words
+    (pipeline/en_site.UIText), loc = its locale (pipeline/locales.py: home path, separators).
+    header(nav, current, page_kind, langs, wordmark, t, loc): skip link and the global bar — the version's site name,
+      the nav (Things to do · Food · Stay · Guides · Courses · Events) and the language menu (_lang.html.j2: Korean
+      and every version this build has, each this page's counterpart, else its home); phones get the menu panel
+      (a <details>, works without JS) with the other versions listed.
+    crumbs(items, t): the breadcrumb line (page.crumbs; the JSON-LD BreadcrumbList repeats these names).
+    footer(nav, site, langs, wordmark, tourapi_used, t, loc): explore · sources (links only) · about; the operator's
+      Korean name in a lang="ko" span (no company name is made up) and the correction contact. -#}
+{% import "_ui.html.j2" as ui %}
+{% import "_lang.html.j2" as lg %}
+
+{% macro nav_items(nav, current, stagger=false, loc=none) -%}
+{% for label, href in nav %}<li{% if stagger %} style="--i:{{ loop.index0 }}"{% endif %}><a href="{{ href }}"{% if current == href %} aria-current="page"{% endif %}{% if href == loc.home ~ 'courses/' %} data-track="course_click"{% endif %}>{{ label }}</a></li>{% endfor %}
+{%- endmacro %}
+
+{% macro header(nav, current, page_kind, langs, wordmark, t, loc) -%}
+<a class="skip-link" href="#main-content">{{ t.skip }}</a>
+<header class="mast mast-en" data-mast>
+  <div class="wrap mast-in">
+    <a class="wordmark" href="{{ loc.home }}"{% if page_kind == 'home' %} aria-current="page"{% endif %}><span class="wm-a">{{ wordmark }}</span></a>
+    <nav class="mast-nav" aria-label="{{ t.main_menu }}"><ul>{{ nav_items(nav, current, false, loc) }}</ul></nav>
+    {% if langs %}{{ lg.menu(langs, t.language) }}{% endif %}
+    <details class="menu" data-menu>
+      <summary><span class="vh">{{ t.menu }}</span><i class="bars" aria-hidden="true"></i></summary>
+      <nav class="menu-panel" aria-label="{{ t.full_menu }}">
+        <ul>{{ nav_items(nav, current, true, loc) }}</ul>
+        <ul class="menu-sub"><li><a href="{{ loc.home }}about/"{% if current == loc.home ~ 'about/' %} aria-current="page"{% endif %}>{{ t.about_sources }}</a></li>{{ lg.others(langs) }}</ul>
+      </nav>
+    </details>
+  </div>
+</header>
+{%- endmacro %}
+
+{% macro crumbs(items, t) -%}
+{% if items %}<nav class="crumbs" aria-label="{{ t.you_are_here }}">{% for name, url in items %}{% if not loop.last %}<a href="{{ url }}">{{ name }}</a><span aria-hidden="true">›</span>{% else %}<span aria-current="page">{{ name }}</span>{% endif %}{% endfor %}</nav>{% endif %}
+{%- endmacro %}
+
+{% macro footer(nav, site, langs, wordmark, tourapi_used, t, loc) -%}
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-in">
+      <nav class="foot-col foot-nav" aria-label="{{ t.explore }}">
+        <h2>{{ t.explore }}</h2>
+        <ul>{{ nav_items(nav, '', false, loc) }}{{ lg.others(langs) }}</ul>
+      </nav>
+      <div class="foot-col">
+        <h2>{{ t.sources }}</h2>
+        <ul class="foot-src">
+          {% if tourapi_used %}<li>{{ t.foot_tourapi }} <a href="https://api.visitkorea.or.kr/" rel="noopener" data-track="official_click">{{ t.kto_tourapi }}</a></li>{% endif %}
+          <li>{{ t.foot_official }} <a href="{{ site.source.url }}" rel="noopener" data-track="official_click">{{ t.city_tourism }}</a></li>
+          <li>{{ t.foot_maps }}</li>
+        </ul>
+      </div>
+      <nav class="foot-col" aria-label="{{ t.about }}">
+        <h2>{{ t.about }}</h2>
+        <ul><li><a href="{{ loc.home }}about/">{{ t.about_site }}</a></li><li><a href="{{ loc.home }}about/#how">{{ t.how_made }}</a></li><li><a href="{{ loc.home }}about/#corrections">{{ t.report_error }}</a></li><li><a href="/llms.txt">{{ t.llms_guide }}</a></li><li><a href="/sitemap.xml">{{ t.sitemap }}</a></li></ul>
+      </nav>
+    </div>
+    <div class="foot-id">
+      <p class="foot-mark"><span class="wm-a">{{ wordmark }}</span></p>
+      {% set ed_role = (site.editor.role_en if loc.code == 'en' and site.editor else '') or t.editor_role %}
+      <p class="foot-op">{{ t.run_by }} {% if site.operator.logo %}<span class="op-logo" aria-hidden="true">{% include "assets/brand/aio2o-wordmark.svg" %}</span> {% endif %}{% if site.operator.name_en %}{{ site.operator.name_en }} (<span lang="ko">{{ site.operator.name }}</span>){% else %}<span lang="ko">{{ site.operator.name }}</span>{% endif %}{% if site.editor and site.editor.name %} · {{ ed_role }}{{ loc.colon }}<span lang="ko">{{ site.editor.name }}</span>{% endif %}{% if site.operator.contact %} · <a href="mailto:{{ site.operator.contact }}">{{ site.operator.contact }}</a>{% endif %}</p>
+    </div>
+  </div>
+</footer>
+{%- endmacro %}

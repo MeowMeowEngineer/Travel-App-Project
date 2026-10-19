@@ -1,0 +1,36 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- /courses/: the official courses by length (당일 · 1박 2일 · 2박 3일 · the rest), each as a line row — code, name,
+    the first stops by name in course order (ui.stoprow: places with a page linked, then '외 n곳'), the number of
+    stops and the straight-line sum (or the measured legs). co_groups = present.course_groups_vm. -#}
+{% block bodyclass %}pg-courses{% endblock %}
+{% block main_class %}{% endblock %}
+{% block content %}
+<section class="pg-hero band-s" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('list.head.courses')) }}
+  <div class="wrap band-grid">
+    <div>
+      <p class="eyebrow">{{ site.source.name }} 공식 코스</p>
+      <h1 id="h-list" class="h-list">{{ site.region }} 여행 코스 <span class="count tn">{{ n_courses }}개</span></h1>
+      <p class="list-lede">경유지를 공식 코스 순서대로 적고 장소 페이지로 연결했습니다. 거리는 한국관광공사 좌표 사이 직선거리의 합이고, 좌표가 빠진 경유지가 있으면 좌표 있는 구간 수를 적었습니다.</p>
+    </div>
+    {% if co_groups|length > 1 %}<ol class="band-data only-wide" aria-label="일정별">{% for g in co_groups %}<li><a href="#{{ g.id }}"><b class="num tn">{{ g.courses|length }}</b><span>{{ g.title }}</span></a></li>{% endfor %}</ol>{% endif %}
+  </div>
+</section>
+<div class="wrap p2-courses">
+  {% for g in co_groups %}
+  <section class="chapter chapter-tight" id="{{ g.id }}" aria-labelledby="h-{{ g.id }}">
+    <div class="ch-head"><h2 id="h-{{ g.id }}">{{ g.title }}{% if g.title in ('당일', '1박 2일', '2박 3일') %} 코스{% endif %} <span class="count tn">{{ g.courses|length }}</span></h2></div>
+    <ol class="lines">
+      {% for cv in g.courses %}
+      <li class="line-row">
+        <span class="line-dur">{{ cv.code or cv.duration or '' }}</span>
+        <a class="line-name" href="{{ cv.path }}" data-track="course_click">{{ cv.title or cv.display }}</a>
+        {{ ui.stoprow(cv.stops, (cv.title or cv.display) ~ ' 경유지 순서') }}
+        {{ ui.linemeta(cv) }}
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

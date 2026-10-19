@@ -1,0 +1,50 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- /videos/ (topic = none) and /videos/<topic>/ (topic = that group). video_groups = present.video_groups_vm:
+    [{id, title, vids, slug, path, preview}]; places = entities by slug (a video's place_slugs → linked places).
+    Index: a short band with the count, '공식 채널만' (JS) and the topic chips; per topic the first eight as cards
+    (YouTube's own thumbnail; the player loads only when pressed — site.js [data-yt]) and the rest as lean rows in a
+    folded '더 보기' (site.js opens it when '공식 채널만' is on), with a link to the topic's own page.
+    Topic page: the band (back to every topic), eight cards, then every other video of the topic as lean rows in the
+    same fold (text in a closed <details> draws no glyphs, so the first visit stays inside the font budget).
+    The header band: the AI art of the index (list.head.videos) or of the topic (videos.head.<topic.art>, the keys of
+    build.VIDEO_TOPIC_ART). -#}
+{% import "_p1.html.j2" as p1 %}
+{% set label = (('그 밖의' if topic.title == '기타' else topic.title) if topic else '') %}
+{% macro lites(vs) -%}
+{% for v in vs %}{% set linked = [] %}{% for s in v.place_slugs or [] %}{% if s in places %}{% set _ = linked.append(places[s]) %}{% endif %}{% endfor %}{{ ui.vlite(v, linked) }}{% endfor %}
+{%- endmacro %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-videos{% if topic %} pg-vtopic{% endif %}{% endblock %}
+{% block head %}<link rel="preconnect" href="https://i.ytimg.com">{% endblock %}
+{% block content %}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('videos.head.' ~ topic.art) if topic else (art_slots or {}).get('list.head.videos')) }}
+  <div class="wrap">
+    {% if not topic %}<span class="hd-mascot">{{ ui.kpic('mascot-camera', 'play', 104) }}</span>{% endif %}
+    {% if topic %}<p class="kicker"><a href="/videos/">영상</a><span>주제</span></p>{% endif %}
+    <h1 id="h-list" class="h-list">{% if topic %}{{ site.region }} {{ label }} 영상{% else %}영상으로 보는 {{ site.region }}{% endif %} <span class="count tn">{{ total }}편</span></h1>
+    <div class="v-tools">
+      {% if official %}<button type="button" class="v-off" aria-pressed="false" data-v-official>공식 채널만 <span class="tn">{{ official }}</span></button>{% endif %}
+      {% if topic %}<a class="v-all" href="/videos/">모든 주제 보기<span class="arr" aria-hidden="true">›</span></a>
+      {% else %}<nav class="v-nav" aria-label="영상 주제">{% for g in video_groups %}<a href="#{{ g.id }}">{{ '그 밖의 영상' if g.title == '기타' else g.title }} <span class="tn">{{ g.vids|length }}</span></a>{% endfor %}</nav>{% endif %}
+    </div>
+  </div>
+</section>
+<div class="wrap v-wrap" data-videos>
+  {% for g in video_groups %}
+  {% set gl = '그 밖의' if g.title == '기타' else g.title %}
+  {% set rest = g.vids[8:] %}
+  <section class="v-sec{% if not loop.first %} cv{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h">
+    {% if topic %}<h2 id="{{ g.id }}-h" class="vh">{{ site.region }} {{ label }} 영상 목록</h2>
+    {% else %}{{ ui.chead((('그 밖의 ' ~ site.region ~ ' 영상') if g.title == '기타' else (site.region ~ ' ' ~ g.title ~ ' 영상')), g.id ~ '-h', g.path, gl ~ ' 영상 모아 보기', '', '', g.vids|length) }}{% endif %}
+    <ul class="vids vids-4">{{ p1.vgrid(g.vids[:8], places) }}</ul>
+    {% if rest %}
+    <details class="v-more"><summary>{{ gl }} 영상 {{ rest|length }}편 더 보기</summary>
+    <ul class="vlist">{{ lites(rest) }}</ul>
+    </details>
+    {% endif %}
+  </section>
+  {% endfor %}
+  <p class="note v-src">{% if topic %}{{ site.region }} {{ label }} 주제를 다룬 YouTube 영상입니다. {% endif %}주제마다 공식 채널 영상을 먼저, 그다음 방송사·크리에이터 영상을 실었습니다. 썸네일을 누르면 이 자리에서 재생됩니다 · 영상·썸네일: 각 채널의 YouTube{% if has_abroad and not topic %} · 외국어 영상과 외신 기사는 <a href="/abroad/">해외에서 본 {{ site.region }}</a>에 따로 모았습니다{% endif %}</p>
+</div>
+{% endblock %}

@@ -1,0 +1,176 @@
+/* ---------------------------------------------------------------- skip link, sample banner */
+.skip-link { position: absolute; left: -9999px; top: 8px; z-index: 100; background: var(--blue); color: #fff; padding: 12px 18px; border-radius: 980px; font-weight: 700; }
+.skip-link:focus { left: 16px; color: #fff; text-decoration: none; }
+/* the sample-build note (base.html.j2 puts it just above the footer; sample mode only) */
+.banner { background: #fff4d6; color: #3b2c00; font-size: 13.5px; font-weight: 700; line-height: 1.5; text-align: center; padding: 10px var(--m); }
+
+/* ---------------------------------------------------------------- global bar: frosted, thin, in the flow (sticky)
+   48px on phones, 52px on desktop. Sticky, so it never covers anything at load and never shifts the page. Pages with
+   a local bar (body.has-lnav: place, course, event, guide) let the global bar scroll away and keep only the local
+   bar stuck to the top. The translucent colour sits on the bar itself (what a contrast scan composites); the blur
+   sits on ::before, so the bar never becomes a containing block for the fixed menu panel.
+   Phones: wordmark · 영상 · context button (pages without a local bar) · 검색 · 메뉴 (the full nav in the panel). */
+.mast { position: sticky; top: 0; z-index: 50; height: var(--bar); color: var(--ink); background: rgba(250, 250, 252, .8); view-transition-name: mast; }
+.mast::before { content: ""; position: absolute; inset: 0; z-index: -1; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); transition: box-shadow .2s var(--fb); }
+html.is-scrolled .mast::before { box-shadow: 0 1px 0 rgba(0, 0, 0, .08); }
+.has-lnav .mast { position: relative; background: #fafafc; }
+.mast-in { position: relative; display: flex; align-items: center; gap: 2px; height: 100%; }
+.wordmark { display: inline-flex; align-items: baseline; gap: 8px; min-height: 44px; align-self: center; color: var(--ink); text-decoration: none; margin-right: auto; padding-top: 12px; }
+.wordmark:hover { text-decoration: none; color: var(--ink); }
+.wm-a { font: 700 19px/1 var(--font); letter-spacing: -.03em; white-space: nowrap; }
+.wm-b { font: 700 11px/1 var(--font); letter-spacing: .02em; color: var(--ink-2); white-space: nowrap; }
+.mast-nav ul { display: flex; }
+.mast-nav a { display: flex; align-items: center; min-height: 44px; padding: 0 11px; color: #333336; text-decoration: none; font-size: 14px; letter-spacing: -.01em; white-space: nowrap; transition: color .2s var(--fb); }
+.mast-nav a:hover { color: #000; text-decoration: none; }
+.mast-nav a[aria-current] { color: var(--ink); font-weight: 700; }
+.mast-search { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 0 8px; margin-left: 4px; color: #333336; text-decoration: none; font-size: 14px; }
+.mast-search:hover, .mast-search[aria-current] { color: #000; text-decoration: none; }
+.mast-search .icon { width: 18px; height: 18px; }
+.mast-search span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mast-ctx, .mast-v { display: none; }
+.menu { display: none; position: static; }
+.menu summary { list-style: none; display: flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; cursor: pointer; color: var(--ink); }
+.menu summary::-webkit-details-marker { display: none; }
+.bars { position: relative; width: 17px; height: 10px; }
+.bars::before, .bars::after { content: ""; position: absolute; left: 0; right: 0; height: 1.5px; border-radius: 1px; background: currentColor; transition: transform .24s var(--ease), top .24s var(--ease); }
+.bars::before { top: 0; } .bars::after { top: 8px; }
+.menu[open] .bars::before { top: 4px; transform: rotate(45deg); }
+.menu[open] .bars::after { top: 4px; transform: rotate(-45deg); }
+.menu-panel { position: fixed; left: 0; right: 0; top: var(--bar); bottom: 0; background: #fff; padding: 12px var(--m) 40px; overflow-y: auto; z-index: 60; }
+.menu-panel li a { display: flex; align-items: center; min-height: 52px; color: var(--ink); text-decoration: none; font: 700 28px/1.2 var(--font); letter-spacing: -.03em; }
+.menu-panel li a[aria-current] { color: var(--link); }
+.menu-panel .menu-sub { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--hair); }
+.menu-panel .menu-sub li a { min-height: 44px; font: 400 17px/1.3 var(--font); letter-spacing: -.01em; color: var(--ink-2); }
+@media (prefers-reduced-motion: no-preference) {
+  .menu[open] .menu-panel li { animation: menu-in .4s var(--ease) both; animation-delay: calc(var(--i, 0) * 25ms); }
+}
+@keyframes menu-in { from { opacity: 0; transform: translateY(-6px); } }
+@media (max-width: 1023px) {
+  .mast-nav { display: none; }
+  .menu { display: block; }
+  .wm-a { font-size: 16px; letter-spacing: -.035em; }
+  .wm-b { display: none; }
+  .mast-v, .mast-ctx { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0 6px; font: 400 15px/1 var(--font); color: var(--ink); text-decoration: none; white-space: nowrap; }
+  .mast-v:hover, .mast-ctx:hover { text-decoration: none; color: var(--ink); }
+  .mast-v[aria-current] { font-weight: 700; }
+  .mast-ctx { font-weight: 700; }
+  .mast-ctx::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); margin-right: 5px; }
+  .mast-search { margin: 0; padding: 0; }
+}
+/* the narrowest phones: the context button loses its dot, so the bar never wraps (영상 gives way to 검색: below) */
+@media (max-width: 374px) { .mast-ctx::before { display: none; } }
+
+/* ---------------------------------------------------------------- local bar (ui.lnav: place, course, event, guide)
+   The page title, its section links (desktop) and one blue pill — the page's contextual action (place: 길찾기 to
+   the exact route, course: 경유지 목록, event: 길찾기, guide: 걷는 순서 / 코스 보기). The only bar that stays. */
+.lnav { position: sticky; top: 0; z-index: 45; height: 52px; background: rgba(255, 255, 255, .72); }
+.lnav::before { content: ""; position: absolute; inset: 0; z-index: -1; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 1px 0 rgba(0, 0, 0, .12); }
+.lnav-in { display: flex; align-items: center; height: 100%; gap: 4px; }
+.lnav-t { flex: 1 1 auto; min-width: 0; font: 700 21px/1.2 var(--font); letter-spacing: -.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }   /* a repeat of the H1, not a value */
+.lnav-links { display: flex; flex: none; }
+.lnav-links a { display: flex; align-items: center; min-height: 44px; padding: 0 10px; font-size: 13.5px; color: #333336; text-decoration: none; }
+.lnav-links a:hover { color: var(--link); text-decoration: none; }
+.lnav-cta { flex: none; display: inline-flex; align-items: center; min-height: 44px; margin-left: 10px; padding: 0 15px; border: 7px solid transparent; border-left: 0; border-right: 0; background: var(--blue) padding-box; border-radius: 980px; color: #fff; font: 400 14px/1 var(--font); text-decoration: none; white-space: nowrap; transition: background-color .2s var(--fb); }
+.lnav-cta:hover { background-color: var(--blue-hi); color: #fff; text-decoration: none; }
+@media (max-width: 1023px) {
+  .lnav-links { display: none; }
+  .lnav-t { font-size: 17px; }
+  .lnav-cta { margin-left: 8px; }
+}
+
+/* ---------------------------------------------------------------- breadcrumbs (ui.crumbs): base.html.j2 prints them at the
+   foot of the page, above the footer, the way apple.com does (the JSON-LD BreadcrumbList names must be visible) */
+.crumbs-bar { background: var(--bg-2); padding: 14px 0 0; }
+.crumbs-bar .wrap > .crumbs { padding-bottom: 12px; border-bottom: 1px solid var(--hair); }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; font-size: 13px; color: var(--ink-3); }
+.crumbs a { color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; min-height: 32px; }
+.crumbs a:hover { color: var(--ink); text-decoration: underline; }
+.crumbs span[aria-hidden] { color: var(--ink-3); }
+.crumbs [aria-current] { color: var(--ink); }
+@media (max-width: 1023px) { .crumbs a { min-height: 44px; } }
+
+/* ---------------------------------------------------------------- footer (Apple: grey, small, quiet) */
+.foot { position: relative; background: var(--bg-2); padding: 32px 0 44px; font-size: 13px; line-height: 1.5; color: var(--ink-3); }
+.foot-in { display: grid; grid-template-columns: 2fr 3fr 1.6fr; gap: 24px var(--g); padding-bottom: 24px; border-bottom: 1px solid var(--hair); }
+.foot h2 { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 6px; letter-spacing: -.01em; }
+.foot-col a { color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; min-height: 32px; }
+.foot-col a:hover { color: var(--ink); text-decoration: underline; }
+.foot-col ul { columns: 2; column-gap: 16px; }
+.foot-src { columns: 1 !important; }
+.foot-src li { margin-bottom: 4px; color: var(--ink-3); }
+.foot-src a { display: inline-block; padding: 4px 0; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; }   /* a link inside a sentence: underlined, 24px tall on desktop */
+.foot-id { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; padding-top: 18px; }
+.foot-mark { display: flex; align-items: baseline; gap: 8px; color: var(--ink); }
+.foot-mark .wm-a { font-size: 17px; }
+.foot-mark .wm-b { display: inline; }
+.foot-op { color: var(--ink-2); }
+@media (max-width: 1023px) {
+  .foot-in { grid-template-columns: 1fr 1fr; row-gap: 20px; }
+  .foot-col a { min-height: 44px; }
+  .foot-src a { display: inline-flex; min-height: 44px; }
+}
+@media (max-width: 760px) { .foot-in { grid-template-columns: 1fr; } }
+
+
+/* ---------------------------------------------------------------- UI4 header (owner 2026-10-14, the reference's manner)
+   White (92% with a blur), 60px on desktop / 52px on phones, our nav as 44px rounded links (the current page with a
+   3px sea underline), the site search and the language menu. The skip link stays. Contrast: ink-2 on white 9.36. */
+.mast { background: rgba(255, 255, 255, .92); }
+html.is-scrolled .mast::before { box-shadow: 0 1px 0 var(--hair), 0 8px 24px -18px rgba(20, 52, 99, .4); }
+.has-lnav .mast { background: #fff; }
+.mast-nav a { position: relative; padding: 0 12px; border-radius: 12px; color: var(--ink-2); font-size: 15px; font-weight: 400; }
+.mast-nav a:hover { color: var(--ink); background: var(--bg-2); }
+.mast-nav a[aria-current] { color: var(--ink); font-weight: 700; }
+.mast-nav a[aria-current]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 4px; height: 3px; border-radius: 3px; background: var(--sea); }
+@media (min-width: 1024px) { .wm-a { font-size: 20px; } }
+@media (min-width: 1024px) and (max-width: 1180px) { .mast-nav a { padding: 0 8px; font-size: 14px; } .mast-nav a[aria-current]::after { left: 8px; right: 8px; } }
+.foot { background: var(--bg-2); }
+
+/* ---------------------------------------------------------------- the site search in the bar (base.html.j2 form.hs)
+   Owner 2026-10-14 ('페이지 상단에는 검색, 중앙 부분에는 AI챗봇으로 확실히 구분'): every Korean page searches from here;
+   the assistant is the home's centre card and the launcher, never a button in this bar.
+   From 1024px: a pill field — '장소·음식·지역 검색' — with a round sea search button at its end, always shown (works
+   without JS); a 3:1 outline (#7A93B8 on white 3.14); on focus the sea border and a two-tone ring (tint, then sea).
+   Phones: '검색' in the bar is a tinted round icon (a link to /search/ without JS); with JS it opens the same form
+   OVER the bar (html.hs-open, site.js): the field, the round search button and '닫기', each a 44px target — the bar
+   keeps its 52px, so the fixed area never grows (CLAUDE.md 7: ≤ 15% of the screen).
+   Contrast: ink on white 16.27, placeholder ink-3 on g0 5.22, the white icon on sea 4.96, sea-deep icon on tint 7.13. */
+.hs { display: none; }
+.hs-f { display: flex; align-items: center; flex: 1; min-width: 0; height: 44px; padding: 0 3px 0 16px; box-sizing: border-box; border: 1.5px solid #7A93B8; border-radius: 999px; background: var(--g0); transition: border-color .2s var(--fb), box-shadow .2s var(--fb), background-color .2s var(--fb); }
+.hs-f:hover { border-color: var(--sea); }
+.hs-f:focus-within { border-color: var(--sea); background: #fff; box-shadow: 0 0 0 3px var(--tint2), 0 0 0 5px var(--sea); }
+.hs input { flex: 1; min-width: 0; height: 40px; padding: 0; border: 0; border-radius: 0; background: transparent; font: 400 15px/1.2 var(--font); letter-spacing: -.01em; color: var(--ink); -webkit-appearance: none; appearance: none; }
+.hs input::placeholder { color: var(--ink-3); opacity: 1; }
+.hs input:focus { outline: none; }
+.hs input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.hs-go, .hs-x { flex: none; display: inline-grid; place-items: center; padding: 0; border: 0; cursor: pointer; }
+.hs-go { width: 36px; height: 36px; border-radius: 50%; background: var(--sea); color: #fff; transition: background-color .2s var(--fb); }
+.hs-go:hover { background: var(--sea-hi); }
+.hs-go .icon { width: 18px; height: 18px; stroke-width: 2.2; }
+.hs-x { width: 44px; height: 44px; border-radius: 50%; background: transparent; color: var(--ink-2); }
+.hs-x:hover { background: var(--bg-2); color: var(--ink); }
+.hs-x .icon { width: 20px; height: 20px; }
+.hs-go:focus-visible, .hs-x:focus-visible { outline: 3px solid var(--sea-deep); outline-offset: 2px; }
+@media (max-width: 1023px) {
+  .mast-search { position: relative; z-index: 0; width: 44px; height: 44px; margin: 0 2px; border-radius: 50%; color: var(--sea-deep); }
+  .mast-search::before { content: ""; position: absolute; z-index: -1; width: 38px; height: 38px; border-radius: 50%; background: var(--tint); }
+  .mast-search .icon { width: 20px; height: 20px; stroke-width: 2.1; }
+  .mast-search:hover, .mast-search[aria-current] { background: transparent; color: var(--sea-deep); }
+  .mast-search:hover::before, .mast-search[aria-current]::before { background: var(--tint2); }
+  .mast-search:focus-visible { outline: 3px solid var(--sea-deep); outline-offset: 0; }
+  /* opened: the form covers the bar (the field 44px tall, the search button 40px round, '닫기' 44px); the bar's own
+     items step back so that nothing behind it is reachable */
+  html.hs-open .hs { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: 4px; padding: 0 calc(var(--m) - 6px) 0 var(--m); background: #fff; }
+  html.hs-open .mast-in > :not(.hs) { visibility: hidden; }
+  .hs-f { padding-left: 16px; }
+  .hs input { font-size: 16px; }   /* 16px: iOS does not zoom into the field */
+  .hs-go { width: 40px; height: 40px; }
+}
+@media (min-width: 1024px) {
+  .mast-search { display: none; }
+  .hs { display: flex; align-items: center; flex: 0 1 clamp(210px, 19vw, 280px); min-width: 180px; margin-left: 14px; }
+  .hs-x { display: none; }
+  .hs + .lang-menu { margin-left: 6px; }
+}
+/* the narrowest phones: 영상 gives way to the search (it stays in the menu panel), the context button loses its dot */
+@media (max-width: 374px) { .mast-v { display: none; } .mast-search { display: flex; } }

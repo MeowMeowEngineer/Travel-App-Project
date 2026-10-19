@@ -1,0 +1,16 @@
+[
+  {
+    "id": "event-sample-1",
+    "slug": "sample-event",
+    "status": "published",
+    "name": "[샘플] 군산 행사 A",
+    "start_date": "2026-10-30",
+    "end_date": "2026-11-01",
+    "place_name": "[샘플] 행사 장소",
+    "address": "",
+    "summary": "[샘플] TourAPI 행사정보(eventstartdate·eventenddate·eventplace) 값을 그대로 씁니다.",
+    "source_name": "한국관광공사 TourAPI",
+    "source_url": "",
+    "checked_at": "2026-10-08"
+  }
+]

@@ -1,0 +1,171 @@
+{% extends "base.html.j2" %}
+{#- The place page of every version but Korean (the words named below are English's; t = the version's words). Same order as the Korean page: kicker → the English name (the Korean name under it, lang="ko",
+    for a taxi driver or a Korean map search) → the summary as the answer (first sentence, the rest lighter in the
+    same paragraph: JSON-LD's description is the whole summary) → official designations as chips when the Korean page
+    shows them (each links to its list; the facts card's 'Designations' row names the list) → key facts as
+    tiles + 'Sources: …' (no checked date — operator decision 2026-10-09) → the route
+    row (Google Maps · Naver Map · Kakao Map, 'Other maps'). The lead photo by licence (KOGL-1: a rounded crop,
+    preloaded; KOGL-3: whole, desktop only — phones get the provider's small renditions). Then the facts card (every
+    English value whole, per-field sources as footnotes, both values + the note where sources differ), photos, more
+    facts, map; chapters: nearby, details, FAQ, sources. v = pipeline/en_site.Site.place_vm. -#}
+{% import "en/_en.html.j2" as E with context %}
+{% import "_media.html.j2" as md %}
+{% set fn = v.notes|length > 1 %}
+{% set nm = v.name %}
+{% set lead = v.hero_k1 or v.hero_k3 %}
+{% set has_near = v.near_sights or v.near_biz or v.courses or v.guides or v.events %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-place kind-{{ v.kind }}{% if lead %} has-photo{% else %} no-photo{% endif %}{% endblock %}
+{% block head %}{% if v.hero_k1 %}{{ md.preload(v.hero_k1, '(min-width: 1024px) min(940px, 66vw), 100vw') }}{% endif %}{% endblock %}
+{% block lnav %}
+{% set links = [(t.s('sec_facts'), '#h-facts')] %}
+{% if v.photos %}{% set _ = links.append((t.s('sec_photos'), '#h-photos')) %}{% endif %}
+{% set _ = links.append((t.s('sec_map'), '#h-map' if v.points else '#h-dir')) %}
+{% if has_near %}{% set _ = links.append((t.s('sec_nearby'), '#h-near')) %}{% endif %}
+{% if v.details %}{% set _ = links.append((t.s('sec_details'), '#h-details')) %}{% endif %}
+{% if v.faqs %}{% set _ = links.append((t.s('sec_faq'), '#h-faq')) %}{% endif %}
+{% set _ = links.append((t.s('sec_sources'), '#h-src')) %}
+{{ ui.lnav(nm, links, v.route.cta, t.s('jump_place', name=nm)) }}
+{% endblock %}
+{% block content %}
+<article class="place" data-entity-id="{{ v.e.id }}" data-tier="{{ v.e.tier or 'basic' }}">
+  <header class="pl-hero{% if v.hero_k1 %} hk1{% elif v.hero_k3 %} hk3{% else %} hnone{% endif %}">
+    <div class="wrap pl-hero-in">
+      <div class="pl-head">
+        <p class="kicker">{% for lab, href in v.kicker %}{% if href %}<a href="{{ href }}">{{ lab }}</a>{% else %}<span>{{ lab }}</span>{% endif %}{% endfor %}<span>{{ region }}{% if v.area %}{{ loc.list_sep }}{{ v.area }}{% endif %}</span></p>
+        <h1 class="d1 vt-title">{{ nm }}</h1>
+        <p class="alt-n pl-alt ko-name">{{ t.f('in_korean', name=E.ko(v.name_ko)) }}</p>
+        <div class="summary" data-block="summary">
+          <p class="lede">{{ v.lede }}</p>
+        </div>
+        {{ E.dzchips(v.designations, v.e.id) }}
+        {{ E.kf(v.kf, 'kf-hero', v.e.id) }}
+        <div class="kf-notes">{{ E.kfnote(v.kf, v.e.id) }}</div>
+        {{ E.route(v.route, v.e.id, nm) }}
+        {% if v.story %}<p class="lede-more">{{ v.story|join(loc.sjoin) }}</p>{% endif %}
+      </div>
+      {% if v.hero_k1 %}
+      <figure class="pl-ph t1">
+        <div class="pl-ph-frame">{{ ui.img(v.hero_k1, '(min-width: 1024px) min(940px, 66vw), 100vw', true, 'settle vt-photo', false, true) }}</div>
+        <figcaption><span class="cap-n">{{ nm }}{% if v.photos|length > 1 %} <span class="tn">1/{{ v.photos|length }}</span>{% endif %}</span><span class="cap-c">{{ E.credit(v.hero_k1) }}</span></figcaption>
+      </figure>
+      {% elif v.hero_k3 %}
+      {{ E.hero_k3(v.hero_k3, nm, v.photos|length) }}
+      {% if v.thumbs %}
+      <div class="pl-thumbs only-narrow">
+        <ul>{% for t in v.thumbs %}<li><a href="#h-photos"><img class="t{{ t.type }}" src="{{ t.url }}" width="{{ t.w }}" height="{{ t.h }}" style="height:{{ [t.h, 100]|min }}px" alt="{{ t.alt }}" loading="lazy" decoding="async" data-kogl="{{ t.type }}"></a></li>{% endfor %}</ul>
+        <p class="pl-thumbs-c"><a href="#h-photos">{{ t.n('photos_n', v.photos|length) }} ↓</a> · {{ t.f('source_is', name=t.kto) }} · {{ v.lics|join(loc.list_sep) }}</p>
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="pl-band tone-2">
+  <div class="wrap pl-grid{% if not lead %} lift{% endif %}">
+    <section class="pl-side" aria-labelledby="h-facts" data-block="facts" data-sticky>
+      <h2 id="h-facts" class="h-side">{{ t.f('h_facts', name=E.nm(nm)) }}</h2>
+      {% if v.practical or v.designations %}<dl class="facts">{% for r in v.practical %}{{ E.factrow(r, fn, v.e.id, v.address_ko) }}{% endfor %}{{ E.dzrow(v.designations, v.e.id) }}</dl>{% endif %}
+      {% if v.missing %}<p class="need"><b>{{ t.not_listed }}</b> {{ v.missing|join(loc.list_sep) }}</p>{% endif %}
+      {{ E.notes(v.notes, v.e.id) }}
+    </section>
+
+    <div class="pl-main">
+      {% if v.photos %}
+      {% set strip = v.photos[1:7] if v.hero_k1 else v.photos[:7] %}
+      <section class="media" aria-labelledby="h-photos">
+        <h2 id="h-photos" class="h-sec">{{ t.f('h_photos', name=E.nm(nm)) }} <span class="tn">{{ v.photos|length }}</span></h2>
+        {% if v.hero_k3 %}{{ E.figure(v.photos[0], nm, 1, v.photos|length, 'ph-lead only-narrow', false, '100vw') }}{% set strip = v.photos[1:7] %}{% endif %}
+        {% if strip %}
+        <div class="car car-ph" data-gallery>
+          <div class="car-view" data-gal-view><ul class="strip car-track">{% for ph in strip %}<li>{{ E.figure(ph, nm, loop.index + 1, v.photos|length, '', false, '(min-width: 1024px) 460px, 340px', false, false) }}</li>{% endfor %}</ul></div>
+          <div class="car-foot car-foot-s"><p class="strip-credit">{{ t.f('source_is', name=t.kto) }} · {{ strip|map(attribute='lic')|unique|join(loc.list_sep) }}</p>{% if strip|length > 1 %}<div class="car-nav" data-gal-nav><button type="button" class="gal-btn" data-dir="-1">{{ ui.icon('prev', 'icon') }}<span class="vh">{{ t.prev_photo }}</span></button><button type="button" class="gal-btn" data-dir="1">{{ ui.icon('next', 'icon') }}<span class="vh">{{ t.next_photo }}</span></button></div>{% endif %}</div>
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {% if v.more %}
+      <section class="block" aria-labelledby="h-more" data-block="facts">
+        <h2 id="h-more" class="h-sec">{{ t.f('h_more', name=E.nm(nm)) }}</h2>
+        <dl class="facts facts-more">{% for r in v.more %}{{ E.factrow(r, fn, v.e.id) }}{% endfor %}</dl>
+      </section>
+      {% endif %}
+      {% if v.fit %}
+      <section class="block" aria-labelledby="h-fit" data-block="facts">
+        <h2 id="h-fit" class="h-sec">{{ t.f('h_fit', name=E.nm(nm)) }}</h2>
+        <dl class="facts facts-more">{% for r in v.fit %}{{ E.factrow(r, fn, v.e.id) }}{% endfor %}</dl>
+      </section>
+      {% endif %}
+
+      {% if v.points %}
+      <section class="block" aria-labelledby="h-map">
+        <h2 id="h-map" class="h-sec">{{ t.f('h_map', name=E.nm(nm)) }}</h2>
+        {{ E.mapfig(v.points, t.s('map_of', name=nm), 'place-map', t.s('map_straight')) }}
+      </section>
+      {% endif %}
+    </div>
+  </div>
+  </div>
+
+  {% if has_near %}
+  <section class="wrap chapter ch-rail" aria-labelledby="h-near" data-block="nearby">
+    <h2 id="h-near" class="rail-label">{{ t.f('h_near', name=E.nm(nm)) }}</h2>
+    <div class="rail-body">
+      {% if v.near_sights or v.near_biz %}
+      <div class="near-cols2">
+        {% for title, xs in [(t.s('near_sights'), v.near_sights), (t.s('near_biz'), v.near_biz)] if xs %}
+        <div class="tile"><h3 class="h-sub">{{ title }}</h3>
+          <ol class="near">{% for n in xs %}<li><a href="{{ n.href }}" data-track="{{ n.track }}" data-place="{{ v.e.id }}">{{ n.name }}</a><span class="near-t">{{ n.type }}</span><span class="near-d tn">{{ n.d }}</span></li>{% endfor %}</ol>
+        </div>
+        {% endfor %}
+      </div>
+      {% if v.nearby_source.provider %}<p class="note">{{ t.f('near_note', m=(v.nearby_source.radius_m or 0)|int, provider=en.provider(v.nearby_source.provider)) }}</p>{% endif %}
+      {% endif %}
+      {% for title, xs, track in [(t.s('courses_here'), v.courses, 'course_click'), (t.s('guides_here'), v.guides, 'guide_click')] if xs %}
+      <div class="xl-g">
+        <h3 class="h-sub">{{ title }}</h3>
+        <ul class="xlinks">{% for x in xs %}<li><a href="{{ x.path }}" data-track="{{ track }}" data-place="{{ v.e.id }}">{{ x.rec.name or x.rec.title }}</a></li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+      {% if v.events %}
+      <div class="xl-g">
+        <h3 class="h-sub">{{ t.events_here }}</h3>
+        <ul class="xlinks">{% for x in v.events %}<li><a href="{{ loc.home }}events/#{{ x.anchor }}">{{ x.rec.series_name }}</a></li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if v.details %}
+  <section class="wrap chapter ch-rail" aria-labelledby="h-details" data-block="details">
+    <h2 id="h-details" class="rail-label">{{ t.f('h_details', name=E.nm(nm)) }}</h2>
+    <div class="rail-body prose details">
+      {% for d in v.details %}<h3>{{ d.heading }}</h3><p>{{ d.text|tel(v.e.id) }}{% if v.detail_notes|length > 1 %}{{ E.csup(d.n) }}{% endif %}</p>{% endfor %}
+      {{ E.chnotes(v.detail_notes, v.e.id) }}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if v.faqs %}
+  <section class="wrap chapter ch-rail" aria-labelledby="h-faq" data-block="faq">
+    <h2 id="h-faq" class="rail-label">{{ t.f('h_faq', name=E.nm(nm)) }}</h2>
+    <div class="rail-body">{{ E.faq(v.faqs, v.faq_notes, v.e.id) }}</div>
+  </section>
+  {% endif %}
+
+  <section class="wrap chapter ch-rail pl-src" aria-labelledby="h-src" data-block="sources">
+    <h2 id="h-src" class="rail-label">{{ t.f('h_sources', name=E.nm(nm)) }}</h2>
+    <div class="rail-body">
+      <dl class="src-dl">
+        {% if v.orig_url %}<div data-block="original"><dt>{{ t.original_page }}</dt><dd><a href="{{ v.orig_url }}" rel="noopener" data-track="official_click" data-place="{{ v.e.id }}">{{ t.f('in_korean_paren', name=v.orig_name) }}</a></dd></div>{% endif %}
+        {% if v.visitkorea %}<div><dt>{{ t.visitkorea }}</dt><dd><a href="{{ v.visitkorea }}" rel="noopener" data-track="official_click" data-place="{{ v.e.id }}">{{ t.kto_page }}</a></dd></div>{% endif %}
+        {% if v.photos %}<div><dt>{{ t.sec_photos }}</dt><dd>{{ t.kto }} · {{ v.lics|join(loc.list_sep) }}</dd></div>{% endif %}
+        <div><dt>{{ t.korean_page }}</dt><dd><a href="{{ v.ko_path }}" hreflang="ko" lang="ko">{{ v.name_ko }}</a></dd></div>
+      </dl>
+      <p class="note"><a href="{{ loc.home }}about/#corrections">{{ t.report_error }}</a></p>
+    </div>
+  </section>
+</article>
+{% endblock %}

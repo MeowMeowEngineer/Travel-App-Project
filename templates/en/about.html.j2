@@ -1,0 +1,79 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- <home>about/ of every version but Korean: what the version is, where its information comes from, how sources are shown,
+    photo licences, names and translation, corrections, the operator (its Korean name, lang="ko"). Facts only. The
+    head's AI art (about.head) in the version's language: beside the title from 900px, below the lede on phones. -#}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-about{% endblock %}
+{% block content %}
+{% set ah = (art_slots or {}).get('about.head') %}
+<header class="pg-hero{% if ah %} has-art-hero{% endif %}"><div class="wrap">
+{% set ko_link %}<a href="/" hreflang="ko" lang="ko">{{ ko_site_name }}</a>{% endset %}
+<h1 class="h-list vt-title">{{ t.about_site }}</h1>
+<p class="list-lede">{{ t.f('about_lede', site=site.site_name, ko_site=ko_link, r=region) }}</p>{{ artm.hero(ah, loc.code) }}
+</div></header>
+
+<section class="wrap chapter ch-rail" aria-labelledby="h-what">
+  {% macro b(n) %}<b class="tn">{{ n }}</b>{% endmacro %}
+  <h2 id="h-what" class="rail-label">{{ t.about_what }}</h2>
+  <div class="rail-body prose">
+    <p>{{ t.f('about_counts', places=b(n_places), indexed=n_index, guides=b(n_guides), courses=b(n_courses), series=b(n_series)) }}</p>
+    <p>{{ t.about_sync }}</p>
+  </div>
+</section>
+
+<section class="wrap chapter ch-rail" aria-labelledby="how">
+  <h2 id="how" class="rail-label">{{ t.how_made }}</h2>
+  <div class="rail-body prose">
+    <p>{{ t.about_how_1 }}</p>
+    <p>{{ t.f('about_how_2', note=loc.conflict, missing=t.not_listed) }}</p>
+    <p>{{ t.about_how_3 }}</p>
+  </div>
+</section>
+
+<section class="wrap chapter ch-rail" aria-labelledby="h-photos">
+  <h2 id="h-photos" class="rail-label">{{ t.sec_photos }}</h2>
+  <div class="rail-body prose">
+    <p>{{ t.f('about_photos', n1=lics[1] or 0, lic1=en.lic('KOGL-1'), n3=lics[3] or 0, lic3=en.lic('KOGL-3')) }}</p>
+    <p id="illustrations">{{ t.about_art }}</p>
+  </div>
+</section>
+
+<section class="wrap chapter ch-rail" aria-labelledby="h-names">
+  <h2 id="h-names" class="rail-label">{{ t.about_names_h }}</h2>
+  <div class="rail-body prose">
+    <p>{{ t.about_names }}</p>
+  </div>
+</section>
+
+<section class="wrap chapter ch-rail" id="chatbot" aria-labelledby="h-chatbot">
+  <h2 id="h-chatbot" class="rail-label">Site assistant</h2>
+  <div class="rail-body prose">
+    <p>The ‘Ask’ button at the bottom right opens an assistant that answers only from this site's information: the values and sources on its place, guide, course and event pages, with a link to each page it uses. Where two sources differ it gives both; where the site has no value it says so and points to the phone number or official website in the data.</p>
+    <p>Answers are written by Claude Haiku 5.5, an AI model by Anthropic. AI answers can be wrong: check the linked pages and the official sources before you go. It cannot book, pay or sign you up.</p>
+    <p>This site does not store conversations. The conversation stays in this browser tab and is cleared when you press ‘New chat’ or close the tab. Each time you ask, the new question, the conversation before it (the last 12 messages) and the address of the page you are on go through this site's server function to the Anthropic API, which writes the answer. The server log keeps only the outcome and usage numbers, never your questions or the answers. What happens to them at Anthropic follows Anthropic's policies, and this site cannot delete what has already been sent.</p>
+    <p>Please do not type personal details such as names or phone numbers: nothing masks them automatically. If you typed one by mistake, press ‘New chat’; otherwise it is sent again with the conversation the next time you ask.</p>
+  </div>
+</section>
+
+<section class="wrap chapter ch-rail" aria-labelledby="corrections">
+  {% set mail %}{% if site.operator.contact %}<a href="mailto:{{ site.operator.contact }}">{{ site.operator.contact }}</a>{% else %}{{ t.the_operator }}{% endif %}{% endset %}
+  {% set op %}{% if site.operator.name_en %}{{ site.operator.name_en }} (<span lang="ko">{{ site.operator.name }}</span>){% else %}<span lang="ko">{{ site.operator.name }}</span>{% endif %}{% endset %}
+  <h2 id="corrections" class="rail-label">{{ t.report_error }}</h2>
+  <div class="rail-body prose">
+    <p>{{ t.f('about_report', mail=mail) }}</p>
+    <p>{{ t.f('about_operator', op=op) }}</p>
+  </div>
+</section>
+
+<section class="wrap chapter ch-rail" aria-labelledby="h-official">
+  <h2 id="h-official" class="rail-label">{{ t.official_sites }}</h2>
+  <div class="rail-body">
+    <ul class="src-list">
+      {% set city_link %}<a href="{{ site.source.url }}" rel="noopener" data-track="official_click">{{ t.city_tourism }}</a>{% endset %}
+      <li>{{ t.f('in_korean_paren', name=city_link) }}</li>
+      <li><a href="https://api.visitkorea.or.kr/" rel="noopener" data-track="official_click">{{ t.kto_tourapi }}</a></li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

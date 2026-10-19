@@ -1,0 +1,83 @@
+/* ================================================================ home opening (owner 2026-10-10: "첫 화면만 너무 AI
+   티가 난다", after view-beryl.vercel.app). One official photo full-bleed under the masthead (media.HOME_COVER, KOGL-1:
+   object-fit crops it, which KOGL-3 never allows — CLAUDE.md 3.4), a dark scrim (an overlay, not a filter on the
+   photo), the white H1 · sub line · search · list counts at the bottom left, and a bottom bar: the next event and the
+   photo credit. Everything is there from the first paint (no reveal); the colour bento follows below the photo.
+   Text contrast: #fff on the scrim's lower half (≥ .62 black over the photo) is ≥ 7:1; the bar text .82 white ≥ 6:1.
+   The masthead is transparent with white text over the photo until the page scrolls (html.is-scrolled, site.js),
+   then it takes its usual translucent white. Both homes open on this photo (owner 2026-10-13 night: the Korean home
+   left its season field for it — 46-home-open.css lays out its question box and the news card beside it). */
+html:not(.is-scrolled) .pg-en-home .mast { background: transparent; color: #fff; }
+html:not(.is-scrolled) .pg-en-home .mast::before { -webkit-backdrop-filter: none; backdrop-filter: none; background: linear-gradient(180deg, rgba(4, 9, 16, .45), rgba(4, 9, 16, 0)); }
+html:not(.is-scrolled) .pg-en-home .mast :is(.wordmark, .wordmark:hover, .wm-a, .wm-b, .mast-nav a, .mast-nav a:hover, .mast-nav a[aria-current], .mast-search, .mast-v, .mast-ctx, .mast-lang, .menu summary) { color: #fff; }
+html:not(.is-scrolled) .pg-en-home .menu[open] summary { color: var(--ink); }
+html:not(.is-scrolled) .pg-en-home .mast:has(.menu[open]) { background: #fff; color: var(--ink); }
+html:not(.is-scrolled) .pg-en-home .mast:has(.menu[open]) :is(.wordmark, .wm-a, .mast-v, .mast-ctx, .mast-search) { color: var(--ink); }
+
+.hx { position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: flex-end;
+  margin-top: calc(-1 * var(--bar)); min-height: max(560px, min(100svh, 940px)); color: #fff; background: #0c1724; overflow: hidden; }
+.hx > .wrap, .hx-bar > .wrap { width: 100%; box-sizing: border-box; }   /* a flex column must not shrink .wrap to its content */
+.hx-ph { position: absolute; inset: 0; z-index: -2; }
+.hx-ph picture, .hx-ph img { display: block; width: 100%; height: 100%; max-width: none; }
+.hx-ph img { object-fit: cover; object-position: 50% 58%; }
+.hx::before { content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, rgba(4, 9, 16, .5) 0, rgba(4, 9, 16, .12) 20%, rgba(4, 9, 16, .2) 38%, rgba(4, 9, 16, .62) 58%, rgba(4, 9, 16, .86) 82%, rgba(4, 9, 16, .92) 100%); }
+.hx-in { padding-top: calc(var(--bar) + 48px); padding-bottom: 28px; }
+.hx-k { margin: 0 0 12px; font: 700 15px/1.3 var(--font); letter-spacing: -.01em; color: rgba(255, 255, 255, .86); }
+.hx-h1 { margin: 0 0 16px; max-width: 11em; font: 700 clamp(46px, 8.6vw, 120px)/1.02 var(--font); letter-spacing: -.05em; text-wrap: balance; color: #fff; }
+.hx-sub { margin: 0 0 26px; max-width: 32em; font: 400 clamp(17px, 1.55vw, 21px)/1.55 var(--font); letter-spacing: -.015em; color: rgba(255, 255, 255, .9); text-wrap: pretty; }
+.hx-search { display: flex; align-items: center; max-width: 600px; min-height: 58px; margin: 0 0 18px; padding: 0 6px 0 18px; background: #fff; color: var(--ink); border-radius: 14px; box-shadow: 0 12px 40px rgba(0, 0, 0, .28); }
+.hx-ico { flex: none; width: 20px; height: 20px; color: #6e6e73; }
+.hx-search input { flex: 1; min-width: 0; height: 56px; padding: 0 12px; border: 0; background: transparent; font: 400 17px/1 var(--font); color: var(--ink); }
+.hx-search input::placeholder { color: #6e6e73; }
+.hx-search input:focus { outline: none; }
+.hx-search:focus-within { outline: 3px solid #fff; outline-offset: 3px; }
+.hx-search button { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 18px; border: 0; border-radius: 10px; background: #1d1d1f; color: #fff; font: 700 16px/1 var(--font); cursor: pointer; }
+.hx-search button:hover { background: #000; }
+.hx-search button:focus-visible { outline: 2px solid #1d1d1f; outline-offset: 2px; }
+.hx-cats { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; }
+.hx-cats a { display: inline-flex; align-items: center; min-height: 44px; color: #fff; font: 700 16px/1 var(--font); text-decoration: none; letter-spacing: -.01em; }
+.hx-cats a .tn { margin-left: 5px; }
+.hx-cats a .arr { margin-left: 4px; opacity: .7; }
+.hx-cats a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hx a:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 4px; }
+
+.hx-bar { border-top: 1px solid rgba(255, 255, 255, .18); }
+.hx-bar-in { display: flex; align-items: center; justify-content: space-between; gap: 8px 24px; flex-wrap: wrap; min-height: 56px; padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px)); font: 400 13px/1.4 var(--font); color: rgba(255, 255, 255, .82); }
+.hx-ev { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0 6px; min-height: 44px; color: #fff; text-decoration: none; }
+.hx-ev:hover .hx-ev-t { text-decoration: underline; text-underline-offset: 3px; }
+.hx-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sea); box-shadow: 0 0 0 4px var(--tint2); margin-right: 4px; }
+.hx-ev-c { font-weight: 700; }
+.hx-ev-t { font-weight: 700; }
+.hx-ev .arr { opacity: .7; }
+.hx-cap { margin: 0; color: rgba(255, 255, 255, .78); }
+.hx-cap a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+/* the answer bar right under the photo: a little air, no top search row (the search lives in the opening) */
+.hx + .abar { padding-top: 28px; }
+@media (max-width: 699px) {
+  .hx { min-height: max(560px, calc(100svh - 64px)); }
+  .hx-in { padding-bottom: 20px; }
+  .hx-sub { margin-bottom: 20px; }
+  .hx-search { min-height: 54px; padding-left: 14px; }
+  .hx-search input { height: 52px; font-size: 16px; padding: 0 8px; }
+  .hx-search button { min-height: 44px; padding: 0 14px; }
+  .hx-search button .arr { display: none; }
+  .hx-cats { gap: 0 14px; }
+  .hx-cats a { font-size: 15px; }
+  .hx-bar-in { justify-content: flex-start; }
+}
+@media (min-width: 1024px) {
+  .hx-ph img { object-position: 50% 60%; }
+  .hx::before { background: linear-gradient(90deg, rgba(4, 9, 16, .72) 0, rgba(4, 9, 16, .38) 42%, rgba(4, 9, 16, 0) 70%),
+    linear-gradient(180deg, rgba(4, 9, 16, .5) 0, rgba(4, 9, 16, 0) 22%, rgba(4, 9, 16, .12) 52%, rgba(4, 9, 16, .78) 86%, rgba(4, 9, 16, .9) 100%); }
+  .hx-in { padding-bottom: 40px; }
+  .hx-bar-in { justify-content: flex-start; gap: 8px 40px; }   /* both left: the photo's own mark sits bottom right */
+}
+/* with the product-shot slides gone from the home, the numerals band follows the bento directly: give it its air */
+.pg-home .abar + .nums { padding-top: clamp(48px, 6vw, 88px); }
+/* English home: no search page, so one white button to the official courses takes the search's place */
+.hx-cta { margin: 0 0 18px; }
+.hx-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 22px; border-radius: 12px; background: #fff; color: #1d1d1f; font: 700 17px/1 var(--font); text-decoration: none; box-shadow: 0 12px 40px rgba(0, 0, 0, .28); }
+.hx-btn:hover { background: #f5f5f7; color: #000; text-decoration: none; }
+.hx .hx-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }

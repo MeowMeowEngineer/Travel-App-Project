@@ -1,0 +1,298 @@
+[
+  {
+    "id": "sample-0001",
+    "slug": "gyeongam-railroad-village",
+    "name": "경암동 철길마을",
+    "kind": "attraction",
+    "category": "골목과 문화",
+    "themes": [
+      "alleys-culture"
+    ],
+    "tier": "full",
+    "status": "published",
+    "reviewed_at": "2026-10-08",
+    "reviewer": "샘플",
+    "summary": "[샘플] 경암동 철길마을은 (위치)에 있는 (무엇)입니다. 첫 문장에 '무엇·어디'를, 둘째 문장에 원문·TourAPI에 근거한 방문 이유를 씁니다.",
+    "facts": {
+      "address": "[샘플] TourAPI addr1 값",
+      "usetime": "[샘플] TourAPI usetime 값",
+      "parking": "[샘플] TourAPI parking 값",
+      "infocenter": "[샘플] 문의처 값",
+      "babycarriage": "[샘플] chkbabycarriage 값"
+    },
+    "facts_source": {
+      "provider": "한국관광공사 TourAPI",
+      "contentid": "",
+      "checked_at": "2026-10-08"
+    },
+    "map_ids": {
+      "naver_place_id": "",
+      "google_place_id": ""
+    },
+    "official": {
+      "source_url": "https://www.gunsan.go.kr/tour",
+      "visitkorea_url": "",
+      "homepage": ""
+    },
+    "original": {
+      "text": "[샘플] 이용조건이 공공누리 제1유형으로 확인된 경우, 군산시 문화관광의 원문이 여기에 글자 하나 바꾸지 않고 들어갑니다.\n줄바꿈도 원문 그대로 유지합니다.",
+      "source_name": "군산시 문화관광",
+      "source_url": "https://www.gunsan.go.kr/tour",
+      "license": "KOGL-1",
+      "collected_at": "2026-10-07",
+      "sha256": "62683b021ea9d7e2b9624553f314d8974b2203a37b8edc7ba7c7552a98fa5e99"
+    },
+    "images": [],
+    "nearby": [
+      {
+        "name": "초원사진관",
+        "kind": "attraction",
+        "type_label": "관광지",
+        "distance_m": 0,
+        "internal_slug": "chowon-photo-studio"
+      },
+      {
+        "name": "[샘플] 주변 숙소 A",
+        "kind": "stay",
+        "type_label": "숙박",
+        "distance_m": 650,
+        "internal_slug": "sample-stay-a"
+      },
+      {
+        "name": "[샘플] 주변 음식점 A",
+        "kind": "food",
+        "type_label": "음식점",
+        "distance_m": 320,
+        "internal_slug": "sample-food-a"
+      },
+      {
+        "name": "[샘플] 페이지 없는 음식점 B",
+        "kind": "food",
+        "type_label": "음식점",
+        "distance_m": 480,
+        "internal_slug": ""
+      }
+    ],
+    "nearby_source": {
+      "provider": "한국관광공사 TourAPI 위치기반",
+      "radius_m": 2000,
+      "distance_basis": "직선거리",
+      "checked_at": "2026-10-08"
+    },
+    "media": {
+      "videos": [
+        {
+          "youtube_id": "SAMPLE",
+          "title": "[샘플] 군산시 공식 채널 영상 제목",
+          "channel": "군산시",
+          "url": ""
+        }
+      ],
+      "news": [
+        {
+          "title": "[샘플] 군산시 보도자료 제목",
+          "publisher": "군산시",
+          "date": "2026-10-01",
+          "url": "https://example.com/news"
+        }
+      ]
+    },
+    "faq": [
+      {
+        "q": "경암동 철길마을은 입장료가 있나요?",
+        "a": "[샘플] 원문·TourAPI에 요금 정보가 있으면 그 값을 그대로 쓰고, 없으면 '자료에 요금 정보가 없어 방문 전 공식 안내 확인이 필요하다'고 답합니다.",
+        "source": "TourAPI 소개정보"
+      },
+      {
+        "q": "근처에 주차할 곳이 있나요?",
+        "a": "[샘플] TourAPI parking 값을 그대로 인용합니다.",
+        "source": "TourAPI 소개정보"
+      }
+    ],
+    "question_ids": [
+      "N01",
+      "N18"
+    ],
+    "tourapi": {}
+  },
+  {
+    "id": "sample-0002",
+    "slug": "chowon-photo-studio",
+    "name": "초원사진관",
+    "kind": "attraction",
+    "category": "골목과 문화",
+    "themes": [
+      "alleys-culture",
+      "modern-history"
+    ],
+    "tier": "full",
+    "status": "published",
+    "reviewed_at": "2026-10-08",
+    "summary": "[샘플] 초원사진관은 (위치)에 있는 (무엇)입니다. 원문 이용조건 확인 전이라 원문 전문 대신 링크가 나가는 예시입니다.",
+    "facts": {
+      "address": "[샘플] TourAPI addr1 값",
+      "usetime": "[샘플] usetime 값",
+      "restdate": "[샘플] restdate 값",
+      "usefee": "[샘플] 요금 값",
+      "parking": "[샘플] parking 값"
+    },
+    "facts_source": {
+      "provider": "한국관광공사 TourAPI",
+      "contentid": "",
+      "checked_at": "2026-10-08"
+    },
+    "official": {
+      "source_url": "https://www.gunsan.go.kr/tour"
+    },
+    "original": {
+      "text": "[샘플] 이용조건 확인 전 원문입니다. 이 문장은 페이지에 노출되면 안 되며 QA에서 노출 여부를 검사합니다.",
+      "source_name": "군산시 문화관광",
+      "source_url": "https://www.gunsan.go.kr/tour",
+      "license": "UNKNOWN",
+      "collected_at": "2026-10-07",
+      "sha256": "8a8ccd409aaecbf5c324c841db4813d609f95172c928f9cd430c5506db429718"
+    },
+    "nearby": [
+      {
+        "name": "경암동 철길마을",
+        "kind": "attraction",
+        "type_label": "관광지",
+        "distance_m": 0,
+        "internal_slug": "gyeongam-railroad-village"
+      }
+    ],
+    "nearby_source": {
+      "provider": "한국관광공사 TourAPI 위치기반",
+      "radius_m": 2000,
+      "distance_basis": "직선거리",
+      "checked_at": "2026-10-08"
+    },
+    "media": {
+      "news": [
+        {
+          "title": "[샘플] 관련 기사 제목",
+          "publisher": "[샘플] 매체",
+          "date": "2026-09-20",
+          "url": "https://example.com/article"
+        }
+      ]
+    },
+    "faq": [
+      {
+        "q": "초원사진관은 어떤 곳인가요?",
+        "a": "[샘플] 원문과 TourAPI 개요에 있는 사실만으로 2~3문장으로 답합니다.",
+        "source": "원문"
+      }
+    ],
+    "question_ids": [
+      "N02",
+      "N23"
+    ],
+    "tourapi": {}
+  },
+  {
+    "id": "sample-0003",
+    "slug": "eunpa-lake-park",
+    "name": "은파호수공원",
+    "kind": "attraction",
+    "category": "공원과 자연",
+    "themes": [
+      "parks-nature"
+    ],
+    "tier": "basic",
+    "status": "published",
+    "reviewed_at": "2026-10-08",
+    "summary": "[샘플] 은파호수공원은 (위치)에 있는 (무엇)입니다. basic 등급은 요약·기본 정보·길찾기·원문·출처만 갖춥니다.",
+    "facts": {
+      "address": "[샘플] TourAPI addr1 값"
+    },
+    "facts_source": {
+      "provider": "한국관광공사 TourAPI",
+      "contentid": "",
+      "checked_at": "2026-10-08"
+    },
+    "official": {
+      "source_url": "https://www.gunsan.go.kr/tour"
+    },
+    "original": {
+      "text": "[샘플] 공공누리 제3유형(변경금지) 원문 예시입니다. 원문은 그대로 싣고, 요약·FAQ는 별도 블록에 씁니다.",
+      "source_name": "군산시 문화관광",
+      "source_url": "https://www.gunsan.go.kr/tour",
+      "license": "KOGL-3",
+      "collected_at": "2026-10-07",
+      "sha256": "00eef5e3db7a1ea3f7359c13445947afcf0d06e08d1813395acf9436c486997e"
+    },
+    "question_ids": [
+      "N06"
+    ],
+    "tourapi": {}
+  },
+  {
+    "id": "sample-0101",
+    "slug": "sample-stay-a",
+    "name": "[샘플] 주변 숙소 A",
+    "kind": "stay",
+    "themes": [],
+    "tier": "basic",
+    "status": "published",
+    "reviewed_at": "2026-10-08",
+    "summary": "[샘플] 숙소 A는 TourAPI 숙박 정보에 등록된 숙소입니다. 독채 여부처럼 자료에 없는 조건은 '문의 필요'로 둡니다.",
+    "facts": {
+      "address": "[샘플] addr1",
+      "checkin": "15:00",
+      "checkout": "11:00",
+      "parking": "[샘플] parkinglodging 값",
+      "infocenter": "[샘플] 문의처"
+    },
+    "facts_source": {
+      "provider": "한국관광공사 TourAPI",
+      "contentid": "",
+      "checked_at": "2026-10-08"
+    },
+    "original": {},
+    "question_ids": [
+      "N29"
+    ],
+    "tourapi": {}
+  },
+  {
+    "id": "sample-0201",
+    "slug": "sample-food-a",
+    "name": "[샘플] 주변 음식점 A",
+    "kind": "food",
+    "themes": [],
+    "tier": "basic",
+    "status": "published",
+    "reviewed_at": "2026-10-08",
+    "summary": "[샘플] 음식점 A는 TourAPI 음식점 정보에 등록된 곳입니다. 메뉴·영업시간은 등록 값 그대로 보여 줍니다.",
+    "facts": {
+      "address": "[샘플] addr1",
+      "usetime": "[샘플] opentimefood 값",
+      "menu": "[샘플] firstmenu 값"
+    },
+    "facts_source": {
+      "provider": "한국관광공사 TourAPI",
+      "contentid": "",
+      "checked_at": "2026-10-08"
+    },
+    "original": {},
+    "question_ids": [
+      "N30"
+    ],
+    "tourapi": {}
+  },
+  {
+    "id": "sample-0999",
+    "slug": "sample-draft",
+    "name": "[샘플] 검수 전 장소",
+    "kind": "attraction",
+    "themes": [
+      "parks-nature"
+    ],
+    "tier": "basic",
+    "status": "draft",
+    "summary": "[샘플] draft 상태라 어떤 빌드에도 나오지 않습니다.",
+    "original": {},
+    "tourapi": {}
+  }
+]

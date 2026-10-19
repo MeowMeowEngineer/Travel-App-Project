@@ -1,0 +1,64 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- /map/: every place by 권역 → 읍·면·동 (present.map_vm: regions [{name, id, anchor, members, k, dongs}], anchors,
+    far_m, far_label, none_label, n_geo, n_all, n_dong) beside a sticky map tile (desktop) or behind the 목록 | 지도
+    switch (phones). The 권역 rule is written on the page (CLAUDE.md 7). Tabs, kind toggles and row ↔ marker
+    highlighting are site.js ([data-region-tabs], [data-kinds], [data-segmap], [data-pt]); without JS the directory is
+    the whole answer (the map tile, tabs and toggles are JS-only furniture). Each 권역 section opens with its AI art
+    band (area.<r.art>, present.REGION_ART; lazy). -#}
+{% import "_p1.html.j2" as p1 %}
+{% set kl = {'attraction': '관광지', 'stay': '숙소', 'food': '음식점'} %}
+{% set mk = {'attraction': 'a', 'stay': 's', 'food': 'f'} %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-map{% endblock %}
+{% block content %}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('list.head.map')) }}
+  <div class="wrap">
+    <h1 id="h-list" class="h-list">{{ site.region }} 지도 <span class="count tn">{{ n_all }}곳</span></h1>
+    <p class="list-lede">{% if anchors %}여행 권역 <span class="tn">{{ anchors|length }}</span>곳 · {% endif %}읍·면·동 <span class="tn">{{ n_dong }}</span>곳 · 지도: 좌표가 있는 <span class="tn">{{ n_geo }}</span>곳</p>
+    {% if anchors %}
+    <details class="rule">
+      <summary>권역을 나눈 기준</summary>
+      <p>좌표가 있는 곳은 기준점 {{ anchors|length }}곳 — {% for a in anchors %}<a href="{{ a.path }}">{{ a.place }}</a>({{ a.name }}){% if not loop.last %}, {% endif %}{% endfor %} — 가운데 직선거리로 가장 가까운 기준점의 권역에 넣었습니다. 가장 가까운 기준점까지 {{ (far_m / 1000)|int }}km를 넘는 섬은 ‘{{ far_label }}’으로 따로 뒀습니다. 좌표가 없는 곳은 주소의 읍·면·동이 같은 장소들이 가장 많이 속한 권역을 따랐고, 읍·면·동도 없으면 ‘{{ none_label }}’입니다.</p>
+    </details>
+    {% endif %}
+  </div>
+</section>
+<div class="wrap map-grid">
+  <div class="map-dir">
+    <div class="f-row region-tabs" role="group" aria-label="권역" data-region-tabs>
+      <a href="#map-top" data-region="" aria-current="true">전체 <span class="tn">{{ n_all }}</span></a>
+      {% for r in regions %}<a href="#{{ r.id }}" data-region="{{ r.name }}">{{ r.name }} <span class="tn">{{ r.members|length }}</span></a>{% endfor %}
+    </div>
+    <div class="f-row f-kinds" role="group" aria-label="종류" data-kinds>
+      {% for k in ('attraction', 'stay', 'food') %}<button type="button" data-kind="{{ k }}" aria-pressed="true"><i class="mk mk-{{ mk[k] }}" aria-hidden="true"></i>{{ kl[k] }}</button>{% endfor %}
+    </div>
+    {% if n_geo %}<div class="seg seg-map" role="group" aria-label="보기" data-segmap><button type="button" data-view="list" aria-pressed="true">목록</button><button type="button" data-view="map" aria-pressed="false">지도 <span class="tn">{{ n_geo }}</span></button></div>{% endif %}
+    <div id="map-top"></div>
+    {% set seen = namespace(names=[]) %}
+    {% for r in regions %}
+    <section class="region{% if not loop.first %} cv{% endif %}" id="{{ r.id }}" data-region-sec="{{ r.name }}" aria-labelledby="{{ r.id }}-h">{{ artm.strip((art_slots or {}).get('area.' ~ r.art) if r.art else none) }}
+      <div class="region-head">
+        <h2 id="{{ r.id }}-h">{{ r.name }} <span class="count tn">{{ r.members|length }}곳</span></h2>
+        <p class="region-k tn">관광지 {{ r.k.attraction or 0 }} · 숙소 {{ r.k.stay or 0 }} · 음식점 {{ r.k.food or 0 }}{% if r.anchor %} · 기준점 <a href="{{ r.anchor.path }}">{{ r.anchor.place }}</a>{% endif %}</p>
+      </div>
+      <div class="dongs">
+        {% for d in r.dongs %}
+        {# the round-2 anchor /map/#<읍·면·동> still lands on that 동's first group (a 동 can fall in two 권역) #}
+        {% set old_id = d.name if (d.name not in seen.names and ' ' not in d.name) else '' %}{% if old_id %}{% set seen.names = seen.names + [d.name] %}{% endif %}
+        <section class="dong" aria-labelledby="{{ d.id }}"{% if old_id %} id="{{ old_id }}"{% endif %}>
+          <h3 id="{{ d.id }}">{{ d.name }} <span class="tn">{{ d.members|length }}</span></h3>
+          <ul>{% for e in d.members %}<li data-kind-row="{{ e.kind }}"{% if e._geo %} data-pt="{{ e.slug }}"{% endif %}><i class="mk mk-{{ mk[e.kind] }}" aria-hidden="true"></i><a href="{{ e._path }}">{{ e.name }}</a><span class="vh"> ({{ kl[e.kind] }})</span></li>{% endfor %}</ul>
+        </section>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+  {% if n_geo %}
+  <aside class="map-side" aria-label="{{ site.region }} 권역 지도">
+    {{ p1.placemap({'all': points, 'anchor_pts': anchors}, site.region ~ ' 권역 지도', 'all-mapfig', '좌표가 있는 ' ~ n_geo ~ '곳') }}
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

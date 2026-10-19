@@ -1,0 +1,27 @@
+# 비밀값 — 커밋 금지(CLAUDE.md 3절 9항). 이름만 적은 .env.example은 커밋한다.
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 빌드 산출물(공개 산출물 public/은 커밋한다 — Vercel이 그대로 배포)
+dist/
+dist-*/
+reports/
+
+# TourAPI·외부 응답 캐시
+data/cache/
+data/*/places.json.bak
+
+# api/chat.js의 npm 패키지 — Vercel이 package-lock.json으로 설치한다(npm ci)
+node_modules/
+
+# 그림 원본(운영자가 넣는 곳) — 원본은 커밋하지 않고 tools/*_media.py가 만든 파생본만 templates/assets/에 커밋한다
+incoming/ai-images/*
+incoming/mascot/*
+incoming/icons/*
+!incoming/*/README.md

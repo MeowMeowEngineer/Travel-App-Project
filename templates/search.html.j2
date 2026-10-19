@@ -1,0 +1,29 @@
+{% extends "base.html.j2" %}
+{% import "_mascot.html.j2" as mm %}
+{#- /search/: name, other names, 대표 메뉴, 동·권역, course/guide/event names. search.js (attached by site.js for
+    [data-search]) fetches /search/index.json on first focus (or at once with ?q=) and prints the results into
+    [data-results], hiding the directory while they show. Without JS the form reloads this page and the 가나다
+    directory below answers (directory = present.search_directory: [{initial, id, places}]). -#}
+{% set n_places = directory|sum(attribute='places', start=[])|length %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-search{% endblock %}
+{% block content %}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">
+  <div class="wrap">
+    <h1 id="h-list" class="h-list">{{ site.region }}에서 찾기</h1>
+    {{ ui.search_form('q', '', '장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', '예: 짬뽕, 철길, 장미동', true) }}
+    <div class="results" data-results aria-live="polite"></div>
+    <div class="empty-mascot" data-empty-art hidden>{{ mm.pic('mascot-search', 'small', 120) }}</div>
+  </div>
+</section>
+<section class="wrap chapter chapter-tight" aria-labelledby="h-dir" data-directory>
+  <div class="ch-head"><h2 id="h-dir">가나다순 장소 <span class="count tn">{{ n_places }}곳</span></h2></div>
+  <nav class="jump" aria-label="첫 글자로 이동">{% for g in directory %}<a href="#{{ g.id }}">{{ g.initial }}</a>{% endfor %}</nav>
+  {% for g in directory %}
+  <section class="dir-g{% if not loop.first %} cv{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h">
+    <h3 id="{{ g.id }}-h" class="dir-ini">{{ g.initial }} <span class="tn">{{ g.places|length }}</span></h3>
+    <ul class="dir-list">{% for e in g.places %}<li><a href="{{ e._path }}">{{ e.name }}</a><span>{{ e.kind|kind_label }}{% if e._type %} · {{ e._type }}{% endif %}{% if e._area %} · {{ e._area }}{% endif %}</span></li>{% endfor %}</ul>
+  </section>
+  {% endfor %}
+</section>
+{% endblock %}

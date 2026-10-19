@@ -1,0 +1,30 @@
+/* 46-pic — the 3D clay pictures (templates/_pic.html.j2; pipeline/icons.py registry; tools/icon_media.py files).
+   .pic-3d  the GPT-made picture, width = height = --pic (its room from the first paint), a soft contact shadow.
+   .pic-tmp the interim look until the picture exists: our line glyph drawn softly (sea-deep, 1.7 stroke) on a pale
+            sea-blue circle with a subtle inner highlight at the top left and a soft drop shadow — the reference's
+            manner (pale tinted circle + object), calm; kind-* / sit-* / fact-* pictures sit on warm sand instead.
+   Decorative (aria-hidden or alt=""), so contrast rules for text do not apply; the glyph is still sea-deep on tint
+   (7.13:1). */
+.pic { position: relative; flex: none; display: inline-grid; place-items: center; width: var(--pic, 56px); height: var(--pic, 56px); }
+.pic-3d picture, .pic-3d img { display: block; width: 100%; height: 100%; }
+.pic-3d img { object-fit: contain; filter: drop-shadow(0 6px 8px rgba(20, 52, 99, .14)); }
+.pic-tmp { border-radius: 50%; color: var(--sea-deep);
+  background: radial-gradient(circle at 35% 30%, #fff 0, var(--tint) 38%, var(--tint2) 100%);
+  box-shadow: inset 0 -6px 10px rgba(29, 79, 150, .12), inset 0 3px 4px rgba(255, 255, 255, .95), 0 6px 14px -8px rgba(29, 79, 150, .35); }
+/* review 2026-10-14 ('AI 티'): closer to clay until the pictures come — a puffy two-tone look: a small round chick-yellow
+   clay dab under a thick, round-capped sea glyph (the glyph is never filled, so its drawing stays exact) */
+.pic-tmp::before { content: ""; position: absolute; right: 22%; bottom: 20%; width: 34%; height: 34%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FFF1BF 0, var(--chick) 70%); box-shadow: inset 0 -2px 3px rgba(150, 100, 0, .22), 0 2px 4px -2px rgba(120, 84, 0, .35); }
+.pic-tmp[data-pic^="kind-"], .pic-tmp[data-pic^="sit-"], .pic-tmp[data-pic^="fact-"] { color: #6B4A1F;
+  background: radial-gradient(circle at 35% 30%, #fff 0, #FBF5EC 38%, #EADBC4 100%);
+  box-shadow: inset 0 -6px 10px rgba(120, 84, 40, .12), inset 0 3px 4px rgba(255, 255, 255, .95), 0 6px 14px -8px rgba(90, 64, 30, .35); }
+.pic-tmp[data-pic^="kind-"]::before, .pic-tmp[data-pic^="sit-"]::before, .pic-tmp[data-pic^="fact-"]::before {
+  background: radial-gradient(circle at 35% 30%, #fff 0, var(--tint2) 70%); box-shadow: inset 0 -2px 3px rgba(29, 79, 150, .18); }
+.pic-tmp .pic-g { position: relative; width: 48%; height: 48%; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+/* 물어보기 (icon-ask) until its picture comes: the mascot's own 3D face (templates/assets/mascot) */
+.pic-mascot { border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff 0, var(--tint) 38%, var(--tint2) 100%);
+  box-shadow: inset 0 -6px 10px rgba(29, 79, 150, .12), 0 6px 14px -8px rgba(29, 79, 150, .35); overflow: hidden; }
+.pic-mascot picture, .pic-mascot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* a site without a mascot (templates/_mascot.html.j2 glyph fallback): the line glyph in the mascot's box, sea-deep */
+.mascot-g { display: inline-grid; place-items: center; width: var(--mg, 52px); height: var(--mg, 52px); color: var(--sea-deep); }
+.mascot-g .icon { width: 54%; height: 54%; stroke-width: 2; }

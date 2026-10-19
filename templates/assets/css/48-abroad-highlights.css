@@ -1,0 +1,89 @@
+/* ================================================================ 해외에서 본 군산 — highlights (/abroad/, owner 2026-10-13;
+   templates/_abroad_hl.html.j2, assets/highlights.js). A row of round pictures with short names under the page title,
+   like a profile's story highlights; each opens the viewer, one card at a time: picture, the quotation of the original
+   in its own language (owner 2026-10-14) with '— outlet · language · date' under it, '원문 보기'. The rings take the accent fills in turn (lime, lavender, sky: dark text on them only); a picture
+   sits on a badge of the same fill, so the badge shows until the picture arrives (after 'load') or when it fails.
+   Everything has its size from the first paint (no shift). With reduced motion the viewer changes cards without
+   moving. The viewer's rules are here although its markup arrives on the first press (assets/highlights.js). */
+.hl { margin: clamp(18px, 2.2vw, 28px) 0 14px; --hl-d: clamp(66px, 17vw, 84px); }
+.hl-h { margin: 0 0 6px; font: 700 15px/1.4 var(--font); letter-spacing: -.01em; }
+.hl-sub { margin-left: 6px; font-weight: 400; color: var(--ink-3); }
+/* position: relative keeps the visually hidden names (.vh, absolute) inside the scrolling row — else they widen the page */
+.hl-row { position: relative; display: flex; gap: clamp(10px, 1.4vw, 18px); margin: 0 calc(-1 * var(--m)); padding: 6px var(--m) 8px; list-style: none;
+  overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: var(--m); scrollbar-width: thin; }
+.hl-i { flex: none; scroll-snap-align: start; }
+.hl-i { --hl-c: var(--tint2); --hl-ch: var(--g2); }   /* ui4: one soft sea-blue ring (lime / lavender / sky retired) */
+.hl-a { display: flex; flex-direction: column; align-items: center; gap: 7px; width: calc(var(--hl-d) + 12px); padding: 2px 0 4px;
+  border-radius: 14px; color: var(--ink); text-decoration: none; }
+.hl-a:hover { text-decoration: none; }
+.hl-ring { display: block; width: var(--hl-d); height: var(--hl-d); padding: 3px; border-radius: 50%; background: var(--hl-c);
+  transition: background-color .2s var(--fb); }
+.hl-a:hover .hl-ring { background: var(--hl-ch); }
+.hl-pic { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border: 2.5px solid var(--bg);
+  border-radius: 50%; background: var(--hl-c); }
+.hl-badge { position: absolute; inset: 0; display: grid; place-items: center; font: 700 17px/1 var(--font); letter-spacing: .04em;
+  color: var(--sea-deep); }
+.hl-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hl-pic img:not([src]) { display: none; }
+.hl-badge .pic img { position: static; object-fit: contain; }   /* the globe picture under a circle's own picture */   /* its picture arrives after 'load' (site.js) */
+.hl-name { max-width: 100%; font-size: 13px; line-height: 1.3; text-align: center; word-break: keep-all; }
+.hl-credit { margin: 2px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-3); }
+
+/* the viewer: a card on wide screens, the whole screen on phones */
+html.hl-open { overflow: hidden; }
+.hl-dlg { width: min(480px, calc(100vw - 32px)); max-width: none; height: min(700px, calc(100vh - 48px)); max-height: none;
+  margin: auto; padding: 0; border: 0; border-radius: var(--r-l); overflow: hidden; background: var(--bg); color: var(--ink);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .35); }
+.hl-dlg::backdrop { background: rgba(0, 0, 0, .72); }
+@media (max-width: 599px) {
+  .hl-dlg { width: 100vw; height: 100vh; height: 100dvh; border-radius: 0; box-shadow: none; }
+}
+.hl-box { display: flex; flex-direction: column; height: 100%; }
+.hl-top { flex: none; padding: max(12px, env(safe-area-inset-top)) 16px 2px; }
+.hl-bars { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.hl-bars li { flex: 1; height: 3px; border-radius: 3px; background: var(--bg-3); }
+.hl-bars li.is-on { background: var(--ink); }
+.hl-bar2 { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.hl-t { margin: 0; font: 700 15px/1.3 var(--font); }
+.hl-t .tn { margin-left: 4px; font-weight: 400; color: var(--ink-3); }
+.hl-x { display: inline-grid; place-items: center; width: 44px; height: 44px; margin-right: -10px; padding: 0; border: 0;
+  border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer; }
+.hl-x:hover { background: var(--bg-2); }
+.hl-stage { flex: 1; min-height: 0; padding: 8px 16px 20px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.hl-ph { margin: 0 0 14px; }
+.hl-ph-box { display: block; aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--r); background: var(--bg-2); }
+.hl-ph-box img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hl-ph figcaption { margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--ink-3); }
+.hl-meta { margin: 0 0 8px; font-size: 13px; line-height: 1.45; color: var(--ink-3); }
+/* the quotation: the original's words in its own language (lang on the blockquote — a Japanese or Chinese one takes the
+   system CJK face and breaks between characters, 77-lang.css), a rule at its left; the source line under it. Only size,
+   weight and leading are set here so the lang rules' font-family reaches the text. */
+.hl-q { margin: 0 0 20px; }
+.hl-q blockquote { margin: 0; padding: 2px 0 2px 16px; border-left: 3px solid var(--sea); }
+.hl-q blockquote p { margin: 0; font-size: clamp(18px, 1.9vw, 21px); font-weight: 700; line-height: 1.6; letter-spacing: -.005em;
+  overflow-wrap: break-word; }
+.hl-q blockquote:lang(ja) p, .hl-q blockquote:lang(zh) p { letter-spacing: .01em; line-height: 1.75; }
+.hl-q .hl-meta { margin: 10px 0 0 19px; }
+.hl-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; }
+.hl-go { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 20px; border-radius: 980px;
+  background: var(--sea); color: #fff; box-shadow: none; font: 700 15px/1 var(--font);
+  text-decoration: none; transition: background-color .2s var(--fb); }
+.hl-go:hover { background: var(--sea-hi); text-decoration: none; }
+.hl-embed { margin: 0 0 14px; }
+.hl-nav { flex: none; display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--hair); }
+.hl-btn { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 980px;
+  background: var(--bg-2); color: var(--ink); font: 700 15px/1 var(--font); cursor: pointer; }
+.hl-btn:hover { background: var(--bg-3); }
+.hl-btn[aria-disabled="true"] { opacity: .4; cursor: default; }
+.hl-btn[aria-disabled="true"]:hover { background: var(--bg-2); }
+@media (prefers-reduced-motion: no-preference) {
+  .hl-dlg[open] { animation: hl-pop .24s var(--ease); }
+  .hl-dlg[open]::backdrop { animation: hl-fade .24s linear; }
+  .hl-s.hl-from-r { animation: hl-from-r .3s var(--ease); }
+  .hl-s.hl-from-l { animation: hl-from-l .3s var(--ease); }
+}
+@keyframes hl-pop { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+@keyframes hl-fade { from { opacity: 0; } }
+@keyframes hl-from-r { from { opacity: 0; transform: translateX(28px); } }
+@keyframes hl-from-l { from { opacity: 0; transform: translateX(-28px); } }

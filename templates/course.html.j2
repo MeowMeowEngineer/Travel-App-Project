@@ -1,0 +1,112 @@
+{% extends "base.html.j2" %}
+{% import "_p2.html.j2" as p2 %}
+{% import "_art.html.j2" as artm %}
+{#- An official course (Apple direction). Opening: the name, figures (stops · straight-line sum · the most common
+    closed day · start → end), 카카오맵 길찾기 to the first stop with coordinates and the computed lede. Then the stop
+    band (course.js) beside the station tiles and the course map (co.map = present.course_map: Kakao Maps, only
+    when at least half of the stops have coordinates; else the numbered stop list stands alone), the closed days by
+    weekday, and the sources with their dates. co = present.course_stop_details(course_vm). Above the head's text the
+    course's AI art band (course.banner.<course id>, templates/_art.html.j2) — never in a stop card. -#}
+{% block bodyclass %}pg-course{% endblock %}
+{% block main_class %}{% endblock %}
+{% block lnav %}
+{% set links = [('경유지', '#stops')] %}
+{% if week %}{% set _ = links.append(('쉬는 날', '#h-week')) %}{% endif %}
+{% set _ = links.append(('출처', '#h-src')) %}
+{{ ui.lnav(course_name, links, {'url': '#stops', 'label': '경유지 목록'}) }}
+{% endblock %}
+{% block content %}
+{% set fr = co.first_route %}
+{% set co_group_id = "g-" ~ ((co.duration or co.group or "여행 코스")|frag) %}
+{% set fr_stop = co.stops[fr.n - 1] if fr else none %}
+<article class="course" data-course>
+  <header class="pg-hero co-head">{{ artm.band((art_slots or {}).get('course.banner.' ~ c.id)) }}
+    <div class="wrap co-hero">
+      <div class="co-hero-text">
+        <p class="kicker"><a href="/courses/">코스</a>{% if co.duration or co.group %}<a href="/courses/#{{ co_group_id }}">{{ co.duration or co.group }}{% if co.duration %} 코스{% endif %}</a>{% endif %}{% if orig_url %}<a href="{{ orig_url }}" rel="noopener" data-track="official_click">{{ orig_name }} 공식 코스</a>{% else %}<span>{{ orig_name }} 공식 코스</span>{% endif %}</p>
+        <h1 class="d1 vt-title">{{ course_name }}</h1>
+        <dl class="datarow">
+          <div><dt>경유지</dt><dd class="tn">{{ co.n_places }}곳</dd></div>
+          {% if co.complete and co.measured %}<div><dt>경유지 사이 직선 합</dt><dd class="tn">{{ co.total|pdist }}</dd></div>
+          {% elif co.legs_possible %}<div><dt>좌표 있는 구간</dt><dd class="tn">{{ co.measured }}/{{ co.legs_possible }}</dd></div>{% endif %}
+          {% if co.closed_note %}<div class="dr-closed"><dt>쉬는 날</dt><dd>{% if week %}<a href="#h-week">{% endif %}<span class="closed">{{ co.closed_note }}</span>{% if week %}</a>{% endif %}</dd></div>{% endif %}
+          {% if co.first %}<div class="dr-wide"><dt>출발 → 마지막</dt><dd>{{ co.first }} → {{ co.last }}</dd></div>{% endif %}
+        </dl>
+        <div class="route route-co" data-route>
+          <h2 id="h-dir" class="vh">{{ course_name }} 가는 길</h2>
+          <div class="route-row">{% if fr %}<a class="btn btn-go" data-primary href="{{ fr.url }}" rel="noopener" data-track="route_click" data-provider="kakao_route" data-place="{{ fr_stop.t.id if fr_stop and fr_stop.t else '' }}"><span><span class="tn">{{ fr.n }}</span>번 {{ fr.name }} 길찾기</span><span class="arr" aria-hidden="true">›</span></a>{% endif %}<a class="btn btn-ol" href="#stops">경유지 목록</a></div>
+        </div>
+        <ol class="co-strip only-narrow" aria-label="경유지 순서">{% for s in co.stops %}<li><a href="#s{{ s.n }}"><span class="tn">{{ s.n }}</span>{{ s.short }}</a></li>{% endfor %}</ol>
+        {% if lede %}<p class="lede" data-block="summary">{{ lede }}</p>{% endif %}
+        <p class="note">경유지 순서: {% if orig_url %}<a href="{{ orig_url }}" rel="noopener" data-track="official_click">{{ orig_name }} 코스 안내</a>{% else %}{{ orig_name }} 코스 안내{% endif %}</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap co-grid{% if not co.map %} no-map{% endif %}">
+    <nav class="band" aria-label="경유지 순서">
+      <p class="band-live" aria-live="polite" data-live><span class="bl-k">경유지 순서{% if not co.complete %} · 간격은 순서만{% endif %}</span><span class="bl-0">경유지 <span class="tn">{{ co.stops|length }}</span>곳</span></p>
+      <ol class="band-line" style="--n:{{ co.stops|length }}">
+        <span class="band-track" aria-hidden="true"><span class="band-fill" data-fill></span></span>
+        {% for s in co.stops %}<li style="--y:{{ '%.4f'|format(s.y) }};--i:{{ loop.index0 }}"><a href="#s{{ s.n }}" data-step="{{ s.n }}"><i aria-hidden="true"></i><span class="band-n tn">{{ s.n }}</span><span class="band-nm">{{ s.short }}</span></a></li>{% endfor %}
+      </ol>
+    </nav>
+
+    <section class="p2-stops" aria-labelledby="h-stops">
+    <h2 id="h-stops" class="vh">{{ course_name }} 경유지 {{ co.n_places }}곳</h2>
+    <ol class="stops" id="stops">
+      {% for s in co.rows %}
+      {% if s.sep %}
+      <li class="stop-sep"><span class="sep-k">{{ s.kind_label }}</span><span class="sep-v">{{ s.name }}{% if s.note %} · {{ s.note }}{% endif %}</span></li>
+      {% else %}
+      <li class="stop" id="s{{ s.n }}" data-stop="{{ s.n }}" data-vt-scope>
+        {{ ui.board(co, s) }}
+        {% if s.t %}
+        <div class="stop-body{% if s.photo %} has-ph{% endif %}">
+          {% if s.photo %}{{ ui.figure(s.photo, s.t.name, 0, 0, 'stop-ph', false, '(min-width: 1024px) 26vw, 100vw', true, false) }}{% endif %}
+          <div class="stop-text">
+            {% if s.part_of %}<p class="stop-note">{{ s.t.name }} 안의 경유지</p>{% endif %}
+            {% if s.line %}<p class="stop-line">{{ s.line }}</p>{% endif %}
+            {% if s.kf %}{{ ui.kfrows(s.kf, s.t.id) }}{% endif %}
+            {% if s.note %}<p class="stop-note">{{ s.note }}</p>{% endif %}
+            <p class="stop-go"><a href="{{ s.path }}" data-track="nearby_click" data-place="{{ s.t.id }}">{{ s.t.name }} 방문 전 확인<span class="arr" aria-hidden="true">›</span></a></p>
+          </div>
+        </div>
+        {% else %}
+        {% if s.note %}<p class="stop-note">{{ s.note }}</p>{% endif %}
+        <p class="stop-none"><a href="{{ s.search }}" rel="noopener" data-track="map_click" data-provider="naver">네이버 지도에서 {{ s.name }} 찾기(검색)</a></p>
+        {% endif %}
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ol>
+    </section>
+
+    {% if co.map %}
+    <aside class="co-map" aria-label="코스 지도">
+      {{ ui.coursemap(co.map, course_name ~ ' 경유지 지도') }}
+    </aside>
+    {% endif %}
+  </div>
+
+  {% if week %}
+  <section class="wrap chapter chapter-mid">
+    {{ ui.week(week, 'h-week', course_name ~ ' 경유지의 요일별 쉬는 날') }}
+  </section>
+  {% endif %}
+
+  <section class="wrap chapter ch-rail ch-src" aria-labelledby="h-src">
+    <h2 id="h-src" class="rail-label">출처</h2>
+    <div class="rail-body">
+      <dl class="src-dl">
+        <div><dt>코스 원문</dt><dd>{% if orig_url %}<a href="{{ orig_url }}" rel="noopener" data-track="official_click">{{ orig_name }}에서 보기</a>{% else %}{{ orig_name }}{% endif %}{% if orig.license %} · {{ orig.license|license_label }}{% endif %}</dd></div>
+        {% if co.legs_possible %}<div><dt>거리 계산</dt><dd>경유지 사이 {{ co.legs_possible }}구간 중 {{ co.measured }}구간을 한국관광공사 TourAPI 좌표 사이 직선으로 잼</dd></div>{% endif %}
+      </dl>
+      {% if show_original %}
+      <blockquote class="p2-orig" cite="{{ orig.source_url }}">{{ orig.text|nl2br }}</blockquote>
+      <p class="note">원문: <a href="{{ orig.source_url }}" rel="noopener" data-track="official_click">{{ orig.source_name }}</a> · {{ orig.license|license_label }}</p>
+      {% endif %}
+    </div>
+  </section>
+</article>
+{% endblock %}

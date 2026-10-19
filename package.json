@@ -1,0 +1,15 @@
+{
+  "name": "incheon-site-assistant",
+  "private": true,
+  "description": "Site assistant for the Incheon travel site: the Vercel function api/chat.js (static pages are built by Python into public/).",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "test": "node --test \"tests/js/*.test.js\""
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.133.0"
+  }
+}

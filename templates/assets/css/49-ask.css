@@ -1,0 +1,90 @@
+/* ================================================================ the centre question card (_ask.html.j2; owner
+   2026-10-13, after the explorer card of Mention Atlas): one white card in the middle of the home — eyebrow, the
+   question as the heading, one question box (the site assistant, chat.js; without JS the Korean search), the starter
+   questions and the assistant's terms. All of it is in the first paint (text only) and nothing in it moves when
+   chat.js arrives. Since 2026-10-13 night only the English home shows it: the card straddles the end of the dark
+   photo opening (.ask-dark), under the photo's credit line (the Korean home asks from its opening, 46-home-open.css).
+   The conversation (.ask-log, chat.js dock mode; its inside is styled by chat.css, which comes with chat.js) opens
+   under the starters with a FIXED height set here, in the first paint: it is shown at once inside the reader's own
+   input event and the answer streams and scrolls inside it, so nothing below the card ever moves. The ask button
+   holds both of its labels in one grid cell (ask / stop, one hidden), so its width never changes; its min-width
+   also covers the label in the system font drawn before Pretendard arrives, and on phones the heading and the
+   first terms line keep one line count in either font — the font swap does not move the card's content.
+   Contrast: ink on #fff 16.8 · ink-3 #6e6e73 on #fff 5.1 · white on ink 16.8 · ink on lime 15.0 · link 5.6. */
+.ask { position: relative; padding: clamp(28px, 3.4vw, 48px) 0 var(--s-bl); }
+.ask-dark { padding-top: 0; background: linear-gradient(180deg, #0a0f17 0, #0a0f17 clamp(56px, 7vw, 104px), transparent 0); }
+.ask-card { position: relative; padding: clamp(22px, 4vw, 56px); border: 1px solid var(--bg-3); border-radius: var(--r-l); background: #fff; color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .05), 0 22px 60px rgba(0, 0, 0, .1); }
+.ask-k { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font: 700 15px/1.3 var(--font); letter-spacing: -.01em; color: var(--ink-2); }
+.ask-k .pic { margin-right: 2px; }
+.ask-h { margin: 0 0 clamp(18px, 2.4vw, 28px); font: 700 clamp(26px, 3.2vw, 42px)/1.18 var(--font); letter-spacing: -.035em; text-wrap: balance; }
+
+.ask-box { border: 1px solid var(--hair); border-radius: 18px; background: #fff; transition: border-color .2s var(--fb); }
+.ask-box:focus-within { border-color: var(--ink); outline: 2px solid var(--focus); outline-offset: 2px; }
+.ask-row { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px clamp(14px, 1.6vw, 22px); }
+.ask-ico { flex: none; width: 24px; height: 24px; color: var(--ink-3); }
+.ask-row input { flex: 1; min-width: 0; height: 56px; padding: 0 4px; border: 0; background: transparent; font: 400 clamp(17px, 1.5vw, 20px)/1.3 var(--font); letter-spacing: -.01em; color: var(--ink); }
+.ask-row input::placeholder { color: var(--ink-3); opacity: 1; }
+.ask-row input:focus { outline: none; }
+.ask-go { flex: none; display: inline-grid; place-items: center; min-width: 136px; min-height: 56px; padding: 0 clamp(18px, 2.2vw, 30px); border: 0; border-radius: 12px; background: var(--ink); color: #fff; font: 700 17px/1 var(--font); letter-spacing: -.01em; cursor: pointer; }
+.ask-go:hover { background: #000; }
+.ask-go-l { grid-area: 1 / 1; white-space: nowrap; }
+.ask-go-s, .ask-go[data-mode="stop"] .ask-go-l { visibility: hidden; }
+.ask-go[data-mode="stop"] .ask-go-s { visibility: visible; }
+.ask-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 20px; margin: 0; padding: 6px 8px 6px clamp(14px, 1.6vw, 22px); border-top: 1px solid var(--bg-3); font: 400 14px/1.45 var(--font); color: var(--ink-3); }
+.ask-meta > span { padding-block: 6px; }
+.ask-alt { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: var(--link); font: 400 14px/1 var(--font); cursor: pointer; }
+.ask-alt .icon { width: 16px; height: 16px; }
+.ask-alt:hover { background: var(--bg-2); }
+
+.ask-sug { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 18px; }
+.ask-sug-l { margin: 0 4px 0 0; font: 400 15px/1.4 var(--font); color: var(--ink-3); }
+.ask-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ask-chip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid var(--hair); border-radius: 999px; background: #fff; color: var(--ink); font: 400 15px/1.25 var(--font); letter-spacing: -.01em; text-decoration: none; }
+.ask-chip:hover { border-color: var(--ink); background: var(--bg-2); }
+
+/* the conversation: fixed height, scrolling inside; until chat.js has drawn into it, a quiet dot */
+.ask-log { display: flex; flex-direction: column; height: min(64vh, 560px); height: min(64svh, 560px); margin-top: 20px; border: 1px solid var(--hair); border-radius: 18px; background: #fff; overflow: hidden; }
+.ask-log:empty::before { content: ""; width: 8px; height: 8px; margin: 26px 24px; border-radius: 50%; background: var(--blue); }
+@media (prefers-reduced-motion: no-preference) {
+  .ask-log:empty::before { animation: ask-wait 1.1s ease-in-out infinite; }
+  @keyframes ask-wait { 50% { opacity: .3; } }
+}
+.ask-fail { margin: 0; padding: 20px 24px; font: 400 16px/1.5 var(--font); color: var(--ink); }
+
+.ask-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; margin: clamp(20px, 2.4vw, 28px) 0 0; padding-top: 16px; border-top: 1px solid var(--bg-3); font: 400 13px/1.5 var(--font); color: var(--ink-3); }
+.ask-tick { margin-right: 6px; font-weight: 700; color: var(--ink); }
+.ask-foot a { color: var(--link); }
+html:not(.js) .ask-jsonly .ask-box { display: none; }   /* no search page to fall back on */
+
+/* in place: the English home (before the colour bento) */
+.ask + .abar { padding-top: 0; }
+/* the floating launcher (49-chat.css) never steps aside (owner 2026-10-14: visible bottom-right at load, every page) */
+
+@media (max-width: 699px) {
+  .ask-card { padding: 22px 16px 18px; border-radius: var(--r); }
+  /* one line for the Korean question even in the system font drawn before Pretendard arrives (up to ~16% wider):
+     the font swap never changes its line count, so nothing below moves (card width = 90.8vw - 34px from 348px) */
+  .ask-h { font-size: min(26px, calc((90.8vw - 34px) / 13.6)); }
+  .ask-row { gap: 6px; padding-left: 14px; }
+  .ask-ico { display: none; }
+  .ask-row input { height: 48px; font-size: 17px; }
+  .ask-go { min-width: 104px; min-height: 48px; padding: 0 18px; font-size: 16px; }
+  .ask-meta { flex-wrap: nowrap; padding-left: 14px; font-size: 13px; }
+  .ask-alt { flex: none; padding: 0 8px; }
+  /* the starters: one row that scrolls sideways, edge to edge of the card */
+  .ask-sug { display: block; }
+  .ask-sug-l { margin-bottom: 8px; }
+  .ask-chips { flex-wrap: nowrap; overflow-x: auto; margin-inline: -16px; padding: 0 16px 2px; scrollbar-width: none; scroll-padding-inline: 16px; }
+  .ask-chips::-webkit-scrollbar { display: none; }
+  .ask-chips li { flex: none; }
+  .ask-chip { padding: 0 14px; font-size: 15px; white-space: nowrap; }
+  /* the terms as plain blocks (no flex, no text-wrap: balance: on a flex item that cost ~75 ms of the first layout at
+     perf_check's CPU x4); the first line keeps two lines in either font (the swap leaves the card's height be),
+     breaking after '답하고,' in Pretendard */
+  .ask-foot { display: block; }
+  .ask-ok, .ask-terms { display: block; }
+  .ask-ok { max-width: 16em; margin-bottom: 6px; }
+  /* the conversation takes most of a phone's screen, in line with the question box above it */
+  .ask-log { height: 70vh; height: 70svh; margin-top: 16px; }
+}

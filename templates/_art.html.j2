@@ -1,0 +1,52 @@
+{#- AI art (owner decisions 2026-10-13, CLAUDE.md 4): the only way a page shows a ChatGPT illustration.
+    `a` is a picture from pipeline/art.py (slots()/picture()); `lang` is the page's language ('ko', 'en', 'ja' …).
+    The figure carries data-art and the <img> alt is the picture's alt in that language: it starts with '일러스트: ',
+    'Illustration: ', 'イラスト：' …, so no one takes it for a photo. No caption: the owner dropped the on-image
+    'AI 생성 이미지' label (2026-10-13 night, '다 빼'); /about/ says once that the illustrations are drawn with generative
+    AI, and validate.py rejects that label on any page. It also rejects AI art anywhere else, on place pages, inside
+    place cards and in structured data. A page gets only the pictures whose langs name its language (art.for_lang).
+    decorative: the figure is hidden from screen readers (a band repeated on every list, the 404 gull, a small picture
+    beside a heading) — the alt stays in the markup. Styles: templates/assets/css/49-art.css. -#}
+{% macro figure(a, lang='ko', sizes='100vw', eager=false, cls='', decorative=false, high=false) -%}
+<figure class="art{{ ' ' ~ cls if cls }}" data-art="{{ a.id }}"{% if decorative %} aria-hidden="true"{% endif %}><picture><source type="image/avif" srcset="{{ a.avif }}" sizes="{{ sizes }}"><source type="image/webp" srcset="{{ a.webp }}" sizes="{{ sizes }}"><img src="{{ a.src }}" alt="{{ a.alts[lang] }}" width="{{ a.w }}" height="{{ a.h }}" {% if high %}fetchpriority="high"{% elif not eager %}loading="lazy"{% endif %} decoding="async"></picture></figure>
+{%- endmacro %}
+
+{#- band(a): the header band of a page, above its H1 — the lists (D head-*), a theme page (H theme.head.<slug>), a
+    video topic page (M videos.head.<topic>), a course page (I course.banner.<course id>) — a 2.4:1 strip, at most a
+    fifth of a phone screen (css). In the first screen, so not lazy; not fetchpriority=high either, so on a slow phone it
+    does not take the bandwidth the stylesheet and fonts need first (a 400w file at 1x). Nothing when the slot is empty. -#}
+{% macro band(a, lang='ko') -%}
+{% if a %}<div class="wrap art-band-wrap">{{ figure(a, lang, '(min-width: 1264px) 1200px, calc(100vw - 32px)', eager=true, cls='art-band', decorative=true) }}</div>{% endif %}
+{%- endmacro %}
+
+{#- banner(a, lang): a guide's campaign card (C·G camp-* in Korean, Q en-camp-* in English) at the top of its head —
+    its printed words are the alt's; loaded like the band. -#}
+{% macro banner(a, lang='ko') -%}
+{% if a %}{{ figure(a, lang, '(min-width: 1000px) 440px, (min-width: 700px) 44vw, calc(100vw - 32px)', eager=true, cls='art-camp') }}{% endif %}
+{%- endmacro %}
+
+{#- small(a): a small square picture on the 404 page and the empty search result (F art-*). -#}
+{% macro small(a, lang='ko', hidden=false) -%}
+{% if a %}<div class="art-small-wrap"{% if hidden %} hidden{% endif %}>{{ figure(a, lang, '200px', cls='art-small', decorative=true) }}</div>{% endif %}
+{%- endmacro %}
+
+{#- strip(a): a band at the head of a section further down a page (L area.<권역> on /map/, in the directory column):
+    lazy, decorative. -#}
+{% macro strip(a, lang='ko') -%}
+{% if a %}{{ figure(a, lang, '(min-width: 1264px) 590px, (min-width: 1024px) 47vw, calc(100vw - 32px)', cls='art-band art-strip', decorative=true) }}{% endif %}
+{%- endmacro %}
+
+{#- beside(a) — {% call artm.beside(a) %}<h3 …>…</h3>{% endcall %}: a small square picture beside a heading further down
+    a page (J events.month.<MM> on /events/, N abroad.group.<group> on /abroad/): picture and heading in one row; lazy,
+    decorative. Without a picture the heading alone, exactly as before. -#}
+{% macro beside(a, lang='ko') -%}
+{% if a %}<div class="art-hd">{{ figure(a, lang, '72px', cls='art-mark', decorative=true) }}{{ caller() }}</div>{% else %}{{ caller() }}{% endif %}
+{%- endmacro %}
+
+{#- hero(a): the picture of a page head beside its title (S about.head): from 900px to the right of the title (the
+    head's class has-art-hero), on phones below the lede; in the first screen — not lazy, no fetchpriority. The frame
+    (520px from 900px, at most 560px, else the column) shows the drawing's subject side scaled ×1.68 (css 49-art), so
+    the drawing is 1.89 times the frame's width: the sizes say that width. -#}
+{% macro hero(a, lang='ko') -%}
+{% if a %}{{ figure(a, lang, '(min-width: 900px) 983px, (min-width: 592px) 1059px, calc((100vw - 32px) * 1.89)', eager=true, cls='art-hero') }}{% endif %}
+{%- endmacro %}

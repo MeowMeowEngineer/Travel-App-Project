@@ -1,0 +1,38 @@
+/* ================================================================ motion: transitions, helper states, render containment
+   Apple's restraint: state feedback 200ms; reveals 0.8–0.9s cubic-bezier(.28,.11,.32,1); the cinematic moments are
+   the home story stage and the drawn route. CSS here never hides content. Starting states (offset, opacity 0) are
+   set by motion.js and only on elements that are below the first screen when the libraries arrive. Without JS or
+   with reduced motion the page is in its final state. */
+
+/* ---------------------------------------------------------------- view transitions (cross-document, same origin)
+   The new page is never animated in (it is fully visible underneath); the old page fades out on top in 220ms. site.js
+   names the clicked title vt-title and a KOGL-1 thumbnail vt-photo, so they morph into the next page's H1
+   (.vt-title or [data-vt-title]) and KOGL-1 photo (.vt-photo, or img[data-vt-photo][data-kogl="1"]); a KOGL-3 photo
+   never morphs (30-info). The bars (view-transition-name: mast) stay put. Browsers without support navigate normally. */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: vt-out .22s cubic-bezier(.4, 0, 1, 1) both; z-index: 2; }
+::view-transition-new(root) { animation: none; z-index: 1; }
+::view-transition-group(vt-title) { animation-duration: .5s; animation-timing-function: var(--ease); z-index: 3; }
+::view-transition-group(vt-photo) { animation-duration: .6s; animation-timing-function: var(--ease); z-index: 3; }
+::view-transition-group(mast) { animation-duration: 0s; z-index: 4; }
+@keyframes vt-out { to { opacity: 0; } }
+.vt-title, [data-vt-title] { view-transition-name: vt-title; }
+.vt-photo, img[data-vt-photo][data-kogl="1"] { view-transition-name: vt-photo; }
+
+/* ---------------------------------------------------------------- motion helpers (motion.js) */
+.split-line { padding-bottom: .06em; margin-bottom: -.06em; }
+
+/* ---------------------------------------------------------------- render containment for long pages
+   Rendering work for long sections is spent only near the viewport until 'load'; site.js then sets html.cv-off
+   so ScrollTrigger measures true heights. Opt in with .cv (never on the first screen; a staged block only when
+   motion.js stages it after lifting this with html.cv-off, as the home story). The homes: every .sec band, the
+   numerals band, the gallery and the story (all under the photo, below the first screen) — the first paint then
+   lays out the opening, the bento and the photo only (about −0.1 s LCP at 390, slow 4G, CPU ×4). */
+.cv, .pg-home .sec, .pg-home .gallery, .pg-home .story, .nums, .foot { content-visibility: auto; contain-intrinsic-size: auto 900px; }
+html.cv-off .cv, html.cv-off .pg-home .sec, html.cv-off .pg-home .gallery, html.cv-off .pg-home .story, html.cv-off .nums, html.cv-off .foot { content-visibility: visible; }
+
+/* ---------------------------------------------------------------- reduced motion: final state, nothing moves */
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}

@@ -1,0 +1,72 @@
+/* ================================================================ 70-p1 — page team p1: place, lists (+ themes), map,
+   search, videos. Only what the shared partials (00–65) do not already style for these templates; the shared classes
+   (.pl-hero, .pl-grid, .facts, .kf, .route, .ledger, .rec, .map-grid, .dong, .search, .vids, .vlist …) are used as
+   they are. */
+
+/* ---------------------------------------------------------------- place: first screen */
+/* other names under the H1 (JSON-LD alternateName repeats exactly this line) */
+.pl-alt { font-size: 14px; line-height: 1.5; margin-top: 6px; }
+/* the summary is one paragraph (JSON-LD's description is the whole summary, so it must read as one run): the first
+   sentence answers, the rest follows in the secondary ink */
+.lede-2 { color: var(--ink-2); }
+@media (max-width: 760px) {
+  .pl-head .lede { font-size: 16.5px; }
+  .pl-alt { font-size: 13px; margin-top: 4px; }
+}
+
+/* ---------------------------------------------------------------- official designations (schema.designations): chips under
+   the answer, each linking to its list (whole labels: '군산맛집(2026, 군산시 지정)'); the '지정' row of the facts card
+   (label, the list as a link, 확인일); one short chip on a list record */
+.dz { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin: 16px auto 0; max-width: 40em; font-size: 13px; line-height: 1.3; }
+.dz-k { font-weight: 700; color: var(--ink-3); }
+.dz-c { position: relative; display: inline-flex; align-items: center; min-height: 30px; padding: 4px 12px; border-radius: 980px; background: var(--bg-2); color: var(--ink); font-weight: 700; text-decoration: none; }
+.dz-c:hover { background: var(--bg-3); text-decoration: none; }
+.dz-src { position: relative; display: inline-flex; align-items: center; min-height: 30px; color: var(--link); }
+.dz-list li + li { margin-top: 10px; }
+.dz-l { display: block; font-weight: 700; }
+.dz-s { display: block; font-size: 13px; line-height: 1.5; color: var(--ink-3); }
+.dz-chip { justify-self: start; display: inline-flex; align-items: center; margin-top: 6px; padding: 2px 9px; border-radius: 980px; background: var(--bg-2); color: var(--ink-2); font-size: 12px; font-weight: 700; line-height: 1.4; white-space: nowrap; }
+.rec:hover .dz-chip { background: #fff; }
+@media (max-width: 1023px) {
+  .dz-c, .dz-src { min-height: 36px; }
+  .dz-c::after, .dz-src::after { content: ""; position: absolute; z-index: 1; top: 50%; left: 50%; width: max(100% + 8px, 44px); height: 44px; transform: translate(-50%, -50%); }
+}
+@media (max-width: 760px) { .dz { margin-top: 12px; } }
+
+/* ---------------------------------------------------------------- place: facts card extras */
+.pl-side .need + .need { border-top: 0; padding-top: 0; }
+.withheld { font-size: 14px; color: var(--ink-2); }
+/* a licensed original shown verbatim (sample data only: Gunsan originals are linked, never copied) */
+.orig { margin: 0; padding: 0 0 0 14px; border-left: 3px solid var(--hair); font-size: 15px; line-height: 1.65; color: var(--ink-2); }
+.src-dl dd .note { margin-top: 6px; }
+.pl-src .src-dl a { min-height: 44px; }
+
+/* ---------------------------------------------------------------- place: 주변·함께 가기 link groups (events, guides, twins,
+   names that run on) — a grey label over hairline rows */
+.xl-g { margin-top: 28px; }
+.xl-g .xlinks { margin-top: 0; border-top: 1px solid var(--hair); }
+.xlinks .same-t { margin-left: auto; text-align: right; }
+
+/* ---------------------------------------------------------------- lists: the filter bar is JS-only furniture laid out from the
+   first paint — the `hidden` attribute keeps it out without JS (site.js removes it), html.js lays it out at once, so
+   nothing moves when site.js runs */
+html.js .filters[data-filters][hidden] { display: block !important; }
+.list-empty { padding-bottom: var(--sec); }
+.list-empty .empty { padding-top: 0; }
+.list-empty a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.pg-theme .list-lede { color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- videos: the topic page's way back, the source line */
+.v-all { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 980px; background: var(--bg-2); color: var(--ink); font-size: 15px; text-decoration: none; }
+.v-all:hover { background: var(--bg-3); text-decoration: none; }
+.v-wrap > .v-src { margin-top: 56px; max-width: 46em; }
+.pg-vtopic .v-wrap { padding-top: 12px; }   /* one topic: the cards follow the band (no section head between) */
+/* the kind's hub guide (LISTS[kind].hub, owner 2026-10-08) under the list lede */
+.list-hub { margin-top: 2px; font-size: clamp(15px, 1.3vw, 19px); }
+.list-hub a { display: inline-flex; align-items: center; min-height: 44px; }
+.list-hub .arr { margin-left: 4px; }
+/* desktop: the result count and the filter button sit apart from the scrolling type row (a hairline between) */
+@media (min-width: 1024px) { .f-top .f-tools { padding-left: 14px; border-left: 1px solid var(--hair); } }
+/* the 목록 | 지도 switch never wraps a label; on the narrowest phones the result line may take two lines instead */
+.seg button { white-space: nowrap; }
+@media (max-width: 400px) { .f-tools .f-result { white-space: normal; min-width: 0; line-height: 1.3; } .seg button { min-width: 0; padding: 0 12px; } }

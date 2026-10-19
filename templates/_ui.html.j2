@@ -1,0 +1,708 @@
+{#- _ui.html.j2 — the shared markup of the Apple direction (CLAUDE.md 7). {% import "_ui.html.j2" as ui %}
+    Every macro prints only stored or computed values (pipeline/present.py view models); styles: templates/assets/css.
+    Rules the macros keep: a value is printed whole, or its main part with '외' pointing to the whole value on the
+    page (never an ellipsis); closed days carry class "closed" (red + a square drawn by CSS); a contested value shows
+    both sources + "방문 전 전화 확인"; KOGL-3 photos are never cropped (class t3, data-kogl="3"); every outbound
+    link keeps data-track / data-provider / data-place.
+    Filters and globals used here (pipeline/build.make_env, build()): sup, csup, tojson_attr, pdist (present.dist),
+    ko_date, short_iso, nwt (time ranges and prices never break inside), card_vm(e[, photo]).
+    Photos go through _media.html.j2 (md.picture / md.credit): <picture> with the same-origin AVIF/WebP derivatives
+    of KOGL-1 photos (pipeline/media.py), and data-kogl="1|3|0" on every <img> so the behaviour layer (motion.js,
+    site.js) never crops, zooms or morphs anything but KOGL-1.
+
+    Macros (inputs → output):
+      icon(name, cls)                 inline SVG icon, stroke = currentColor
+      type_icon(e)                    small rounded kind icon for a place without a photo
+      img(ph, sizes, eager, cls, lazy_src, high)     <img>/<picture> of a present.photo dict
+      figure(ph, cap, idx, total, cls, eager, sizes, credit, named, reveal)   photo + caption with the credit
+      status(items, cls)              key-information line as text (present.status_items)
+      kfv(s, more_href, compact, place) / kf(K, cls, more_href, place) / kfnote(K) / kfrows(K, place)
+                                      key facts (present.key_facts): spec tiles, the note line under them, card rows
+      value(r) / factrow(r, fn) / facts(rows, fn, cls)        fact rows (present.fact_rows) — the validated form
+      notes(items, cls) / chnotes(items)                      numbered source notes
+      route(primary, front, rest, place, hid, nm)             route block: 3 in front, the rest under '다른 지도'
+      lnav(title, links, cta, label)  the local bar (base.html.j2 {% block lnav %}): title, section links, one pill
+      board(cv, s) / onroute(rows, place) / stoprow(stops, …) / linemeta(cv)    course parts
+      coursemap(m, title, caption, cls)                       the course's stops on the map (present.course_map)
+      near(items, place)              distance-sorted list (place_vm near_sights / near_biz)
+      mapfig(data, label, cls, caption)                       map box; map.js reads data-map
+      faq(items, ns)                  visible Q → A
+      chead(title, hid, …) / sec_head(eyebrow, title, hid, …) / rail(hid, label, nm, block, cls){caller}   headings
+      opening(title, kicker, lede, count, eyebrow, cls, hid){caller?}   the white page head with the H1
+      kicker_line(items) / crumbs(items)                      small path lines
+      abar(purposes, ev, hid)         the home answer bar: search · the next event · five purposes with figures
+      showcase(slides, sizes, label, high)  the home product-shot photo: KOGL-1 slides, dots, pause
+      answer(a, q, id)                answer tile (present.answer_row / guide_rows)
+      evrow(r)                        dated event tile (present.ranked_events rows with dp)
+      ticket(r)                       event ticket row (present.event_row)
+      card(c, cls, sizes, track)      the one place-card component (present.card_vm: photo, kf rows)
+      carnav(what)                    the round previous / next buttons of a carousel ([data-gallery])
+      rec(it, kind)                   ledger row (present.list_vm items: slots)
+      week(W, hid, title)             places × 월–일 (present.week_grid)
+      video(v, place, linked, eager, tag) / vrow(v, linked, eager)    video card / compact row, thumbnail facade
+      search_form(id, value, label, placeholder, live)        GET /search/ form (search.js enhances [data-search])
+      bento(a){caller} / mark(text, phrase) / nums(items, hid, title, note) / bigword(word)
+                                      the home accent points (45-accent.css): colour bento tile, lime marker,
+                                      big-numerals band, the black band's oversized word
+    Page-only variants live in _p1.html.j2 (place, lists, map, search, videos) and _p2.html.j2 (home, course,
+    guide, event, about, 404). -#}
+
+{% import "_media.html.j2" as md %}
+
+{#- icon(name, cls='icon'): name ∈ bed bowl wave tree building museum lamp spark clock car ticket play calendar phone
+    route map info access umbrella family bus sun arrow external search globe book pause resume pin(default) -#}
+{% macro icon(name, cls='icon') -%}
+<svg class="{{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{{ icon_paths(name) }}</svg>
+{%- endmacro %}
+{#- icon_paths(name): the drawing of icon(name) alone (icon(), sprite()) -#}
+{% macro icon_paths(name) -%}
+{%- if name == 'bed' %}<path d="M3 19V7M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-8v6"/><circle cx="6.5" cy="11.5" r="1.8"/>
+{%- elif name == 'bowl' %}<path d="M3.5 11h17a8.5 8.5 0 0 1-17 0Z"/><path d="M8 7.5c0-1.2 1.2-1.2 1.2-2.5M12 7.5c0-1.2 1.2-1.2 1.2-2.5M16 7.5c0-1.2 1.2-1.2 1.2-2.5"/>
+{%- elif name == 'wave' %}<path d="M2 16c2.5 0 2.5-1.8 5-1.8S9.5 16 12 16s2.5-1.8 5-1.8S19.5 16 22 16M2 20c2.5 0 2.5-1.8 5-1.8S9.5 20 12 20s2.5-1.8 5-1.8S19.5 20 22 20"/><path d="m5 12 4.5-7 3 4.5L14 7l5 5"/>
+{%- elif name == 'tree' %}<path d="M12 21v-5"/><path d="M12 3 6.5 10h3L6 15h12l-3.5-5h3Z"/>
+{%- elif name == 'building' %}<path d="M3 21h18M5 21V9.5L12 5l7 4.5V21M9.5 21v-5h5v5M9 11.5h.01M15 11.5h.01"/>
+{%- elif name == 'museum' %}<path d="M3 21h18M3.5 9.5h17L12 4ZM6 9.5v8.5M10 9.5v8.5M14 9.5v8.5M18 9.5v8.5M4 18h16"/>
+{%- elif name == 'lamp' %}<path d="M8.5 21h7M12 21V10M8 10h8l-1.5-5h-5Z"/>
+{%- elif name == 'spark' %}<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>
+{%- elif name == 'clock' %}<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>
+{%- elif name == 'car' %}<path d="m5 15 1.6-5.2h10.8L19 15M4 15h16v3.5H4ZM7 18.5V20M17 18.5V20"/>
+{%- elif name == 'ticket' %}<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4Z"/><path d="M13 7v10"/>
+{%- elif name == 'play' %}<circle cx="12" cy="12" r="9.5"/><path d="M10 8.5v7l6-3.5Z" fill="currentColor"/>
+{%- elif name == 'calendar' %}<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>
+{%- elif name == 'phone' %}<path d="M5 4h4l1.5 4.5-2.3 1.4a11 11 0 0 0 5.9 5.9l1.4-2.3L20 15v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z"/>
+{%- elif name == 'route' %}<circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 18h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/>
+{%- elif name == 'map' %}<path d="m3 6.5 6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5Z"/><path d="M9 4v13.5M15 6.5V20"/>
+{%- elif name == 'info' %}<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>
+{%- elif name == 'access' %}<circle cx="12" cy="4.5" r="1.6"/><path d="M8 8.5h8M12 8.5v5l3.5 6M12 13.5l-3.5 6"/>
+{%- elif name == 'umbrella' %}<path d="M3 12a9 9 0 0 1 18 0Z"/><path d="M12 12v6a2 2 0 0 0 4 0"/>
+{%- elif name == 'family' %}<circle cx="8" cy="6" r="2"/><circle cx="16.5" cy="9" r="1.6"/><path d="M5 21v-6l-1-4h8l-1 4v6M14.5 21v-4l-1-3h6l-1 3v4"/>
+{%- elif name == 'bus' %}<rect x="5" y="3.5" width="14" height="14" rx="2.5"/><path d="M5 11h14M8.5 17.5V20M15.5 17.5V20M8.5 14.5h.01M15.5 14.5h.01"/>
+{%- elif name == 'sun' %}<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>
+{%- elif name == 'arrow' %}<path d="M5 12h14M13 6l6 6-6 6"/>
+{%- elif name == 'external' %}<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>
+{%- elif name == 'search' %}<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/>
+{%- elif name == 'globe' %}<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5M12 3.5C9.6 5.9 8.4 8.7 8.4 12s1.2 6.1 3.6 8.5"/>
+{%- elif name == 'book' %}<path d="M12 6.5C10.2 5.2 7.6 4.6 4 4.8V18c3.6-.2 6.2.4 8 1.7 1.8-1.3 4.4-1.9 8-1.7V4.8c-3.6-.2-6.2.4-8 1.7ZM12 6.5v13.2"/>
+{%- elif name == 'pause' %}<path d="M9 6.5v11M15 6.5v11"/>
+{%- elif name == 'resume' %}<path d="M8.5 6.2v11.6l9.3-5.8Z" fill="currentColor"/>
+{%- elif name == 'prev' %}<path d="M14.5 6 8.5 12l6 6"/>
+{%- elif name == 'next' %}<path d="m9.5 6 6 6-6 6"/>
+{%- elif name == 'chat' %}<path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 17h-8l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5Z"/><path d="M8.5 11.2h.01M12 11.2h.01M15.5 11.2h.01"/>
+{%- elif name == 'up' %}<path d="M12 19V5M6 11l6-6 6 6"/>
+{%- elif name == 'close' %}<path d="M6 6l12 12M18 6 6 18"/>
+{%- else %}<path d="M12 21s-6.5-5.8-6.5-10.5a6.5 6.5 0 1 1 13 0C18.5 15.2 12 21 12 21Z"/><circle cx="12" cy="10.5" r="2.3"/>
+{%- endif %}
+{%- endmacro %}
+
+{#- sprite(names) + use(name, cls): a page that repeats icons many times (the guide's mini cards) draws each once in a
+    hidden sprite and points at it (<use href="#gi-NAME">), so the HTML carries each drawing once. -#}
+{% macro sprite(names) -%}
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">{% for n in names %}<symbol id="gi-{{ n }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{{ icon_paths(n) }}</symbol>{% endfor %}</svg>
+{%- endmacro %}
+{% macro use(name, cls='icon') -%}
+<svg class="{{ cls }}" aria-hidden="true" focusable="false"><use href="#gi-{{ name }}"/></svg>
+{%- endmacro %}
+
+{#- type_icon(e): a place without a photo gets this small icon (never an empty cover). e._visual = (tone, icon)
+    from build.VISUALS. -#}
+{% macro type_icon(e, size=48) -%}
+{%- set g = (e._visual or ('', 'pin'))[1] -%}
+<span class="type-ico">{{ kpic(KIND_PIC.get(g, 'kind-attraction'), g, size) }}</span>
+{%- endmacro %}
+
+{#- kpic(id, glyph, size): the 3D picture registry (templates/_pic.html.j2 pic(), ui4 2026-10-14), imported lazily
+    inside the macro so _pic may import this file. KIND_PIC: build.VISUALS glyph → stable picture ID
+    (docs/handover/gpt_image_prompts_3d_2026-10-14.md, docs/handover/specs/icon_audit.md I04–I08). -#}
+{% set KIND_PIC = {'bed': 'kind-stay', 'bowl': 'kind-food', 'museum': 'kind-museum', 'spark': 'kind-experience',
+  'building': 'theme-modern-history', 'wave': 'theme-islands-sea', 'tree': 'theme-parks-nature',
+  'lamp': 'theme-alleys-culture', 'pin': 'kind-attraction', 'cup': 'kind-cafe'} %}
+{% macro kpic(id, glyph, size=56, alt='') -%}
+{%- import "_pic.html.j2" as pk -%}{{ pk.pic(id, glyph, size, alt) }}
+{%- endmacro %}
+
+{#- img(ph, sizes, eager, cls, lazy_src, high): ph = present.photo dict {url, w, h, type, alt, th?, avif?, webp?}.
+    md.picture: KOGL-1 with same-origin derivatives (ph.avif / ph.webp srcsets) → <picture>; otherwise the
+    provider's own file with its small rendition (ph.th) in srcset. Width/height only when measured (never
+    guessed). The <img> carries class t<type> (the skin's licence rules) and data-kogl (the behaviour layer's).
+    lazy_src: the sources wait in data-src / data-srcset (home slides 2..n; motion.js wakes them after 'load'). -#}
+{% macro img(ph, sizes='100vw', eager=false, cls='', lazy_src=false, high=false) -%}
+{{ md.picture(ph, sizes, eager, 't' ~ ph.type ~ (' ' ~ cls if cls else ''), lazy_src, high) }}
+{%- endmacro %}
+
+{#- figure(ph, cap, idx, total, cls, eager, sizes, credit, named, reveal): a photo at its native ratio, never wider than
+    the source, with the caption under it: the name and "idx/total" (named) and the credit "출처: 한국관광공사 ·
+    공공누리 제N유형" (credit; CLAUDE.md 3.4). reveal: below the fold it settles in when scrolled to (motion.js; KOGL-1
+    fade + 1.06→1, KOGL-3 fade only). KOGL-1 gets rounded corners; KOGL-3 sits whole in a padded rounded frame.
+    Add cls "ph-bleed" for a KOGL-1 photo that fills its box. -#}
+{% macro figure(ph, cap='', idx=0, total=0, cls='', eager=false, sizes='100vw', credit=true, named=true, reveal=true) -%}
+<figure class="ph t{{ ph.type }}{% if cls %} {{ cls }}{% endif %}"{% if ph.w and ph.h %} style="--nw:{{ ph.w }}px;--ar:{{ ph.w }}/{{ ph.h }}"{% endif %}{% if reveal and not eager %} data-reveal-ph{% endif %}>
+<div class="ph-frame">{{ img(ph, sizes, eager, '', false, eager) }}</div>
+{% if named or credit %}<figcaption>{% if named %}<span class="cap-n">{{ cap or ph.name }}</span>{% if total > 1 %}<span class="cap-i tn">{{ idx }}/{{ total }}</span>{% endif %}{% endif %}{% if credit %}<span class="cap-c">{{ md.credit(ph) }}</span>{% endif %}</figcaption>{% endif %}
+</figure>
+{%- endmacro %}
+
+{#- status(items, cls): the key-information line as text. items = present.status_items(e[, full=True]): {key, text,
+    html, closed, cls (st-flag / st-missing / st-tel), href}. A contested value reads '<label> 출처마다 다름'
+    and links to the facts (#h-facts); hidden commas keep the line readable when lifted as text. -#}
+{% macro status(items, cls='') -%}
+{% if items %}<p class="status{% if cls %} {{ cls }}{% endif %}">{% for s in items %}<span class="st{% if s.closed %} closed{% endif %}{% if s.cls %} {{ s.cls }}{% endif %}">{% if s.href and s.cls in ('st-flag', 'st-missing') %}<a href="{{ s.href }}">{{ s.html }}</a>{% else %}{{ s.html }}{% endif %}</span>{% if not loop.last %}<span class="vh">, </span>{% endif %}{% endfor %}</p>{% endif %}
+{%- endmacro %}
+
+{#- Key facts (present.key_facts(e, mode)): the same slots in the same order for every place of a kind (CLAUDE.md 7
+    핵심 정보 줄). K = {slots [{key, label, main, sub, more, closed, conflict, vals [{provider, main, sub, closed}],
+    tel?, missing?}], missing [labels], date (earliest 확인일 — data only, never printed), providers, conflict,
+    tel (visible, digits)}.
+    kfv(s, more_href, compact, place): one value. A long value shows its main part and '외 ↓' (more_href, to the facts
+    on the place page; plain '외' inside a card whose whole area is a link). A conflict shows both values with their
+    providers. compact (card rows) leaves the sub-line of a conflict out. -#}
+{% macro kfv(s, more_href='', compact=false, place='') -%}
+{% if s.missing %}<span class="kf-na">확인 필요</span>
+{%- elif s.conflict %}{% for v in s.vals %}<span class="kf-alt"><span class="kf-main tn{% if v.closed %} closed{% endif %}">{{ v.main|nwt }}</span>{% if v.sub and not compact %}<span class="kf-sub tn">{{ v.sub|nwt }}</span>{% endif %}<span class="kf-src">{{ v.provider }}</span></span>{% endfor %}
+{%- else %}<span class="kf-main tn{% if s.closed %} closed{% endif %}">{% if s.key == 'tel' %}<a class="tel" href="tel:{{ s.tel }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.main }}</a>{% else %}{{ s.main|nwt }}{% endif %}</span>{% if s.sub %}<span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}{% if s.more %}{% if more_href %} <a class="kf-more" href="{{ more_href }}">외 ↓</a>{% else %} <span class="kf-more">외</span>{% endif %}{% endif %}
+{%- endif %}
+{%- endmacro %}
+
+{#- kf(K, cls, more_href, place): the first-screen spec tiles (place, event): value big on top, label under it; 2 per
+    row on phones. cls 'kf-hero' (5 slots) or 'kf-ev'. -#}
+{#- FACT_PIC: first-screen tile key → (stable picture ID, interim glyph) — icon_audit I06 -#}
+{% set FACT_PIC = {'hours': ('fact-hours', 'clock'), 'closed': ('fact-closed', 'calendar'), 'fee': ('fact-fee', 'ticket'),
+  'parking': ('fact-parking', 'car'), 'tel': ('fact-phone', 'phone'), 'menu': ('fact-menu', 'bowl'),
+  'checkin': ('fact-checkin', 'clock'), 'checkout': ('fact-checkin', 'clock'), 'rooms': ('kind-stay', 'bed')} %}
+{% macro kf(K, cls='', more_href='#h-facts', place='') -%}
+{% set hero = 'kf-hero' in cls %}{% if K.slots %}<dl class="kf{% if cls %} {{ cls }}{% endif %}">{% for s in K.slots %}<div class="kf-i kf-{{ s.key }}{% if s.conflict %} is-conflict{% endif %}"><dt>{% if hero and s.key in FACT_PIC %}{{ kpic(FACT_PIC[s.key][0], FACT_PIC[s.key][1], 32) }}{% endif %}{{ s.label }}</dt><dd>{{ kfv(s, more_href, false, place) }}</dd></div>{% endfor %}</dl>{% endif %}
+{%- endmacro %}
+
+{#- kfnote(K): the lines under the tiles — one call line for a real conflict, '확인 필요: …' once, then 출처 (no 확인일:
+    operator decision 2026-10-09).
+    Put it inside <div class="kf-notes">. -#}
+{% macro kfnote(K) -%}
+{% if K.conflict %}<p class="kf-call"><span class="flag">{% for s in K.slots if s.conflict %}{{ s.label }}{% if not loop.last %}·{% endif %}{% endfor %} 출처마다 다름</span> · 방문 전 전화 확인{% if K.tel and K.tel[1] %} <a class="tel" href="tel:{{ K.tel[1] }}" data-track="tel_click">{{ K.tel[0] }}</a>{% endif %}</p>{% endif %}
+{% if K.missing %}<p class="kf-need">확인 필요: {{ K.missing|join('·') }}</p>{% endif %}
+{% if K.providers %}<p class="kf-prov">출처 {{ K.providers|join('·') }}</p>{% endif %}
+{%- endmacro %}
+
+{#- kfrows(K, place): card rows — label | value, the kind's three slots in fixed order (key_facts(e, 'card'): a missing
+    slot stays in its place as '확인 필요'). -#}
+{% macro kfrows(K, place='') -%}
+{% if K and K.slots %}<dl class="kfr">{% for s in K.slots %}<div class="kfr-i{% if s.conflict %} is-conflict{% endif %}"><dt>{{ s.label }}</dt><dd>{{ kfv(s, '', true, place) }}</dd></div>{% endfor %}</dl>{% endif %}
+{%- endmacro %}
+
+{#- value(r): one stored value (present.value_view / fact_rows item): timetable rows (tt), a price table (fees), a
+    fee grid (grid), or the whole text (html). Tables carry data-form so pipeline.validate compares their words
+    without the layout punctuation; text must match display_value verbatim. -#}
+{% macro tt_rows(tt) -%}
+{% set ns = namespace(g='') %}
+{% for t in tt.rows %}
+<tr class="{% if t.closed %}is-closed{% endif %}{% if t.label and t.group and t.group == ns.g %} sub{% endif %}">
+<th scope="row">{% if t.group and t.group != ns.g %}<b>{{ t.group }}</b>{% if t.label %} {{ t.label }}{% endif %}{% else %}{{ t.label }}{% endif %}</th>
+<td>{% if t.closed %}<span class="closed">{{ t.value }}</span>{% else %}<span class="tn">{{ t.value }}</span>{% endif %}{% if t.note %} <span class="tt-note">({{ t.note }})</span>{% endif %}</td>
+</tr>
+{% set ns.g = t.group %}
+{% endfor %}
+{%- endmacro %}
+{% macro fee_rows(fees) -%}
+{% for g in fees.groups %}
+{% if g.label %}<tr class="fg"><th colspan="2" scope="rowgroup">{{ g.label }}</th></tr>{% endif %}
+{% for x in g.rows %}<tr><th scope="row">{{ x.who }}</th><td class="tn">{{ x.price }}</td></tr>{% endfor %}
+{% endfor %}
+{%- endmacro %}
+{% macro grid(gr) -%}
+<table class="fees fgrid" data-form="grid"><thead><tr><td></td><th scope="col">{{ gr.cols[0] }}</th><th scope="col">{{ gr.cols[1] }}</th></tr></thead><tbody>
+{% for r in gr.rows %}<tr><th scope="row">{{ r.who }} <small>({{ r.sub }})</small></th><td class="tn">{{ r.a }} <small>({{ r.asub }})</small></td><td class="tn">{{ r.b }} <small>({{ r.bsub }})</small></td></tr>{% endfor %}
+</tbody></table>
+{%- endmacro %}
+{% macro value(r) -%}
+{% if r.tt %}<table class="tt" data-form="tt"><tbody>{{ tt_rows(r.tt) }}</tbody></table>{% for f in r.tt.foot %}<p class="vnote">※ {{ f }}</p>{% endfor %}
+{% elif r.fees %}<table class="fees" data-form="fees"><tbody>{{ fee_rows(r.fees) }}</tbody></table>{% for f in r.fees.foot %}<p class="vnote">※ {{ f }}</p>{% endfor %}
+{% elif r.grid %}{{ grid(r.grid) }}
+{% elif r.closed %}<span class="closed">{{ r.html }}</span>
+{% else %}{{ r.html }}{% endif %}
+{%- endmacro %}
+
+{#- factrow(r, fn): <div class="fr"><dt>label</dt><dd data-key>value¹</dd></div>. A conflict (r.conflict) prints one
+    table: a provider caption row above each source's block, then the flag line "출처마다 다름 · 방문 전 전화 확인"
+    (+ the call number on the first conflict row) — CSS shows the flag first; it sits last in the <dd> for the
+    validator. fn=false: one source on the page, no superscripts (the provider is named instead). -#}
+{% macro factrow(r, fn=true) -%}
+<div class="fr{% if r.wide %} wide{% endif %}{% if r.conflict %} conflict{% endif %}" data-key="{{ r.key }}">
+<dt>{{ r.label }}</dt>
+<dd data-key="{{ (r['keys'] or [r.key])|join(' ') }}">
+{% if r.blocks %}
+<table class="tt tt-src"{% if r.blocks|selectattr('tt')|list or r.blocks|selectattr('fees')|list or r.blocks|selectattr('grid')|list %} data-form="src"{% endif %}><tbody>
+{% for b in r.blocks %}
+<tr class="src-row"><th colspan="2" scope="rowgroup">{{ b.provider_full or b.provider }}{% if fn %}{{ b.n|sup }}{% endif %}</th></tr>
+{% if b.tt %}{{ tt_rows(b.tt) }}{% for f in b.tt.foot %}<tr class="foot"><td colspan="2">※ {{ f }}</td></tr>{% endfor %}
+{% elif b.fees %}{{ fee_rows(b.fees) }}{% for f in b.fees.foot %}<tr class="foot"><td colspan="2">※ {{ f }}</td></tr>{% endfor %}
+{% elif b.grid %}<tr><td colspan="2">{{ grid(b.grid) }}</td></tr>
+{% else %}<tr><td colspan="2" class="whole">{% if b.closed %}<span class="closed">{{ b.html }}</span>{% else %}{{ b.html }}{% endif %}</td></tr>{% endif %}
+{% endfor %}
+</tbody></table>
+{% elif r.html or r.tt or r.fees or r.grid %}<div class="v">{{ value(r) }}{% if fn %}{{ r.n|sup }}{% endif %}</div>{% endif %}
+{% for a in r.alts %}<div class="v also"><span class="or">또는</span> {{ value(a) }}{% if fn %}{{ a.n|sup }}{% else %} <span class="or">({{ a.provider }})</span>{% endif %}</div>{% endfor %}
+{% if r.conflict %}<p class="flag-line"><span class="flag">{{ r.flag }}</span> · 방문 전 전화 확인{% if r.tel and r.tel[1] %} <a class="tel" href="tel:{{ r.tel[1] }}" data-track="tel_click">{{ r.tel[0] }}</a>{% endif %}</p>{% endif %}
+</dd>
+</div>
+{%- endmacro %}
+{% macro facts(rows, fn=true, cls='') -%}
+{% if rows %}<dl class="facts{% if cls %} {{ cls }}{% endif %}">{% for r in rows %}{{ factrow(r, fn) }}{% endfor %}</dl>{% endif %}
+{%- endmacro %}
+
+{#- notes(items, cls): the numbered sources of a page's fact rows (place_vm.notes: {provider, url, checked_at,
+    confirmed_by}); one source: '출처' instead of a number. cls 'notes-inline' = one line. -#}
+{% macro notes(items, cls='') -%}
+{% if items %}
+<ol class="notes{% if cls %} {{ cls }}{% endif %}">{% for s in items %}<li>{% if items|length > 1 %}<span class="fn-n tn">{{ loop.index }}</span>{% else %}<span class="fn-k">출처</span>{% endif %}{% if s.url %}<a href="{{ s.url }}" rel="noopener" data-track="official_click">{{ s.provider }}</a>{% else %}{{ s.provider }}{% endif %}{% if s.confirmed_by %} · {{ s.confirmed_by }}로 재확인{% endif %}</li>{% endfor %}</ol>
+{% endif %}
+{%- endmacro %}
+{#- chnotes(items): chapter notes (FAQ, 자세히: place_vm faq_notes / detail_notes {url, name}); superscripts in the
+    text (csup), the providers listed once. -#}
+{% macro chnotes(items) -%}
+{% if items %}<p class="ch-notes">{% if items|length == 1 %}출처: {% if items[0].url %}<a href="{{ items[0].url }}" rel="noopener" data-track="official_click">{{ items[0].name }}</a>{% else %}{{ items[0].name }}{% endif %}{% else %}{% for s in items %}<span class="ch-src-i"><span class="fn-n tn">{{ loop.index }}</span>{% if s.url %}<a href="{{ s.url }}" rel="noopener" data-track="official_click">{{ s.name }}</a>{% else %}{{ s.name }}{% endif %}</span>{% endfor %}{% endif %}</p>{% endif %}
+{%- endmacro %}
+
+{#- route(primary, front, rest, place, hid, nm): CLAUDE.md 7 — front row of three: 카카오맵 길찾기 (the one filled pill,
+    '카카오맵에서 찾기' without coordinates), 네이버 지도, 카카오맵 (outlined); the rest folded under '다른 지도'.
+    Inputs from present.route_links() (place_vm primary / front / rest). A link that opens a name search carries a
+    small '검색' tag. hid + nm: a visually hidden heading '<nm> 가는 길' with that id (the first-screen route block
+    is the page's #h-dir target). -#}
+{% macro route(primary, front, rest, place='', hid='', nm='') -%}
+<div class="route" data-block="directions" data-route>
+{% if hid %}<h2 id="{{ hid }}" class="vh">{{ nm }} 가는 길</h2>{% endif %}
+<div class="route-row">
+{% if primary %}<a class="btn btn-go" data-primary href="{{ primary.url }}" rel="noopener" data-track="{{ 'route_click' if primary.role == 'route' else 'map_click' }}" data-provider="{{ primary.key }}" data-place="{{ place }}">{{ primary.label }}{% if not primary.precise %} <span class="rtag">검색</span>{% endif %}<span class="arr" aria-hidden="true">›</span></a>{% endif %}
+{% for l in front %}<a class="btn btn-ol" href="{{ l.url }}" rel="noopener" data-track="{{ 'route_click' if l.role == 'route' else 'map_click' }}" data-provider="{{ l.key }}" data-place="{{ place }}">{{ l.label }}{% if not l.precise %} <span class="rtag">검색</span>{% endif %}</a>{% endfor %}
+</div>
+{% if rest %}<details class="more-maps"><summary>다른 지도</summary><p class="tlinks">{% for l in rest %}<a href="{{ l.url }}" rel="noopener" data-track="{{ 'route_click' if l.role == 'route' else 'map_click' }}" data-provider="{{ l.key }}" data-place="{{ place }}">{{ l.label }}{% if not l.precise %} <span class="rtag">검색</span>{% endif %}</a>{% endfor %}</p></details>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- lnav(title, links, cta, label): the local bar, put in {% block lnav %} of base.html.j2. title = the page name;
+    links = [(label, '#id')] (desktop only); cta = {url, label, ext, track, provider, place} | none — the page's one
+    contextual action (place: 길찾기 / 지도 to the exact route, course: 경유지 목록, event: 길찾기, guide: 걷는 순서). -#}
+{% macro lnav(title, links=[], cta=none, label='') -%}
+<nav class="lnav" aria-label="{{ label or (title ~ ' 바로가기') }}" data-lnav>
+<div class="wrap lnav-in">
+<p class="lnav-t">{{ title }}</p>
+{% if links %}<ul class="lnav-links">{% for lab, href in links %}<li><a href="{{ href }}">{{ lab }}</a></li>{% endfor %}</ul>{% endif %}
+{% if cta %}<a class="lnav-cta" href="{{ cta.url }}"{% if cta.ext %} rel="noopener"{% endif %}{% if cta.track %} data-track="{{ cta.track }}"{% endif %}{% if cta.provider %} data-provider="{{ cta.provider }}"{% endif %}{% if cta.place %} data-place="{{ cta.place }}"{% endif %}>{{ cta.label }}</a>{% endif %}
+</div>
+</nav>
+{%- endmacro %}
+
+{#- board(cv, s): station board 역명판 for one course stop (present.course_vm + course_stop_details):
+    code · type · 동, the name, ← previous │ ● │ next → with straight-line distances. -#}
+{% macro board(cv, s) -%}
+<div class="board">
+<p class="board-top"><span class="code tn">{{ s.code }}</span><span class="board-k">{{ s.type or '경유지' }}{% if s.dong %} · {{ s.dong }}{% endif %}</span><span class="board-cum tn">{% if s.n == 1 %}출발{% elif s.cum %}출발부터 직선 {{ s.cum|pdist }}{% endif %}</span></p>
+<p class="board-name">{{ s.short }}{% if s.paren %} <span class="b-paren">{{ s.paren }}</span>{% endif %}</p>
+{% if s.label %}<p class="board-label">코스 원문 표기 {{ s.label }}</p>{% endif %}
+<div class="board-bar">
+{% if s.prev %}<a class="b-prev" href="#s{{ s.prev.n }}"><span class="b-dir" aria-hidden="true">←</span><span class="b-nm">{{ s.prev.name }}</span>{% if s.prev_m is not none %}<span class="b-d tn">{{ s.prev_m|pdist }}</span>{% endif %}</a>{% else %}<span class="b-prev b-end">출발 경유지</span>{% endif %}
+<span class="b-here" aria-hidden="true"></span>
+{% if s.next %}<a class="b-next" href="#s{{ s.next.n }}">{% if s.next_m is not none %}<span class="b-d tn">{{ s.next_m|pdist }}</span>{% endif %}<span class="b-nm">{{ s.next.name }}</span><span class="b-dir" aria-hidden="true">→</span></a>{% else %}<span class="b-next b-end">마지막 경유지</span>{% endif %}
+</div>
+</div>
+{%- endmacro %}
+
+{#- onroute(rows, place): the official courses through a place (place_vm.boards: [{cv, s}]), one row each. -#}
+{% macro onroute(rows, place='') -%}
+<table class="onroute"><caption class="h-sub">이곳을 지나는 군산시 공식 코스 {{ rows|length }}개</caption><tbody>
+{% for b in rows %}{% set s = b.s %}
+<tr><th scope="row"><a href="{{ b.cv.path }}#s{{ s.n }}" data-track="course_click" data-place="{{ place }}">{{ b.cv.display }}</a><span class="or-n tn">{{ s.n }}/{{ b.cv.stops|length }}</span></th>
+<td class="or-prev">{% if s.prev %}{% if s.prev.path %}<a href="{{ s.prev.path }}">{% endif %}<span aria-hidden="true">← </span><span class="vh">이전 </span>{{ s.prev.name }}{% if s.prev.path %}</a>{% endif %}{% if s.prev_m is not none %} <span class="tn">{{ s.prev_m|pdist }}</span>{% endif %}{% else %}<span class="muted">출발</span>{% endif %}</td>
+<td class="or-next">{% if s.next %}{% if s.next_m is not none %}<span class="tn">{{ s.next_m|pdist }}</span> {% endif %}{% if s.next.path %}<a href="{{ s.next.path }}">{% endif %}<span class="vh">다음 </span>{{ s.next.name }}<span aria-hidden="true"> →</span>{% if s.next.path %}</a>{% endif %}{% else %}<span class="muted">마지막</span>{% endif %}</td></tr>
+{% endfor %}
+</tbody></table>
+{%- endmacro %}
+
+{#- stoprow(stops, label, more, k): a course line's stops by name in course order — the first k (every one when there
+    are at most k + 1), the names of places with a page linked, then '외 n곳' (more % n) for the rest. The arrows
+    are drawn (aria-hidden); the list is the order. A name never breaks off its arrow (no-break space before →).
+    linemeta(cv): 'n곳 · 직선 x km' or '좌표 있는 구간 m/n'. -#}
+{% macro stoprow(stops, label='경유지 순서', more='외 %d곳', k=3) -%}
+{% set shown = stops if stops|length <= k + 1 else stops[:k] %}
+<ol class="line-stops" aria-label="{{ label }}">
+{%- for s in shown %}<li>{% if s.path %}<a href="{{ s.path }}">{{ s.short or s.name }}</a>{% else %}<span>{{ s.short or s.name }}</span>{% endif %}{% if not loop.last %}<span class="ls-arr" aria-hidden="true">&nbsp;→</span>{% endif %}</li>{{ ' ' if not loop.last }}{% endfor -%}
+{%- if stops|length > shown|length %} <li class="ls-more">{{ more|format(stops|length - shown|length) }}</li>{% endif -%}
+</ol>
+{%- endmacro %}
+{% macro linemeta(cv) -%}
+<span class="line-meta tn">{{ cv.stops|length }}곳{% if cv.complete and cv.measured %} · 직선 {{ cv.total|pdist }}{% elif cv.legs_possible %} · 좌표 있는 구간 {{ cv.measured }}/{{ cv.legs_possible }}{% endif %}</span>
+{%- endmacro %}
+
+{#- coursemap(m, title, caption, cls): a course's stops on the map (present.course_map {points, n_geo, n_all}; None
+    when fewer than half of the stops have coordinates — then nothing is drawn). map.js (Kakao Maps, the SDK
+    fetched near the screen after load) numbers the markers as the stop list does and joins them in order by thin
+    straight lines; the box height is set in CSS, so nothing shifts when the map arrives. caption defaults to the
+    factual '경유지 n곳 중 좌표가 있는 m곳 · 순서대로 직선 연결'; the credit is the map's own (Kakao's logo in its
+    corner, once). -#}
+{% macro coursemap(m, title, caption='', cls='') -%}
+{{ mapfig({'course': m.points}, title, 'course-mapfig' ~ (' ' ~ cls if cls else ''), caption or ('경유지 ' ~ m.n_all ~ '곳 중 좌표가 있는 ' ~ m.n_geo ~ '곳 · 순서대로 직선 연결'), false) }}
+{%- endmacro %}
+
+{#- near(items, place): distance-sorted list (place_vm near_sights / near_biz: {name, href, internal, kind, type, m,
+    closed?}); figures right-aligned, tabular; a place's weekly closed day (closed: a key-facts slot) beside its type. -#}
+{% macro near(items, place='') -%}
+<ol class="near">{% for n in items %}<li><a href="{{ n.href }}"{% if not n.internal %} rel="noopener"{% endif %} data-track="{{ {'stay': 'stay_click', 'food': 'food_click'}.get(n.kind, 'nearby_click') }}" data-place="{{ place }}">{{ n.name }}</a><span class="near-t">{{ n.type }}{% if not n.internal %} · 지도 검색{% endif %}{% if n.closed %} · {% if n.closed.closed %}<span class="closed">{{ n.closed.main }}</span>{% else %}{{ n.closed.main }}{% endif %}{% endif %}</span><span class="near-d tn">{{ n.m|pdist }}</span></li>{% endfor %}</ol>
+{%- endmacro %}
+
+{#- mapfig(data, label, cls, caption): a map box (shown only with JS; every map has a text equivalent on its page).
+    data = place_vm.place_points {self, near, anchors[, radius]} | {course: […]} | {list: list_vm.points} |
+    {all, anchor_pts} | {anchors: home_vm.region_map.anchors} | {guide: …, route}. The box names the Kakao Maps SDK
+    it needs (data-kakao-sdk: the build's kakao_sdk global, from site.json kakao_js_key); map.js fetches it near the
+    screen, after load. Without JS the figure is not shown (css/10-base.css) and the page's lists are the answer. -#}
+{% macro mapfig(data, label, cls='', caption='', credit=true) -%}
+<figure class="mapfig{% if cls %} {{ cls }}{% endif %}">
+<div class="map" role="region" aria-label="{{ label }}" data-map="{{ data|tojson_attr }}"{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-lenis-prevent><p class="map-off">지도를 불러오는 중입니다.</p></div>
+<figcaption>{% if caption %}{{ caption }}{% if credit %} · {% endif %}{% endif %}{% if credit %}지도: 카카오맵{% endif %}</figcaption>
+</figure>
+{%- endmacro %}
+
+{#- faq(items, ns): visible Q → A (place_vm.faq_vm {q, a, html, n}; ns = faq_notes). Questions end in ~나요?/~인가요?. -#}
+{% macro faq(items, ns=[]) -%}
+<div class="faq">{% for f in items %}
+<div class="qa"><h3>{{ f.q }}</h3><p>{{ f.html or f.a }}{% if ns|length > 1 %}{{ f.n|csup }}{% endif %}</p></div>
+{% endfor %}</div>
+{{ chnotes(ns) }}
+{%- endmacro %}
+
+{#- Headings. chead(title, hid, link, link_label, note, eyebrow, count, split): a chapter head (h2, 26–40px) with an
+    optional link ›. sec_head(eyebrow, title, hid, link, link_label, note, split): a big section head (.h2, 32–56px)
+    with a grey eyebrow above it — Apple's "eyebrow / headline." pair. split: the masked line rise below the fold
+    (motion.js [data-split]); mk: a phrase of the title under the lime marker (mark). rail(hid, label, nm, block,
+    cls){caller}: a chapter with a sticky label column on
+    desktop ('<nm> label'). -#}
+{% macro chead(title, hid, link='', link_label='', note='', eyebrow='', count=none, split=false) -%}
+<div class="ch-head">{% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}<h2 id="{{ hid }}"{% if split %} data-split{% endif %}>{{ title }}{% if count is not none %} <span class="count tn">{{ count }}</span>{% endif %}</h2>{% if link %}<a class="ch-link" href="{{ link }}">{{ link_label }}<span class="arr" aria-hidden="true">›</span></a>{% endif %}{% if note %}<p class="sh-note">{{ note }}</p>{% endif %}</div>
+{%- endmacro %}
+{% macro sec_head(eyebrow, title, hid, link='', link_label='', note='', split=false, mk='') -%}
+<div class="sh">{% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}<h2 id="{{ hid }}" class="h2"{% if split %} data-split{% endif %}>{{ mark(title, mk) if mk else title }}</h2>{% if link %}<a class="ch-link" href="{{ link }}">{{ link_label }}<span class="arr" aria-hidden="true">›</span></a>{% endif %}{% if note %}<p class="sh-note">{{ note }}</p>{% endif %}</div>
+{%- endmacro %}
+{% macro rail(hid, label, nm='', block='', cls='') -%}
+<section class="wrap chapter ch-rail{% if cls %} {{ cls }}{% endif %}" aria-labelledby="{{ hid }}"{% if block %} data-block="{{ block }}"{% endif %}>
+<h2 id="{{ hid }}" class="rail-label">{% if nm %}<span class="nm">{{ nm }}</span> {% endif %}{{ label }}</h2>
+<div class="rail-body">{{ caller() }}</div>
+</section>
+{%- endmacro %}
+
+{#- opening(title, kicker, lede, count, eyebrow, cls, hid){caller?}: the white page head with the page's H1 (lists,
+    indexes, search, map, about, 404). count: a figure after the title (e.g. '427곳'). cls 'band-s' = the short band
+    of lists. Use {% call ui.opening(…) %}…{% endcall %} to add the band's own content (filters, a search form). -#}
+{% macro opening(title, kicker=[], lede='', count=none, eyebrow='', cls='', hid='') -%}
+<header class="pg-hero{% if cls %} {{ cls }}{% endif %}"><div class="wrap">
+{% if kicker %}{{ kicker_line(kicker) }}{% endif %}{% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
+<h1 class="h-list vt-title"{% if hid %} id="{{ hid }}"{% endif %}>{{ title }}{% if count is not none %} <span class="count tn">{{ count }}</span>{% endif %}</h1>
+{% if lede %}<p class="list-lede">{{ lede }}</p>{% endif %}
+{% if caller is defined %}{{ caller() }}{% endif %}
+</div></header>
+{%- endmacro %}
+
+{#- kicker_line(items): '관광지 · 문화유산' path above an H1 (place_vm.kicker: [(label, href)]; href '' = plain text).
+    crumbs(items): a breadcrumb nav from page.crumbs [(name, url)] (the JSON-LD carries the breadcrumb too). -#}
+{% macro kicker_line(items) -%}
+<p class="kicker">{% for lab, href in items %}{% if href %}<a href="{{ href }}">{{ lab }}</a>{% else %}<span>{{ lab }}</span>{% endif %}{% endfor %}</p>
+{%- endmacro %}
+{% macro crumbs(items) -%}
+{% if items %}<nav class="crumbs" aria-label="현재 위치">{% for name, url in items %}{% if not loop.last %}<a href="{{ url }}">{{ name }}</a><span aria-hidden="true">›</span>{% else %}<span aria-current="page">{{ name }}</span>{% endif %}{% endfor %}</nav>{% endif %}
+{%- endmacro %}
+
+{#- abar(purposes, ev, hid): the home answer bar, inside the first screen at 390 and 1440 — a GET form to /search/
+    (works without JS), the next dated event (present.pick_next_event: chip, dp, title, path | source_url, fee) and
+    the purposes (home_vm.purposes: {key, href, fig, unit, short (desktop), tiny (phones)}; every figure is checked
+    against the guide text at build time). -#}
+{% macro abar(purposes, ev=none, hid='q-home') -%}
+<section class="abar" aria-label="바로 찾기">
+<div class="wrap"><div class="abar-in">
+<div class="abar-top">
+<form class="abar-search" action="/search/" method="get" role="search">
+<label for="{{ hid }}" class="vh">장소·메뉴·동네 찾기</label>
+{{ icon('search', 'abar-ico') }}
+<input id="{{ hid }}" name="q" type="search" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="장소·메뉴·동네 (예: 짬뽕, 선유도)">
+<button type="submit" class="btn">검색</button>
+</form>
+{% if ev %}<a class="abar-ev" href="{{ ev.path or ev.source_url }}"{% if not ev.path %} rel="noopener" data-track="official_click"{% endif %}>
+<span class="chip">{{ ev.chip }}</span>
+{% if ev.dp and ev.dp.a %}<span class="abar-ev-d tn">{{ ev.dp.a.md }}<span class="wdp">({{ ev.dp.a.wd }})</span>{% if ev.dp.b %}–{{ ev.dp.b.md }}<span class="wdp">({{ ev.dp.b.wd }})</span>{% endif %}</span>{% endif %}
+<span class="abar-ev-t">{{ ev.title }}</span>
+{% if ev.fee %}<span class="abar-ev-m">{{ ev.fee }}</span>{% endif %}
+<span class="arr" aria-hidden="true">›</span>
+</a>{% endif %}
+</div>
+{% if purposes %}<ol class="abar-p">{% for a in purposes %}<li><a href="{{ a.href }}"{% if a.track %} data-track="{{ a.track }}"{% endif %}>
+<span class="ap-n"><b class="num tn">{{ a.fig }}</b>{% if a.unit %}<small>{{ a.unit }}</small>{% endif %}</span>
+<span class="ap-k">{{ a.key }}</span>
+<span class="ap-v"><span class="only-wide">{{ a.short }}</span><span class="only-narrow">{{ a.tiny }}</span></span>
+<span class="arr" aria-hidden="true">›</span>
+</a></li>{% endfor %}</ol>{% endif %}
+</div></div>
+</section>
+{%- endmacro %}
+
+{#- showcase(slides, sizes, label, high): the home photo shown like a product shot — a rounded KOGL-1 frame no wider
+    than its 940px source. slides = KOGL-1 present.photo dicts with place / path (home_vm.hero); the caller passes KOGL-1
+    only (they are cropped and pushed in). The first is loaded at once (eager; high=true adds fetchpriority=high for a
+    photo on the first screen — preload it with page.preload — false when it sits below it, as under the home's colour
+    bento); the others load after 'load' and cross-fade OVER it (motion.js hero(); dots follow). The only
+    scroll motion is a push-in of the KOGL-1 photo (1 → 1.06, [data-hero-zoom]). Pause button stops the slide show
+    (WCAG 2.2.2). -#}
+{% macro showcase(slides, sizes='(min-width: 1024px) 880px, calc(100vw - 32px)', label='군산 풍경 사진', high=true) -%}
+{% set slides = slides|selectattr('type', 'equalto', 1)|list %}{# a cropped, zoomed slot takes KOGL-1 only #}
+{% if slides %}
+<section class="op-show" data-hero aria-label="{{ label }}">
+<div class="wrap">
+<div class="op-media">
+{% for ph in slides %}
+<figure class="op-slide{% if loop.first %} is-on{% endif %}" data-slide>
+<div class="op-ph" data-hero-zoom>{{ img(ph, sizes, loop.first, '', not loop.first, loop.first and high) }}</div>
+<figcaption class="op-cap">{% if ph.path %}<a href="{{ ph.path }}">{{ ph.place or ph.name }}</a>{% else %}{{ ph.place or ph.name }}{% endif %} · {{ md.credit(ph) }}</figcaption>
+</figure>
+{% endfor %}
+</div>
+{% if slides|length > 1 %}
+<div class="op-ctl">
+<span class="op-dots" aria-hidden="true">{% for ph in slides %}<i{% if loop.first %} class="is-on"{% endif %} data-dot></i>{% endfor %}<span class="op-count tn"><b data-hero-i>1</b>/{{ slides|length }}</span></span>
+<button type="button" class="op-pause" aria-pressed="false" data-hero-pause><span class="ico" aria-hidden="true"></span><span class="lbl">사진 움직임 멈추기</span></button>
+</div>
+{% endif %}
+</div>
+</section>
+{% endif %}
+{%- endmacro %}
+
+{#- answer(a, q, id): an answer tile — key, one figure the answer itself contains (or one with an explicit label),
+    the answer, a round arrow (present.answer_row: {key, href, answer, closed, fig, unit, fig_label}). q: the
+    guide's question above the answer (guides index). -#}
+{% macro answer(a, q='', id='') -%}
+<li{% if id %} id="{{ id }}"{% endif %}><a class="ans" href="{{ a.href }}">
+<span class="ans-k">{{ a.key }}</span>
+<span class="ans-n">{% if a.fig %}<b class="num tn">{{ a.fig }}</b><small>{{ a.fig_label or a.unit }}</small>{% endif %}</span>
+<span class="ans-v">{% if q %}<span class="ans-q">{{ q }}</span>{% endif %}{{ a.answer }}{% if a.closed %}<span class="ans-closed closed">{{ a.closed }}</span>{% endif %}</span>
+<span class="arr" aria-hidden="true">›</span>
+</a></li>
+{%- endmacro %}
+
+{#- evrow(r): a dated event tile — the date big (r.dp: present.date_parts), the relative chip (present.ranked_events:
+    오늘 · 내일 시작 · n일 뒤 시작 · m월 d일 시작 · 진행 중 · m.d.까지), the name, place · time · fee. Without an
+    event page the tile links to the source. -#}
+{% macro evrow(r) -%}
+<li class="evr"><a href="{{ r.path or r.source_url }}"{% if not r.path %} rel="noopener" data-track="official_click"{% endif %}>
+{% if r.dp and r.dp.a %}<span class="evr-date"><span class="num tn">{{ r.dp.a.md }}</span><span class="wd">{{ r.dp.a.wd }}</span>{% if r.dp.b %}<span class="num dash">–</span><span class="num tn">{{ r.dp.b.md }}</span><span class="wd">{{ r.dp.b.wd }}</span>{% elif r.dp.end_month %}<span class="num dash">–</span><span class="wd wd-m">{{ r.dp.end_month|int }}월</span>{% endif %}</span>{% endif %}
+{% if r.chip %}<span class="evr-chip">{{ r.chip }}</span>{% endif %}
+<span class="evr-name" data-vt>{{ r.title }}</span>
+<span class="evr-meta">{% if r.place %}<span>{{ r.place }}</span>{% endif %}{% if r.time %}<span class="tn">{{ r.time }}</span>{% endif %}{% if r.fee %}<span>{{ r.fee }}</span>{% endif %}</span>
+<span class="arr" aria-hidden="true">›</span>
+</a></li>
+{%- endmacro %}
+
+{#- ticket(r): a dated event as a ticket row (present.event_row: range, title, place, time, fee, path, source,
+    source_url) — date │ name │ place · time · fee ›. Without an event page the row links to the source. -#}
+{% macro ticket(r) -%}
+<li class="ticket"><a href="{{ r.path or r.source_url }}"{% if not r.path %} rel="noopener" data-track="official_click"{% endif %}>
+<span class="tk-date tn">{{ (r.range or r.period_text)|dbr }}</span>
+<span class="tk-name" data-vt>{{ r.title }}</span>
+<span class="tk-meta">{% if r.place %}<span>{{ r.place }}</span>{% endif %}{% if r.time %}<span class="tn">{{ r.time }}</span>{% endif %}{% if r.fee %}<span>{{ r.fee }}</span>{% endif %}{% if not r.path %}<span>{{ r.source }} 원문</span>{% endif %}</span>
+<span class="arr" aria-hidden="true">›</span>
+</a></li>
+{%- endmacro %}
+
+{#- card(c, cls, sizes, track): the one place-card component (home 대표 장소, island gallery, theme rows, near lists).
+    c = present.card_vm(e[, photo]): {e, id, kind, name, path, type, dong, meta, line, photo, kf (key_facts card mode),
+    web, n_courses?}. Photo box 4:3 — KOGL-1 cropped to fill (and drifting in a [data-gal-view] row), KOGL-3 whole
+    in a padded frame, never above its own size — the credit under the photo, the name (a link over the whole card:
+    data-track / data-place), '유형 · 동', the kind's three key-fact rows. No photo: a small type icon. A stay with
+    its own homepage keeps a '숙소 홈페이지' link (stay_click). cls 'pc-row': the compact row variant. -#}
+{% macro card(c, cls='', sizes='(min-width: 1024px) 320px, 300px', track='nearby_click') -%}
+<article class="pc pc-{{ c.kind }}{% if cls %} {{ cls }}{% endif %}{% if not c.photo %} pc-nophoto{% endif %}" data-vt-scope>
+{% if c.photo %}<figure class="pc-ph t{{ c.photo.type }}"><div class="pc-frame"{% if c.photo.type == 1 %} data-drift{% endif %}>{{ img(c.photo, sizes, false) }}</div><figcaption>{{ md.credit(c.photo) }}</figcaption></figure>
+{% else %}<p class="pc-icon">{{ type_icon(c.e) }}</p>{% endif %}
+<div class="pc-body">
+<h3 class="pc-name"><a href="{{ c.path }}" data-vt data-track="{{ track }}" data-place="{{ c.id }}">{{ c.name }}</a></h3>
+<p class="pc-meta">{{ c.type }}{% if c.dong %} · {{ c.dong }}{% endif %}{% if c.n_courses %} · 공식 코스 {{ c.n_courses }}개{% endif %}</p>
+{{ kfrows(c.kf, c.id) }}
+{% if c.web %}<p class="pc-act"><a class="pc-web" href="{{ c.web }}" rel="noopener" data-track="stay_click" data-place="{{ c.id }}">숙소 홈페이지 {{ icon('external', 'icon-sm') }}</a></p>{% endif %}
+</div>
+</article>
+{%- endmacro %}
+
+{#- carnav(what): Apple's gallery controls — two round buttons under a snap row. Markup contract (site.js):
+    <div class="car" data-gallery><div class="car-view" data-gal-view><ol class="car-track">…</ol></div>
+    <div class="car-foot">{{ ui.carnav('장소') }}</div></div>. Buttons are disabled at the ends; without JS hidden. -#}
+{% macro carnav(what='항목') -%}
+<div class="car-nav" data-gal-nav><button type="button" class="gal-btn" data-dir="-1">{{ icon('prev', 'icon') }}<span class="vh">이전 {{ what }}</span></button><button type="button" class="gal-btn" data-dir="1">{{ icon('next', 'icon') }}<span class="vh">다음 {{ what }}</span></button></div>
+{%- endmacro %}
+
+{#- rec(it, kind): a ledger record for lists (present.list_vm item: name, path, type, street, dong, rooms, web,
+    web_text, photo (thumb), slots [key-facts cells: {key, label, main, sub, more, closed, conflict, vals, missing}],
+    tags, region, themes, flags, id). The list markup sets --cols with .kind-<kind> on the ledger; a missing value
+    reads '확인 필요'; a conflict shows both values and one call line. -#}
+{% macro rec(it, kind) -%}
+<li class="rec" data-vt-scope id="{{ it.id }}" data-tags="|{{ it.tags|join('|') }}|" data-region="{{ it.region }}" data-themes="{{ it.themes|join(' ') }}"{% for k, v in it.flags.items() %}{% if v %} data-{{ k }}="1"{% endif %}{% endfor %}>
+<div class="rec-name">
+<a class="rec-link" href="{{ it.path }}" data-vt data-track="{{ {'stay': 'stay_click', 'food': 'food_click'}.get(kind, 'nearby_click') }}" data-place="{{ it.e.id }}">{{ it.name }}</a>
+{% set bits = [] %}{% if it.type %}{% set _ = bits.append(it.type) %}{% endif %}{% if it.street %}{% set _ = bits.append(it.street) %}{% endif %}{% if it.dong %}{% set _ = bits.append(it.dong) %}{% endif %}{% if it.rooms %}{% set _ = bits.append('객실 ' ~ it.rooms ~ ('실' if it.rooms.isdigit() else '')) %}{% endif %}
+<span class="rec-meta">{{ bits|join(' · ') }}</span>
+{% if it.web %}<a class="rec-web" href="{{ it.web }}" rel="noopener" data-track="{{ 'stay_click' if kind == 'stay' else 'official_click' }}" data-place="{{ it.e.id }}">{{ it.web_text }}</a>{% endif %}
+{% if it.photo %}<img class="rec-th t{{ it.photo.type }}" src="{{ it.photo.url }}"{% if it.photo.w and it.photo.h %} width="{{ it.photo.w }}" height="{{ it.photo.h }}"{% endif %} alt="" loading="lazy" decoding="async" data-kogl="{{ it.photo.type }}">{% endif %}
+</div>
+<dl class="rec-cells">{% for c in it.slots %}<div class="c-{{ c.key }}{% if c.conflict %} is-conflict{% endif %}"><dt>{{ c.label }}</dt><dd>{{ kfv(c, '', false, it.e.id) }}</dd></div>{% endfor %}</dl>
+{% if it.slots|selectattr('conflict')|list %}<p class="rec-call">방문 전 전화 확인</p>{% endif %}
+</li>
+{%- endmacro %}
+
+{#- week(W, hid, title): 요일표 — places × 월–일 (present.week_grid), red squares only where the source names a weekly
+    closed day; a contested closed day shows no side. -#}
+{% macro week(W, hid, title) -%}
+<section class="week" aria-labelledby="{{ hid }}">
+<div class="week-head"><h2 id="{{ hid }}" class="h-sec">{{ title }}</h2>
+<p class="week-sum">{% for d, n in W.per_day.items() %}{% if n %}<span class="ws"><i class="sq" aria-hidden="true"></i>{{ d }}요일 <b class="tn">{{ n }}</b>곳</span>{% endif %}{% endfor %}</p></div>
+<div class="week-scroll"><table class="wk">
+<thead><tr><th scope="col" class="wk-name">장소</th>{% for d in '월화수목금토일' %}<th scope="col" class="wk-d">{{ d }}</th>{% endfor %}<th scope="col" class="wk-src">쉬는 날(출처 표기)</th></tr></thead>
+<tbody>
+{% for r in W.rows %}
+<tr><th scope="row" class="wk-name"><a href="{{ r.path }}">{{ r.name }}</a></th>
+{% for c in r.cells %}<td class="wk-d{% if c %} wk-{{ c }}{% endif %}">{% if c == 'closed' %}<i class="sq" aria-hidden="true"></i><span class="vh">{{ '월화수목금토일'[loop.index0] }}요일 휴무</span>{% elif c == 'partial' %}<i class="sq sq-part" aria-hidden="true"></i><span class="vh">일부 주 휴무</span>{% elif c == 'na' %}<span class="vh">자료 없음</span>{% endif %}</td>{% endfor %}
+<td class="wk-src">{% if r.contested %}<span class="flag">출처마다 다름</span> · 방문 전 전화 확인{% elif r.text %}{{ r.text }}{% else %}<span class="muted">자료 없음</span>{% endif %}</td></tr>
+{% endfor %}
+</tbody></table></div>
+<p class="note wk-key"><span><i class="sq" aria-hidden="true"></i>매주 쉬는 요일</span>{% if W.partial %}<span><i class="sq sq-part" aria-hidden="true"></i>격주·특정 주만 쉬는 요일</span>{% endif %}<span>빈칸: 쉬는 날로 적히지 않은 요일</span>{% if W.na %}<span><i class="wk-na-key" aria-hidden="true"></i>쉬는 날 자료가 없거나 출처마다 다른 칸</span>{% endif %}</p>
+</section>
+{%- endmacro %}
+
+{#- video(v, place, linked, eager, tag): a video card — the channel's YouTube thumbnail (stored oEmbed URL, linked,
+    not re-hosted) as a link to YouTube; site.js swaps in a youtube-nocookie player on press, nothing else loads
+    from YouTube before that. linked: places the video shows (entities). tag 'li' inside ul.vids, 'div' elsewhere.
+    Official channels get .is-official (the videos page's '공식 채널만'). Old signature video(v, place_id) kept. -#}
+{% macro video(v, place='', linked=[], eager=false, tag='div') -%}
+<{{ tag }} class="vid{% if v.channel_kind == 'official' %} is-official{% endif %}">
+{% set t = v.thumbnail or {} %}
+{% if v.youtube_id and not v.youtube_id.startswith('SAMPLE') %}
+<div class="vid-box" data-video>
+<a class="vid-play" href="{{ v.url or ('https://www.youtube.com/watch?v=' ~ v.youtube_id) }}" rel="noopener" data-yt="{{ v.youtube_id }}" data-title="{{ v.title }}" data-track="video_click"{% if place %} data-place="{{ place }}"{% endif %}>
+<span class="vid-th">{% if t.url %}<img src="{{ t.url }}"{% if t.url_large %} srcset="{{ t.url }} {{ t.width or 320 }}w, {{ t.url_large }} {{ t.width_large or 480 }}w" sizes="(min-width: 1024px) 30vw, (min-width: 700px) 46vw, 90vw"{% endif %}{% if t.width and t.height %} width="{{ t.width }}" height="{{ t.height }}"{% endif %} alt="" loading="{{ 'eager' if eager else 'lazy' }}"{% if eager %} fetchpriority="high"{% endif %} decoding="async">{% endif %}</span>
+<span class="vid-disc" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg></span>
+<span class="vh">여기서 재생: {{ v.title }}</span>
+</a>
+</div>
+{% endif %}
+<div class="vid-text"><p class="vid-title">{{ v.title }}</p>{% if v.channel %}<p class="vid-meta">{{ v.channel }}{% if v.channel_kind == 'official' %} (공식 채널){% endif %}{% if v.published_date %} · <time datetime="{{ v.published_date }}" class="tn">{{ v.published_date|ko_date }}</time> 게시{% endif %}</p>{% endif %}{% if linked %}<p class="vid-places">관련 장소 {% for x in linked %}<a href="{{ x._path }}">{{ x.name }}</a>{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}</p>{% endif %}{% if v.url %}<a class="vid-link" href="{{ v.url }}" rel="noopener" data-track="video_click"{% if place %} data-place="{{ place }}"{% endif %}>YouTube에서 보기<span class="arr" aria-hidden="true">↗</span></a>{% endif %}</div>
+</{{ tag }}>
+{%- endmacro %}
+
+{#- vrow(v, linked, eager): a compact video row (home topic rows): 16:9 thumbnail, two-line title, channel · date;
+    the whole row links to YouTube (no player here). -#}
+{% macro vrow(v, linked=[], eager=false) -%}
+<li class="vr{% if v.channel_kind == 'official' %} is-official{% endif %}"><a class="vr-a" href="{{ v.url }}" rel="noopener" data-track="video_click">
+{% set t = v.thumbnail or {} %}<span class="vr-th">{% if t.url %}<img src="{{ t.url }}"{% if t.width and t.height %} width="{{ t.width }}" height="{{ t.height }}"{% endif %} alt="" loading="{{ 'eager' if eager else 'lazy' }}" decoding="async">{% endif %}<span class="vid-disc vid-disc-sm" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg></span></span>
+<span class="vr-text"><span class="vr-title">{{ v.title }}</span><span class="vr-meta">{{ v.channel }}{% if v.channel_kind == 'official' %} · 공식{% endif %}{% if v.published_date %} · <time datetime="{{ v.published_date }}" class="tn">{{ v.published_date|short_iso }}</time>{% endif %}</span></span>
+</a>{% if linked %}<p class="vr-places">{% for x in linked %}<a href="{{ x._path }}">{{ x.name }}</a>{% endfor %}</p>{% endif %}</li>
+{%- endmacro %}
+
+{#- vlite(v, linked): the folded-list row (/videos/ "더 보기" parts): a small 320×180 thumbnail (or a grey
+    placeholder), title and channel · 공식 · date, one link to YouTube. No player, nothing loaded before the press. -#}
+{% macro vlite(v, linked=[]) -%}
+{% set t = v.thumbnail or {} %}<li class="vid vl{% if v.channel_kind == 'official' %} is-official{% endif %}"><a class="vl-a" href="{{ v.url }}" rel="noopener" data-track="video_click">{% if t.url %}<img src="{{ t.url }}" width="{{ t.width or 320 }}" height="{{ t.height or 180 }}" alt="" loading="lazy" decoding="async">{% else %}<span class="vl-ph"></span>{% endif %}<span class="vl-t">{{ v.title }}</span><span class="vl-m">{{ v.channel }}{% if v.channel_kind == 'official' %} · 공식{% endif %}{% if v.published_date %} · <time datetime="{{ v.published_date }}" class="tn">{{ v.published_date|short_iso }}</time>{% endif %}</span></a>{% if linked %}<p class="vid-places">관련 장소 {% for x in linked %}<a href="{{ x._path }}">{{ x.name }}</a>{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}</p>{% endif %}</li>
+{%- endmacro %}
+
+{#- search_form(id, value, label, placeholder, live): GET /search/. live=true adds data-search (assets/search.js then
+    fetches /search/index.json and prints results into the page's [data-results] element). -#}
+{% macro search_form(id='q', value='', label='장소 이름, 대표 메뉴, 동 이름, 코스·가이드·행사 이름', placeholder='예: 짬뽕, 철길, 장미동', live=true) -%}
+<form class="search" action="/search/" method="get" role="search"{% if live %} data-search data-index="/search/index.json"{% endif %}>
+<label class="search-l" for="{{ id }}">{{ label }}</label>
+<div class="search-row"><input id="{{ id }}" name="q" type="search" value="{{ value }}" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="{{ placeholder }}"><button type="submit" class="btn">찾기</button></div>
+</form>
+{%- endmacro %}
+
+{#- ---------------------------------------------------------------- accent points (owner, 2026-10-09, after
+    masstige.io; css/45-accent.css). Home pages only, except the lime selected chips (site-wide CSS). The decorative
+    parts are aria-hidden, nothing starts hidden, and every figure is a value the caller computed from the data. -#}
+
+{#- bento(a){caller}: one tile of the home answer bar's colour bento. a = {href, track, fig, unit, key, tone ('lime' |
+    'lav' | 'sky' | 'dark' | '' = Apple grey), icon (a ui.icon name, drawn on the coloured tiles), pill (the black
+    tile's lime label), lead (what the figure counts, printed in front of it), pills (outline pills between the figure
+    and the title from 700px; the fact line takes their place on phones)}; caller() = the one fact line. Big figure +
+    unit top-left, the title, the fact line and a round arrow bottom-right (decorative, drawn by CSS: the whole tile is
+    the link). -#}
+{% macro bento(a) -%}
+<li class="bt bt-{{ a.tone or 'grey' }}"><a href="{{ a.href }}"{% if a.track %} data-track="{{ a.track }}"{% endif %}>
+<span class="ap-n">{% if a.lead %}<small class="ap-l">{{ a.lead }}</small> {% endif %}<b class="num tn">{{ a.fig }}</b>{% if a.unit %}<small>{{ a.unit }}</small>{% endif %}</span>
+{% if a.pill %}<span class="bt-pill">{{ a.pill }}</span>{% elif a.tone and a.icon %}<span class="bt-ico">{{ kpic({'bowl': 'icon-food', 'bed': 'icon-stay', 'map': 'icon-sights', 'route': 'icon-course'}.get(a.icon, 'icon-sights'), a.icon, 48) }}</span>{% endif %}
+{% if a.pills %}<span class="bt-pills">{% for p in a.pills %}<span>{{ p }}</span>{% endfor %}</span>{% endif %}
+<span class="ap-k">{{ a.key }}</span>
+<span class="ap-v">{{ caller() }}</span>
+<span class="bt-go" aria-hidden="true"></span>
+</a></li>
+{%- endmacro %}
+
+{#- mark(text, phrase): the text as it is — the lime marker under the phrase was taken out (owner 2026-10-09: "형광펜
+    밑줄만 촌스러우니까 빼고"); the callers keep naming the phrase so it can come back in one place. -#}
+{% macro mark(text, phrase) -%}
+{{ text }}
+{%- endmacro %}
+
+{#- nums(items, hid, title, note): the big-numerals band. items = [(figure, label, href)] (figures computed by the
+    caller from the data, zero rows left out by the caller): huge bold figures with small grey labels and '›', each a
+    link to its list. note: a line beside the title (the homes pass none: no build date on screen). -#}
+{% macro nums(items, hid, title, note='') -%}
+<section class="nums" aria-labelledby="{{ hid }}">
+<div class="wrap">
+<div class="nums-h"><h2 id="{{ hid }}">{{ title }}</h2>{% if note %}<p>{{ note }}</p>{% endif %}</div>
+<ul class="nums-row n{{ items|length }}">{% for n, label, href in items %}<li><a href="{{ href }}"><b class="num tn">{{ n }}</b><span>{{ label }}<span class="arr" aria-hidden="true">›</span></span></a></li>{% endfor %}</ul>
+</div>
+</section>
+{%- endmacro %}
+
+{#- bigword(word): the black band's oversized word (aria-hidden; at most once per page). The band's lime pill is the
+    section head's eyebrow written as p.eyebrow.pill-l > span (the Korean story, the English courses). -#}
+{% macro bigword(word) -%}
+<p class="dk-word" aria-hidden="true">{{ word }}</p>
+{%- endmacro %}
+
+{#- Guide reading layer (owner 2026-10-09: guide pages were walls of prose). Shared by the Korean and the English
+    guide (en/guide.html.j2 passes its own words and E.kfv).
+    mini(c, kfv_, need_label, track): a mini card (present.mini_card): the licensed thumbnail (KOGL-1 cropped to its
+      square, KOGL-3 whole in a padded frame, never above its own size) or the type icon, the name (its link covers
+      the card), 'type · area', two key-fact chips — values whole (a long one shows its main part and '외'/'more'),
+      a closed day red with its square; with no settled value '확인 필요: …' once.
+    shelf(cards, label, credit, kfv_, need_label, nav, cls, more, nav_js): a row of mini cards that scrolls sideways
+      (snap), the round previous / next buttons (site.js [data-gallery]) and the photo credit line under it. more =
+      {n, text, href}: a last tile pointing to the full list when the row shows only part of it (a hub guide's answer
+      card). nav_js: the buttons are made by site.js ([data-gal-make]; they work only with JS and are hidden without
+      it) — the section rows below the first screen, so a hub guide's HTML does not carry them a dozen times; the
+      foot keeps their height either way (css/72-guide.css).
+    gtoc(sections, label, head): the guide's table of contents — one nav: a row of chips under the answer card on
+      phones and tablets, a sticky side list on wide screens; site.js marks the section being read
+      (aria-current) and tells the map (gs:focus). -#}
+{% macro mini(c, kfv_=none, need_label='확인 필요', track='nearby_click') -%}
+<li class="mc{% if not c.photo %} mc-ic{% endif %}">
+{%- if c.photo %}<span class="mc-th t{{ c.photo.type }}"><img src="{{ c.photo.url }}"{% if c.photo.w and c.photo.h %} width="{{ c.photo.w }}" height="{{ c.photo.h }}"{% endif %} alt="" loading="lazy" data-kogl="{{ c.photo.type }}"></span>{% else %}<span class="type-ico">{{ kpic(KIND_PIC.get(c.icon, 'kind-attraction'), c.icon, 40) }}</span>{% endif -%}
+<p class="mc-nm">{% if c.path %}<a href="{{ c.path }}" data-track="{{ track }}" data-place="{{ c.id }}">{{ c.name }}</a>{% else %}{{ c.name }}{% endif %}</p>
+{%- set meta = [c.type, c.area]|select|list %}{% if meta %}<p class="mc-meta">{{ meta|join(' · ') }}</p>{% endif %}
+{%- if c.chips %}<dl class="mc-kf">{% for s in c.chips %}<div class="mck"><dt>{{ s.label }}</dt><dd>{{ (kfv_ or kfv)(s, '', true, c.id) }}</dd></div>{% endfor %}</dl>
+{%- elif c.need %}<p class="mc-need">{{ need_label }}: {{ c.need|join('·') }}</p>{% endif -%}
+</li>
+{%- endmacro %}
+
+{% macro shelf(cards, label, credit='', kfv_=none, need_label='확인 필요', nav=('이전 장소', '다음 장소'), cls='', more=none, nav_js=false) -%}
+<div class="mcs-box{% if cls %} {{ cls }}{% endif %}" data-gallery>
+<div class="mcs-view" data-gal-view><ol class="mcs" aria-label="{{ label }}">{% for c in cards %}{{ mini(c, kfv_, need_label) }}{% endfor %}
+{%- if more %}<li class="mcs-more"><a href="{{ more.href }}"><span class="mcs-more-n tn">{{ more.n }}</span><span class="mcs-more-t">{{ more.text }}</span></a></li>{% endif %}</ol></div>
+{% if credit or cards|length > 1 %}<div class="mcs-foot">{% if credit %}<p class="mcs-credit">{{ credit }}</p>{% endif %}
+{%- if cards|length > 1 %}{% if nav_js %}<div class="car-nav" data-gal-nav data-gal-make="{{ nav|join('|') }}"></div>{% else %}<div class="car-nav" data-gal-nav><button type="button" class="gal-btn" data-dir="-1">{{ use('prev') }}<span class="vh">{{ nav[0] }}</span></button><button type="button" class="gal-btn" data-dir="1">{{ use('next') }}<span class="vh">{{ nav[1] }}</span></button></div>{% endif %}{% endif %}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- again(cards, label): a section's places that already have their mini card above (the answer card or an earlier
+    section): a one-line row each — the name (its link covers the row) and one short fact of the card (c.brief: the
+    value whole; a long one is left out, the card and the place list have it). Not the whole card again (review
+    2026-10-09: the same card four times on one page). Phones: one row that scrolls sideways; wider: rows that wrap. -#}
+{% macro again(cards, label, track='nearby_click') -%}
+<ul class="mcr" aria-label="{{ label }}">{% for c in cards %}<li>{% if c.path %}<a href="{{ c.path }}" data-track="{{ track }}" data-place="{{ c.id }}">{{ c.name }}</a>{% else %}<b>{{ c.name }}</b>{% endif %}
+{%- if c.brief %}<span class="mcr-kf"><span class="mcr-l">{{ c.brief.label }}</span> <span class="kf-main tn{% if c.brief.closed %} closed{% endif %}">{{ c.brief.main|nwt }}</span></span>{% endif %}</li>{% endfor %}</ul>
+{%- endmacro %}
+
+{% macro gtoc(sections, label='이 가이드의 차례', head='차례') -%}
+<nav class="gd-toc" aria-label="{{ label }}" data-toc>
+<p class="gd-toc-h" aria-hidden="true">{{ head }}</p>
+<ol class="gd-toc-l">{% for s in sections %}<li><a href="#{{ s.id }}" data-toc-link="{{ s.id }}"><span class="toc-n tn">{{ '%02d'|format(s.n) }}</span><span class="toc-t">{{ s.heading }}</span></a></li>{% endfor %}</ol>
+</nav>
+{%- endmacro %}

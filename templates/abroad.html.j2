@@ -1,0 +1,51 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- /abroad/ 해외에서 본 군산 (owner 2026-10-13): foreign press (outlet · date, the headline as a link, our one-line
+    note, the highlight's verbatim passage of the original when it has one (owner 2026-10-14), the outlet's own preview
+    picture beside it when there is one), YouTube videos in other languages (the
+    /videos/ facade cards) and social posts (a card; the official embed loads when it nears the screen). Nothing from
+    the articles or posts is copied onto our server. Beside each group heading (and the foreign-language videos') its AI
+    art (abroad.group.<press|official|travel|blog|research|videos>; lazy). -#}
+{% import "_p1.html.j2" as p1 %}
+{% import "_abroad.html.j2" as ab %}
+{% import "_abroad_hl.html.j2" as hlm %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-abroad{% endblock %}
+{% block head %}{% if abroad_videos %}<link rel="preconnect" href="https://i.ytimg.com">{% endif %}{% endblock %}
+{% block content %}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('list.head.abroad')) }}
+  <div class="wrap">
+    <h1 id="h-list" class="h-list">해외에서 본 {{ site.region }}</h1>
+    <p class="lede">외신·해외 매체 기사{% if posts %}와 SNS 게시물이{% else %}가{% endif %} {{ site.region }}의 어디를 다뤘는지 우리가 한 줄로 정리하고, 원문으로 연결합니다. 외국어로 만든 {{ site.region }} 여행 영상도 함께 모았습니다.</p>
+    {% if highlights %}{{ hlm.row(highlights, site.region) }}{% endif %}
+    <nav class="v-nav" aria-label="이 페이지의 묶음">{% for g in article_groups %}<a href="#{{ g.id }}">{{ g.title }} <span class="tn">{{ g['items']|length }}</span></a>{% endfor %}{% if abroad_videos %}<a href="#ab-video">외국어 영상 <span class="tn">{{ abroad_videos|length }}</span></a>{% endif %}{% if posts %}<a href="#ab-sns">SNS <span class="tn">{{ posts|length }}</span></a>{% endif %}</nav>
+  </div>
+</section>
+<div class="wrap ab-wrap">
+  {% if articles %}
+  <section class="ab-sec" id="ab-articles" aria-labelledby="ab-articles-h">
+    <h2 id="ab-articles-h" class="ab-h">외신·해외 매체 <span class="tn">{{ articles|length }}</span></h2>
+    {% for g in article_groups %}
+    {%+ call artm.beside((art_slots or {}).get('abroad.group.' ~ g['key'])) %}<h3 class="ab-sub" id="{{ g.id }}">{{ g.title }} <span class="tn">{{ g['items']|length }}</span></h3>{% endcall +%}
+    {#- photo cards first, then text cards, and within each the cards with a quotation first — each newest first — so the
+        grid's rows stay even (a quotation makes a card taller; mixed in a row it left tall gaps in its neighbours) #}
+    {% set with_img = g['items']|selectattr('image')|list %}{% set no_img = g['items']|rejectattr('image')|list %}
+    <ul class="ab-list ab-grid">{% for a in (with_img|selectattr('_quote')|list) + (with_img|rejectattr('_quote')|list) + (no_img|selectattr('_quote')|list) + (no_img|rejectattr('_quote')|list) %}{{ ab.article(a) }}{% endfor %}</ul>
+    {% endfor %}
+  </section>
+  {% endif %}
+  {% if abroad_videos %}
+  <section class="ab-sec cv" id="ab-video" aria-labelledby="ab-video-h" data-videos>
+    {%+ call artm.beside((art_slots or {}).get('abroad.group.videos')) %}<h2 id="ab-video-h" class="ab-h">외국어로 소개된 {{ site.region }} 영상 <span class="tn">{{ abroad_videos|length }}</span></h2>{% endcall +%}
+    <ul class="vids vids-4">{{ p1.vgrid(abroad_videos, places) }}</ul>
+  </section>
+  {% endif %}
+  {% if posts %}
+  <section class="ab-sec cv" id="ab-sns" aria-labelledby="ab-sns-h">
+    <h2 id="ab-sns-h" class="ab-h">SNS 게시물 <span class="tn">{{ posts|length }}</span></h2>
+    <ul class="ab-list ab-posts">{% for a in posts %}{{ ab.post(a) }}{% endfor %}</ul>
+  </section>
+  {% endif %}
+  <p class="note ab-src-note">기사와 게시물의 글·사진은 각 매체와 작성자의 것입니다. 한 줄 소개는 우리가 쓴 문장이고, 제목과 인용문은 원문 그대로입니다. 인용문은 원문의 짧은 한두 문장을 번역하지 않고 원문 언어로 옮긴 것으로, 매체·필자와 원문 링크를 함께 답니다. 기사 화면은 옮겨 싣지 않습니다. 기사 옆 사진은 각 매체가 링크 미리보기용으로 공개한 대표 이미지를 매체 주소에서 그대로 불러온 것입니다.{% if posts %} SNS 게시물은 화면에 가까워지면 해당 서비스의 공식 임베드로 불러옵니다.{% endif %}{% if abroad_videos %} 영상·썸네일: 각 채널의 YouTube.{% endif %}{% if highlights %} 하이라이트는 원문을 직접 열어 {{ site.region|josa('이나/나') }} {{ site.region }}의 장소를 좋게 평가한 대목을 확인한 글만 골랐습니다.{% endif %}</p>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{#- _p2.html.j2 — markup used only by the team-p2 page templates (home, course, courses, guide, guides, events, event,
+    about, 404). The shared macros stay in _ui.html.j2; a macro here exists because a page needs a variant the
+    shared one does not offer. {% import "_p2.html.j2" as p2 %}
+
+    Macros (inputs → output):
+      abar(purposes, ev, hid, placeholder, search, hints)   the home answer bar (ui.abar with the owner's search
+                                      examples, OWNER_DECISIONS 2026-10-08, as links under the field, and without the
+                                      search form when the build has no /search/ page)
+      vtopic(r)                       home video row: the topic (its own /videos/<topic>/ page) above its top video
+      src(name, url, checked)         a source name, linked when it has a URL (official_click); `checked` (확인일)
+                                      is accepted and not shown (operator decision 2026-10-09: no visible check dates)
+      period(x)                       an event record's period with <time datetime> (present.ev_period wording)
+      answer(a, q, id, track)         ui.answer with data-track on the link (guide_click / course_click)
+      sec_head(…, track)              ui.sec_head with data-track on its '… 모두 ›' link -#}
+
+{% import "_ui.html.j2" as ui %}
+
+{#- answer(a, q, id, track): ui.answer's tile with the link's data-track — guide_click for a guide, course_click for
+    the courses (the round-2 guide cards and purposes carried it); track='' leaves it out. -#}
+{% macro answer(a, q='', id='', track=none) -%}
+{% set tr = track if track is not none else ('guide_click' if a.href.startswith('/guides/') else ('course_click' if a.href.startswith('/courses/') else '')) %}
+<li{% if id %} id="{{ id }}"{% endif %}><a class="ans" href="{{ a.href }}"{% if tr %} data-track="{{ tr }}"{% endif %}>
+<span class="ans-k">{{ a.key }}</span>
+<span class="ans-n">{% if a.fig %}<b class="num tn">{{ a.fig }}</b><small>{{ a.fig_label or a.unit }}</small>{% endif %}</span>
+<span class="ans-v">{% if q %}<span class="ans-q">{{ q }}</span>{% endif %}{{ a.answer }}{% if a.closed %}<span class="ans-closed closed">{{ a.closed }}</span>{% endif %}</span>
+<span class="arr" aria-hidden="true">›</span>
+</a></li>
+{%- endmacro %}
+
+{#- dotwrap(t): a '·' list that may wrap only after a dot, never before it (Korean lines otherwise break before '·'). -#}
+{% macro dotwrap(t) -%}
+{% for w in (t or '').split('·') %}<span class="nw">{{ w }}{{ '·' if not loop.last }}</span>{% if not loop.last %}<wbr>{% endif %}{% endfor %}
+{%- endmacro %}
+
+{#- abar: see ui.abar for the parts. placeholder: the field's own words; hints: the owner's examples (짬뽕, 선유도,
+    주차), printed as /search/?q= links under the field so a phone never cuts them off; search=false leaves the form
+    out (no /search/ page is built without places). Purpose tiles: the colour bento (ui.bento, 45-accent.css) — the
+    three hub guides on lime · lavender · sky, 당일 as the black tile, the rest Apple grey; figure + unit, the
+    purpose, the short answer (desktop) or the tiny one (phones), a round arrow. A tile with pills (맛집: 짬뽕 요리 20곳 then
+    게장 · 아귀 · 떡갈비 as pills) shows the pills from 700px and the tiny line on phones. -#}
+{% macro abar(purposes, ev=none, hid='q-home', placeholder='무엇이든 찾아보세요', search=true, hints=('짬뽕', '선유도', '주차')) -%}
+<section class="abar" aria-label="바로 찾기">
+<div class="wrap"><div class="abar-in">
+{% if search or ev %}<div class="abar-top{% if not (search and ev) %} abar-one{% endif %}">
+{% if search %}<div class="abar-sw"><form class="abar-search" action="/search/" method="get" role="search">
+<label for="{{ hid }}" class="vh">장소·메뉴·동네 찾기</label>
+{{ ui.icon('search', 'abar-ico') }}
+<input id="{{ hid }}" name="q" type="search" autocomplete="off" enterkeyhint="search" spellcheck="false" placeholder="{{ placeholder }}">
+<button type="submit" class="btn">검색</button>
+</form>
+{% if hints %}<p class="abar-q"><span class="vh">예: </span>{% for w in hints %}<a href="/search/?q={{ w|urlencode }}">{{ w }}</a>{% endfor %}</p>{% endif %}</div>{% endif %}
+{% if ev %}<a class="abar-ev" href="{{ ev.path or ev.source_url }}"{% if not ev.path %} rel="noopener" data-track="official_click"{% endif %}>
+<span class="chip">{{ ev.chip }}</span>
+{% if ev.dp and ev.dp.a %}<span class="abar-ev-d tn">{{ ev.dp.a.md }}<span class="wdp">({{ ev.dp.a.wd }})</span>{% if ev.dp.b %}–{{ ev.dp.b.md }}<span class="wdp">({{ ev.dp.b.wd }})</span>{% endif %}</span>{% endif %}
+<span class="abar-ev-t">{{ ev.title }}</span>
+{% if ev.fee %}<span class="abar-ev-m">{{ ev.fee }}</span>{% endif %}
+<span class="arr" aria-hidden="true">›</span>
+</a>{% endif %}
+</div>{% endif %}
+{% if purposes %}<ol class="abar-p bento n{{ purposes|length }}">{% for a in purposes %}{% call ui.bento(a) %}{% if a.pills %}{{ dotwrap(a.tiny) }}{% else %}<span class="only-wide">{{ a.short }}</span><span class="only-narrow">{{ dotwrap(a.tiny) }}</span>{% endif %}{% endcall %}{% endfor %}</ol>{% endif %}
+</div></div>
+</section>
+{%- endmacro %}
+
+{#- vtopic(r): r = home_vm vrows item {topic, n, v, path, id}. The topic links to its page; the row links to YouTube
+    (no player here, nothing requested from YouTube but the stored thumbnail). -#}
+{% macro vtopic(r) -%}
+{% set v = r.v %}{% set t = v.thumbnail or {} %}
+<li class="vr{% if v.channel_kind == 'official' %} is-official{% endif %}"><p class="vr-topic"><a href="{{ r.path or ('/videos/#' ~ r.id) }}">{{ r.topic }} <span class="tn">{{ r.n }}편</span></a></p>
+<a class="vr-a" href="{{ v.url }}" rel="noopener" data-track="video_click"><span class="vr-th">{% if t.url %}<img src="{{ t.url }}" width="{{ t.width or 320 }}" height="{{ t.height or 180 }}" alt="" loading="lazy" decoding="async">{% endif %}<span class="vid-disc vid-disc-sm" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg></span></span><span class="vr-text"><span class="vr-title">{{ v.title }}</span><span class="vr-meta">{{ v.channel }}{% if v.channel_kind == 'official' %} · 공식{% endif %}{% if v.published_date %} · <time datetime="{{ v.published_date }}" class="tn">{{ v.published_date|short_iso }}</time>{% endif %}</span></span></a></li>
+{%- endmacro %}
+
+{#- src(name, url, checked): '군산시 보도자료'; the name links to the source when it has a URL. The 확인일 stays in
+    the data and JSON-LD, never on the page (operator decision 2026-10-09). -#}
+{% macro src(name, url='', checked='') -%}
+{% if url %}<a href="{{ url }}" rel="noopener" data-track="official_click">{{ name or '주최 측 안내' }}</a>{% else %}{{ name or '-' }}{% endif %}
+{%- endmacro %}
+
+{#- period(x, sep): an event record's period — '2026년 10월 9일(금)–10월 11일(일)' with <time>, '–10월' when the
+    source gives only an end month, else the source's own period text. sep '~' gives the wording of the page's answer
+    line and meta description (build.event_answer). -#}
+{% macro period(x, sep="–") -%}
+{% if x.start_date %}<time datetime="{{ x.start_date }}">{{ x.start_date|ko_date }}</time>{% if x.end_date and x.end_date != x.start_date %}{{ sep }}<time datetime="{{ x.end_date }}">{{ x.end_date|ko_date(x.end_date[:4] != x.start_date[:4]) }}</time>{% elif not x.end_date and x.end_month %}{{ sep }}{% if x.end_month[:4] != x.start_date[:4] %}{{ x.end_month[:4] }}년 {% endif %}{{ x.end_month[5:7]|int }}월{% endif %}{% else %}{{ x.period_text|squash }}{% endif %}
+{%- endmacro %}
+
+{#- sec_head(eyebrow, title, hid, link, link_label, note, split, track): ui.sec_head with data-track on its '… 모두 ›'
+    link (course_click for /courses/, as the round-2 home's course links carried it). -#}
+{% macro sec_head(eyebrow, title, hid, link='', link_label='', note='', split=false, track='') -%}
+<div class="sh">{% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}<h2 id="{{ hid }}" class="h2"{% if split %} data-split{% endif %}>{{ title }}</h2>{% if link %}<a class="ch-link" href="{{ link }}"{% if track %} data-track="{{ track }}"{% endif %}>{{ link_label }}<span class="arr" aria-hidden="true">›</span></a>{% endif %}{% if note %}<p class="sh-note">{{ note }}</p>{% endif %}</div>
+{%- endmacro %}

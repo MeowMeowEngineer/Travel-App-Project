@@ -1,0 +1,26 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- <home>courses/ of every version but Korean: the official courses grouped by length (day trip, 1 night 2 days, 2 nights 3 days, the rest); each
+    row: the name, the first stops in order (ui.stoprow), the number of stops and the straight-line sum. -#}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-courses{% endblock %}
+{% block content %}
+<header class="pg-hero">{{ artm.band((art_slots or {}).get('list.head.courses'), loc.code) }}<div class="wrap">
+<h1 class="h-list vt-title">{{ t.f('courses_h1', r=region) }} <span class="count tn">{{ groups|sum(attribute='courses', start=[])|length }}</span></h1>
+<p class="list-lede">{{ t.courses_lede }}</p>
+</div></header>
+{% for g in groups %}
+<section class="wrap chapter" aria-labelledby="{{ g.id }}" id="{{ g.id }}-sec">
+  <div class="ch-head"><h2 id="{{ g.id }}">{{ g.title }} <span class="count tn">{{ g.courses|length }}</span></h2></div>
+  <ol class="lines lines-nodur">
+    {% for C in g.courses %}
+    <li class="line-row">
+      <a class="line-name" href="{{ C.x.path }}" data-track="course_click">{{ C.name }}</a>
+      {{ ui.stoprow(C.stops, t.s('stops_of', name=C.name), t.printf('plus_more')) }}
+      <span class="line-meta tn">{{ t.n('n_stops', C.n_places) }}{% if C.complete and C.measured %} · {{ t.f('straight_line', d=loc.dist(C.total)) }}{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endfor %}
+{% endblock %}

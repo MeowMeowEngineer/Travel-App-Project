@@ -1,0 +1,81 @@
+{% extends "base.html.j2" %}
+{#- The official course page of every version but Korean: the name, figures (stops · straight-line sum when every leg is measured · start → end),
+    directions to the first stop with coordinates (Google Maps), the summary, the stops in order (each with its
+    key facts and a link to its English page) beside the map, and the source. C = pipeline/en_site.Site.course_vm.
+    Above the head's text the course's AI art band (course.banner.<course id>) in the version's language. -#}
+{% import "en/_en.html.j2" as E with context %}
+{% import "_art.html.j2" as artm %}
+{% block bodyclass %}pg-course{% endblock %}
+{% block main_class %}{% endblock %}
+{% block lnav %}
+{{ ui.lnav(C.name, [(t.s('sec_stops'), '#stops'), (t.s('sec_sources'), '#h-src')], {'url': '#stops', 'label': t.s('sec_stops')}, t.s('jump_course')) }}
+{% endblock %}
+{% block content %}
+{% set fr = C.first_route %}
+<article class="course" data-record="course:{{ C.c.id }}">
+  <header class="pg-hero co-head">{{ artm.band((art_slots or {}).get('course.banner.' ~ C.c.id), loc.code) }}
+    <div class="wrap co-hero">
+      <div class="co-hero-text">
+        <p class="kicker"><a href="{{ loc.home }}courses/" data-track="course_click">{{ t.courses }}</a>{% if C.duration or C.group %}<span>{{ C.duration or C.group }}</span>{% endif %}{% if C.orig_url %}<a href="{{ C.orig_url }}" rel="noopener" data-track="official_click">{{ t.f('official_course_of', name=C.orig_name) }}</a>{% else %}<span>{{ t.f('official_course_of', name=C.orig_name) }}</span>{% endif %}</p>
+        <h1 class="d1 vt-title">{{ C.name }}</h1>
+        <dl class="datarow">
+          <div><dt>{{ t.sec_stops }}</dt><dd class="tn">{{ C.n_places }}</dd></div>
+          {% if C.complete and C.measured %}<div><dt>{{ t.straight_total }}</dt><dd class="tn">{{ loc.dist(C.total) }}</dd></div>
+          {% elif C.legs_possible %}<div><dt>{{ t.legs_coords }}</dt><dd class="tn">{{ C.measured }}/{{ C.legs_possible }}</dd></div>{% endif %}
+          {% if C.first %}<div class="dr-wide"><dt>{{ t.start_end }}</dt><dd>{{ C.first }} → {{ C.last }}</dd></div>{% endif %}
+        </dl>
+        <div class="route route-co" data-route>
+          <h2 id="h-dir" class="vh">{{ t.f('how_to_get', name=C.name) }}</h2>
+          <div class="route-row">{% if fr %}<a class="btn btn-go" data-primary href="{{ fr.url }}" rel="noopener" data-track="route_click" data-provider="google_route" data-place="{{ fr.place }}">{% set nb %}<span class="tn">{{ fr.n }}</span>{% endset %}<span>{{ t.f('directions_to_stop', n=nb) }}</span><span class="arr" aria-hidden="true">›</span></a>{% endif %}<a class="btn btn-ol" href="#stops">{{ t.sec_stops }}</a></div>
+        </div>
+        {% if C.summary %}<p class="lede" data-block="summary">{{ C.summary }}</p>{% endif %}
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap co-grid en-co-grid{% if not C.map %} no-map{% endif %}">
+    <section class="p2-stops" aria-labelledby="h-stops">
+    <h2 id="h-stops" class="h-sec">{{ t.n('stops_in_order', C.n_places) }}</h2>
+    <ol class="stops en-stops" id="stops">
+      {% for s in C.rows %}
+      {% if s.sep %}
+      <li class="stop-sep"><span class="sep-k">{{ s.kind_label }}</span><span class="sep-v">{{ s.name }}{% if s.note %} · {{ s.note }}{% endif %}</span></li>
+      {% else %}
+      <li class="stop" id="s{{ s.n }}" data-vt-scope>
+        <p class="en-stop-h"><span class="code tn">{{ s.n }}</span><span class="en-stop-nm">{% if s.path %}<a href="{{ s.path }}" data-track="nearby_click" data-place="{{ s.t.id }}">{{ s.name }}</a>{% else %}{{ s.name }}{% endif %}</span>{% if s.next_m is not none and not loop.last %}<span class="en-stop-d tn">{{ t.f('next_stop', d=loc.dist(s.next_m)) }}</span>{% endif %}</p>
+        {% if s.p %}
+        <div class="stop-body{% if s.photo %} has-ph{% endif %}">
+          {% if s.photo %}{{ E.figure(s.photo, s.place_name, 0, 0, 'stop-ph', false, '(min-width: 1024px) 26vw, 100vw', true, false) }}{% endif %}
+          <div class="stop-text">
+            {% set meta = [s.type, s.area]|select|list %}{% if meta %}<p class="stop-line">{{ meta|join(' · ') }}</p>{% endif %}
+            {% if s.kf %}{{ E.kfrows(s.kf, s.t.id) }}{% endif %}
+            {% if s.note %}<p class="stop-note">{{ s.note }}</p>{% endif %}
+            <p class="stop-go"><a href="{{ s.path }}" data-track="nearby_click" data-place="{{ s.t.id }}">{{ t.f('visit_info_for', name=s.place_name) }}<span class="arr" aria-hidden="true">›</span></a></p>
+          </div>
+        </div>
+        {% elif s.note %}<p class="stop-note">{{ s.note }}</p>
+        {% endif %}
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ol>
+    </section>
+
+    {% if C.map %}
+    <aside class="co-map" aria-label="{{ t.course_map }}">
+      {{ E.mapfig({'course': C.map.points}, t.s('map_of_stops', name=C.name), 'course-mapfig', t.sn('course_map_caption', C.n_places, a=C.map.n_geo, b=C.n_places), false) }}
+    </aside>
+    {% endif %}
+  </div>
+
+  <section class="wrap chapter ch-rail ch-src" aria-labelledby="h-src">
+    <h2 id="h-src" class="rail-label">{{ t.sec_sources }}</h2>
+    <div class="rail-body">
+      <dl class="src-dl">
+        <div><dt>{{ t.course_source }}</dt><dd>{% if C.orig_url %}<a href="{{ C.orig_url }}" rel="noopener" data-track="official_click">{{ t.f('in_korean_paren', name=C.orig_name) }}</a>{% else %}{{ C.orig_name }}{% endif %}</dd></div>
+        {% if C.legs_possible %}<div><dt>{{ t.distances }}</dt><dd>{{ t.n('legs_measured', C.legs_possible, a=C.measured, b=C.legs_possible) }}</dd></div>{% endif %}
+      </dl>
+    </div>
+  </section>
+</article>
+{% endblock %}

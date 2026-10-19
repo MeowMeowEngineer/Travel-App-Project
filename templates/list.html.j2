@@ -1,0 +1,97 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{#- List pages /places/ /stays/ /food/ and the theme pages (theme.html.j2 extends this one). Everything comes from
+    L = pipeline/present.list_vm(S, kind[, theme]): records grouped by 권역, each with the kind's four key-fact cells
+    (KF_LIST_COLS — the same slots as the place page's spec tiles, '확인 필요' in place, both values of a conflict).
+    The header band: the list's AI art (list.head.<list>) or, on a theme page, the theme's (theme.head.<slug>).
+    A short band: the title with its count (the query words of LISTS[kind].h1 when the pipeline sets them) and, on
+    desktop, the count per 권역 as links. The filter bar is laid out from the first paint with JS (css 70-p1) and
+    absent without it (the `hidden` attribute; site.js removes it); without JS the grouped list is the answer.
+    Map: beside the list on desktop (folded when fewer than 30% of the records have coordinates, CLAUDE.md 7),
+    behind the 목록 | 지도 switch on phones. -#}
+{% import "_p1.html.j2" as p1 %}
+{% set track = {'stay': 'stay_click', 'food': 'food_click'}.get(L.kind, 'nearby_click') %}
+{% set words = L.title if L.theme else (cfg.h1 if cfg is defined and cfg.h1 else L.title) %}
+{% set label = (site.region ~ ' ' ~ L.title) if not L.theme else L.title %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-list kind-{{ L.kind }}{% if L.theme %} pg-theme{% endif %}{% endblock %}
+{% block content %}
+<section class="pg-hero band-s list-head" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('theme.head.' ~ L.theme.slug) if L.theme else (art_slots or {}).get('list.head.' ~ {'attraction': 'places', 'food': 'food', 'stay': 'stays'}.get(L.kind, ''))) }}
+  <div class="wrap band-grid">
+    <div>
+      {#- I19: the mascot beside the head of the food list and of the islands theme (icon_audit; 96–120px, the band
+          picture above stays) -#}
+      {% set hm = {'islands-sea': 'mascot-wave-boat'}.get(L.theme.slug) if L.theme else {'food': 'mascot-eat'}.get(L.kind) %}{% if hm %}<span class="hd-mascot">{{ ui.kpic(hm, 'pin', 104) }}</span>{% endif %}
+      {% if L.theme %}{% set tg = {'modern-history': 'building', 'islands-sea': 'wave', 'parks-nature': 'tree', 'alleys-culture': 'lamp'} %}{% if L.theme.slug in tg %}<p class="hd-pic">{{ ui.kpic('theme-' ~ L.theme.slug, tg[L.theme.slug], 64) }}</p>{% endif %}<p class="kicker"><a href="/places/">관광지</a><span>테마</span></p>{% endif %}
+      <h1 id="h-list" class="h-list">{% if L.theme %}{{ L.title }}{% else %}{{ site.region }} {% for w in words.split("·") %}<span class="nw">{{ w }}{{ "·" if not loop.last }}</span>{% if not loop.last %}<wbr>{% endif %}{% endfor %}{% endif %} <span class="count tn">{{ L.count }}곳</span></h1>
+      <p class="list-lede">{% if L.theme and L.theme.description %}{{ L.theme.description }}{% else %}{% for k, lab in L.slot_cols %}{{ lab }}{% if not loop.last %} · {% endif %}{% endfor %}{% endif %}</p>
+      {% if hub and not L.theme %}<p class="list-hub"><a href="{{ hub.path }}" data-track="guide_click">{{ hub.label }}<span class="arr" aria-hidden="true">›</span></a></p>{% endif %}
+    </div>
+    {% if L.regions|length > 1 %}<ol class="band-data only-wide" aria-label="권역별">{% for r, n in L.regions %}<li><a href="#g-{{ r|frag }}"><b class="num tn">{{ n }}</b><span>{{ r }}</span></a></li>{% endfor %}</ol>{% endif %}
+  </div>
+</section>
+
+{% if L.count %}
+<div class="wrap list-grid{% if not L.map_open %} map-folded{% endif %}">
+  <div class="list-main">
+    <div class="filters" data-filters hidden>
+      <div class="f-top">
+        {% if L.types|length > 1 %}
+        <div class="f-row f-types" role="group" aria-label="유형">
+          <button type="button" data-f="type" data-v="" aria-pressed="true">전체 <span class="tn">{{ L.count }}</span></button>
+          {% for t, n in L.types %}<button type="button" data-f="type" data-v="{{ t }}" aria-pressed="false">{{ t }} <span class="tn">{{ n }}</span></button>{% endfor %}
+        </div>
+        {% endif %}
+        <div class="f-tools">
+          <p class="f-result" aria-live="polite"><span data-result>{{ L.title }} {{ L.count }}곳</span></p>
+          <button type="button" class="f-more" aria-expanded="false" aria-controls="f-panel" data-f-more>필터<span class="f-badge tn" data-f-badge hidden></span></button>
+          {% if L.n_geo %}<div class="seg" role="group" aria-label="보기"><button type="button" data-view="list" aria-pressed="true">목록</button><button type="button" data-view="map" aria-pressed="false">지도 <span class="tn">{{ L.n_geo }}</span></button></div>{% endif %}
+        </div>
+      </div>
+      <div class="f-panel" id="f-panel" data-f-panel hidden>
+        {% if L.regions|length > 1 %}
+        <div class="f-row" role="group" aria-label="권역">
+          <button type="button" data-f="region" data-v="" aria-pressed="true">모든 권역</button>
+          {% for r, n in L.regions %}<button type="button" data-f="region" data-v="{{ r }}" aria-pressed="false">{{ r }} <span class="tn">{{ n }}</span></button>{% endfor %}
+        </div>
+        {% endif %}
+        {% if L.themes %}
+        <div class="f-row" role="group" aria-label="테마">
+          <button type="button" data-f="theme" data-v="" aria-pressed="true">모든 테마</button>
+          {% for s, name, n in L.themes %}<button type="button" data-f="theme" data-v="{{ s }}" aria-pressed="false">{{ name }} <span class="tn">{{ n }}</span></button>{% endfor %}
+        </div>
+        {% endif %}
+        <label class="f-check"><input type="checkbox" data-f="check" value="{{ L.check[0] }}"> {{ L.check[1] }} <span class="tn">{{ L.check[2] }}</span></label>
+      </div>
+    </div>
+
+    <div class="ledger" data-ledger>
+      <div class="lg-head" aria-hidden="true"><span>{{ L.title }}</span>{% for k, lab in L.slot_cols %}<span>{{ lab }}</span>{% endfor %}</div>
+      {% for g in L.groups %}
+      <section class="lg-group{% if not loop.first %} cv{% endif %}" id="{{ g.id }}" aria-labelledby="{{ g.id }}-h">
+        <h2 class="lg-g" id="{{ g.id }}-h">{{ g.name }} <span class="tn">{{ g.recs|length }}곳</span></h2>
+        <ol class="recs">{% for it in g.recs %}{{ p1.rec(it, L.kind) }}{% endfor %}</ol>
+      </section>
+      {% endfor %}
+      <p class="empty" data-empty hidden>조건에 맞는 곳이 없습니다. 필터를 바꿔 보세요.</p>
+    </div>
+    {% if L.n_photo %}{% set lics = [] %}{% for g in L.groups %}{% for it in g.recs %}{% if it.photo and it.photo.type not in lics %}{% set _ = lics.append(it.photo.type) %}{% endif %}{% endfor %}{% endfor %}
+    <p class="note list-foot">사진 출처: 한국관광공사 · 공공누리 제{{ lics|sort|join('·') }}유형</p>{% endif %}
+    {{ p1.dzsrc(L.dz_sources) }}
+  </div>
+  {% if L.n_geo %}
+  <aside class="list-map" id="list-map" aria-label="{{ L.title }} 지도">
+    {% if L.map_open %}
+    {{ p1.placemap({'list': L.points}, label ~ ' 지도', 'list-mapfig', '좌표가 있는 ' ~ L.n_geo ~ '곳만 표시') }}
+    {% else %}
+    <details class="map-fold"><summary>지도 보기 <span class="muted">좌표가 있는 {{ L.n_geo }}곳만 표시</span></summary>
+    {{ p1.placemap({'list': L.points}, label ~ ' 지도', 'list-mapfig', '좌표가 있는 ' ~ L.n_geo ~ '곳만 표시') }}
+    </details>
+    {% endif %}
+  </aside>
+  {% endif %}
+</div>
+{% else %}
+<div class="wrap list-empty"><p class="empty">방문 정보를 확인한 곳부터 안내합니다. 지금은 출처 사이트에서 확인하세요.</p><p><a href="{{ site.source.url }}" rel="noopener" data-track="official_click">{{ site.source.name }}에서 확인 {{ ui.icon('external', 'icon-sm') }}</a></p></div>
+{% endif %}
+{% endblock %}

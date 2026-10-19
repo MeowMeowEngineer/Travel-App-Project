@@ -1,0 +1,18 @@
+{#- _lang.html.j2 — the language menu in the global bar of every page (Korean and every other version;
+    pipeline/en_site.Intl.menu builds `langs` = [{code, hreflang, label, href, current}] in menu order: 한국어 · English ·
+    日本語 · 中文(简体) · 中文(繁體) · Deutsch · Français · Español · Русский, only the versions this build has). A build with
+    Korean alone has no menu (no hreflang, no language link anywhere).
+    menu(langs, label): a <details>/<summary> — opens and closes without JavaScript (site.js only closes it on an
+      outside click, a followed link or Escape: details[data-langmenu]); the summary is a 44px target with a globe
+      icon and the current version's name (phones: the icon, the name stays for screen readers; label = the word
+      'Language' in the page's language, read before it). Each item links that version's counterpart of this page,
+      else its home, and is marked with lang and hreflang (the name written in its own language, like Korea's
+      official tourism site); the page's own version carries aria-current. CSS: assets/css/77-lang.css.
+    others(langs): the other versions as plain list items (the phone menu panel and the footer). -#}
+{% macro menu(langs, label) -%}
+{% if langs and langs|length > 1 %}{% set cur = langs|selectattr('current')|first %}<details class="lang-menu" data-langmenu><summary class="lang-btn"><svg class="icon lang-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9M12 3C9.6 5.5 8.4 8.5 8.4 12s1.2 6.5 3.6 9"/></svg><span class="vh">{{ label }}: </span><span class="lang-cur" lang="{{ cur.hreflang }}">{{ cur.label }}</span></summary><ul class="lang-list">{% for l in langs %}<li><a class="mast-lang" href="{{ l.href }}" hreflang="{{ l.hreflang }}" lang="{{ l.hreflang }}"{% if l.current %} aria-current="true"{% endif %}>{{ l.label }}</a></li>{% endfor %}</ul></details>{% endif %}
+{%- endmacro %}
+
+{% macro others(langs) -%}
+{% for l in langs or [] if not l.current %}<li><a href="{{ l.href }}" hreflang="{{ l.hreflang }}" lang="{{ l.hreflang }}">{{ l.label }}</a></li>{% endfor %}
+{%- endmacro %}

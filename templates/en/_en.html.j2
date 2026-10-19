@@ -1,0 +1,159 @@
+{#- en/_en.html.j2 — the markup of every version but Korean ({% import "en/_en.html.j2" as E with context %}: the
+    macros read the page's t = its words, pipeline/en_site.UIText, and loc = its locale, pipeline/locales.py). Same
+    components and classes as the Korean ones (_ui.html.j2, _p1.html.j2). Values come whole from data/<region>/<code>
+    (view models in pipeline/en_site.py); a key-fact tile may show the main part with 'more ↓' to the whole value in
+    the facts card. Where two sources differ, both values are shown with their sources and the record's note ('Sources
+    differ — call before visiting' in the version's language). KOGL-3 photos are never cropped or scaled (class t3,
+    data-kogl="3"); every photo carries 'Source: Korea Tourism Organization' and its licence label. Outbound links
+    keep data-track / data-provider / data-place like the Korean pages.
+
+    Macros: credit(ph) · figure(ph, cap, idx, total, cls, eager, sizes, credit, named) · hero_k3(ph, nm, n) ·
+    kfv(s, more_href, compact, place) · kf(K, cls, place) · kfnote(K, place) · kfrows(K, place) ·
+    route(R, place, nm) · factrow(r, fn, place) · notes(items, place) · chnotes(items, place) · faq(items, ns) ·
+    mapfig(data, label, cls, caption) · card(c, cls, sizes, track) · ko(name) · nm(name) · sup(n) · csup(n) ·
+    dzchips(ds, place) · dzrow(ds, place) (official designations, Site.designations: the chips under the answer, each
+    linking to its list, and the facts card's 'Designations' row with each list's name as a link — dd
+    data-key="designations"). No checked, reviewed, collected or translated dates on any page (operator decision
+    2026-10-09): they stay in the data and JSON-LD. -#}
+{% import "_ui.html.j2" as ui %}
+{% import "_media.html.j2" as md %}
+
+{% macro ko(name) -%}<span lang="ko">{{ name }}</span>{%- endmacro %}
+{#- nm(name): the place name inside a section heading ('<name> photos'), placed by the version's word order -#}
+{% macro nm(name) -%}<span class="nm">{{ name }}</span>{%- endmacro %}
+{#- footnote superscripts: the visible number plus a hidden ' — source n' (fact rows) / ' source n' (chapters) -#}
+{% macro sup(n) -%}{% if n %}<sup class="fn"><span class="vh"> — {{ t.source_word }} </span>{{ n }}</sup>{% endif %}{%- endmacro %}
+{% macro csup(n) -%}{% if n %}<sup class="fn"><span class="vh"> {{ t.source_word }} </span>{{ n }}</sup>{% endif %}{%- endmacro %}
+
+{% macro credit(ph, long=true) -%}
+{{ t.f('source_is', name=ph.credit or t.kto) }}{% if long and ph.lic %} · {{ ph.lic }}{% endif %}
+{%- endmacro %}
+
+{% macro figure(ph, cap='', idx=0, total=0, cls='', eager=false, sizes='100vw', credit_=true, named=true) -%}
+<figure class="ph t{{ ph.type }}{% if cls %} {{ cls }}{% endif %}"{% if ph.w and ph.h %} style="--nw:{{ ph.w }}px;--ar:{{ ph.w }}/{{ ph.h }}"{% endif %}{% if not eager %} data-reveal-ph{% endif %}>
+<div class="ph-frame">{{ ui.img(ph, sizes, eager, '', false, eager) }}</div>
+{% if named or credit_ %}<figcaption>{% if named %}<span class="cap-n">{{ cap or ph.name }}</span>{% if total > 1 %}<span class="cap-i tn">{{ idx }}/{{ total }}</span>{% endif %}{% endif %}{% if credit_ %}<span class="cap-c">{{ credit(ph) }}</span>{% endif %}</figcaption>{% endif %}
+</figure>
+{%- endmacro %}
+
+{% macro hero_k3(ph, nm, n) -%}
+<figure class="pl-ph t3 only-wide"{% if ph.w and ph.h %} style="--nw:{{ ph.w }}px;--ar:{{ ph.w }}/{{ ph.h }}"{% endif %}>
+<div class="pl-ph-frame"><img class="t{{ ph.type }}" src="{{ ph.url }}"{% if ph.w and ph.h %} width="{{ ph.w }}" height="{{ ph.h }}"{% endif %} alt="{{ ph.alt }}" loading="lazy" decoding="async" data-kogl="{{ ph.type }}"></div>
+<figcaption><span class="cap-n">{{ nm }}{% if n > 1 %} <span class="tn">1/{{ n }}</span>{% endif %}</span><span class="cap-c">{{ credit(ph) }}</span></figcaption>
+</figure>
+{%- endmacro %}
+
+{#- key facts: slots from Site.key_facts — {key, label, main, sub, more, closed, conflict, vals [{provider, main, sub,
+    closed}], tel, missing} -#}
+{% macro kfv(s, more_href='', compact=false, place='') -%}
+{% if s.missing %}<span class="kf-na">{{ t.not_listed }}</span>
+{%- elif s.conflict %}{% for v in s.vals %}<span class="kf-alt"><span class="kf-src">{{ v.provider }}</span> <span class="kf-main tn{% if v.closed %} closed{% endif %}">{{ v.main|nwt }}</span>{% if v.sub and not compact %} <span class="kf-sub tn">{{ v.sub|nwt }}</span>{% endif %}</span>{% endfor %}
+{%- else %}<span class="kf-main tn{% if s.closed %} closed{% endif %}">{% if s.key == 'tel' and s.tel %}<a class="tel" href="tel:{{ s.tel }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.main }}</a>{% else %}{{ s.main|nwt }}{% endif %}</span>{% if s.sub %}<span class="kf-sub tn">{{ s.sub|nwt }}</span>{% endif %}{% if s.more %}{% if more_href %} <a class="kf-more" href="{{ more_href }}">{{ t.more_down }}</a>{% else %} <span class="kf-more">{{ t.more }}</span>{% endif %}{% endif %}
+{%- endif %}
+{%- endmacro %}
+
+{% macro kf(K, cls='', place='') -%}
+{% if K.slots %}<dl class="kf{% if cls %} {{ cls }}{% endif %}">{% for s in K.slots %}<div class="kf-i kf-{{ s.key }}{% if s.conflict %} is-conflict{% endif %}"><dt>{{ s.label }}</dt><dd>{{ kfv(s, '#h-facts', false, place) }}</dd></div>{% endfor %}</dl>{% endif %}
+{%- endmacro %}
+
+{% macro kfnote(K, place='') -%}
+{% if K.conflict %}{% set labs %}{% for s in K.slots if s.conflict %}{{ s.label }}{% if not loop.last %}{{ loc.list_sep }}{% endif %}{% endfor %}{% endset %}<p class="kf-call"><span class="flag">{{ t.f('kf_differ', labels=labs) }}</span> · {{ t.call_before }}{% if K.tel and K.tel[1] %} <a class="tel" href="tel:{{ K.tel[1] }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ K.tel[0] }}</a>{% endif %}</p>{% endif %}
+{% if K.missing %}<p class="kf-need">{{ t.f('not_listed_list', items=K.missing|join(loc.list_sep)) }}</p>{% endif %}
+{% if K.providers %}<p class="kf-prov">{{ t.f('sources_list', items=K.providers|join(loc.list_sep)) }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro kfrows(K, place='') -%}
+{% if K and K.slots %}<dl class="kfr">{% for s in K.slots %}<div class="kfr-i{% if s.conflict %} is-conflict{% endif %}"><dt>{{ s.label }}</dt><dd>{{ kfv(s, '', true, place) }}</dd></div>{% endfor %}</dl>{% endif %}
+{%- endmacro %}
+
+{#- route(R, place, nm): Google Maps (filled) · Naver Map · Kakao Map in front, the rest under 'Other maps'; a
+    link that opens a name search carries a small 'search' tag -#}
+{% macro route(R, place='', nm='') -%}
+<div class="route" data-block="directions" data-route>
+<h2 id="h-dir" class="vh">{{ t.f('how_to_get', name=nm) }}</h2>
+<div class="route-row">
+{% for l in R.front %}<a class="btn {{ 'btn-go' if loop.first else 'btn-ol' }}"{% if loop.first %} data-primary{% endif %} href="{{ l.url }}" rel="noopener" data-track="{{ l.track }}" data-provider="{{ l.key }}" data-place="{{ place }}">{{ l.label }}{% if not l.precise %} <span class="rtag">{{ t.search_tag }}</span>{% endif %}{% if loop.first %}<span class="arr" aria-hidden="true">›</span>{% endif %}</a>{% endfor %}
+</div>
+{% if R.rest %}<details class="more-maps"><summary>{{ t.other_maps }}</summary><p class="tlinks">{% for l in R.rest %}<a href="{{ l.url }}" rel="noopener" data-track="{{ l.track }}" data-provider="{{ l.key }}" data-place="{{ place }}">{{ l.label }}{% if not l.precise %} <span class="rtag">{{ t.search_tag }}</span>{% endif %}</a>{% endfor %}</p></details>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- factrow(r, fn, place): <dd data-key> holds the whole value as one run of text (line breaks kept), so the JSON-LD
+    that repeats it and pipeline.validate read it whole. A conflict prints each source's value under its name, then
+    the record's note and the call number. -#}
+{% macro val(r, text, place='') -%}
+{% if r.url %}<a href="{{ r.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ text }}</a>
+{%- elif r.key in ('infocenter', 'reservation') %}{% for line in text.split('\n') %}{{ line|tel(place) }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+{%- else %}{{ text|nl2br }}{% endif %}
+{%- endmacro %}
+{% macro factrow(r, fn=true, place='', address_ko='') -%}
+<div class="fr{% if r.wide %} wide{% endif %}{% if r.conflict %} conflict{% endif %}" data-key="{{ r.key }}">
+<dt>{{ r.label }}</dt>
+<dd data-key="{{ r.key }}">
+{% if r.blocks %}
+<table class="tt tt-src"><tbody>
+{% for b in r.blocks %}
+<tr class="src-row"><th colspan="2" scope="rowgroup">{{ b.provider }}{% if fn %}{{ sup(b.n) }}{% endif %}</th></tr>
+<tr><td colspan="2" class="whole">{{ val(r, b.text, place) }}</td></tr>
+{% endfor %}
+</tbody></table>
+{% elif r.text %}<div class="v">{{ val(r, r.text, place) }}{% if fn %}{{ sup(r.n) }}{% endif %}</div>{% endif %}
+{% for a in r.alts %}<div class="v also"><span class="or">{{ t.or_word }}</span> {{ val(r, a.text, place) }}{% if fn %}{{ sup(a.n) }}{% else %} <span class="or">({{ a.provider }})</span>{% endif %}</div>{% endfor %}
+{% if r.key == 'address' and address_ko %}<p class="v-ko">{{ t.f('in_korean', name=ko(address_ko)) }}</p>{% endif %}
+{% if r.conflict %}{% set np = r.note.split(' — ', 1) %}<p class="flag-line"><span class="flag">{{ np[0] }}</span>{% if np|length > 1 %} — {{ np[1] }}{% endif %}{% if r.tel and r.tel[1] %} <a class="tel" href="tel:{{ r.tel[1] }}" data-track="tel_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ r.tel[0] }}</a>{% endif %}</p>{% endif %}
+</dd>
+</div>
+{%- endmacro %}
+
+{% macro dzchips(ds, place='') -%}
+{% if ds %}<p class="dz" data-block="designations"><span class="dz-k">{{ t.designations }}</span>{% for d in ds %}<a class="dz-c" href="{{ d.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ d.label }}</a>{% endfor %}<a class="dz-src" href="#dz">{{ t.source }}</a></p>{% endif %}
+{%- endmacro %}
+
+{% macro dzrow(ds, place='') -%}
+{% if ds %}<div class="fr wide dz-row" data-key="designations" id="dz">
+<dt>{{ t.designations }}</dt>
+<dd data-key="designations"><ul class="dz-list">{% for d in ds %}<li><span class="dz-l">{{ d.label }}</span><span class="dz-s"><a href="{{ d.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ d.source_name }}</a></span></li>{% endfor %}</ul></dd>
+</div>{% endif %}
+{%- endmacro %}
+
+{% macro notes(items, place='') -%}
+{% if items %}
+<ol class="notes">{% for s in items %}<li>{% if items|length > 1 %}<span class="fn-n tn">{{ loop.index }}</span>{% else %}<span class="fn-k">{{ t.source }}</span>{% endif %}{% if s.url %}<a href="{{ s.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.provider }}</a>{% else %}{{ s.provider }}{% endif %}{% if s.confirmed_by %} · {{ t.f('rechecked_with', name=s.confirmed_by) }}{% endif %}</li>{% endfor %}</ol>
+{% endif %}
+{%- endmacro %}
+
+{% macro chnotes(items, place='') -%}
+{% macro src(s) %}{% if s.url %}<a href="{{ s.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ s.name }}</a>{% else %}{{ s.name }}{% endif %}{% endmacro %}
+{% if items %}<p class="ch-notes">{% if items|length == 1 %}{{ t.f('source_is', name=src(items[0])) }}{% else %}{% for s in items %}<span class="ch-src-i"><span class="fn-n tn">{{ loop.index }}</span>{{ src(s) }}</span>{% endfor %}{% endif %}</p>{% endif %}
+{%- endmacro %}
+
+{% macro faq(items, ns=[], place='') -%}
+<div class="faq">{% for f in items %}
+<div class="qa"><h3>{{ f.q }}</h3><p>{{ f.a }}{% if ns|length > 1 %}{{ csup(f.n) }}{% endif %}</p></div>
+{% endfor %}</div>
+{{ chnotes(ns, place) }}
+{%- endmacro %}
+
+{#- mapfig: the map box; the other versions also give map.js their words (data-words: zoom buttons, 'whole course',
+    the failure line) — English is map.js's own -#}
+{% macro mapfig(data, label, cls='', caption='', credit=true) -%}
+{% set json = (data|tojson_attr)|replace('&', '&amp;')|replace("'", '&#39;')|replace('<', '&lt;')|replace('>', '&gt;') %}
+<figure class="mapfig{% if cls %} {{ cls }}{% endif %}">
+<div class="map" role="region" aria-label="{{ label }}" data-points='{{ json|safe }}'{% if kakao_sdk %} data-kakao-sdk="{{ kakao_sdk }}"{% endif %} data-lenis-prevent{% if loc.code != 'en' %} data-words="{{ t.map_words() }}"{% endif %}><p class="map-off">{{ t.map_loading }}</p></div>
+<figcaption>{% if caption %}{{ caption }}{% if credit %} · {% endif %}{% endif %}{% if credit %}{{ t.map_credit }}{% endif %}</figcaption>
+</figure>
+{%- endmacro %}
+
+{#- card(c): the place card (classes of ui.card) — photo (KOGL-1 cropped to fill, KOGL-3 whole), credit, the name
+    as the link over the card, 'type · area', the kind's three key facts. No photo: a small type icon. -#}
+{% macro card(c, cls='', sizes='(min-width: 1024px) 320px, 300px', track='nearby_click') -%}
+<article class="pc pc-{{ c.kind }}{% if cls %} {{ cls }}{% endif %}{% if not c.photo %} pc-nophoto{% endif %}" data-vt-scope>
+{% if c.photo %}<figure class="pc-ph t{{ c.photo.type }}"><div class="pc-frame"{% if c.photo.type == 1 %} data-drift{% endif %}>{{ ui.img(c.photo, sizes, false) }}</div><figcaption>{{ credit(c.photo, false) }}</figcaption></figure>
+{% else %}<p class="pc-icon">{{ ui.type_icon(c.e) }}</p>{% endif %}
+<div class="pc-body">
+<h3 class="pc-name"><a href="{{ c.path }}" data-vt data-track="{{ track }}" data-place="{{ c.id }}">{{ c.name }}</a></h3>
+<p class="pc-meta">{{ c.type }}{% if c.area %} · {{ c.area }}{% endif %}</p>
+{{ kfrows(c.kf, c.id) }}
+</div>
+</article>
+{%- endmacro %}

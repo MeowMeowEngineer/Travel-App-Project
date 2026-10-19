@@ -1,0 +1,101 @@
+/* ================================================================ team p2 pages: home, course(s), guide(s), event(s),
+   about, 404 — only what the shared partials (00–65) do not already style. Classes start with .p2- or hang off a
+   page class (.pg-home, .pg-course …), so the shared skin never changes here. */
+
+/* ---------------------------------------------------------------- home */
+/* the answer bar with only one of search / next event (a build without places, or no dated event ahead) */
+.abar-top.abar-one { grid-template-columns: minmax(0, 1fr); max-width: 720px; margin: 0 auto; }
+/* the first slide is the page's large paint on phones: it starts right under the answer bar */
+@media (max-width: 760px) { .pg-home .op-show { padding-top: 14px; } }
+/* 대표 장소 / 영상 / 공식 안내 without data */
+.p2-empty-t, .p2-none { font-size: 17px; line-height: 1.6; color: var(--ink-2); max-width: 38em; margin-bottom: 18px; }
+.p2-none a { color: var(--link); }
+/* 공식 코스 without the drawn route: the lines take the whole row; below 1024px (a flex column) the lines fill the
+   width instead of shrinking around their text */
+.p2-co-one .lines-home { grid-column: 1 / -1; }
+@media (max-width: 1023px) { .sec-co .lines-home { align-self: stretch; } }
+/* the topic link above each video row: its name and count apart, a 44px target */
+.pg-home .vr-topic a { gap: .3em; min-height: 44px; }
+/* 군산 이야기 without one of its four chapters (a data edit): the static tiles share the row evenly */
+@media (min-width: 1024px) { .story:not(.is-staged) .st-chs[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .story:not(.is-staged) .st-chs[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* 공식 안내: the official sites as link tiles */
+.p2-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--g); }
+.p2-links a { position: relative; display: flex; flex-direction: column; gap: 4px; min-height: 96px; padding: 22px 56px 22px 24px; border-radius: var(--r-l); background: var(--tile); color: var(--ink); text-decoration: none; transition: box-shadow .3s var(--ease); }
+.p2-links a:hover { text-decoration: none; color: var(--ink); box-shadow: 0 6px 32px rgba(0, 0, 0, .08); }
+.p2-l-n { font: 700 21px/1.3 var(--font); letter-spacing: -.025em; }
+.p2-l-v { font-size: 15px; color: var(--ink-3); }
+.p2-links .icon-sm { position: absolute; right: 22px; top: 24px; width: 18px; height: 18px; color: var(--link); }
+@media (max-width: 760px) { .p2-links a { min-height: 0; padding: 18px 48px 18px 20px; } .p2-l-n { font-size: 19px; } }
+
+/* ---------------------------------------------------------------- course */
+.stop-note { font-size: 15px; line-height: 1.55; color: var(--ink-3); margin-top: 8px; }
+.stop-text > .stop-note:first-child { margin-top: 0; }
+.p2-stops { grid-column: 3 / span 6; min-width: 0; }
+.p2-stops .stops { grid-column: auto; }
+/* under half of the stops have coordinates: no map — a wider rail and the list to the end of the row */
+.co-grid.no-map .band { grid-column: 1 / span 3; }
+.co-grid.no-map .p2-stops { grid-column: 4 / -1; }
+@media (max-width: 1023px) { .p2-stops { width: 100%; } }
+.p2-orig { margin: 20px 0 0; padding: 18px 22px; border-radius: var(--r); background: var(--bg-2); font-size: 16px; line-height: 1.7; color: var(--ink-2); }
+.sep-v { color: var(--ink); }
+
+/* ---------------------------------------------------------------- courses index */
+.p2-courses { padding-bottom: var(--sec); }
+.p2-courses .chapter-tight:first-child { margin-top: clamp(16px, 2vw, 28px); }
+
+/* ---------------------------------------------------------------- guide */
+.gd-sec .gd-p + .gd-p { margin-top: 12px; }
+.strip-line .p2-sl { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 0 4px; color: var(--ink); }
+@media (max-width: 1023px) { .strip-line .p2-sl { flex-direction: row; text-align: left; gap: 12px; padding: 7px 0; min-height: 44px; } }
+.gi-name b { font: 700 21px/1.35 var(--font); letter-spacing: -.025em; }
+
+/* ---------------------------------------------------------------- events index */
+.ev-sec + .ev-sec { margin-top: var(--s-bl); }
+.ev-dated .ev-month-past { margin-top: 0; }
+.ev-annual .ev-month-past { margin-top: 32px; }
+
+/* ---------------------------------------------------------------- event page */
+.pg-event .kf-call a { color: inherit; text-decoration: none; }
+.pg-event .pl-side .prog-note { margin-top: 14px; }
+.pg-event .pl-side .notes { margin-top: 16px; }
+.p2-eds li { display: grid; grid-template-columns: 13.5em minmax(0, 1fr); column-gap: var(--g); row-gap: 2px; padding: 14px 0; border-top: 1px solid var(--hair); }
+.p2-eds li:first-child { border-top: 0; padding-top: 4px; }
+.p2-ed-d { grid-row: 1 / span 3; font-weight: 700; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.p2-ed-n { font: 700 17px/1.4 var(--font); letter-spacing: -.02em; }
+.p2-ed-m { display: flex; flex-wrap: wrap; font-size: 14px; line-height: 1.5; color: var(--ink-3); }
+.p2-ed-m span:not(:last-child)::after { content: "·"; margin: 0 8px; }
+.p2-ed-s { font-size: 13px; line-height: 1.55; color: var(--ink-3); }
+.p2-ed-s a { color: var(--ink-3); }
+@media (max-width: 760px) { .p2-eds li { grid-template-columns: minmax(0, 1fr); } .p2-ed-d { grid-row: auto; } }
+.p2-alts > li { padding: 14px 0; border-top: 1px solid var(--hair); }
+.p2-alts > li:first-child { border-top: 0; padding-top: 4px; }
+.p2-alt-k { font: 700 16px/1.45 var(--font); letter-spacing: -.015em; }
+.p2-alts ul li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; align-items: baseline; padding-top: 6px; font-size: 16px; line-height: 1.55; }
+.p2-alt-s { font-size: 13px; color: var(--ink-3); text-align: right; }
+.p2-alt-s a { color: var(--ink-3); }
+@media (max-width: 760px) { .p2-alts ul li { grid-template-columns: minmax(0, 1fr); } .p2-alt-s { text-align: left; } }
+.p2-ev-ans { font-size: 15px; line-height: 1.55; color: var(--ink-2); margin: 0 0 12px; }
+.p2-more { margin-top: 20px; }
+.pl-main > .p2-more:last-child { margin-top: var(--s-bl); }
+
+/* ---------------------------------------------------------------- about */
+.p2-how li { position: relative; padding: 12px 0 12px 1.1em; border-top: 1px solid var(--hair); font-size: 17px; line-height: 1.65; max-width: 40em; }
+.p2-how li:first-child { border-top: 0; padding-top: 0; }
+.p2-how li:first-child::before { top: .75em; }
+.p2-how li::before { content: ""; position: absolute; left: 0; top: 1.5em; width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); }
+.about .src-dl dd { min-width: 0; overflow-wrap: anywhere; }
+.about .lic { margin-top: 18px; }
+
+/* ---------------------------------------------------------------- links in the small source lines: underlined (grey
+   text, so colour is not the only cue) and, on touch screens, a 44px hit area from an invisible layer (10-base.css) */
+.p2-ed-s a, .p2-alt-s a, .u-s a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; }
+@media (max-width: 1023px) {
+  .p2-ed-s a, .p2-alt-s a, .u-s a, .prog-src a, .ch-cite a { position: relative; }
+  .p2-ed-s a::after, .p2-alt-s a::after, .u-s a::after, .prog-src a::after, .ch-cite a::after {
+    content: ""; position: absolute; z-index: 1; top: 50%; left: 50%; width: max(100% + 8px, 44px); height: 44px; transform: translate(-50%, -50%); }
+}
+
+/* ---------------------------------------------------------------- 404 */
+.nf .search { margin-top: 24px; max-width: 640px; }
+.p2-nf-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }

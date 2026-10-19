@@ -1,0 +1,212 @@
+{% extends "base.html.j2" %}
+{#- Place page (Apple direction). Everything printed comes from the view model `p` (pipeline/present.place_vm, built on
+    build.entity_ctx); the round-2 keys (e, kind, facts, links, …) are still in the context.
+    First screen (CLAUDE.md 7): kicker with the city → name → the whole summary as the answer (first sentence, the rest
+    in a lighter run of the same paragraph: JSON-LD's description is the summary and must read as one run) → official
+    designations as chips when the place is on a city / national list (each links to its list; the '지정' row of the
+    facts card names the list) → the kind's key facts as spec tiles + 출처 → the route row (카카오맵 길찾기 · 네이버 지도 ·
+    카카오맵, '다른 지도'). The lead photo follows as a product shot (KOGL-1: preloaded, a rounded 3:2 crop; KOGL-3:
+    desktop only, whole, never above its own size — phones get the provider's small renditions as a thumbnail row).
+    Then a grey band: the facts card (every stored value whole, per-field sources as footnotes, both values of a
+    conflict + '방문 전 전화 확인' — all data-block="facts", the rows pipeline.validate reads), photos, 이용 안내 /
+    이용 편의 (also facts), the map; then chapters: 주변·함께 가기, 자세히, 영상, 자주 묻는 질문, 출처.
+    No 확인일·원문 수집일·검수일 on the page (operator decision 2026-10-09): those dates stay in the data, JSON-LD
+    (dateModified, lastReviewed) and sitemap lastmod. -#}
+{% import "_p1.html.j2" as p1 %}
+{% import "_media.html.j2" as md %}
+{% import "_abroad.html.j2" as ab %}
+{% set fn = p.notes|length > 1 %}
+{#- the media block (영상 · 소식 · 해외 기사 · SNS): its parts name the heading and the page-nav link -#}
+{% set abroad = p.e._abroad or [] %}{% set ab_art = abroad|selectattr('kind', 'equalto', 'article')|list %}{% set ab_post = abroad|selectattr('kind', 'equalto', 'post')|list %}{% set media_parts = (['영상'] if p.videos else []) + (['소식'] if (media or {}).news else []) + (['해외 기사'] if ab_art else []) + (['SNS'] if ab_post else []) %}
+{% set nm = p.name %}
+{% set lead = p.hero_k1 or p.hero_k3 %}
+{% set kind_word = {'attraction': '볼거리', 'stay': '숙소', 'food': '음식점'}[p.kind] %}
+{% set show_same = p.dong and p.area_same and (p.compact or not (p.near_sights or p.near_biz)) %}
+{% set has_near = p.onroute or p.near_sights or p.near_biz or p.guides or p.events or p.twins or related or show_same %}
+{% block main_class %}{% endblock %}
+{% block bodyclass %}pg-place kind-{{ p.kind }}{% if lead %} has-photo{% else %} no-photo{% endif %}{% endblock %}
+{% block head %}{% if p.hero_k1 %}{{ md.preload(p.hero_k1, '100vw') }}{% endif %}{% endblock %}
+{% block lnav %}
+{% set links = [('정보', '#h-facts')] %}
+{% if p.photos|length > 1 or p.hero_k3 %}{% set _ = links.append(('사진', '#h-photos')) %}{% endif %}
+{% set _ = links.append(('지도', '#h-map' if p.points else '#h-dir')) %}
+{% if has_near %}{% set _ = links.append(('주변', '#h-near')) %}{% endif %}
+{% if p.details %}{% set _ = links.append(('자세히', '#h-details')) %}{% endif %}
+{% if media_parts %}{% set _ = links.append((media_parts[0], '#h-media')) %}{% endif %}
+{% if p.faqs %}{% set _ = links.append(('질문', '#h-faq')) %}{% endif %}
+{% set _ = links.append(('출처', '#h-src')) %}
+{% if p.primary %}{% set cta = {'url': p.primary.url, 'label': '길찾기' if p.primary.role == 'route' else '지도', 'ext': true, 'track': 'route_click' if p.primary.role == 'route' else 'map_click', 'provider': p.primary.key, 'place': p.e.id} %}{% else %}{% set cta = {'url': '#h-dir', 'label': '길찾기'} %}{% endif %}
+{{ ui.lnav(nm, links, cta, nm ~ ' 바로가기') }}
+{% endblock %}
+{% block content %}
+<article class="place" data-entity-id="{{ p.e.id }}" data-tier="{{ p.e.tier or 'basic' }}"{% if mode != 'production' %} data-status="{{ p.e.status }}" data-index="{{ index_note }}"{% endif %}>
+  <header class="pl-hero{% if p.hero_k1 %} hk1{% elif p.hero_k3 %} hk3{% else %} hnone{% endif %}">
+    {#- the light opening (ui4, 2026-10-14, after the owner's reference): name → one-line answer → key facts (each tile
+        with its small picture, ui.kf) → routes on the left; the lead photo big and rounded on the right from 1024px
+        and under the routes on phones (≤ 45% of the screen height). Text never sits on the photo. KOGL-1 may fill
+        its rounded frame (crop); KOGL-3 sits whole inside a padded tinted frame, never cropped or enlarged
+        (CLAUDE.md 3.4) and only from 1024px: the provider's original is large and may not be re-encoded, so phones
+        get the small renditions as a thumbnail row under the key facts. A place without a photo gets a small kind
+        picture above the name (no large empty cover). -#}
+    <div class="wrap pl-hero-in pl-x{% if lead %} has-lead{% endif %}">
+      <div class="pl-head">
+        {% if not lead %}<p class="pl-kpic">{{ ui.kpic(ui.KIND_PIC.get((p.e._visual or ('', 'pin'))[1], 'kind-attraction'), (p.e._visual or ('', 'pin'))[1], 72, '일러스트: ' ~ p.kind_label) }}</p>{% endif %}
+        <p class="kicker">{% for lab, href in p.kicker %}<a href="{{ href }}">{{ lab }}</a>{% endfor %}<span>{{ site.locality }}{% if p.dong %} {{ p.dong }}{% endif %}</span></p>
+        <h1 class="d1 vt-title">{{ nm }}</h1>
+        {% if p.alt_names %}<p class="alt-n pl-alt">다른 이름: {{ p.alt_names|join(' · ') }}</p>{% endif %}
+        <div class="summary" data-block="summary">
+          {% if p.lede %}<p class="lede">{{ p.lede }}{% if p.story %} <span class="lede-2">{{ p.story|join(' ') }}</span>{% endif %}</p>
+          {% else %}<p class="lede">{{ nm|josa('은/는') }} {{ site.locality }}{% if p.dong %} {{ p.dong }}{% endif %}에 있는 {{ p.kind_label }}입니다.</p>{% endif %}
+        </div>
+        {{ p1.dzchips(p.designations, p.e.id) }}
+        {{ ui.kf(p.kf, 'kf-hero', '#h-facts', p.e.id) }}
+        <div class="kf-notes">{{ p1.kfnote(p.kf, p.e.id) }}</div>
+        {{ ui.route(p.primary, p.front, p.rest, p.e.id, 'h-dir', nm) }}
+      </div>
+      {% if lead %}
+      <figure class="pv pv{{ lead.type }}">
+        {% if p.hero_k1 %}<div class="pv-ph">{{ ui.img(p.hero_k1, '(min-width: 1024px) 560px, 100vw', true, 'pv-img vt-photo', false, true) }}</div>
+        {% else %}<div class="pv-k3"{% if lead.w and lead.h %} style="--nw:{{ lead.w }}px;--ar:{{ lead.w }}/{{ lead.h }}"{% endif %}><img class="t3 vt-photo" src="{{ lead.url }}"{% if lead.w and lead.h %} width="{{ lead.w }}" height="{{ lead.h }}"{% endif %} alt="{{ lead.alt }}" loading="lazy" decoding="async" data-kogl="3"></div>{% endif %}
+        <figcaption class="pv-cap"><span class="pv-cr">{{ md.credit(lead) }}{% if p.photos|length > 1 or p.hero_k3 %} · {% endif %}</span>{% if p.photos|length > 1 or p.hero_k3 %}<a href="#h-photos">사진 {{ p.photos|length }}장</a>{% endif %}</figcaption>
+      </figure>
+      {% endif %}
+      {% if p.hero_k3 %}
+      {% if p.thumbs %}
+      <div class="pl-thumbs only-narrow">
+        <ul>{% for t in p.thumbs %}<li><a href="#h-photos"><img class="t{{ t.type }}" src="{{ t.url }}" width="{{ t.w }}" height="{{ t.h }}" style="height:{{ [t.h, 100]|min }}px" alt="{{ t.alt }}" loading="lazy" decoding="async" data-kogl="{{ t.type }}"></a></li>{% endfor %}</ul>
+        <p class="pl-thumbs-c"><a href="#h-photos">사진 {{ p.photos|length }}장 ↓</a> · 출처: 한국관광공사 · {{ p.photos|map(attribute='lic')|unique|join(', ') }}</p>
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="pl-band tone-2">
+  <div class="wrap pl-grid{% if not lead %} lift{% endif %}">
+    <section class="pl-side" aria-labelledby="h-facts" data-block="facts" data-sticky>
+      <h2 id="h-facts" class="h-side"><span class="nm">{{ nm }}</span> 방문 전 확인</h2>
+      {% if p.practical or p.designations %}<dl class="facts">{% for r in p.practical %}{{ p1.factrow(r, fn, p.e.id) }}{% endfor %}{{ p1.dzrow(p.designations, p.e.id) }}</dl>{% endif %}
+      {% if p.missing %}<p class="need"><b>확인 필요</b> {{ p.missing|join('·') }}</p>{% endif %}
+      {% if p.ask %}<p class="need"><b>숙소에 문의</b> {{ p.ask|join('·') }}</p>{% endif %}
+      {% for key, note in (p.e.fact_conflicts or {}).items() %}<p class="need withheld">{{ {'usetime': '이용시간', 'restdate': '쉬는 날', 'usefee': '요금'}.get(key, key) }}: 같은 출처 안에서 값이 달라 싣지 않았습니다 — {{ note }}.</p>{% endfor %}
+      {{ p1.notes(p.notes, p.e.id) }}
+    </section>
+
+    <div class="pl-main">
+      {% if p.photos|length > 1 or p.hero_k3 %}
+      {% set strip = p.photos[1:7] %}{# the lead photo is the opening (KOGL-1 every width, KOGL-3 from 1024px) #}
+      <section class="media" aria-labelledby="h-photos">
+        <h2 id="h-photos" class="h-sec"><span class="nm">{{ nm }}</span> 사진 <span class="tn">{{ p.photos|length }}</span></h2>
+        {% if p.hero_k3 %}{{ ui.figure(p.photos[0], nm, 1, p.photos|length, 'ph-lead only-narrow', false, '100vw') }}{% endif %}
+        {% if strip %}
+        <div class="car car-ph" data-gallery>
+          <div class="car-view" data-gal-view><ul class="strip car-track">{% for ph in strip %}<li>{{ ui.figure(ph, nm, loop.index + 1, p.photos|length, '', false, '(min-width: 1024px) 460px, 340px', false, false) }}</li>{% endfor %}</ul></div>
+          <div class="car-foot car-foot-s"><p class="strip-credit">출처: 한국관광공사 · {{ strip|map(attribute='lic')|unique|join(', ') }}</p>{% if strip|length > 1 %}{{ ui.carnav('사진') }}{% endif %}</div>
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      {% if p.more %}
+      <section class="block" aria-labelledby="h-more" data-block="facts">
+        <h2 id="h-more" class="h-sec"><span class="nm">{{ nm }}</span> 이용 안내</h2>
+        <dl class="facts facts-more">{% for r in p.more %}{{ p1.factrow(r, fn, p.e.id) }}{% endfor %}</dl>
+      </section>
+      {% endif %}
+      {% if p.fit %}
+      <section class="block" aria-labelledby="h-fit" data-block="facts">
+        <h2 id="h-fit" class="h-sec"><span class="nm">{{ nm }}</span> 이용 편의</h2>
+        <dl class="facts facts-more">{% for r in p.fit %}{{ p1.factrow(r, fn, p.e.id) }}{% endfor %}</dl>
+      </section>
+      {% endif %}
+
+      {% if p.points %}
+      <section class="block" aria-labelledby="h-map">
+        <h2 id="h-map" class="h-sec"><span class="nm">{{ nm }}</span> 지도</h2>
+        {{ p1.placemap(p.points, nm ~ ' 위치 지도', 'place-map', '거리는 좌표 사이 직선') }}
+        {% if p.anchors %}<ul class="anchors">{% for a in p.anchors %}<li><a href="{{ a.path }}">{{ a.name }}</a><span class="tn">직선 {{ a.m|pdist }}</span></li>{% endfor %}</ul>{% endif %}
+      </section>
+      {% endif %}
+      {% if p.access %}{{ p1.access(p.access, nm, p.e.id) }}{% endif %}
+    </div>
+  </div>
+  </div>
+
+  {% if has_near %}
+  <section class="wrap chapter ch-rail" aria-labelledby="h-near" data-block="nearby">
+    <h2 id="h-near" class="rail-label"><span class="nm">{{ nm }}</span> 주변·함께 가기</h2>
+    <div class="rail-body">
+      {% if p.onroute %}{{ ui.onroute(p.onroute, p.e.id) }}{% endif %}
+      {% if p.near_sights or p.near_biz %}
+      <div class="near-cols2">
+        {% if p.near_sights %}<div class="tile"><h3 class="h-sub">주변 볼거리</h3>{{ ui.near(p.near_sights, p.e.id) }}</div>{% endif %}
+        {% if p.near_biz %}<div class="tile"><h3 class="h-sub">주변 숙소·음식점</h3>{{ ui.near(p.near_biz, p.e.id) }}</div>{% endif %}
+      </div>
+      {% if p.nearby_source.provider %}<p class="note">반경 {{ p.nearby_source.radius_m|pdist }} 안 · 직선거리 순 · {{ p.nearby_source.provider }}</p>{% endif %}
+      {% endif %}
+      {% if show_same %}
+      <h3 class="h-sub h-same">{{ p.dong }}의 다른 {{ kind_word }} <span class="tn">{{ p.area_same|length }}</span>곳</h3>
+      <ol class="same">{% for x in p.area_same %}<li><a href="{{ x._path }}" data-track="{{ {'stay': 'stay_click', 'food': 'food_click'}.get(x.kind, 'nearby_click') }}" data-place="{{ p.e.id }}">{{ x.name }}</a>{% if x._type %}<span class="same-t">{{ x._type }}</span>{% endif %}</li>{% endfor %}</ol>
+      {% endif %}
+      {% set rel = related|reject('in', p.twins)|list %}
+      {% for title, xs, kind in [('이곳에서 열리는 행사', p.events, 'event'), ('이곳이 포함된 가이드', p.guides, 'guide'), ('같은 건물의 다른 이름', p.twins, 'twin'), ('이름이 이어진 곳', rel, 'rel')] if xs %}
+      <div class="xl-g">
+        <h3 class="h-sub">{{ title }}</h3>
+        <ul class="xlinks">{% for x in xs %}<li>{% if kind == 'guide' %}<a href="{{ x._path }}" data-track="guide_click" data-place="{{ p.e.id }}">{{ x.title }}</a>{% elif kind == 'rel' %}<a href="{{ x._path }}" data-track="{{ {'stay': 'stay_click', 'food': 'food_click'}.get(x.kind, 'nearby_click') }}" data-place="{{ p.e.id }}">{{ x.name }}</a><span class="same-t">{{ x._type or (x.kind|kind_label) }}</span>{% else %}<a href="{{ x._path }}">{{ x.name }}</a>{% endif %}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if p.details %}
+  <section class="wrap chapter ch-rail" aria-labelledby="h-details" data-block="details">
+    <h2 id="h-details" class="rail-label"><span class="nm">{{ nm }}</span> 자세히</h2>
+    <div class="rail-body prose details">
+      {% for d in p.details %}<h3>{{ d.heading }}</h3><p>{{ d.text|decaution|tel(p.e.id) }}{% if p.detail_notes|length > 1 %}{{ d.n|csup }}{% endif %}</p>{% endfor %}
+      {{ p1.chnotes(p.detail_notes, p.e.id) }}
+    </div>
+  </section>
+  {% endif %}
+
+  {% set news = (media or {}).news or [] %}
+  {% if media_parts %}
+  <section class="wrap chapter ch-rail" aria-labelledby="h-media" data-block="media">
+    <h2 id="h-media" class="rail-label"><span class="nm">{{ nm }}</span> {{ media_parts|join('·') }}</h2>
+    <div class="rail-body">
+      {% if p.videos %}<ul class="vids">{% for v in p.videos %}{{ ui.video(v, p.e.id, [], false, 'li') }}{% endfor %}</ul>
+      {% if has_videos %}<p class="note"><a href="/videos/">영상 모아 보기</a></p>{% endif %}{% endif %}
+      {% if news %}<ul class="xlinks">{% for n in news %}<li><a href="{{ n.url }}" rel="noopener" data-track="news_click" data-place="{{ p.e.id }}">{{ n.title }}</a><span class="same-t">{{ n.publisher }}{% if n.date %} · <span class="tn">{{ n.date }}</span>{% endif %}</span></li>{% endfor %}</ul>{% endif %}
+      {% if abroad %}<h3 class="ab-sub">해외에서 본 {{ nm }}</h3>
+      <ul class="ab-list ab-in">{% for a in ab_art %}{{ ab.article(a, false, false) }}{% endfor %}{% for a in ab_post %}{{ ab.post(a, false) }}{% endfor %}</ul>
+      <p class="note"><a href="/abroad/">해외에서 본 {{ site.region }} 모아 보기</a></p>{% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if p.faqs %}
+  <section class="wrap chapter ch-rail" aria-labelledby="h-faq" data-block="faq">
+    <h2 id="h-faq" class="rail-label"><span class="nm">{{ nm }}</span> 자주 묻는 질문</h2>
+    <div class="rail-body">{{ p1.faq(p.faqs, p.faq_notes, p.e.id) }}</div>
+  </section>
+  {% endif %}
+
+  <section class="wrap chapter ch-rail pl-src" aria-labelledby="h-src" data-block="sources">
+    <h2 id="h-src" class="rail-label"><span class="nm">{{ nm }}</span> 출처</h2>
+    <div class="rail-body">
+      <dl class="src-dl">
+        <div data-block="original"><dt>원문</dt><dd>
+          {% if show_original %}<blockquote class="orig" cite="{{ orig.source_url }}">{{ orig.text|nl2br }}</blockquote>
+          <p class="note">출처: <a href="{{ orig.source_url }}" rel="noopener" data-track="official_click" data-place="{{ p.e.id }}">{{ orig.source_name }}</a> · {{ orig.license|license_label }} · 수정 없이 옮겼습니다.</p>
+          {% elif p.orig_url %}<a href="{{ p.orig_url }}" rel="noopener" data-track="official_click" data-place="{{ p.e.id }}">{{ p.orig.source_name or site.source.name }}에서 원문 보기</a>
+          {% else %}{{ p.orig.source_name or site.source.name }} 원문이 없어 {{ facts_source.provider or '한국관광공사 TourAPI' }} 값으로 정리했습니다.{% endif %}
+        </dd></div>
+        {% if p.visitkorea %}<div><dt>대한민국 구석구석</dt><dd><a href="{{ p.visitkorea }}" rel="noopener" data-track="official_click" data-place="{{ p.e.id }}">한국관광공사 안내에서 보기</a></dd></div>{% endif %}
+        {% for s in sources if s.label == '공식 홈페이지' %}<div><dt>공식 홈페이지</dt><dd><a href="{{ s.url }}" rel="noopener" data-track="official_click" data-place="{{ p.e.id }}">{{ s.url|replace('https://', '')|replace('http://', '') }}</a></dd></div>{% endfor %}
+        {% if p.photos %}<div><dt>사진</dt><dd>한국관광공사 · {{ p.photos|map(attribute='lic')|unique|join(', ') }}</dd></div>{% endif %}
+      </dl>
+      <p class="note"><a href="/about/#correction">틀린 정보 알리기</a></p>
+    </div>
+  </section>
+</article>
+{% endblock %}

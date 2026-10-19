@@ -1,0 +1,23 @@
+{#- _mascot.html.j2 — the site's mascot (owner decision 2026-10-13: a small yellow chick with a blue scarf and a brown
+    backpack, soft 3D clay, only on this site). It appears only in guide spots — the launcher, the question box of the
+    home, and later the chat states, empty results, 404 and help; scenery and banners stay the gouache illustrations.
+    Always decorative: alt="" — the words beside it say what the spot is for. {% import "_mascot.html.j2" as mm %}
+
+    pic(name, kind, show, cls): a <picture> of templates/assets/mascot/<name>-<px>.avif|webp (tools/mascot_media.py
+    makes them square, so width = height = show, the size the page draws it at, and it has its room from the first
+    paint): AVIF first, WebP after, the kind's 1× and 2× files — icon 64·128, small 96·192, medium 200·400
+    (MASCOT_PX = tools/mascot_media.py SIZES; tests/test_mascot.py checks that every file a page names exists).
+    fetchpriority low: it never takes bandwidth from a page's first picture. -#}
+{% set MASCOT_PX = {'icon': (64, 128), 'small': (96, 192), 'medium': (200, 400)} %}
+{#- A site without a mascot (no files in templates/assets/mascot — pipeline/icons.py mascot(name) is False): glyph
+    given → that line glyph in a decorative span of the same box (the launcher keeps its face), else nothing. -#}
+{% macro pic(name, kind, show, cls='', glyph='') -%}
+{%- if mascot_pic is not defined or mascot_pic(name) -%}
+{%- set px = MASCOT_PX[kind] -%}
+{%- set base = '/assets/mascot/' ~ name ~ '-' -%}
+<picture{% if cls %} class="{{ cls }}"{% endif %}><source type="image/avif" srcset="{{ base }}{{ px[0] }}.avif 1x, {{ base }}{{ px[1] }}.avif 2x"><img src="{{ base }}{{ px[0] }}.webp" srcset="{{ base }}{{ px[0] }}.webp 1x, {{ base }}{{ px[1] }}.webp 2x" width="{{ show }}" height="{{ show }}" alt="" decoding="async" fetchpriority="low"></picture>
+{%- elif glyph -%}
+{%- import "_ui.html.j2" as ui -%}
+<span class="mascot-g{{ ' ' ~ cls if cls }}" style="--mg:{{ show }}px" aria-hidden="true">{{ ui.icon(glyph) }}</span>
+{%- endif -%}
+{%- endmacro %}

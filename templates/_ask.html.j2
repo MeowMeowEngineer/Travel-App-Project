@@ -1,0 +1,142 @@
+{#- _ask.html.j2 — the home's centre question card (owner 2026-10-13, after the explorer card of Mention Atlas): ask
+    the site assistant (CLAUDE.md 3.10) from the middle of the home page. {% import "_ask.html.j2" as askm %}
+
+    card(lang, region, starters, dark_top, search_alt): one white card — the eyebrow, the question as the heading, one
+    question box with its button, the starter questions (pipeline/ask.py) and the assistant's terms. All of it is in
+    the first paint (text only, nothing hidden, no image) and nothing in it moves when chat.js comes. Without JS the
+    Korean box is the site search (/search/?q=) and each starter a link to the page that answers it; the other
+    languages have no search page to fall back on, so their box is hidden without JS (html:not(.js)), the starters
+    stay. With JS (site.js, chat.js dock mode) the box, the button and a plain click on a starter ask the assistant and
+    the answer streams into [data-ask-log] — empty and hidden until the reader asks, with a fixed height from the first
+    paint (css/49-ask.css), so nothing below the card ever moves — the same conversation the launcher opens on the
+    other pages (sessionStorage 'gs-chat'). The button carries both of its labels (ask / stop), one of them hidden, so
+    its width never changes when it turns into the stop button. data-fail: the line shown when chat.js cannot load
+    and the box has no search to fall back on.
+    dark_top: the card straddles the end of a dark photo opening (the English home), as in the reference.
+    search_alt: the Korean box's second button ('사이트 검색', always the search page); false leaves it out.
+    Languages: ko, en and, for the seven-language pages, ja, zh-Hans, zh-Hant, de, fr, es, ru (wording after
+    assets/chat.js STR and the launcher, _chat.html.j2); any other falls back to English. The help page (/about/#chatbot)
+    exists in Korean and English only, so the seven link to the English one (hreflang). French keeps a no-break space
+    before '?' and ':'. Since 2026-10-13 night only the English home shows this card; the Korean home asks from its
+    question card under the opening (box + panel below).
+
+    box(starters, region) and panel() — the Korean home's centre card. Owner 2026-10-14 ('위 아래로 같은 줄에 검색이랑
+    물어보기가 따로 있어서 헷갈리잖아 … 페이지 상단에는 검색, 중앙 부분에는 AI챗봇으로 확실히 구분'): the site search is
+    the header's (base.html.j2, every Korean page); this card is the AI assistant only — no '검색' button in it.
+    box: the head — the mascot (decorative), the heading '<region> 여행 도우미에게 물어보세요' (h2: the assistant's name,
+    as its panel title on the other pages) and one plain line on how it answers (AI, from this site's pages, each
+    answer with its source pages) — then ONE form: the question field (a chat-bubble icon before it) and ONE primary
+    button '물어보기' (it turns into '멈추기' while an answer comes: both labels share one grid cell, its width never
+    changes). Enter is the form's own submit (its only button), so the browser decides what an Enter is: it submits
+    only an Enter the input method did not keep for itself — the Korean Enter that ends the last syllable asks at
+    once, a Japanese or Chinese conversion Enter does not (site.js; the 2026-10-14 bug was a 50 ms guard after
+    compositionend that swallowed exactly that Korean Enter). Without JS (or with chat.js failing, or the assistant
+    not connected) the form goes to /search/?q=; one line says so, shown only without JS (.hk-nojs). Then the starter
+    questions as '#' tags (each a link to the page that answers it, ask.json; with JS a plain click asks) and one plain
+    line: chats are not stored, and the help page. All text, nothing hidden, in the first paint; nothing in it moves
+    when chat.js comes. Layout (css/46-home-open.css): from 1024px the head is a column at the left of the box and the
+    tags; phones keep the box where it was in the 390x844 first screen (clear of the launcher): the heading sits on
+    the box's top edge like a field legend, the line on how it answers comes under the tags.
+    panel: the conversation, right under the card — empty and hidden until the reader asks, with its height fixed in
+    the first-paint CSS (css/46-home-open.css); chat.js (dock mode) draws its head ('대화' · '새 대화'), the messages,
+    its own follow-up box (data-ask-more: the placeholder) and the line that the answers are written by AI from this
+    site's data and can be wrong (data-note) into it. -#}
+{% import "_ui.html.j2" as ui %}
+{% import "_mascot.html.j2" as mm %}
+{% import "_pic.html.j2" as pk %}
+{% macro box(starters, region='') -%}
+<div class="hk-ask" data-ask-zone>
+  <div class="hk-head">
+    {{ mm.pic('mascot-hello', 'small', 64, 'hk-mascot') }}
+    <h2 id="h-ask" class="hk-h"><span class="hk-hn">{{ (region ~ ' ') if region }}여행 도우미에게</span> 물어보세요</h2>
+    <p class="hk-sub">AI가 이 사이트에 실린 정보로 답하고, 답마다 출처 페이지를 붙입니다.</p>
+    <p class="hk-note">대화는 저장하지 않습니다 · <a href="/about/#chatbot">도우미 안내</a></p>
+  </div>
+  <form class="hk-box" action="/search/" method="get" data-ask-form="search">
+    <label for="ask-q" class="vh">도우미에게 물을 질문</label>
+    {{ ui.icon('chat', 'hk-ico') }}
+    <input id="ask-q" name="q" type="text" maxlength="800" autocomplete="off" enterkeyhint="send" spellcheck="false" placeholder="궁금한 것을 적어 주세요" data-ask-q>
+    <button type="submit" class="ask-go hk-go" data-ask-go><span class="ask-go-l">물어보기</span><span class="ask-go-l ask-go-s">멈추기</span></button>
+  </form>
+  <p class="hk-nojs">자바스크립트가 꺼져 있어 지금은 사이트 검색 결과로 보여 드립니다.</p>
+  {% if starters %}<ul class="hk-pills" aria-label="예시 질문">{% for x in starters %}<li><a class="hk-pill" href="{{ x.href }}" data-ask="{{ x.q }}">{{ x.q }}</a></li>{% endfor %}</ul>{% endif %}
+</div>
+{%- endmacro %}
+{% macro panel() -%}
+<div class="wrap hk-conv"><div class="ask-log ask-panel" data-ask-log hidden data-ask-more="이어서 물어보기" data-note="AI가 이 사이트의 정보로 쓴 답입니다. 틀릴 수 있으니 방문 전에 확인하세요." data-fail="답을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요."></div></div>
+{%- endmacro %}
+{% macro card(lang, region, starters, dark_top=false, search_alt=true) -%}
+{%- set S = {
+  'ko': {'k': '여행 질문', 'h': region ~ ' 여행, 무엇이 궁금하세요?', 'label': '질문', 'ph': '무엇이든 물어보세요',
+         'go': '물어보기', 'stop': '멈추기', 'alt': '사이트 검색', 'm': '한국어·영어·일본어·중국어 등 어느 말로 물어도 됩니다',
+         'ms': '어느 언어로 물어도 됩니다', 'sug': '이런 질문은 어때요?', 'ok': '이 사이트에 실린 정보로만 답하고, 근거 페이지를 링크합니다',
+         'terms': 'AI 답은 틀릴 수 있으니 방문 전 확인하세요 · 대화는 저장하지 않습니다', 'about': '/about/#chatbot',
+         'about_l': '도우미 안내', 'fail': '도우미를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.'},
+  'en': {'k': 'Trip questions', 'h': 'What would you like to know about ' ~ region ~ '?', 'label': 'Question',
+         'ph': 'Ask anything', 'go': 'Ask', 'stop': 'Stop', 'alt': '', 'm': 'Ask in English, Korean, Japanese, Chinese or any other language',
+         'ms': 'Ask in any language',
+         'sug': 'Try asking', 'ok': "Answers come only from this site's information, with links to the pages",
+         'terms': 'AI answers can be wrong, so check before you go · Chats are not stored', 'about': '/en/about/#chatbot',
+         'about_l': 'About the helper', 'fail': 'The helper could not be loaded. Please try again.'},
+  'ja': {'k': '旅行の質問', 'h': region ~ '旅行について、何を知りたいですか？', 'label': '質問', 'ph': '何でも聞いてください',
+         'go': '質問する', 'stop': '停止', 'alt': '', 'm': '日本語・英語・韓国語・中国語など、どの言語でも質問できます',
+         'ms': 'どの言語でも質問できます', 'sug': 'たとえばこんな質問', 'ok': 'このサイトの情報だけで答え、該当ページへのリンクを付けます',
+         'terms': 'AIの回答は誤ることがあるので訪問前にご確認ください · 会話は保存されません', 'about': '/en/about/#chatbot',
+         'about_l': 'アシスタントについて（英語）', 'fail': 'アシスタントを読み込めませんでした。もう一度お試しください。'},
+  'zh-Hans': {'k': '旅行问题', 'h': '关于' ~ region ~ '旅行，想问什么？', 'label': '问题', 'ph': '请输入您的问题',
+         'go': '提问', 'stop': '停止', 'alt': '', 'm': '可以用中文、英语、韩语、日语等任何语言提问', 'ms': '可以用任何语言提问',
+         'sug': '试试这样问', 'ok': '只根据本站信息回答，并附上相关页面链接', 'terms': 'AI的回答可能有误，出发前请确认 · 对话不会被保存',
+         'about': '/en/about/#chatbot', 'about_l': '关于助手（英文）', 'fail': '无法加载助手，请稍后重试。'},
+  'zh-Hant': {'k': '旅行問題', 'h': '關於' ~ region ~ '旅行，想問什麼？', 'label': '問題', 'ph': '請輸入您的問題',
+         'go': '提問', 'stop': '停止', 'alt': '', 'm': '可以用中文、英語、韓語、日語等任何語言提問', 'ms': '可以用任何語言提問',
+         'sug': '試試這樣問', 'ok': '只根據本站資訊回答，並附上相關頁面連結', 'terms': 'AI的回答可能有誤，出發前請確認 · 對話不會被儲存',
+         'about': '/en/about/#chatbot', 'about_l': '關於助手（英文）', 'fail': '無法載入助手，請稍後重試。'},
+  'de': {'k': 'Fragen zur Reise', 'h': 'Was möchten Sie über ' ~ region ~ ' wissen?', 'label': 'Frage', 'ph': 'Ihre Frage',
+         'go': 'Fragen', 'stop': 'Stopp', 'alt': '', 'm': 'Fragen Sie auf Deutsch, Englisch, Koreanisch oder in jeder anderen Sprache',
+         'ms': 'Fragen Sie in jeder Sprache', 'sug': 'Zum Beispiel', 'ok': 'Antworten nur aus den Angaben dieser Website, mit Links zu den Seiten',
+         'terms': 'KI-Antworten können falsch sein, bitte vor dem Besuch prüfen · Chats werden nicht gespeichert',
+         'about': '/en/about/#chatbot', 'about_l': 'Über den Helfer (Englisch)',
+         'fail': 'Der Helfer konnte nicht geladen werden. Bitte versuchen Sie es erneut.'},
+  'fr': {'k': 'Questions de voyage', 'h': 'Que voulez-vous savoir sur ' ~ region ~ ' ?', 'label': 'Question',
+         'ph': 'Votre question', 'go': 'Demander', 'stop': 'Arrêter', 'alt': '',
+         'm': 'Posez votre question en français, en anglais, en coréen ou dans une autre langue', 'ms': 'Dans la langue de votre choix',
+         'sug': 'Par exemple', 'ok': 'Réponses tirées uniquement des informations de ce site, avec des liens vers les pages',
+         'terms': "Les réponses de l'IA peuvent être fausses : vérifiez avant de partir · Les conversations ne sont pas enregistrées",
+         'about': '/en/about/#chatbot', 'about_l': "À propos de l'assistant (en anglais)",
+         'fail': "Impossible de charger l'assistant. Veuillez réessayer."},
+  'es': {'k': 'Preguntas del viaje', 'h': '¿Qué quiere saber sobre ' ~ region ~ '?', 'label': 'Pregunta',
+         'ph': 'Su pregunta', 'go': 'Preguntar', 'stop': 'Detener', 'alt': '',
+         'm': 'Pregunte en español, inglés, coreano o en cualquier otro idioma', 'ms': 'Pregunte en cualquier idioma',
+         'sug': 'Por ejemplo', 'ok': 'Respuestas solo con la información de este sitio, con enlaces a las páginas',
+         'terms': 'Las respuestas de la IA pueden contener errores; confirme antes de ir · Las conversaciones no se guardan',
+         'about': '/en/about/#chatbot', 'about_l': 'Sobre el asistente (en inglés)',
+         'fail': 'No se pudo cargar el asistente. Inténtelo de nuevo.'},
+  'ru': {'k': 'Вопросы о поездке', 'h': 'Что вы хотите узнать о поездке в ' ~ region ~ '?', 'label': 'Вопрос',
+         'ph': 'Ваш вопрос', 'go': 'Спросить', 'stop': 'Остановить', 'alt': '',
+         'm': 'Спрашивайте по-русски, по-английски, по-корейски или на любом другом языке', 'ms': 'Спрашивайте на любом языке',
+         'sug': 'Например', 'ok': 'Ответы только по данным этого сайта, со ссылками на страницы',
+         'terms': 'Ответы ИИ могут быть неточными, проверьте перед поездкой · Переписка не сохраняется',
+         'about': '/en/about/#chatbot', 'about_l': 'О помощнике (на английском)',
+         'fail': 'Не удалось загрузить помощника. Попробуйте ещё раз.'},
+} -%}
+{%- set s = S.get(lang) or S['en'] -%}
+{%- set search = s.alt != '' -%}
+<section class="ask{{ ' ask-dark' if dark_top }}{{ ' ask-jsonly' if not search }}" aria-labelledby="h-ask" data-chat-dock>
+  <div class="wrap"><div class="ask-card">
+    <p class="ask-k">{{ pk.pic('icon-ask', 'chat', 32, cls='ask-k-pic') }}{{ s.k }}</p>
+    <h2 id="h-ask" class="ask-h">{{ s.h }}</h2>
+    <form class="ask-box"{% if search %} action="/search/"{% endif %} method="get" data-ask-form{{ '="search"'|safe if search }}>
+      <div class="ask-row">
+        <label for="ask-q" class="vh">{{ s.label }}</label>
+        {{ ui.icon('search', 'ask-ico') }}
+        <input id="ask-q" name="q" type="text" maxlength="800" autocomplete="off" enterkeyhint="send" spellcheck="false" placeholder="{{ s.ph }}" data-ask-q>
+        <button type="submit" class="ask-go" data-ask-go><span class="ask-go-l">{{ s.go }}</span><span class="ask-go-l ask-go-s">{{ s.stop }}</span></button>
+      </div>
+      <p class="ask-meta"><span class="only-wide">{{ s.m }}</span><span class="only-narrow">{{ s.ms }}</span>{% if search and search_alt %}<button type="submit" class="ask-alt" formaction="/search/" data-ask-search>{{ ui.icon('search', 'icon') }}{{ s.alt }}</button>{% endif %}</p>
+    </form>
+    {% if starters %}<div class="ask-sug"><p class="ask-sug-l" id="ask-sug-l">{{ s.sug }}</p><ul class="ask-chips" aria-labelledby="ask-sug-l">{% for x in starters %}<li><a class="ask-chip" href="{{ x.href }}" data-ask="{{ x.q }}">{{ x.q }}</a></li>{% endfor %}</ul></div>{% endif %}
+    <div class="ask-log" data-ask-log hidden data-fail="{{ s.fail }}"></div>
+    <p class="ask-foot"><span class="ask-ok"><span class="ask-tick" aria-hidden="true">✓</span>{{ s.ok }}</span><span class="ask-terms">{{ s.terms }} · <a href="{{ s.about }}"{% if lang not in ('ko', 'en') and s.about.startswith('/en/') %} hreflang="en"{% endif %}>{{ s.about_l }}</a></span></p>
+  </div></div>
+</section>
+{%- endmacro %}

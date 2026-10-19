@@ -1,0 +1,68 @@
+{% extends "base.html.j2" %}
+{% import "_art.html.j2" as artm %}
+{% import "_p2.html.j2" as p2 %}
+{#- /events/: on the build date (never printed — operator decision 2026-10-09), the editions running or still to come first (dated tiles ranked today → tomorrow →
+    this week → running), then the finished ones by start month (newest first); beside them the '매년 …' records
+    (the period as the source words it) and records with no date. A value another source gives differently reads
+    '<label> 출처마다 다름' in a row; the event page shows both values. EV = present.events_vm. Beside each month heading
+    of the finished editions, that month's AI art (events.month.<mo.mm>; lazy). -#}
+{% block bodyclass %}pg-events{% endblock %}
+{% block main_class %}{% endblock %}
+{% block content %}
+<section class="pg-hero band-s" aria-labelledby="h-list">{{ artm.band((art_slots or {}).get('list.head.events')) }}
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">행사·축제</p>
+      <h1 id="h-list" class="h-list">{{ site.region }} 행사·축제 일정</h1>
+      <p class="list-lede">진행·예정 <span class="tn">{{ EV.ranked|length }}</span>건 · 지난 회차 <span class="tn">{{ EV.past|length + EV.past_undated|length }}</span>건 · 해마다 열리는 행사 <span class="tn">{{ EV.annual|length }}</span>건</p>
+    </div>
+  </div>
+</section>
+<div class="wrap ev-wrap">
+  <div class="ev-top">
+    <div class="ev-dated">
+      <section class="ev-sec" id="current" aria-labelledby="h-up">
+        <h2 id="h-up" class="ev-k">진행 중이거나 열릴 예정인 행사 <span class="tn">{{ EV.ranked|length }}</span></h2>
+        {% if EV.ranked %}<ol class="evrows">{% for r in EV.ranked %}{{ ui.evrow(r) }}{% endfor %}</ol>
+        {% else %}<p class="ev-none">지금 진행 중이거나 일정이 발표된 회차가 없습니다. 다음 회차는 행사별 페이지의 ‘보통 언제 열리나’에 있습니다.</p>{% endif %}
+      </section>
+      {% if EV.months or EV.past_undated %}
+      <section class="ev-sec" id="past" aria-labelledby="h-past">
+        <h2 id="h-past" class="ev-k ev-month-past">지난 행사 <span class="tn">{{ EV.past|length + EV.past_undated|length }}</span></h2>
+        {% for mo in EV.months %}
+        {%+ call artm.beside((art_slots or {}).get('events.month.' ~ mo.mm)) %}<h3 class="ev-m-sm" id="{{ mo.id }}">{{ mo.title }}</h3>{% endcall +%}
+        <ol class="tickets tickets-past">{% for r in mo.rows %}{{ ui.ticket(r) }}{% endfor %}</ol>
+        {% endfor %}
+        {% if EV.past_undated %}
+        <h3 class="ev-m-sm">날짜 없이 연도만 적힌 지난 기록</h3>
+        <ol class="tickets tickets-past">{% for r in EV.past_undated %}{{ ui.ticket(r) }}{% endfor %}</ol>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    {% if EV.annual or EV.textonly %}
+    <section class="ev-sec ev-annual" aria-labelledby="h-annual">
+      {% if EV.annual %}
+      <h2 id="h-annual" class="ev-k">해마다 열리는 행사 <span class="tn">{{ EV.annual|length }}</span></h2>
+      <p class="note ev-note">올해 날짜가 아직 없는 행사 · 기간은 출처의 표기</p>
+      <ol class="annual">
+        {% for r in EV.annual %}
+        <li><a href="{{ r.path or r.source_url }}"{% if not r.path %} rel="noopener" data-track="official_click"{% endif %}>
+          <span class="an-name">{{ r.title }}</span>
+          <span class="an-period">{{ r.period_text or '기간 미기재' }}</span>
+          {% if r.place %}<span class="an-place">{{ r.place }}</span>{% endif %}
+          <span class="an-src">{{ '행사 정보' if r.path else r.source ~ ' 원문' }}<span class="arr" aria-hidden="true">›</span></span>
+        </a></li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+      {% if EV.textonly %}
+      <h2 id="h-undated" class="ev-k{% if EV.annual %} ev-month-past{% endif %}">기간이 적히지 않은 기록 <span class="tn">{{ EV.textonly|length }}</span></h2>
+      <ol class="annual">{% for r in EV.textonly %}<li><a href="{{ r.path or r.source_url }}"{% if not r.path %} rel="noopener" data-track="official_click"{% endif %}><span class="an-name">{{ r.title }}</span>{% if r.period_text %}<span class="an-period">{{ r.period_text }}</span>{% endif %}{% if r.place %}<span class="an-place">{{ r.place }}</span>{% endif %}<span class="an-src">{{ '행사 정보' if r.path else r.source ~ ' 원문' }}<span class="arr" aria-hidden="true">›</span></span></a></li>{% endfor %}</ol>
+      {% endif %}
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

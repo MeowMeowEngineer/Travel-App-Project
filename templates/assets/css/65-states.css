@@ -1,0 +1,72 @@
+/* ================================================================ states of the behaviour layer (site.js, motion.js)
+   Package B2's motion.css, folded into the one built stylesheet (merge r3-wpb, 2026-10-08), kept for the Apple skin.
+   Keyed on data attributes only, so it applies to markup written to the data-* contract of motion.js / site.js (for
+   example _media.picture(ph, kb=true)). The skin's class rules (40-showcase: .op-slide, .story;
+   60-motion: view transitions, the course route drawing) never put a second animation on the same element.
+   - Without JS (html:not(.js); the class is set inline in <head>) and under prefers-reduced-motion every hook
+     shows its final, still state. Nothing here hides first-screen content.
+   Hooks (see the headers of motion.js and site.js for the full list):
+     [data-js-only]            hidden without JS (filter bars, view toggles, pause buttons …)
+     [data-hero] [data-slide]  stacked opening slides; .is-on visible, .is-in/.is-show the one fading in on top
+                               (.is-paused / .is-offscreen stop the slide show). The first slide carries .is-on in
+                               the HTML; if none does, the first slide is shown anyway
+     [data-kb][data-kogl="1"]  optional slow zoom of a KOGL-1 opening photo while [data-hero].is-live (not .is-paused);
+                               the Apple home opening does not use it (its photo pushes in with the scroll instead)
+     [data-hero-bars] > *      progress marks; ::after fills over --hero-hold while .is-on
+     [data-marquee] [data-mq-move] > [data-mq-track] (+ a copy with [data-mq-dup]); still list without motion
+   Print: every scroll-reveal target prints in its final state. */
+
+/* ---------------------------------------------------------------- no JS: JS-only furniture is not shown */
+html:not(.js) [data-js-only], html:not(.js) [data-hero-pause],
+html:not(.js) [data-mq-pause] { display: none !important; }
+
+/* ---------------------------------------------------------------- reduced motion: nothing moves, so nothing to pause */
+@media (prefers-reduced-motion: reduce) {
+  [data-hero-pause], [data-mq-pause] { display: none !important; }
+}
+
+/* ---------------------------------------------------------------- home opening: slides, slow zoom, progress */
+[data-slide] { opacity: 0; visibility: hidden; }
+[data-slide].is-on { opacity: 1; visibility: visible; z-index: 1; }
+[data-hero]:not(:has([data-slide].is-on)) [data-slide]:first-of-type { opacity: 1; visibility: visible; z-index: 1; }
+[data-slide].is-in { visibility: visible; z-index: 2; transition: opacity 1.8s cubic-bezier(.65, 0, .35, 1); }
+[data-slide].is-in.is-show { opacity: 1; }
+[data-kb] { transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: no-preference) {
+  [data-hero].is-live [data-kb][data-kogl="1"] { animation: gs-kb 26s linear infinite alternate; }
+  [data-hero].is-live [data-hero-bars] > .is-on::after { animation: gs-bar var(--hero-hold, 7s) linear both; }
+  /* a pause always wins over any skin rule that animates the opening photo */
+  [data-hero].is-paused [data-kb], [data-hero].is-offscreen [data-kb],
+  [data-hero].is-paused [data-hero-bars] > .is-on::after { animation-play-state: paused !important; }
+}
+@keyframes gs-kb { from { transform: scale(1); } to { transform: scale(1.14) translate3d(-1.2%, -1%, 0); } }
+@keyframes gs-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ---------------------------------------------------------------- festival marquee */
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-marquee] [data-mq-move] { animation: gs-mq var(--mq-dur, 70s) linear infinite; }
+  html.js [data-marquee]:hover [data-mq-move], html.js [data-marquee]:focus-within [data-mq-move],
+  html.js [data-marquee].is-paused [data-mq-move] { animation-play-state: paused !important; }
+}
+@keyframes gs-mq { to { transform: translate3d(-50%, 0, 0); } }
+/* still list: no JS, reduced motion, or a focused link inside (so the focused link is never off screen) */
+html:not(.js) [data-mq-dup], html.js [data-marquee]:has(a:focus-visible) [data-mq-dup] { display: none !important; }
+html:not(.js) [data-mq-move], html.js [data-marquee]:has(a:focus-visible) [data-mq-move] {
+  animation: none !important; transform: none !important; width: auto !important; flex-wrap: wrap; }
+html:not(.js) [data-mq-track], html.js [data-marquee]:has(a:focus-visible) [data-mq-track] { flex: 1 1 100%; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) {
+  [data-mq-dup] { display: none !important; }
+  [data-mq-move] { animation: none !important; transform: none !important; width: auto !important; flex-wrap: wrap; }
+  [data-mq-track] { flex: 1 1 100%; flex-wrap: wrap; }
+}
+
+/* ---------------------------------------------------------------- scroll motion helpers (motion.js) */
+.split-line { padding-bottom: .06em; margin-bottom: -.06em; }
+
+/* ---------------------------------------------------------------- print: final state */
+@media print {
+  [data-reveal], [data-reveal-ph], [data-reveal-ph] [data-ph-frame], [data-reveal-ph] .ph-frame, [data-reveal-ph] img,
+  [data-split], [data-split] *, [data-ch-card], [data-gal-card], .gal-card { opacity: 1 !important; transform: none !important; clip-path: none !important; }
+  /* motion.js leaves inline starting states only on elements still below the screen: a printout shows them final */
+  [style*="opacity"] { opacity: 1 !important; transform: none !important; }
+}

@@ -1,0 +1,62 @@
+/* AI art (owner decisions 2026-10-13, CLAUDE.md 4; templates/_art.html.j2, pipeline/art.py): an illustration is a
+   figure whose alt starts with '일러스트: ' ('Illustration: ' …), never a place's photo; no label on the picture
+   (owner 2026-10-13 night) — /about/ says the illustrations are drawn with generative AI. Header bands (D head-* of the
+   lists, H theme.head, M videos.head, I course.banner), the guide campaign card (C·G camp-*, Q en-camp-*), small
+   pictures on the 404 page and the empty search result (F art-*); below, in the art-slots block, the map 권역 strip
+   (L), the small picture beside a heading (J events.month, N abroad.group) and the about head's picture (S). */
+.art { position: relative; margin: 0; }
+.art img { display: block; width: 100%; height: auto; }
+
+/* header band: a 2.4:1 strip above the H1 — at most a fifth of a phone screen, 260px on wider screens; the
+   picture keeps its centre (the subject sits in the middle band of the drawing) */
+.art-band-wrap { margin-bottom: clamp(14px, 2vw, 24px); }
+.art-band { border-radius: var(--r); overflow: hidden; }
+.art-band img { aspect-ratio: 2.4; object-fit: cover; max-height: 20vh; max-height: 20svh; }
+@media (min-width: 761px) { .art-band img { max-height: 260px; } }
+
+/* guide campaign card: on top of the head on phones; from 700px beside the question, so the answer stays high */
+.gd-head .art-camp { border-radius: var(--r); overflow: hidden; margin: 0 0 16px; }
+@media (min-width: 700px) {
+  .gd-head.has-camp .art-camp { float: right; width: min(44%, 440px); margin: 0 0 24px 32px; }
+  .gd-head.has-camp .gd-ans { clear: both; }
+}
+
+/* 404 and the empty search result: a small square picture */
+.art-small-wrap { max-width: 200px; margin: 0 0 14px; }
+.art-small { border-radius: var(--r-s); overflow: hidden; }
+[data-empty-art] .art-small-wrap { margin-top: 14px; }
+
+/* art-slots — /assets/style.css carries the rules from here to 'art-slots end' only when a built page shows one of
+   these pictures (pipeline/build.py site_css, art.SLOT_CSS_MARKS): a slot without a picture adds nothing to the site. */
+/* L: a 권역's strip on /map/, above its heading (the band's 2.4:1 frame, in the directory column) */
+.region > .art-strip { margin-bottom: 14px; }
+
+/* J·N: a small square picture beside a heading (the month of past events, an /abroad/ group); the row takes the
+   heading's spacing. */
+.art-hd { display: flex; align-items: center; gap: 14px; }
+.art-hd > :not(.art) { min-width: 0; }
+.art-mark { flex: none; width: 72px; }
+.art-mark img { border-radius: var(--r-s); }
+.ev-sec .art-hd { padding: 16px 0 8px; }
+.art-hd > .ev-m-sm { padding: 0; }
+.ab-sec .art-hd { margin: 8px 0 12px; }
+.ab-sec > .art-hd:first-child { margin: 0 0 16px; }
+.art-hd > .ab-sub, .art-hd > .ab-h { margin: 0; }
+
+/* S: the about head's picture — on phones under the lede, from 900px to the right of the title (the head turns into
+   two columns, text left); a 4:3 frame of the drawing's subject side. Its left 46% is a plain panel (the S composition
+   leaves room for a title, which we do not lay on it): a 4:3 cover from the right edge would still be 40% panel, so
+   the picture is scaled ×1.68 about its right edge, 60% down — the frame holds the window, the desk and the harbour
+   (templates/_art.html.j2 hero() sizes count the scale, so the file chosen stays sharp) */
+.art-hero { max-width: 560px; margin: 20px 0 0; border-radius: var(--r); overflow: hidden; }
+.about-head .art-hero { margin-inline: auto; }
+.art-hero img { aspect-ratio: 4 / 3; object-fit: cover; object-position: 100% 50%; transform: scale(1.68);
+  transform-origin: 100% 60%; }
+@media (min-width: 900px) {
+  .has-art-hero > .wrap { display: grid; grid-template-columns: minmax(0, 1fr) min(44%, 520px);
+    grid-template-rows: auto auto auto 1fr; column-gap: clamp(32px, 4vw, 64px); text-align: left; }
+  .has-art-hero > .wrap > * { grid-column: 1; }
+  .has-art-hero > .wrap > .art-hero { grid-column: 2; grid-row: 1 / -1; width: 100%; max-width: none; margin: 0; }
+  .has-art-hero .lede { margin-left: 0; margin-right: 0; }
+}
+/* art-slots end */

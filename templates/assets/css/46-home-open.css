@@ -1,0 +1,259 @@
+/* ================================================================ Korean home, UI4 (owner 2026-10-14, after the AIO2O
+   proposal demo for KT Skylife — its design language only: layout, parts, spacing, type, radii, colour roles, motion;
+   docs/handover/specs/ui4_mapping.md, skyref_study.md, home_redesign.md; templates/home.html.j2). body.pg-ko-home.
+   1. .ho      the LIGHT opening: a soft sea-blue gradient (g0 → white, a g1 glow behind the picture side). Left: the
+               eyebrow pill, the H1, one lede, the sea pill button, the slide controls (one white pill: pause, ‹ n/N ›,
+               a 6 s progress line) and '소식 전체'. Right (from 1024px): ONE big rounded white card per news item —
+               the real photo (never darkened; KOGL-1 fills its frame, KOGL-3 sits whole on a tinted frame), the
+               outlet's preview image or the illustration, then the chip, the title and the date. A native scroll-snap
+               row ([data-hcar], site.js): it works without JS (the controls hide), one card in view at a time.
+               Phones: eyebrow · H1 · lede, the card (photo on top, text under it, swipeable), the controls row.
+   2. .hq      the white question card, overlapping the opening's bottom edge (a fixed negative margin in the first
+               paint: no layout shift): the question box (2px sea border, a 5px tint ring on focus), the '#' tags and
+               the 3D icon menu (_pic.html.j2 pictures; one row from 1024px, 4 columns on phones).
+   3. .hk-conv the conversation (chat.js dock): hidden until the reader asks; its height is fixed here.
+   4. the sections below in the reference's parts: sea eyebrow label + big bold title, white cards with a hairline
+      border and radius 24, soft tinted panels instead of colour blocks; 군산 이야기 is light now.
+   Contrast (00-tokens.css head): ink on g0/white ≥ 15; ink-2 9.36; sea-deep on tint 7.13; white on sea 4.96; sea on
+   white 4.96 (eyebrows, figures); ink-3 on white 5.62 / g0 5.22. Targets ≥ 44px below 1024px; visible focus. */
+.hk { display: block; }
+
+/* ---------------------------------------------------------------- 1. the opening */
+.ho { position: relative; padding: 16px 0 36px;
+  background: radial-gradient(900px 520px at 88% 18%, var(--g1), rgba(226, 237, 250, 0) 70%), linear-gradient(180deg, var(--g0) 0, #fff 100%); }
+.ho-in { display: flex; flex-direction: column; }
+.ho-text { display: contents; }
+.ho-k { order: 1; align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; min-height: 30px; margin: 0 0 10px; padding: 0 14px; border: 1px solid var(--hair); border-radius: 999px; background: rgba(255, 255, 255, .9); font: 700 13.5px/1.2 var(--font); letter-spacing: .01em; color: var(--sea-deep); }
+.ho-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sea); }
+.hk-h1 { order: 2; margin: 0 0 8px; font: 700 clamp(30px, 8.2vw, 36px)/1.18 var(--font); letter-spacing: -.04em; color: var(--ink); text-wrap: balance; }
+.ho-lede { order: 3; margin: 0 0 18px; max-width: 30em; font: 400 16px/1.6 var(--font); letter-spacing: -.01em; color: var(--ink-2); word-break: keep-all; }
+.ho-cta { order: 4; display: none; margin: 0; }
+.btn-sea { display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 28px; border-radius: 999px; background: var(--sea); color: #fff; font: 700 17px/1 var(--font); letter-spacing: -.01em; text-decoration: none; box-shadow: 0 10px 24px -12px rgba(29, 79, 150, .55); transition: background-color .2s var(--fb), transform .3s var(--ease-out); }
+.btn-sea:hover { background: var(--sea-hi); color: #fff; text-decoration: none; }
+.btn-sea:focus-visible { outline: 3px solid var(--sea-deep); outline-offset: 3px; }
+.btn-sea .arr { transition: transform .3s var(--ease-out); }
+.btn-sea:hover .arr { transform: translateX(3px); }
+.ho-ctl { order: 5; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
+.ho-all { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font: 700 15px/1 var(--font); color: var(--sea-deep); text-decoration: none; }
+.ho-all:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hv-ctl { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--hair); border-radius: 999px; background: rgba(255, 255, 255, .92); box-shadow: var(--shadow-1); }
+html:not(.js) .ho-ctl { display: none; }
+[data-hcar].no-scroll .hv-ctl { visibility: hidden; }
+.hv-c { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer; transition: background-color .2s var(--fb); }
+.hv-c:hover { background: var(--tint); }
+.hv-c:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.hv-c .icon { width: 18px; height: 18px; stroke-width: 2; }
+.hv-pause .i-play, [data-hcar].is-stopped .hv-pause .i-pause { display: none; }
+[data-hcar].is-stopped .hv-pause .i-play { display: block; }
+.hv-count { min-width: 3.4em; margin: 0; text-align: center; font: 700 14px/1 var(--font); color: var(--ink-2); }
+.hv-prog { position: relative; display: block; width: 40px; height: 3px; margin: 0 12px 0 4px; border-radius: 3px; background: var(--tint2); overflow: hidden; }
+.hv-prog i { position: absolute; inset: 0; border-radius: inherit; background: var(--sea); transform: scaleX(0); transform-origin: 0 50%; }
+.hv-prog i.is-run { animation: hv-fill 6s linear forwards; }
+@keyframes hv-fill { to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .hv-prog { display: none; } }
+
+/* the news cards: one in view at a time */
+.ho-news { order: 4; min-width: 0; }
+.hv-view { overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; border-radius: 28px; }
+.hv-view::-webkit-scrollbar { display: none; }
+.hv-track { display: flex; gap: 16px; }
+.nc { position: relative; flex: 0 0 100%; display: flex; flex-direction: column; width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--hair); border-radius: 28px; background: #fff; scroll-snap-align: start; scroll-snap-stop: always; }
+.nc-frame { position: relative; aspect-ratio: 2 / 1; overflow: hidden; border-radius: 20px; background: var(--tint); }
+.nc-frame img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+/* KOGL-3 (and any photo that is not KOGL-1): whole, at its own ratio, on a tinted frame — never cropped or zoomed */
+.nc-frame.t3, .nc-frame.t0 { background: var(--tint); }
+.nc-frame:not(.t1):not(.nc-ogf) img.t3, .nc-frame:not(.t1):not(.nc-ogf) img.t0 { inset: 12px; width: calc(100% - 24px); height: calc(100% - 24px); object-fit: contain; }
+.nc-frame .nc-art { position: absolute; inset: 0; margin: 0; }
+/* .art img (49-art.css, later in the sheet) sets height: auto — the card's picture fills the frame again, its lower part
+   (where the card drawings put their subject) kept (owner 2026-10-14: '사진이 너무 짤렸다') */
+.nc-frame .nc-art img { height: 100%; object-position: 50% 100%; }
+.nc-icof { display: grid; place-items: center; background: linear-gradient(180deg, var(--g0), var(--g1)); }
+.nc-body { display: flex; flex-direction: column; flex: 1; padding: 12px 6px 2px; }
+.nc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+.nc-chip, .nc-st { display: inline-flex; align-items: center; min-height: 26px; padding: 0 11px; border-radius: 999px; font: 700 13px/1.2 var(--font); letter-spacing: -.01em; }
+.nc-chip { background: var(--tint); color: var(--sea-deep); }
+.nc-st { background: var(--bg-2); color: var(--ink-2); }
+.nc-t { margin: 0; font: 700 18px/1.4 var(--font); letter-spacing: -.025em; overflow-wrap: anywhere; word-break: keep-all; }
+.nc-t a { color: var(--ink); text-decoration: none; }
+.nc-t a::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: 28px; }
+.nc-t a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.nc-t a:focus-visible { outline: none; }
+.nc-t a:focus-visible::after { outline: 3px solid var(--focus); outline-offset: -3px; }
+.nc-x { margin-left: .2em; color: var(--ink-3); font-weight: 400; }
+.nc-meta { margin: 6px 0 0; font: 400 14.5px/1.45 var(--font); color: var(--ink-2); }
+.nc-cr { margin: auto 0 0; padding-top: 10px; font: 400 12.5px/1.4 var(--font); color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- 2. the assistant card (_ask.html.j2 box)
+   Owner 2026-10-14 ('중앙 부분에는 AI챗봇으로 확실히 구분하고 눈에 더 잘 띄고 직관적으로'): the card is the AI assistant
+   only (the site search is the header's). Its head: the mascot, the heading (the assistant's name) and one line on how
+   it answers; ONE box — a chat bubble, the field, ONE sea button '물어보기' — with a soft sea glow, its border turning
+   sea-deep with a two-tone sea ring on focus (tint, then sea: 4.96 on white); the '#' tags ask it. Phones keep the box where it was in the 390x844 first
+   screen (above the launcher's corner): the heading sits on the box's top edge as its legend (no height of its own),
+   the line on how it answers and the note come under the tags. From 1024px: the head is a column at the box's left. */
+.hq { position: relative; z-index: 2; margin-top: -16px; }
+.hq-card { position: relative; padding: 18px 16px 12px; border: 1px solid var(--hair); border-radius: 28px; background: #fff; box-shadow: var(--shadow-3); }
+.hk-ask { position: relative; display: flex; flex-direction: column; }
+.hk-head { display: contents; }
+.hk-mascot { display: contents; }   /* the <img> is the box (a <picture> lays out as its image) */
+.hk-mascot img { position: absolute; z-index: 2; left: 2px; top: -27px; display: block; width: 40px; height: 40px; pointer-events: none; }
+.hk-h { position: absolute; z-index: 1; left: 40px; top: -12px; max-width: calc(100% - 52px); margin: 0; padding: 0 8px 0 4px; background: #fff; font: 700 clamp(13px, 3.7vw, 15px)/24px var(--font); letter-spacing: -.03em; color: var(--sea-deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hk-sub { order: 5; margin: 10px 0 0; font: 400 13.5px/1.5 var(--font); letter-spacing: -.01em; color: var(--ink-2); word-break: keep-all; }
+.hk-note { order: 6; margin: 2px 0 0; font: 400 13px/1.45 var(--font); color: var(--ink-3); }
+.hk-note a { color: var(--sea-hi); }
+.hk-box { order: 1; display: flex; align-items: center; gap: 4px; height: 58px; padding: 4px 4px 4px 12px; box-sizing: border-box; border: 2px solid var(--sea); border-radius: 18px; background: #fff; color: var(--ink); box-shadow: 0 10px 26px -16px rgba(29, 79, 150, .55); transition: box-shadow .2s var(--fb), border-color .2s var(--fb); }
+.hk-box:focus-within { border-color: var(--sea-deep); box-shadow: 0 0 0 3px var(--tint2), 0 0 0 5px var(--sea), 0 12px 28px -14px rgba(29, 79, 150, .6); }
+.hk-ico { flex: none; width: 22px; height: 22px; color: var(--sea); stroke-width: 1.9; }
+.hk-box input { flex: 1; min-width: 0; height: 46px; padding: 0 0 0 4px; border: 0; background: transparent; font: 400 16px/1.2 var(--font); letter-spacing: -.01em; color: var(--ink); }
+.hk-box input::placeholder { color: var(--ink-3); opacity: 1; }
+.hk-box input:focus { outline: none; }
+.hk-box .hk-go { flex: none; display: inline-grid; place-items: center; min-width: 96px; height: 46px; padding: 0 16px; border: 0; border-radius: 13px; background: var(--sea); color: #fff; font: 700 16px/1 var(--font); letter-spacing: -.01em; cursor: pointer; transition: background-color .2s var(--fb); }
+.hk-box .hk-go:hover { background: var(--sea-hi); }
+.hk-box button:focus-visible { outline: 3px solid var(--sea-deep); outline-offset: 2px; }
+.hk-box .hk-go[data-mode="stop"] { background: var(--ink); }
+/* without JS the box is the site search: one line says so (html.js is set in <head>, so it never flashes) */
+.hk-nojs { order: 2; margin: 8px 0 0; font: 400 13px/1.45 var(--font); color: var(--ink-2); }
+html.js .hk-nojs { display: none; }
+/* the recommended questions as '#' tags: one row that scrolls sideways on phones */
+.hk-pills { order: 3; display: flex; gap: 8px; margin: 12px -16px 0; padding: 0 16px 2px; overflow-x: auto; scrollbar-width: none; scroll-padding-inline: 16px; list-style: none; }
+.hk-pills::-webkit-scrollbar { display: none; }
+.hk-pills li { flex: none; }
+.hk-pill { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); font: 700 14px/1.2 var(--font); letter-spacing: -.01em; text-decoration: none; white-space: nowrap; transition: background-color .2s var(--fb), color .2s var(--fb); }
+.hk-pill::before { content: "#"; margin-right: 3px; color: var(--sea); }
+.hk-pill:hover { background: var(--tint); color: var(--sea-deep); text-decoration: none; }
+.hk-pill:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* the 3D icon menu */
+.hq-menu { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--bg-3); }
+.hq-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px 2px; margin: 0; padding: 0; list-style: none; }
+.hq-i { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; width: 100%; min-height: 84px; padding: 8px 2px; border: 0; border-radius: 16px; background: transparent; color: var(--ink); font: inherit; text-align: center; text-decoration: none; cursor: pointer; }
+.hq-i:hover { text-decoration: none; color: var(--ink); background: var(--g0); }
+.hq-i:focus-visible { outline: 3px solid var(--focus); outline-offset: 0; }
+.hq-l { font: 700 13px/1.25 var(--font); letter-spacing: -.03em; word-break: keep-all; }
+.hq-n { margin-top: -3px; font: 500 12px/1.2 var(--font); color: var(--ink-3); letter-spacing: -.01em; }
+.hq-i .pic { transition: transform .45s var(--ease-bounce); }
+.hq-i:hover .pic { transform: translateY(-6px) rotate(-4deg); }
+@media (prefers-reduced-motion: reduce) { .hq-i .pic, .btn-sea, .btn-sea .arr { transition: none; } .hq-i:hover .pic { transform: none; } }
+
+/* phones: nine (or six) services in rows of three, no item left alone on the last row */
+@media (max-width: 699px) { .hq-row:has(> li:nth-child(9):last-child), .hq-row:has(> li:nth-child(6):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ---------------------------------------------------------------- 3. the conversation (chat.js dock): fixed height */
+.hk .ask-panel { height: 70vh; height: 70svh; margin: 16px 0 0; border: 1px solid var(--hair); border-radius: 24px; background: #fff; box-shadow: var(--shadow-2); scroll-margin-top: calc(var(--bar) + 12px); }
+
+/* ---------------------------------------------------------------- from 700px */
+@media (min-width: 700px) {
+  .ho { padding: 32px 0 56px; }
+  .hk-h1 { font-size: clamp(36px, 5.4vw, 46px); }
+  .ho-lede { font-size: 17.5px; }
+  .ho-news { max-width: none; }
+  .nc-frame { aspect-ratio: 16 / 10; }
+  .hv-prog { width: 64px; }
+  .hq { margin-top: -36px; }
+  .hq-card { padding: 22px 26px 16px; }
+  /* the head as a row above the box: the mascot, the heading, the line on how it answers */
+  .hk-head { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 14px; align-items: center; margin: 0 0 14px; }
+  .hk-mascot img { position: static; grid-column: 1; grid-row: 1 / span 3; align-self: center; width: 56px; height: 56px; }
+  .hk-h { grid-column: 2; position: static; max-width: none; padding: 0; background: none; font: 700 22px/1.3 var(--font); letter-spacing: -.035em; color: var(--ink); white-space: normal; overflow: visible; }
+  .hk-sub { grid-column: 2; margin: 2px 0 0; font-size: 15px; }
+  .hk-sub, .hk-note { order: 0; }
+  .hk-note { grid-column: 2; margin: 0; }
+  .hk-box { height: 64px; padding-left: 18px; border-radius: 20px; }
+  .hk-ico { width: 24px; height: 24px; }
+  .hk-box input { font-size: 17.5px; }
+  .hk-box .hk-go { min-width: 120px; height: 52px; border-radius: 15px; font-size: 17.5px; }
+  .hk-pills { flex-wrap: wrap; overflow: visible; margin: 14px 0 0; padding: 0; }
+  .hk-pill { min-height: 36px; }
+  .hq-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .hk .ask-panel { height: min(64vh, 560px); height: min(64svh, 560px); max-width: 920px; margin: 28px auto 4px; border-radius: 26px; }
+}
+
+/* ---------------------------------------------------------------- from 1024px: text left, the card right */
+@media (min-width: 1024px) {
+  .ho { padding: 24px 0 96px; }
+  .ho-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr); gap: 56px; align-items: center; }
+  .ho-text { display: flex; flex-direction: column; align-items: flex-start; }
+  .ho-k { margin-bottom: 18px; }
+  .hk-h1 { max-width: 9em; margin-bottom: 14px; font-size: clamp(44px, 4.2vw, 60px); line-height: 1.14; }
+  .ho-lede { margin-bottom: 28px; font-size: 18px; }
+  .ho-cta { display: block; }
+  .ho-ctl { justify-content: flex-start; gap: 18px; margin-top: 28px; }
+  .hv-c { width: 36px; height: 36px; }
+  .hv-prog { width: 88px; }
+  .ho-news { max-width: none; }
+  .nc { padding: 12px; box-shadow: var(--shadow-2); border-color: rgba(216, 224, 234, .7); }
+  .hv-view { padding: 0; }
+  .nc-frame { aspect-ratio: 16 / 8.2; }
+  .nc-body { padding: 16px 10px 6px; }
+  .nc-t { font-size: 21px; }
+  .hq { margin-top: -64px; }
+  .hq-card { padding: 26px 30px 14px; }
+  /* the head at the left of the box and the tags: one block that reads as the assistant */
+  .hk-ask { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); column-gap: clamp(28px, 3vw, 44px); align-items: center; }
+  .hk-head { grid-column: 1; grid-row: 1 / span 3; grid-template-columns: 64px minmax(0, 1fr); align-items: start; align-self: center; margin: 0; }
+  .hk-mascot img { align-self: start; width: 64px; height: 64px; }
+  .hk-h { font-size: 23px; line-height: 1.28; word-break: keep-all; }
+  .hk-hn { white-space: nowrap; }   /* two lines read as the name, then the ask: '군산 여행 도우미에게 / 물어보세요' */
+  .hk-sub { font-size: 14.5px; }
+  .hk-note { grid-column: 2; margin-top: 6px; }
+  .hk-box, .hk-nojs, .hk-pills { grid-column: 2; }
+  .hk-pills { margin-top: 12px; }
+  .hq-menu { margin-top: 16px; padding-top: 8px; }
+  .hq-row { grid-template-columns: none; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; }
+  .hq-i { min-height: 96px; }
+  .hq-l { font-size: 14.5px; }
+}
+
+/* ---------------------------------------------------------------- 4. the sections below, in the reference's parts */
+.pg-ko-home .sh .eyebrow { color: var(--sea); font-weight: 700; letter-spacing: .02em; }
+.pg-ko-home .tone-2 .sh .eyebrow { color: var(--sea-hi); }
+.pg-ko-home .sh .h2 { letter-spacing: -.035em; }
+.pg-ko-home .tone-2 { background: var(--bg-2); }
+.pg-ko-home .pc { border: 1px solid var(--hair); border-radius: var(--r-card); background: #fff; box-shadow: none; transition: box-shadow .25s var(--fb); }
+.pg-ko-home .pc:hover { box-shadow: var(--shadow-2); }
+/* the big numerals: one soft tinted panel */
+.pg-ko-home .nums { padding: clamp(36px, 5vw, 64px) 0; }
+.pg-ko-home .nums > .wrap { padding-block: clamp(22px, 3vw, 36px); border-radius: 28px; background: linear-gradient(135deg, var(--g0), var(--g1)); }
+.pg-ko-home .nums-h { border-bottom-color: var(--g2); padding-inline: clamp(18px, 3vw, 36px); }
+.pg-ko-home .nums-h h2 { color: var(--ink); }
+.pg-ko-home .nums-row { padding-inline: clamp(18px, 3vw, 36px); }
+.pg-ko-home .nums .num { color: var(--sea-deep); }
+.pg-ko-home .nums a { color: var(--ink); }
+/* 군산 이야기: light — the black band is gone (ui4_mapping: soft tinted panels instead of loud colour blocks) */
+.pg-ko-home .story { background: linear-gradient(180deg, #fff 0, var(--g0) 100%); color: var(--ink);
+  --ink: #172033; --ink-2: #3E4757; --ink-3: #5F6878; --hair: #D8E0EA; --tile: #fff; --bg-2: #F4F7FB; --bg-3: #E7EDF4;
+  --link: var(--sea-hi); --red: #C9252C; --focus: var(--sea); }
+.pg-ko-home .story .pill-l span, .pg-ko-home .story .eyebrow.pill-l span { background: var(--tint); color: var(--sea-deep); }
+.pg-ko-home .story .st-big .num { color: var(--tint2); }
+/* owner 2026-10-14 ('AI 같고 촌스럽다'): no poster-size year on the Korean home — each chapter's own year line stays */
+.pg-ko-home .story .st-big { display: none !important; }
+
+/* ---------------------------------------------------------------- 1b. the opening photo (owner 2026-10-14: '고화질 실사
+   배경'): media.HOME_COVER — an official KOGL-1 photo (cropping allowed, CLAUDE.md 3.4) full-bleed behind the opening,
+   the local AVIF/WebP derivatives (preloaded). A navy scrim keeps the white words readable (heaviest at the text side
+   from 1024px, at the top on phones); the white card, the pill and the controls stay as they are. Credit at the
+   bottom right, above the question card's overlap. */
+.ho.ho-ph { overflow: hidden; padding-bottom: 50px; background: #22436F; }
+.ho-bg { position: absolute; inset: 0; z-index: 0; }
+.ho-bg picture, .ho-bg img { display: block; width: 100%; height: 100%; max-width: none; }
+.ho-bg img { object-fit: cover; object-position: 50% 60%; }
+.ho-bg::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(8, 25, 52, .66) 0, rgba(8, 25, 52, .5) 42%, rgba(8, 25, 52, .28) 100%); }
+.ho-ph .ho-in { position: relative; z-index: 1; }
+.ho-ph .hk-h1 { color: #fff; text-shadow: 0 2px 18px rgba(0, 0, 0, .3); }
+.ho-ph .ho-lede { color: #fff; text-shadow: 0 1px 10px rgba(0, 0, 0, .35); }
+.ho-ph .ho-k { border-color: transparent; }
+.ho-ph .ho-all { color: #fff; text-shadow: 0 1px 8px rgba(0, 0, 0, .35); }
+.ho-ph .ho-all:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.ho-ph .btn-sea { box-shadow: 0 10px 26px -8px rgba(0, 0, 0, .45); }
+.ho-cap { position: absolute; z-index: 1; right: 16px; bottom: 22px; left: 16px; margin: 0; text-align: right;
+  font: 400 11.5px/1.35 var(--font); color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, .55); }
+.ho-cap a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+@media (min-width: 700px) { .ho.ho-ph { padding-bottom: 76px; } .ho-cap { bottom: 44px; right: 24px; } }
+@media (min-width: 1024px) {
+  .ho.ho-ph { padding-bottom: 104px; }
+  .ho-bg img { object-position: 50% 55%; }
+  .ho-bg::after { background:
+    linear-gradient(90deg, rgba(8, 25, 52, .7) 0, rgba(8, 25, 52, .55) 30%, rgba(8, 25, 52, .18) 58%, rgba(8, 25, 52, .06) 100%),
+    linear-gradient(180deg, rgba(8, 25, 52, .2) 0, rgba(8, 25, 52, 0) 28%); }
+  .ho-cap { left: auto; right: max(24px, calc((100% - 1200px) / 2)); bottom: 80px; }
+}

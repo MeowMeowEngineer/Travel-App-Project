@@ -1,0 +1,205 @@
+{
+ "_about": "3D 그림 자리 등록부(엔진 공통, 군산 사이트에서 옮김 2026-10-19). id → glyph(그림 파일이 없을 때 templates/_ui.html.j2 icon으로 그리는 임시판)·label·group. 원본 incoming/icons/<id>.png → python tools/icon_media.py → templates/assets/icons/<id>-<px>.avif|webp + manifest.json. 옮겨 온 그림은 도시와 무관한 28장뿐이다(theme-*·mascot-* 그림은 군산 장소·군산 전용 마스코트라 옮기지 않았고, 그 자리는 glyph로 그린다). label은 그림이 혼자 뜻을 전할 때만 alt '일러스트: <label>'로 쓴다.",
+ "icons": {
+  "icon-food": {
+   "glyph": "bowl",
+   "label": "맛집",
+   "group": "home.menu"
+  },
+  "icon-stay": {
+   "glyph": "bed",
+   "label": "숙소",
+   "group": "home.menu"
+  },
+  "icon-sights": {
+   "glyph": "pin",
+   "label": "가볼만한 곳",
+   "group": "home.menu"
+  },
+  "icon-course": {
+   "glyph": "route",
+   "label": "코스",
+   "group": "home.menu"
+  },
+  "icon-events": {
+   "glyph": "calendar",
+   "label": "행사 달력",
+   "group": "home.menu"
+  },
+  "icon-map": {
+   "glyph": "map",
+   "label": "지도",
+   "group": "home.menu"
+  },
+  "icon-video": {
+   "glyph": "play",
+   "label": "영상",
+   "group": "home.menu"
+  },
+  "icon-abroad": {
+   "glyph": "globe",
+   "label": "해외에서 본 인천",
+   "group": "home.menu"
+  },
+  "icon-getting-here": {
+   "glyph": "bus",
+   "label": "가는 법",
+   "group": "home.menu"
+  },
+  "icon-ask": {
+   "glyph": "chat",
+   "label": "물어보기",
+   "group": "home.menu"
+  },
+  "fact-hours": {
+   "glyph": "clock",
+   "label": "운영시간",
+   "group": "place.facts"
+  },
+  "fact-closed": {
+   "glyph": "calendar",
+   "label": "쉬는 날",
+   "group": "place.facts"
+  },
+  "fact-fee": {
+   "glyph": "ticket",
+   "label": "요금",
+   "group": "place.facts"
+  },
+  "fact-parking": {
+   "glyph": "car",
+   "label": "주차",
+   "group": "place.facts"
+  },
+  "fact-phone": {
+   "glyph": "phone",
+   "label": "전화",
+   "group": "place.facts"
+  },
+  "fact-menu": {
+   "glyph": "bowl",
+   "label": "대표 메뉴",
+   "group": "place.facts"
+  },
+  "fact-checkin": {
+   "glyph": "bed",
+   "label": "체크인",
+   "group": "place.facts"
+  },
+  "kind-attraction": {
+   "glyph": "pin",
+   "label": "관광지",
+   "group": "no-photo"
+  },
+  "kind-food": {
+   "glyph": "bowl",
+   "label": "음식점",
+   "group": "no-photo"
+  },
+  "kind-stay": {
+   "glyph": "bed",
+   "label": "숙소",
+   "group": "no-photo"
+  },
+  "kind-cafe": {
+   "glyph": "lamp",
+   "label": "카페·빵집",
+   "group": "no-photo"
+  },
+  "kind-museum": {
+   "glyph": "museum",
+   "label": "박물관·전시",
+   "group": "no-photo"
+  },
+  "kind-experience": {
+   "glyph": "spark",
+   "label": "체험",
+   "group": "no-photo"
+  },
+  "guide": {
+   "glyph": "book",
+   "label": "가이드",
+   "group": "guides"
+  },
+  "info-center": {
+   "glyph": "info",
+   "label": "관광안내소",
+   "group": "guides"
+  },
+  "transit-bus": {
+   "glyph": "bus",
+   "label": "시내버스",
+   "group": "guides"
+  },
+  "theme-modern-history": {
+   "glyph": "building",
+   "label": "근대역사",
+   "group": "themes"
+  },
+  "theme-islands-sea": {
+   "glyph": "wave",
+   "label": "섬·바다",
+   "group": "themes"
+  },
+  "theme-parks-nature": {
+   "glyph": "tree",
+   "label": "공원·자연",
+   "group": "themes"
+  },
+  "theme-alleys-culture": {
+   "glyph": "lamp",
+   "label": "골목·문화",
+   "group": "themes"
+  },
+  "sit-rainy": {
+   "glyph": "umbrella",
+   "label": "비 오는 날",
+   "group": "situations"
+  },
+  "sit-kids": {
+   "glyph": "family",
+   "label": "아이와 함께",
+   "group": "situations"
+  },
+  "sit-night": {
+   "glyph": "lamp",
+   "label": "야경",
+   "group": "situations"
+  },
+  "sit-carfree": {
+   "glyph": "bus",
+   "label": "차 없이",
+   "group": "situations"
+  },
+  "sit-free": {
+   "glyph": "ticket",
+   "label": "입장료 없이",
+   "group": "situations"
+  },
+  "sit-walk": {
+   "glyph": "route",
+   "label": "걷기·산책",
+   "group": "situations"
+  },
+  "mascot-eat": {
+   "glyph": "bowl",
+   "label": "맛집 안내 마스코트",
+   "group": "mascot"
+  },
+  "mascot-bus": {
+   "glyph": "bus",
+   "label": "가는 법 안내 마스코트",
+   "group": "mascot"
+  },
+  "mascot-camera": {
+   "glyph": "play",
+   "label": "영상 안내 마스코트",
+   "group": "mascot"
+  },
+  "mascot-wave-boat": {
+   "glyph": "wave",
+   "label": "섬·바다 안내 마스코트",
+   "group": "mascot"
+  }
+ }
+}

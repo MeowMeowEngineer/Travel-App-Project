@@ -1,0 +1,78 @@
+{#- 해외에서 본 군산 — highlights (/abroad/, owner 2026-10-13; quotations 2026-10-14; data/<region>/abroad_highlights.json
+    through build.abroad_highlights_vm). Each card quotes the original: a short passage (1-2 consecutive sentences) in
+    its own language, never translated, in a <blockquote lang cite> with the outlet / author line and the link — the
+    owner's decision of 2026-10-14 (CLAUDE.md 3.10). No screenshot of an article page: the only pictures are the
+    outlet's own og:image, a KOGL-1 photo of a place it names, and the services' official embeds.
+    row(hl, region): round pictures with short names under the page title, like a profile's story highlights. Each is
+    a link to the original, so it works without JS; with JS site.js [data-hl] attaches highlights.js on the first
+    press and the viewer opens instead. The circles' pictures wait in data-src / data-srcset until the page has
+    loaded (site.js swaps them in), so they never compete with the page's LCP; until then, without JS, or when a
+    picture fails (site.js removes it), the globe picture under it shows. The pictures: the outlet's own
+    link-preview picture (og:image, from its address, no referrer — as the article cards below), else a KOGL-1 photo
+    of a place the item names (a circle crops: KOGL-1 only, credited under the row) from the same-origin AVIF/WebP
+    derivatives when they exist, else the provider's small rendition.
+    dialog(hl): the viewer, written by the build to /abroad/highlights.json ({"html": …}) and fetched with
+    highlights.js on the first press, so it adds nothing to the page's first load: a <dialog hidden> (showModal), one
+    card at a time — picture, the quotation (blockquote, lang = the original's language, cite = its address), '— outlet
+    or service · language · date' (as stored in abroad.json), '원문 보기' (new tab). A social post's card carries
+    [data-embed]: site.js loads the service's official embed when the card is shown (window.gsEmbedWatch; a button
+    instead with Save-Data); a post whose service gives no text through oEmbed (Instagram) has no quotation, only the
+    source line and its embed. -#}
+{% import "_abroad.html.j2" as ab %}
+{% import "_media.html.j2" as md %}
+{% import "_ui.html.j2" as ui %}
+{% import "_pic.html.j2" as pk %}
+
+{#- badge(a): what a circle shows under its picture (before it loads, without JS, when it fails or when there is
+    none) — the 3D globe picture (icon-abroad), not language letters ('EN' read as a label, owner 2026-10-14) -#}
+{% macro badge(a) -%}
+{{ pk.pic('icon-abroad', 'globe', 50) }}
+{%- endmacro %}
+
+{#- source(a, lang): outlet (a post: service · account) · language · date, as stored in abroad.json; lang is the
+    quotation's language for a post (abroad.json keeps none for posts) -#}
+{% macro source(a, lang='') -%}
+{% set lg = a.lang or lang %}<span class="ab-src"{% if a.kind != 'post' and a.lang and a.lang not in ('ko', 'en') %} lang="{{ a.lang }}"{% endif %}>{{ a.outlet if a.kind != 'post' else a.platform_label }}</span>{% if a.kind == 'post' and a.author %} · <span{% if lg and lg not in ('ko', 'en') %} lang="{{ lg }}"{% endif %}>{{ a.author }}</span>{% endif %}{% if lg and lg != 'ko' %} · <span>{{ {'en': '영어', 'ja': '일본어', 'zh': '중국어', 'fr': '프랑스어'}.get(lg, lg) }}</span>{% endif %}{% if a.date %} · <time datetime="{{ a.date }}" class="tn">{{ ab.when(a.date) }}</time>{% endif %}
+{%- endmacro %}
+
+{% macro row(hl, region) -%}
+<section class="hl" aria-labelledby="hl-h" data-hl="{{ hl.src }}">
+<h2 id="hl-h" class="hl-h">하이라이트 <span class="hl-sub">해외에서 좋게 본 {{ region }}</span></h2>
+<ul class="hl-row">{% for h in hl['items'] %}{% set a = h.item %}<li class="hl-i"><a class="hl-a" href="{{ a.url }}" rel="noopener" data-hl-open="{{ loop.index0 }}"><span class="hl-ring"><span class="hl-pic"><span class="hl-badge" aria-hidden="true">{{ badge(a) }}</span>
+{%- if a.image %}<img data-src="{{ a.image }}" alt="" width="76" height="76" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+{%- elif h.photo and h.photo.avif %}<picture><source type="image/avif" data-srcset="{{ h.photo.avif }}" sizes="76px">{% if h.photo.webp %}<source type="image/webp" data-srcset="{{ h.photo.webp }}" sizes="76px">{% endif %}<img data-src="{{ h.photo.small or h.photo.url }}" alt="" width="76" height="76" loading="lazy" decoding="async" data-kogl="1"></picture>
+{%- elif h.photo %}<img data-src="{{ h.photo.small }}" alt="" width="76" height="76" loading="lazy" decoding="async" data-kogl="1">
+{%- endif %}</span></span>{% set who = a.outlet or a.platform_label %}<span class="hl-name">{{ h.label }}{% if who and who != h.label %}<span class="vh">, {{ who }}</span>{% endif %}</span></a></li>{% endfor %}</ul>
+{% if hl.og or hl.credits %}<p class="hl-credit">사진: {% if hl.og %}각 매체의 링크 미리보기 이미지{% endif %}{% for places, credit in hl.credits %}{% if hl.og or not loop.first %} · {% endif %}{{ places }} 사진 {{ credit }}{% endfor %}</p>{% endif %}
+</section>
+{%- endmacro %}
+
+{% macro dialog(hl) -%}
+{% set n = hl['items']|length %}
+<dialog class="hl-dlg" aria-labelledby="hl-dlg-h" data-hl-dialog data-lenis-prevent hidden>
+<div class="hl-box">
+<div class="hl-top">
+<ol class="hl-bars" aria-hidden="true">{% for h in hl['items'] %}<li data-hl-bar></li>{% endfor %}</ol>
+<div class="hl-bar2"><h2 class="hl-t" id="hl-dlg-h">하이라이트 <span class="tn"><span data-hl-cur>1</span> / {{ n }}</span></h2>
+<button type="button" class="hl-x" data-hl-close><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="vh">닫기</span></button></div>
+</div>
+<div class="hl-stage" data-hl-stage>
+{% for h in hl['items'] %}{% set a = h.item %}
+<div class="hl-s" role="group" aria-roledescription="하이라이트" aria-label="{{ loop.index }} / {{ n }}" tabindex="-1" data-hl-slide hidden{% if a.kind == 'post' %} data-embed="{{ a.platform }}" data-url="{{ a.url }}"{% endif %}>
+{% if a.kind != 'post' and a.image %}<figure class="hl-ph"><span class="hl-ph-box"><img src="{{ a.image }}" alt="" width="480" height="300" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span><figcaption>사진: {{ a.outlet }} 링크 미리보기 이미지</figcaption></figure>
+{% elif a.kind != 'post' and h.photo %}<figure class="hl-ph"><span class="hl-ph-box">{{ md.picture(h.photo, '(min-width: 600px) 448px, calc(100vw - 32px)') }}</span><figcaption>{{ h.photo.place }} · {{ md.credit(h.photo) }}</figcaption></figure>
+{% endif %}
+{% if h.quote %}<figure class="hl-q"><blockquote lang="{{ h.quote_lang }}" cite="{{ a.url }}"><p>{{ h.quote }}</p></blockquote>
+<figcaption class="hl-meta"><span aria-hidden="true">— </span>{{ source(a, h.quote_lang) }}</figcaption></figure>
+{% else %}<p class="hl-meta">{{ source(a) }}</p>
+{% endif %}
+{% if a.kind == 'post' %}<div class="ab-embed hl-embed" data-embed-slot></div>
+{% endif %}
+<p class="hl-act">{% if a.kind == 'post' %}<button type="button" class="ab-load" data-embed-load data-title="{{ a.platform_label }} 게시물">게시물 불러오기</button>{% endif %}<a class="hl-go" href="{{ a.url }}" target="_blank" rel="noopener" data-track="abroad_click">원문 보기{{ ui.icon('external', 'icon icon-sm') }}<span class="vh"> ({{ a.outlet or a.platform_label }}, 새 탭)</span></a></p>
+</div>
+{% endfor %}
+</div>
+<div class="hl-nav"><button type="button" class="hl-btn" data-hl-dir="-1">{{ ui.icon('prev') }}<span>이전</span></button><button type="button" class="hl-btn" data-hl-dir="1"><span>다음</span>{{ ui.icon('next') }}</button></div>
+</div>
+</dialog>
+{%- endmacro %}

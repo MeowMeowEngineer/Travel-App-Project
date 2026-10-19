@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --omit=dev",
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "trailingSlash": true,
+  "functions": {
+    "api/chat.js": {
+      "maxDuration": 120,
+      "supportsCancellation": true,
+      "includeFiles": "public/chat/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/chat/",
+      "destination": "/api/chat"
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "local/*": false
+    }
+  }
+}

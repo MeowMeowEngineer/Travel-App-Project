@@ -1,0 +1,18 @@
+{% extends "base.html.j2" %}
+{% import "_mascot.html.j2" as mm %}
+{% import "_p2.html.j2" as p2 %}
+{#- 404: say so, offer the search (a plain GET form to /search/, when the build has one), the list pages and the
+    home's answer tiles (h = present.home_vm). -#}
+{% block bodyclass %}pg-404{% endblock %}
+{% block main_class %}{% endblock %}
+{% block content %}
+<section class="pg-hero nf" aria-labelledby="h-nf">
+  <div class="wrap">
+    <p class="nf-mascot">{{ mm.pic('mascot-404', 'medium', 160) }}</p><h1 id="h-nf" class="h-list">페이지를 찾을 수 없습니다</h1>
+    <p class="list-lede">주소가 바뀌었거나 아직 공개되지 않은 페이지입니다.</p>
+    {% if has_search %}{{ ui.search_form('q404', '', '장소 이름, 대표 메뉴, 동 이름으로 찾기', '예: 짬뽕, 선유도, 장미동', false) }}{% endif %}
+    <p class="p2-nf-links"><a class="btn btn-ol" href="/">첫 화면으로</a>{% for kind, path, title in list_nav %}<a class="btn btn-ol" href="{{ path }}">{{ title }} 전체</a>{% endfor %}</p>
+    {% if h and h.answers %}<div class="answers"><h2 class="ans-head">상황별 여행 가이드</h2><ol>{% for a in h.answers %}{{ p2.answer(a) }}{% endfor %}</ol></div>{% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% import "_ui.html.j2" as ui %}{% import "en/_chrome.html.j2" as enc %}{% import "_lang.html.j2" as lg %}<!doctype html>
+{#- base.html.j2 — every page (Apple direction). Head logic (title, description, canonical, robots/noindex,
+    search-engine tokens in production only, og/twitter, geo, JSON-LD, GA4 + track.js in production with a GA4 id) is
+    unchanged by the redesign. Blocks for page templates:
+      content     the page (inside <main id="main-content">)
+      main_class  class of <main>: "wrap" by default — every page sets it to "" and lays out its own bands
+                  (.pg-hero / .pl-hero / .op … each with its own .wrap)
+      bodyclass   extra classes on <body> (e.g. "pg-place kind-food has-photo"; pg-home enables the home's
+                  content-visibility rules in css/60-motion.css)
+      lnav        the local bar (ui.lnav: title, section links, one blue pill). When a page fills it, the global bar
+                  scrolls away and only the local bar stays stuck (body.has-lnav) — place, course, event, guide
+      head        extra <head> tags (e.g. md.preload(ph), a preconnect); page.preload {type, srcset, sizes, media}
+                  or {href, media} is printed here already
+      crumbs      the breadcrumb line above the footer (default: page.crumbs)
+    Context used here: site, page, page_kind, noindex, banner, mode, nav [(label, href)], nav_current, ctxbtn
+    (label, href) | None, has_search, has_videos, tourapi_used, wordmark (pipeline/present.common_vm, page_chrome).
+    Language: lang ('ko' when unset; 'en', 'ja', 'zh-Hans' … on the other versions, pipeline/en_site.py with the
+    locale table pipeline/locales.py) sets <html lang>, og:locale (og_locale) and the body chrome (the other versions'
+    header, crumbs and footer are in en/_chrome.html.j2, with their words t and locale loc). The head logic — title,
+    robots/noindex, canonical, verification tokens, og, JSON-LD, GA4 — is the same for every language.
+    page.alternates [{hreflang, href}] prints the hreflang links (ko · en · ja · zh-Hans · zh-Hant · de · fr · es · ru ·
+    x-default: the versions this page has) of a page that has a twin; langs [{code, hreflang, label, href, current}]
+    is the language menu (_lang.html.j2: each version's counterpart page, else its home; none without other versions).
+    Scripts: site.js (defer) is the only script in the HTML; it attaches motion.js after 'load' and map.js /
+    course.js / search.js on pages with their hooks (see the header of assets/site.js). -#}
+{% set lang = lang|default('ko') %}
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+{% if site.gtm_id and mode == 'production' %}<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','{{ site.gtm_id }}');</script>
+<!-- End Google Tag Manager -->
+{% endif %}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{# set before the first paint: JS-only furniture is laid out from the start, so nothing appears or moves later #}
+<script>document.documentElement.classList.add('js')</script>
+<title>{{ page.title }}{% if site.site_name and site.site_name not in page.title %} | {{ site.site_name }}{% endif %}</title>
+{% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
+<link rel="canonical" href="{{ page.canonical }}">
+{% for a in page.alternates or [] %}<link rel="alternate" hreflang="{{ a.hreflang }}" href="{{ a.href }}">
+{% endfor %}
+{% if noindex %}
+<meta name="robots" content="noindex, nofollow">
+{% elif page.robots %}
+<meta name="robots" content="{{ page.robots }}">
+{% else %}
+<meta name="robots" content="index, follow, max-image-preview:large">
+{% endif %}
+{% if mode == 'production' %}{% set sv = site.search_verification or {} %}
+{% if sv.google %}<meta name="google-site-verification" content="{{ sv.google }}">{% endif %}
+{% if sv.bing %}<meta name="msvalidate.01" content="{{ sv.bing }}">{% endif %}
+{% if sv.naver %}<meta name="naver-site-verification" content="{{ sv.naver }}">{% endif %}
+{% endif %}
+<meta property="og:type" content="{{ page.og_type or 'website' }}">
+<meta property="og:site_name" content="{{ site.site_name }}">
+<meta property="og:title" content="{{ page.title }}">
+{% if page.description %}<meta property="og:description" content="{{ page.description }}">{% endif %}
+<meta property="og:url" content="{{ page.canonical }}">
+<meta property="og:locale" content="{{ og_locale or ('en_US' if lang == 'en' else 'ko_KR') }}">
+{% if page.image %}<meta property="og:image" content="{{ page.image }}">{% endif %}
+{% if page.image_alt %}<meta property="og:image:width" content="{{ page.image_w }}">
+<meta property="og:image:height" content="{{ page.image_h }}">
+<meta property="og:image:alt" content="{{ page.image_alt }}">
+<meta name="twitter:image:alt" content="{{ page.image_alt }}">
+{% endif %}
+<meta name="twitter:card" content="{{ 'summary_large_image' if page.image else 'summary' }}">
+<meta name="theme-color" content="#ffffff">
+{% if page.geo %}
+<meta name="geo.position" content="{{ page.geo.lat }};{{ page.geo.lng }}">
+<meta name="ICBM" content="{{ page.geo.lat }}, {{ page.geo.lng }}">
+{% endif %}
+{% if page.geo_placename %}<meta name="geo.placename" content="{{ page.geo_placename }}">{% endif %}
+{% if page.preload %}<link rel="preload" as="image"{% if page.preload.type %} type="{{ page.preload.type }}"{% endif %}{% if page.preload.srcset %} imagesrcset="{{ page.preload.srcset }}" imagesizes="{{ page.preload.sizes or '100vw' }}"{% else %} href="{{ page.preload.href }}"{% endif %}{% if page.preload.media %} media="{{ page.preload.media }}"{% endif %} fetchpriority="high">{% endif %}
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/brand/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/vendor/pretendard/pretendard.css">
+<link rel="stylesheet" href="/assets/style.css">
+{# head block: a page whose first screen shows a KOGL-1 photo may preload it here with md.preload(ph)
+   (_media.html.j2) instead of page.preload. The behaviour states are folded into the one built stylesheet
+   (templates/assets/css/65-states.css), so there is no third stylesheet. #}
+{% block head %}{% endblock %}
+{% for block in page.jsonld %}
+<script type="application/ld+json">{{ block|safe }}</script>
+{% endfor %}
+{# site.js (every page) is the only script in the HTML: bar state, menu, pause buttons, filters, carousels,
+   YouTube facade, view-transition names. It attaches motion.js after page load (never with reduced motion;
+   motion.js then loads GSAP/ScrollTrigger — SplitText only for a below-the-fold [data-split] heading — and
+   Lenis only on desktop) and map.js / course.js / search.js when the page has their hooks (the Kakao Maps SDK
+   itself loads only near a map box, after load). #}
+<script src="/assets/site.js" defer></script>
+{% if site.ga4_id and mode == 'production' %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ site.ga4_id }}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ site.ga4_id }}');</script>
+{% endif %}
+{% if (site.ga4_id or site.gtm_id) and mode == 'production' %}<script src="/assets/track.js" defer></script>{% endif %}
+</head>
+{% set ln = self.lnav()|trim %}
+{% set bc = self.bodyclass()|trim %}
+<body data-page-kind="{{ page_kind }}"{% if bc or ln %} class="{{ bc }}{% if ln %}{{ ' ' if bc }}has-lnav{% endif %}"{% endif %}>
+{% if site.gtm_id and mode == 'production' %}<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ site.gtm_id }}"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+{% endif %}
+{% if lang != 'ko' %}{{ enc.header(nav, nav_current, page_kind, langs, wordmark, t, loc) }}{% else %}
+<a class="skip-link" href="#main-content">본문 바로가기</a>
+{% macro nav_links(stagger=false) -%}
+{#- the courses entry keeps course_click on every page (the round-2 header '코스 보기' carried it; a page with a
+    local bar now offers its own pill instead of that button) -#}
+{% for label, href in nav %}<li{% if stagger %} style="--i:{{ loop.index0 }}"{% endif %}><a href="{{ href }}"{% if nav_current == href %} aria-current="page"{% endif %}{% if href == '/courses/' %} data-track="course_click"{% endif %}>{{ label }}</a></li>{% endfor %}
+{%- endmacro %}
+{# The global bar: frosted, 52/60px, sticky (in the flow, so nothing is covered at load). The wordmark is
+   site.json site_name (present.common_vm), with the brand small beside it only when it differs (the
+   traveller-facing name is the owner's call, CLAUDE.md 9). Owner 2026-10-14 ('페이지 상단에는 검색, 중앙 부분에는
+   AI챗봇으로 확실히 구분'): this bar is where the SITE SEARCH lives, on every Korean page — form.hs (GET /search/?q=,
+   the static search, search.js), its field 'hs-q' and a round search button; the assistant has no button here (it
+   is the home's centre card and the launcher on every page, _chat.html.j2). /search/ is Korean only: the other
+   language versions (enc.header) have no search page, so their bar has no search.
+   Desktop: wordmark · nav · the search field (always shown, works without JS) · language menu.
+   Phones: wordmark · 영상 · context button · 검색 · 언어 · 메뉴 — '검색' is a link to /search/ (without JS: that page
+   and its own field); with JS it opens the same form OVER the bar (field + close, site.js [data-hs-open]), so the
+   fixed area stays the 52px bar (6% of a 390x844 screen, CLAUDE.md 7 ≤ 15%) and the context button keeps its place.
+   Below 375px 영상 gives way to 검색 (it stays in the menu panel). On /search/ itself the page's own field is the
+   search: the bar keeps only its 검색 link (the current page). The whole nav is in the menu panel (a <details>:
+   works without JS). A page with a local bar (block lnav) lets this bar scroll away; its context action is then the
+   local bar's pill. #}
+{% set wm = wordmark or ((site.region or '') ~ ' 여행') %}
+<header class="mast" data-mast>
+  <div class="wrap mast-in">
+    <a class="wordmark" href="/"{% if page_kind == 'home' %} aria-current="page"{% endif %}><span class="wm-a">{{ wm }}</span>{% if site.brand and site.brand != wm %}<span class="wm-b">{{ site.brand }}</span>{% endif %}</a>
+    <nav class="mast-nav" aria-label="주 메뉴"><ul>{{ nav_links() }}</ul></nav>
+    {% if has_videos %}<a class="mast-v" href="/videos/"{% if nav_current == '/videos/' %} aria-current="page"{% endif %}>영상</a>{% endif %}
+    {% if ctxbtn and not ln %}<a class="mast-ctx" href="{{ ctxbtn[1] }}"{% if ctxbtn[1] == '/courses/' %} data-track="course_click"{% endif %}{% if ctxbtn[1] == '#list-map' %} data-show-map{% endif %}>{{ ctxbtn[0] }}</a>{% endif %}
+    {% if has_search %}{% set on_search = nav_current == '/search/' %}
+    <a class="mast-search" href="/search/"{% if on_search %} aria-current="page"{% else %} data-hs-open{% endif %}>{{ ui.icon('search', 'icon') }}<span>검색</span></a>
+    {% if not on_search %}<form class="hs" id="hs" action="/search/" method="get" role="search" data-hs>
+      <label for="hs-q" class="vh">사이트 검색</label>
+      <span class="hs-f"><input id="hs-q" name="q" type="search" maxlength="100" placeholder="장소·음식·지역 검색" autocomplete="off" enterkeyhint="search" spellcheck="false"><button type="submit" class="hs-go">{{ ui.icon('search', 'icon') }}<span class="vh">검색</span></button></span>
+      <button type="button" class="hs-x" data-hs-close>{{ ui.icon('close', 'icon') }}<span class="vh">검색 닫기</span></button>
+    </form>{% endif %}{% endif %}
+    {% if langs %}{{ lg.menu(langs, '언어') }}{% endif %}
+    <details class="menu" data-menu>
+      <summary><span class="vh">메뉴</span><i class="bars" aria-hidden="true"></i></summary>
+      <nav class="menu-panel" aria-label="전체 메뉴">
+        <ul>{{ nav_links(true) }}</ul>
+        <ul class="menu-sub">{% if has_search %}<li><a href="/search/"{% if nav_current == '/search/' %} aria-current="page"{% endif %}>검색</a></li>{% endif %}<li><a href="/about/"{% if nav_current == '/about/' %} aria-current="page"{% endif %}>소개·출처</a></li>{{ lg.others(langs) }}</ul>
+      </nav>
+    </details>
+  </div>
+</header>
+{% endif %}
+{{ ln }}
+<main id="main-content" tabindex="-1" class="{% block main_class %}wrap{% endblock %}">
+{% block content %}{% endblock %}
+</main>
+{% if banner %}<div class="banner" role="note">{{ banner }}</div>{% endif %}
+{# Breadcrumbs at the top of the grey footer, the way apple.com does (the first screen belongs to the answer); the
+   JSON-LD BreadcrumbList repeats exactly these names. A page may move them with {% block crumbs %}. #}
+{% block crumbs %}{% if page.crumbs %}<div class="crumbs-bar"><div class="wrap">{% if lang != 'ko' %}{{ enc.crumbs(page.crumbs, t) }}{% else %}{{ ui.crumbs(page.crumbs) }}{% endif %}</div></div>{% endif %}{% endblock %}
+{% if lang != 'ko' %}{{ enc.footer(nav, site, langs, wordmark, tourapi_used, t, loc) }}{% else %}
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-in">
+      <nav class="foot-col foot-nav" aria-label="둘러보기">
+        <h2>둘러보기</h2>
+        <ul>{{ nav_links() }}{% if has_search %}<li><a href="/search/">검색</a></li>{% endif %}</ul>
+      </nav>
+      <div class="foot-col">
+        <h2>출처</h2>
+        <ul class="foot-src">
+          <li>원문 출처: <a href="{{ site.source.url }}" rel="noopener" data-track="official_click">{{ site.source.name }}</a></li>
+          {% if tourapi_used %}<li>관광 정보·사진: 한국관광공사 TourAPI</li>{% endif %}
+          <li>지도: 카카오맵</li>
+        </ul>
+      </div>
+      <nav class="foot-col" aria-label="안내">
+        <h2>안내</h2>
+        <ul>{% if has_videos %}<li><a href="/videos/">영상으로 보는 {{ site.region }}</a></li>{% endif %}{% if has_abroad %}<li><a href="/abroad/">해외에서 본 {{ site.region }}</a></li>{% endif %}<li><a href="/about/">소개·출처</a></li><li><a href="/about/#how">이 사이트를 만드는 방법</a></li><li><a href="/about/#correction">정정 요청</a></li><li><a href="/llms.txt">AI용 안내(llms.txt)</a></li><li><a href="/sitemap.xml">사이트맵</a></li>{{ lg.others(langs) }}</ul>
+      </nav>
+    </div>
+    <div class="foot-id">
+      <p class="foot-mark"><span class="wm-a">{{ wm }}</span>{% if site.brand and site.brand != wm %}<span class="wm-b">{{ site.brand }}</span>{% endif %}</p>
+      <p class="foot-op">운영: {% if site.operator.logo %}<span class="op-logo" aria-hidden="true">{% include "assets/brand/aio2o-wordmark.svg" %}</span> {% endif %}{{ site.operator.name }}{% if site.operator.name_en %}({{ site.operator.name_en }}){% endif %}{% if site.editor and site.editor.name %} · {{ site.editor.role or '편집 책임' }} {{ site.editor.name }}{% endif %}{% if site.operator.contact %} · 정정 요청 <a href="mailto:{{ site.operator.contact }}">{{ site.operator.contact }}</a>{% endif %}</p>
+    </div>
+  </div>
+</footer>
+{% endif %}
+{% include "_chat.html.j2" %}
+</body>
+</html>
+{% if false %}{% block lnav %}{% endblock %}{% block bodyclass %}{% endblock %}{% endif %}

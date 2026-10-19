@@ -1,0 +1,114 @@
+/* ---------------------------------------------------------------- reset and base */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: calc(var(--bar) + 16px); background: var(--bg); }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 17px/1.47 var(--font); letter-spacing: -.01em;
+  word-break: keep-all; overflow-wrap: break-word; line-break: strict;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4, p, dl, dd, ol, ul, figure, table, blockquote { margin: 0; }
+ol, ul { padding: 0; list-style: none; }
+h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; }
+[class] { font-synthesis: none; }
+p, dd, li { text-wrap: pretty; }
+img { max-width: 100%; height: auto; }
+picture { display: contents; }
+table { border-collapse: collapse; }
+button, input, select { font-family: inherit; }
+::selection { background: rgba(0, 113, 227, .2); }
+a { color: var(--link); text-decoration: none; transition: color .2s var(--fb); }
+a:hover { text-decoration: underline; text-underline-offset: .18em; }
+/* links inside running text keep an underline (colour is not the only cue); stand-alone links are plain like Apple's */
+.prose p a, .details p a, .faq p a, .gd-sec .gd-p a, .gd-pts a, .dek a, .lede a, .rule p a, .note a, .ch-notes a, .notes a, .vnote a,
+.prog-src a, .st-p a, figcaption a, .rule-note a, .res-why a, .source-line a, .answer a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+main:focus { outline: none; }
+
+/* ---------------------------------------------------------------- utilities */
+.wrap { max-width: calc(var(--maxw) + 2 * var(--m)); margin: 0 auto; padding: 0 var(--m); }
+.tn, time, .tt td, .fees td { font-variant-numeric: tabular-nums lining-nums; }
+.num { font-family: var(--font-num); font-weight: 700; font-variant-numeric: tabular-nums lining-nums; letter-spacing: -.03em; }
+.wd { font: 700 .32em/1 var(--font); letter-spacing: 0; vertical-align: .95em; margin: 0 .25em 0 .1em; }
+.vh, .sr-only { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.note { font-size: 14px; line-height: 1.5; color: var(--ink-3); margin-top: 12px; }
+.note a { color: var(--ink-3); }
+.muted { color: var(--ink-3); }
+.arr { display: inline-block; margin-left: .18em; transition: transform .2s var(--fb); }
+a:hover .arr, a:focus-visible .arr { transform: translateX(3px); }
+/* closed days: red + a square, so colour is never the only cue. Any .closed element draws its own square;
+   .sq is the square alone (week table, legends). */
+.closed { color: var(--red); font-weight: 700; }
+.closed::before, .sq { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--red); margin-right: 6px; vertical-align: .1em; flex: none; }
+.sq-part { background: transparent; box-shadow: inset 0 0 0 1.5px var(--red); }
+.flag { display: inline-block; font: 700 14px/1.4 var(--font); color: var(--red); }
+.dash { color: var(--ink-3); }
+.tel, .nw { white-space: nowrap; }
+.fn { font: 700 10.5px/0 var(--font); color: var(--ink-3); margin-left: 2px; vertical-align: .55em; }
+.chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 980px; background: var(--blue); color: #fff; font: 700 12px/1 var(--font); letter-spacing: 0; white-space: nowrap; flex: none; }
+.chip-inv { background: var(--blue); color: #fff; }
+.tile { background: var(--tile); border-radius: var(--r-l); padding: 24px; }
+/* JS-only furniture is not shown without JS (html.js is set inline in <head>) */
+html:not(.js) .js-only, html:not(.js) .filters, html:not(.js) .mapfig, html:not(.js) [data-kinds],
+html:not(.js) [data-segmap], html:not(.js) .map-fold, html:not(.js) .op-ctl, html:not(.js) .car-nav, html:not(.js) .st-rail,
+html:not(.js) .v-off { display: none !important; }
+@media (min-width: 1024px) { .only-narrow { display: none !important; } }
+@media (max-width: 1023px) { .only-wide { display: none !important; } }
+
+/* ---------------------------------------------------------------- type scale (Pretendard 400 / 700)
+   section H2 .h2 clamp(32,4vw,56)/1.08 · page H1 .d1 / .h-list clamp(34,4.6vw,64)/1.07 · home H1 .op-h1 up to 80 ·
+   chapter heads 24–40 · lede 17–21/1.45 · body 17/1.47 */
+.eyebrow { font: 700 clamp(15px, 1.25vw, 19px)/1.3 var(--font); letter-spacing: -.01em; color: var(--ink-3); margin-bottom: 6px; }
+.h2 { font: 700 clamp(32px, 4vw, 56px)/1.08 var(--font); letter-spacing: -.032em; }
+.h3 { font: 700 clamp(21px, 1.9vw, 28px)/1.2 var(--font); letter-spacing: -.02em; }
+.d1 { font: 700 clamp(34px, 4.6vw, 64px)/1.07 var(--font); letter-spacing: -.034em; margin-top: 6px; }
+.d1 .fn { font-size: 13px; vertical-align: 2.4em; margin-left: 3px; letter-spacing: 0; }
+.kicker { display: flex; flex-wrap: wrap; align-items: center; font-size: 15px; font-weight: 700; color: var(--ink-3); }
+.kicker > * + *::before { content: "·"; color: var(--ink-3); margin: 0 8px; font-weight: 400; display: inline-block; text-decoration: none; }
+.kicker a { color: var(--ink-3); min-height: 32px; display: inline-flex; align-items: center; }
+.kicker a:hover { color: var(--link); }
+.kicker .chip { margin-left: 4px; }
+.kicker .chip::before { content: none; }
+.lede { font: 400 clamp(17px, 1.5vw, 21px)/1.45 var(--font); color: var(--ink); margin-top: 14px; max-width: 34em; letter-spacing: -.012em; }
+.lede .fn { font-size: 11px; }
+.dek { font-size: 17px; line-height: 1.6; color: var(--ink-2); margin-top: 10px; max-width: 40em; }
+.dek .tel, .gd-sec .tel, .gi-reason .tel, .details .tel { color: var(--link); text-decoration: none; }
+.city { font-size: 14px; line-height: 1.5; color: var(--ink-3); margin-top: 10px; }
+.alt-n { color: var(--ink-3); }
+.prose p { font-size: 17px; line-height: 1.7; max-width: 38em; }
+.prose p + p, .prose table + p, .prose p + table { margin-top: 14px; }
+@media (max-width: 760px) { .kicker { font-size: 14px; } }
+
+/* touch widths: small links that stand on their own (a number in the key line, a fact, a card value, a ledger cell,
+   a source in the notes, a credit, a crumb) get a 44px hit area from an invisible layer; the line keeps its size.
+   Links inside running text are left as they are. */
+@media (max-width: 1023px) {
+  .kicker a { min-height: 44px; }
+  .status a, .facts a, .dek .tel, .kf a, .kfr a, .rec-cells a, .notes a, .ch-notes a, .op-cap a, .st-cap a,
+  .crumbs a, .src-dl a { position: relative; }
+  .status a::after, .facts a::after, .dek .tel::after, .kf a::after, .kfr a::after, .rec-cells a::after, .notes a::after,
+  .ch-notes a::after, .op-cap a::after, .st-cap a::after, .crumbs a::after, .src-dl a::after {
+    content: ""; position: absolute; z-index: 1; top: 50%; left: 50%; width: max(100% + 8px, 44px); height: 44px; transform: translate(-50%, -50%); }
+}
+
+/* ---------------------------------------------------------------- buttons: pills
+   .btn = the one filled action (blue); .btn-ol / .btn-line = outlined; .btn-ink = black (on white) */
+.btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .35em; min-height: 44px; padding: 0 22px; background: var(--blue); color: #fff; text-decoration: none; font: 400 17px/1.18 var(--font); letter-spacing: -.01em; border-radius: 980px; border: 0; cursor: pointer; white-space: nowrap; transition: background-color .2s var(--fb), color .2s var(--fb), box-shadow .2s var(--fb); }
+.btn:hover { background: var(--blue-hi); color: #fff; text-decoration: none; }
+.btn .arr { display: none; }
+.btn small { font-size: 13px; opacity: .9; }
+.btn-ol, .btn-line { background: transparent; color: var(--link); box-shadow: inset 0 0 0 1px var(--blue); }
+.btn-ol:hover, .btn-line:hover { background: var(--blue); color: #fff; box-shadow: inset 0 0 0 1px var(--blue); }
+.on-dark .btn-ol, .story .btn-ol { color: var(--link); box-shadow: inset 0 0 0 1px var(--link); }
+/* a link that opens a name search (no coordinates or place id) carries a small '검색' tag */
+.rtag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 2px; border-radius: 980px; background: rgba(0, 0, 0, .08); color: inherit; font-size: 11.5px; font-weight: 700; letter-spacing: 0; }
+.btn:not(.btn-ol):not(.btn-line) .rtag { background: rgba(255, 255, 255, .22); }
+
+/* ---------------------------------------------------------------- icons (ui.icon): inline SVG, stroke = currentColor */
+.icon { width: 22px; height: 22px; flex: none; vertical-align: -.25em; }
+.icon-sm { width: 16px; height: 16px; flex: none; vertical-align: -.15em; }
+/* a place without a photo: a small kind icon (never an empty cover) */
+.type-ico { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--bg-3); color: var(--ink-2); }
+.type-ico .icon { width: 22px; height: 22px; }
+.tone-2 .type-ico { background: var(--bg); }

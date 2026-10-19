@@ -1,0 +1,34 @@
+{# Licensed photos as <picture>/<img> with width/height (no layout shift), and the first-screen preload.
+   Import: {% import "_media.html.j2" as md %}. Photo dicts come from pipeline/present.photo() + media.attach():
+     ph.url (provider original), ph.w / ph.h (intrinsic size), ph.type (1 = KOGL-1, 3 = KOGL-3), ph.alt,
+     ph.credit, ph.lic (licence label), ph.th (provider's small rendition or none),
+     ph.avif / ph.webp (same-origin srcsets, KOGL-1 derivatives only; '' otherwise).
+   Rules (CLAUDE.md 3.4): KOGL-3 is always the provider's own file, never cropped, scaled or re-encoded; every
+   photo keeps its credit "출처: 한국관광공사" next to it (credit()). data-kogl tells motion.js which treatment a
+   photo may get (KOGL-1: curtain, zoom, pan; anything else: fade only). #}
+
+{# picture(ph, sizes='100vw', eager=false, cls='', lazy_src=false, high=false, kb=false)
+   - sizes: the slot's rendered width ('100vw', '(min-width: 1024px) 420px, 80vw' …)
+   - eager / high: first-screen photo (loading=eager, fetchpriority=high when high)
+   - lazy_src: write data-src / data-srcset instead (hero slides 2..n; motion.js swaps them in after load)
+   - kb: mark a KOGL-1 hero photo for the slow CSS zoom (css/65-states.css; ignored for anything but KOGL-1). ui.img
+     never passes it: the Apple opening (ui.showcase) pushes its KOGL-1 photo in with the scroll instead
+     (motion.js heroZoom, [data-hero-zoom]) #}
+{% macro picture(ph, sizes='100vw', eager=false, cls='', lazy_src=false, high=false, kb=false) -%}
+{% set a_src = 'data-src' if lazy_src else 'src' %}{% set a_set = 'data-srcset' if lazy_src else 'srcset' %}
+{% set k1 = ph.type == 1 %}
+{% set common %}{% if cls %} class="{{ cls }}"{% endif %}{% if ph.w and ph.h %} width="{{ ph.w }}" height="{{ ph.h }}"{% endif %} alt="{{ ph.alt }}" loading="{{ 'eager' if eager else 'lazy' }}" decoding="async"{% if high %} fetchpriority="high"{% endif %} data-kogl="{{ ph.type }}"{% if kb and k1 %} data-kb{% endif %}{% endset %}
+{% if k1 and ph.avif %}<picture><source type="image/avif" {{ a_set }}="{{ ph.avif }}" sizes="{{ sizes }}">{% if ph.webp %}<source type="image/webp" {{ a_set }}="{{ ph.webp }}" sizes="{{ sizes }}">{% endif %}<img {{ a_src }}="{{ ph.url }}"{{ common }}></picture>
+{%- else %}<img {{ a_src }}="{{ ph.url }}"{% if ph.th and ph.th.w and ph.w %} {{ a_set }}="{{ ph.th.url }} {{ ph.th.w }}w, {{ ph.url }} {{ ph.w }}w" sizes="{{ sizes }}"{% endif %}{{ common }}>{% endif %}
+{%- endmacro %}
+
+{# credit(ph, long=true): the credit line every photo carries. long adds the licence label. #}
+{% macro credit(ph, long=true) -%}
+출처: {{ ph.credit or '한국관광공사' }}{% if long and ph.lic %} · {{ ph.lic }}{% endif %}
+{%- endmacro %}
+
+{# preload(ph, sizes='100vw'): put in {% block head %} of the page whose first screen shows ph (home opening,
+   KOGL-1 place opening). Emits nothing unless ph is KOGL-1 with an AVIF derivative. #}
+{% macro preload(ph, sizes='100vw') -%}
+{% if ph and ph.type == 1 and ph.avif %}<link rel="preload" as="image" type="image/avif" imagesrcset="{{ ph.avif }}" imagesizes="{{ sizes }}" fetchpriority="high">{% endif %}
+{%- endmacro %}

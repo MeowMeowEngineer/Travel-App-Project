@@ -1,0 +1,114 @@
+{% extends "base.html.j2" %}
+{#- The guide page of every version but Korean: the Korean guide's reading layer (guide.html.j2) in the version's words. The title as the H1; the
+    answer card (the summary's first sentence big, the guide's places as mini cards, the rest of the summary — the
+    DOM keeps the summary contiguous, CSS order moves the cards up); the table of contents (chips on phones and
+    tablets, a sticky side list on wide screens); the body sections as sentence bullets with figures emphasised and
+    the guide's places linked, each with the mini cards of the places it names, beside the map that follows the
+    section being read; the places with their reasons and key facts; the FAQ as an accordion (first answer open);
+    the sources. A section's places that already have a card above get a one-line row (ui.again), not the card
+    again. G = pipeline/en_site.Site.guide_vm. English pages: the guide's campaign card at the top of the head
+    (en.guide.banner.<guide id>, its English words in the alt; laid out as the Korean guide's). -#}
+{% import "en/_en.html.j2" as E with context %}
+{% import "_art.html.j2" as artm %}
+{% block bodyclass %}pg-guide{% endblock %}
+{% block main_class %}{% endblock %}
+{% block lnav %}
+{% set links = [] %}
+{% if G.places %}{% set _ = links.append((t.s('sec_places'), '#h-items')) %}{% endif %}
+{% if G.faqs %}{% set _ = links.append((t.s('sec_faq'), '#h-faq')) %}{% endif %}
+{% set _ = links.append((t.s('sec_sources'), '#h-src')) %}
+{{ ui.lnav(G.label or G.title, links, {'url': '#h-items', 'label': t.s('sec_places')} if G.places else none, t.s('jump_guide')) }}
+{% endblock %}
+{% block content %}
+{% macro credit_en(cards) -%}
+{% set ls = cards|selectattr('photo')|map(attribute='photo.lic')|unique|list %}{% if ls %}{{ t.f('photos_is', name=t.kto) }} · {{ ls|join(loc.list_sep) }}{% endif %}
+{%- endmacro %}
+{% set types = G.places|selectattr('photo')|map(attribute='photo.lic')|unique|list %}
+<article class="guide" data-record="guide:{{ G.g.id }}">
+{% if G.picks %}{{ ui.sprite(G.icons) }}{% endif %}
+  {% set camp = (art_slots or {}).get('en.guide.banner.' ~ G.g.id) if loc.code == 'en' else none %}
+  <header class="pg-hero gd-head{% if camp %} has-camp{% endif %}"><div class="wrap">{{ artm.banner(camp, loc.code) }}
+    <p class="kicker"><a href="{{ loc.home }}guides/">{{ t.guides }}</a>{% if G.label %}<span>{{ G.label }}</span>{% endif %}</p>
+    {#- a title with ': ' reads as the question and, in grey on its own line, its list (the Korean two-tone head);
+        the H1's text stays the whole title #}
+    {% set tp = G.title.split(': ', 1) %}
+    <h1 class="d1 d1-q vt-title">{% if tp|length == 2 %}{{ tp[0] }}<span class="d1-sub"><span class="vh">: </span>{{ tp[1] }}</span>{% else %}{{ G.title }}{% endif %}</h1>
+    {#- the count: the answer card's header gives it (the Korean head has none), so the tile only stands when the
+        guide has no place cards. No checked date (operator decision 2026-10-09) #}
+    {% if not G.picks %}
+    <dl class="datarow">
+      <div><dt>{{ t.sec_places }}</dt><dd class="tn">{{ G.places|length }}</dd></div>
+    </dl>
+    {% endif %}
+    <div class="gd-ans">
+      <div class="summary" data-block="summary"><p class="lede gd-ans-l {{ G.ans.size }}">{{ G.ans.html }}</p>{% if G.ans.rest %}<p class="dek gd-ans-r">{{ G.ans.rest_html }}</p>{% endif %}</div>
+      {% if G.picks %}
+      <div class="gd-picks">
+        {% set nb %}<b class="tn">{{ G.picks_total }}</b>{% endset %}
+        <p class="gd-picks-h"><span>{{ t.n('guide_places_n', G.picks_total, n=nb) }}</span>{% if G.places %}<a href="#h-items">{{ t.full_list }}</a>{% endif %}</p>
+        {% set more = {'n': t.sn('n_more', G.picks_more), 'text': t.s('see_full_list'), 'href': '#h-items'} if G.picks_more and G.places else none %}
+        {{ ui.shelf(G.picks, t.s('places_in_guide'), credit_en(G.picks), E.kfv, t.s('not_listed'), (t.s('prev_place'), t.s('next_place')), more=more) }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  </header>
+
+  {% if G.sections or G.points %}
+  <div class="wrap gd-grid cv{% if G.points %} has-map{% endif %}{% if G.sections|length > 1 %} has-toc{% endif %}">
+    {% if G.sections|length > 1 %}{{ ui.gtoc(G.sections, t.s('toc_label'), t.s('toc_head')) }}{% endif %}
+    <div class="gd-body">
+      {% for s in G.sections %}
+      <section class="gd-sec" aria-labelledby="{{ s.id }}" data-sec="{{ s.id }}" data-pts="{{ s.pts|join(' ') }}">
+        <p class="gd-sec-n tn" aria-hidden="true">{{ '%02d'|format(s.n) }}</p>
+        <h2 id="{{ s.id }}" class="h-sec" data-split>{{ s.heading }}</h2>
+        {% for para in s.paras %}{% if para|length > 1 %}<ul class="gd-pts">{% for b in para %}<li{% if b.own %} class="own"{% endif %}>{{ b.html }}</li>{% endfor %}</ul>{% else %}<p class="gd-p">{{ para[0].html }}</p>{% endif %}{% endfor %}
+        {% if s.places %}{{ ui.shelf(s.places, t.s('places_in_section'), credit_en(s.places), E.kfv, t.s('not_listed'), (t.s('prev_place'), t.s('next_place')), 'mcs-sec', nav_js=true) }}{% endif %}
+        {% if s.again %}{{ ui.again(s.again, t.s('places_again')) }}{% endif %}
+      </section>
+      {% endfor %}
+    </div>
+    {% if G.points %}
+    <aside class="gd-map" aria-label="{{ t.guide_map }}">
+      {{ E.mapfig({'guide': G.points, 'route': false}, t.s('guide_map'), 'guide-mapfig', t.s('map_numbers')) }}
+    </aside>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if G.places %}
+  <section class="wrap chapter cv" aria-labelledby="h-items">
+    <div class="ch-head"><h2 id="h-items">{{ t.n('guide_places_n', G.places|length) }}</h2></div>
+    <ol class="gitems">
+      {% for it in G.places %}
+      <li class="gitem">
+        <span class="gi-n tn">{{ it.n }}</span>
+        <div class="gi-main">
+          <p class="gi-name">{% if it.path %}<a href="{{ it.path }}" data-track="nearby_click" data-place="{{ it.p.e.id }}">{{ it.name }}</a>{% else %}<b>{{ it.name }}</b>{% if it.name_ko %} {{ E.ko(it.name_ko) }}{% endif %}{% endif %}{% set meta = [it.type, it.area]|select|list %}{% if meta %}<span class="gi-meta">{{ meta|join(' · ') }}</span>{% endif %}</p>
+          {% if it.reason %}<p class="gi-reason">{{ it.reason|tel }}</p>{% endif %}
+          {% if it.kf %}{{ E.kfrows(it.kf, it.p.e.id) }}{% endif %}
+        </div>
+        {% if it.photo %}<img class="gi-th t{{ it.photo.type }}" src="{{ it.photo.url }}"{% if it.photo.w and it.photo.h %} width="{{ it.photo.w }}" height="{{ it.photo.h }}"{% endif %} alt="{{ it.photo.alt }}" loading="lazy" decoding="async" data-kogl="{{ it.photo.type }}">{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% if types %}<p class="note">{{ t.f('photos_is', name=t.kto) }} · {{ types|join(loc.list_sep) }}</p>{% endif %}
+  </section>
+  {% endif %}
+
+  {% if G.faqs %}
+  <section class="wrap chapter ch-rail cv" aria-labelledby="h-faq">
+    <h2 id="h-faq" class="rail-label">{{ t.sec_faq }}</h2>
+    <div class="rail-body"><div class="faq faq-acc">{% for f in G.faqs %}<details class="qa"{% if loop.first %} open{% endif %}><summary><h3>{{ f.q }}</h3><span class="qa-i" aria-hidden="true"></span></summary><p>{{ f.a }}{% if G.faq_notes|length > 1 %}{{ E.csup(f.n) }}{% endif %}</p></details>{% endfor %}</div>{{ E.chnotes(G.faq_notes) }}</div>
+  </section>
+  {% endif %}
+
+  <section class="wrap chapter ch-rail ch-src cv" aria-labelledby="h-src">
+    <h2 id="h-src" class="rail-label">{{ t.sec_sources }}</h2>
+    <div class="rail-body">
+      {% if G.sources %}<ul class="src-list src-compact">{% for s in G.sources %}<li><a href="{{ s.url }}" rel="noopener" data-track="official_click">{{ s.name }}</a></li>{% endfor %}</ul>{% endif %}
+      <p class="note"><a href="{{ loc.home }}about/#corrections">{{ t.report_error }}</a></p>
+    </div>
+  </section>
+</article>
+{% endblock %}
