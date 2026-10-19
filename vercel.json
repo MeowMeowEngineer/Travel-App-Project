@@ -10,12 +10,21 @@
       "maxDuration": 120,
       "supportsCancellation": true,
       "includeFiles": "public/chat/**"
+    },
+    "api/plan.js": {
+      "maxDuration": 60,
+      "supportsCancellation": true,
+      "includeFiles": "public/chat/**"
     }
   },
   "rewrites": [
     {
       "source": "/api/chat/",
       "destination": "/api/chat"
+    },
+    {
+      "source": "/api/plan/",
+      "destination": "/api/plan"
     }
   ],
   "git": {

@@ -20,9 +20,11 @@
 // — {continue: true} with the cut answer as the last assistant message — and the stream carries only the rest of the
 // answer (cleanRequest, trimOverlap).
 //
-// SSE events: {type:'status', text} while a tool runs · {type:'text', delta} · {type:'done', links, fix, cut?} ·
-// {type:'error', code, message}. Logs: one JSON line per request with status, tool names and token numbers — never
-// the user's text, the answer, the address or the key.
+// SSE events: {type:'meta', dir, site, lang?} first (the answer's direction — 'rtl' for Arabic and Hebrew script —, the
+// site language its links open, and its language when prompt.js chooseLang is sure of it) · {type:'status', text} while a tool
+// runs · {type:'text', delta} · {type:'done', links, fix, cut?} · {type:'error', code, message}. Logs: one JSON line per
+// request with status, tool names, token numbers, the question's language code, which limit forced the answer and the
+// share of Hangul letters in a non-Korean answer — never the user's text, the answer, the address or the key.
 //
 // What a question has to pass, cheapest first (README '사이트 도우미'): POST · an Origin from the allow-list and no
 // 'Sec-Fetch-Site: cross-site' (this only stops other websites' pages: a script sets any header it likes) · a key is
@@ -35,8 +37,8 @@ import { isIP } from "node:net";
 
 import { QUERY_CHARS, defaultKnowledge } from "./knowledge.js";
 import {
-  EFFORT, LANGS, MODEL, NO_THINKING_NOTE, TOOLS, TOOLS_PLAIN, buildSystem, continueText, dataBlock, errorText, questionLang,
-  neutralise, statusText,
+  EFFORT, LANGS, MODEL, TOOLS, TOOLS_PLAIN, buildSystem, chooseLang, continueFor, dataBlock, errorText, languageReminder,
+  languageRetryNote, lastCallNote, neutralise, noThinkingNote, statusText, wrongLanguage,
 } from "./prompt.js";
 import { loadSite } from "./site.js";
 
@@ -69,6 +71,10 @@ export const LIMITS = {
   requestMs: 90000,      // the whole answer (vercel.json maxDuration is 120)
   callMs: 45000,         // one API call (4,000 output tokens take about 27 s at the measured ~150 tokens/s)
   jsonRetries: 2,
+  // the language gate (answer()): the first answer text is held until it has gateLetters letters of prose (about one
+  // sentence); a shorter whole answer is judged once it has gateMinLetters
+  gateLetters: 40,
+  gateMinLetters: 12,
 };
 
 /** The key: ANTHROPIC_API_KEY only (Vercel Settings → Environment Variables; a local test: the environment), trimmed
@@ -85,7 +91,7 @@ export async function makeClient(key) {
   return new Anthropic({ apiKey: key, authToken: null, maxRetries: 1, timeout: LIMITS.callMs });
 }
 
-const SSE_HEADERS = {
+export const SSE_HEADERS = {
   "Content-Type": "text/event-stream; charset=utf-8",
   "Cache-Control": "no-cache, no-transform",
   "X-Accel-Buffering": "no",
@@ -93,7 +99,7 @@ const SSE_HEADERS = {
   "X-Robots-Tag": "noindex",
 };
 
-function json(status, body, headers = {}) {
+export function json(status, body, headers = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store",
@@ -235,7 +241,7 @@ export function limitCode(limit) {
   return "busy";
 }
 
-class HttpError extends Error {
+export class HttpError extends Error {
   constructor(status, code) {
     super(code);
     this.status = status;
@@ -243,7 +249,7 @@ class HttpError extends Error {
   }
 }
 
-async function readBody(request, max) {
+export async function readBody(request, max) {
   const declared = Number(request.headers.get("content-length") || 0);
   if (declared > max) throw new HttpError(413, "too_large");
   if (!request.body) throw new HttpError(400, "bad_request");
@@ -325,9 +331,11 @@ function partialAnswer(text) {
  *  question (≤ userChars), the last LIMITS.messages kept, earlier answers cut (their links kept), the data delimiter
  *  neutralised. Two questions in a row: the earlier one got no answer (the reader stopped it, or it failed) and the
  *  reader moved on — only the newer one is asked. With continue: true the conversation ends with the cut answer to the
- *  last question, and the server adds the request to go on (prompt.js continueText) as the last, user, message;
- *  cont.partial is that cut answer. `language` is the language the question is written in (prompt.js questionLang),
- *  the one every request to go on is written in. */
+ *  last question, and the server adds the request to go on (prompt.js continueFor) as the last, user, message;
+ *  cont.partial is that cut answer. `qlang` is the language the answer is written in (prompt.js chooseLang: {code,
+ *  site, dir, sure, why}) — every request to go on is written in it, its links open that version —; `language` its
+ *  site language. `site` is the site the assistant answers for (chatbot/site.js): its address reads earlier answers'
+ *  links back as paths, its city's name is in the request to go on. */
 export function cleanRequest(body, site = {}) {
   if (!body || typeof body !== "object" || !Array.isArray(body.messages)) throw new HttpError(400, "bad_request");
   const cont = body.continue === true;
@@ -364,16 +372,18 @@ export function cleanRequest(body, site = {}) {
     return { role: m.role, content: neutralise(content) };
   });
   const lang = normLang(typeof body.lang === "string" ? body.lang : "");
-  const language = questionLang(question.content, lang);
+  // the answer's language: the one the question asks for, a lasting request earlier, the question's own, or — for a
+  // question with none ('2?') — the previous answer's (prompt.js chooseLang)
+  const qlang = chooseLang(question.content, messages.slice(0, messages.length - (cont ? 2 : 1)), lang);
   let partial = "";
   if (cont) {
     partial = messages[messages.length - 1].content;
     const chars = [...partial];
-    messages.push({ role: "user", content: neutralise(continueText(chars.slice(-160).join(""), language, site)) });
+    messages.push({ role: "user", content: neutralise(continueFor(chars.slice(-160).join(""), qlang, site)) });
   }
   let page = typeof body.page === "string" ? body.page.trim() : "";
   page = page.startsWith("/") && page.length <= LIMITS.pageChars ? page.split(/[?#]/)[0] : "";
-  return { messages, lang, page, language, cont: cont ? { partial } : null };
+  return { messages, lang, page, language: qlang.site, qlang, cont: cont ? { partial } : null };
 }
 
 /** A continuation as the reader should see it after the cut answer: when it begins by writing again the end of the cut
@@ -404,7 +414,7 @@ export function trimOverlap(prev, next) {
 }
 
 // ------------------------------------------------------------------ the answer loop
-function validInput(name, input) {
+export function validInput(name, input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   if (name === "search_site") {
     const q = typeof input.query === "string" ? input.query.trim() : "";
@@ -420,22 +430,88 @@ function validInput(name, input) {
     if (!ids.every((x) => typeof x === "string" && x.trim() && x.length <= 300)) return null;
     return { ids: ids.map((x) => x.trim()) };
   }
+  if (name === "fee_total") return validFees(input);
+  if (name === "check_plan") return validPlan(input);
   return null;
+}
+
+const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+const text = (v, max) => typeof v === "string" && v.trim().length > 0 && v.length <= max;
+
+/** fee_total's input (prompt.js): a ticket name and up to 20 kinds of people, and/or up to 20 priced items. */
+export function validFees(input) {
+  const people = input.people ?? [];
+  const items = input.items ?? [];
+  if (!Array.isArray(people) || !Array.isArray(items) || people.length > 20 || items.length > 20) return null;
+  if (input.ticket !== undefined && !(typeof input.ticket === "string" && input.ticket.length <= 60)) return null;
+  if (!people.every((p) => p && typeof p === "object" && int(p.count, 1, 999)
+    && (p.age === undefined || int(p.age, 0, 120)) && (p.category === undefined || text(p.category, 20)))) return null;
+  if (!items.every((x) => x && typeof x === "object" && text(x.label, 80) && int(x.won, 0, 10000000) && int(x.count, 1, 999))) return null;
+  if (!people.length && !items.length) return null;
+  for (const k of ["resident", "group"]) if (input[k] !== undefined && typeof input[k] !== "boolean") return null;
+  return { ticket: (input.ticket || "").trim(), people: people.map((p) => ({ count: p.count, age: p.age, category: p.category?.trim() })),
+    resident: !!input.resident, group: !!input.group, items: items.map((x) => ({ label: x.label.trim(), won: x.won, count: x.count })) };
+}
+
+/** check_plan's input (prompt.js): a date (YYYY-MM-DD, optional) and 1–12 stops with a page path and HH:MM times. */
+export function validPlan(input) {
+  const stops = input.stops;
+  if (input.date !== undefined && !(typeof input.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input.date))) return null;
+  if (!Array.isArray(stops) || !stops.length || stops.length > 12) return null;
+  const hm = (v) => typeof v === "string" && /^(?:[01]?\d|2[0-4]):[0-5]\d$/.test(v.trim());
+  if (!stops.every((x) => x && typeof x === "object" && text(x.page, 300) && hm(x.start) && hm(x.end))) return null;
+  return { date: input.date || "", stops: stops.map((x) => ({ page: x.page.trim(), start: x.start.trim(), end: x.end.trim() })) };
+}
+
+// '합계 4,000원', 'total of 8,000 won', '合計8,000ウォン' — a total the answer writes, to compare with fee_total's
+const TOTAL_WORD = /(?:합계|총액|총|모두|total|insgesamt|gesamt|summe|итого|всего|в сумме|合計|合计|总计|總計|共计|共計)[^\d\n]{0,10}$/iu;
+const AMOUNT = /(\d{1,3}(?:[,.\u00a0 ]\d{3})+|\d{4,})\s*(?:원|won|ウォン|韩元|韓元|wons?|вон)/giu;
+
+/** How many totals an answer writes that are none of the totals fee_total gave in this request (a number for the log:
+ *  the review's G02 wrote 8,000, 5,000 and 4,000 won for one family). */
+export function totalsOff(text, known) {
+  if (!known.length) return 0;
+  let off = 0;
+  for (const m of String(text).matchAll(AMOUNT)) {
+    if (!TOTAL_WORD.test(String(text).slice(Math.max(0, m.index - 24), m.index))) continue;
+    if (!known.includes(Number(m[1].replace(/[^\d]/g, "")))) off += 1;
+  }
+  return off;
+}
+
+/** The letters of an answer's prose (link targets and bracketed names left out): what the language gate waits for. */
+function proseLetters(text) {
+  return (String(text).replace(/\]\([^)]*\)/g, "]").replace(/\[[^\]\n]*\]|\([^)\n]*\)/g, " ").match(/\p{L}/gu) || []).length;
 }
 
 function apiStatus(err) {
   return typeof err?.status === "number" ? err.status : 0;
 }
 
+/** The share of Hangul among the letters of an answer outside link targets and brackets (the Korean a non-Korean
+ *  answer may carry next to a name or as an address), rounded to two places: a number for the log, never text. */
+export function hangulShare(text) {
+  const s = String(text).replace(/\]\([^)]*\)/g, "]").replace(/\[[^\]\n]*\]|\([^)\n]*\)|（[^）\n]*）|「[^」\n]*」/g, " ");
+  const letters = (s.match(/\p{L}/gu) || []).length;
+  return letters ? Math.round(((s.match(/\p{Script=Hangul}/gu) || []).length / letters) * 100) / 100 : 0;
+}
+
 /** Runs one question to the end, writing SSE events through send(). Returns the log record's numbers. */
-export async function answer({ client, kb, messages, lang, page, send, signal, now, cont = null, language = "", site = {} }) {
-  // the language a request to go on is written in: the question's (cleanRequest), else the interface's
-  const qlang = language || lang;
+export async function answer({ client, kb, messages, lang, page, send, signal, now, cont = null, language = "", qlang = null,
+  site: where = {} }) {
+  // the answer's language (cleanRequest: prompt.js chooseLang — the one asked for, else the question's own): its links
+  // open that version's pages (else the English ones) with their names, a request to go on is written in it. `where`:
+  // the site the assistant answers for (chatbot/site.js — its address, name and the city's names)
+  const ql = qlang || { code: language || lang, site: language || lang, dir: "", sure: !!language };
+  const site = LANGS.includes(ql.site) ? ql.site : "en";
   const t0 = Date.now();
-  const system = buildSystem(kb.catalog, { now, page: kb.describePage(page), lang, site });
+  send({ type: "meta", dir: ql.dir || "", site, ...(ql.sure && ql.code ? { lang: ql.code } : {}) });
+  let system = buildSystem(kb.catalog, { now, page: kb.describePage(page, site), lang, answer: ql, site: where });
+  // after the tool results of a round, a non-Korean answer is told its language again (prompt.js languageReminder)
+  const reminder = ql.code !== "ko" ? { type: "text", text: languageReminder(ql) } : null;
   const convo = messages.map((m) => ({ role: m.role, content: m.content }));
   const rec = { rounds: 0, tools: [], in: 0, out: 0, cache_read: 0, cache_write: 0, stop: "", fallback: false,
-    cont: !!cont, rescue: false, more: false };
+    cont: !!cont, rescue: false, more: false, forced: "", qlang: ql.code || "und" };
   let tools = TOOLS;
   let toolChars = LIMITS.toolChars;
   let outUsed = 0;   // output tokens of this question's calls so far (thinking included)
@@ -457,6 +533,20 @@ export async function answer({ client, kb, messages, lang, page, send, signal, n
     pending = null;
     emit(t);
   };
+  const totals = [];     // the totals fee_total gave in this request (totalsOff, the log)
+  // the language gate (해남각's, brought here 2026-10-18; its review T04: a Simplified Chinese question, rightly detected,
+  // got a whole Korean answer): when the answer's language is sure, each call's first text is held until it has enough
+  // letters to tell; written in another language, the call is made once more with a note (prompt.js
+  // languageRetryNote) before the reader sees any of it — once per question. Every call, not only the request's
+  // first text: a forced last call after a round that wrote a line (the external evaluation of 2026-10-18: a Korean
+  // question's forced last call answered in English), and a continuation — a continue request's, or the rest this
+  // request asks for — whose text waits in `pending` anyway until a repeat of the cut answer's end can be dropped.
+  const judged = ql.sure && LANGS.includes(ql.code);
+  let gate = null;
+  // a new call's text after an earlier call's starts a new paragraph (a continuation joins the text it goes on with)
+  const paragraph = () => {
+    if (text && !/\n\s*$/.test(text)) emit("\n\n");
+  };
   let rescue = false;   // this call follows one that only thought: no thinking, a full call's output
   let more = false;     // this call goes on with the answer the call before it left cut at max_tokens
   for (let call = 0; call <= LIMITS.toolRounds; call += 1) {
@@ -467,17 +557,24 @@ export async function answer({ client, kb, messages, lang, page, send, signal, n
     // the last round, a continuation (it only writes: what it read is in the conversation), or too little of the
     // question's output left for another tool round: this call answers
     const last = going || call === LIMITS.toolRounds || (!rescue && left < LIMITS.answerReserve);
+    // a call made to answer while the model may still want to read: told to answer now, in the answer's language and
+    // without a word about any limit (prompt.js lastCallNote), and the log says which limit it was
+    const forced = last && !going ? (call === LIMITS.toolRounds ? "rounds" : "output") : "";
+    if (forced) rec.forced = forced;
     let maxTokens = last ? Math.max(left, LIMITS.lastCallTokens) : Math.min(LIMITS.maxTokens, left);
     if (rescue || going) maxTokens = LIMITS.maxTokens;
     maxTokens = Math.min(maxTokens, cap - outUsed);
     const params = { model: MODEL, max_tokens: maxTokens, system, tools, messages: convo,
       output_config: { effort: going ? "low" : EFFORT } };
+    // only the uncached context changes; the cached rules + catalog stay byte for byte
+    if (forced && !rec.rescue) params.system = [system[0], { type: "text", text: `${system[1].text}\n${lastCallNote(ql)}` }];
     if (rec.rescue) {
       // thinking off (accepted at effort low to high) and the earlier turns' thinking blocks left out with it, so the
       // whole output goes to the answer; the uncached context asks for the answer only (the cached part is unchanged)
       params.thinking = { type: "disabled" };
       params.output_config = { effort: "low" };
-      params.system = [system[0], { type: "text", text: `${system[1].text}\n${NO_THINKING_NOTE}` }];
+      params.system = [system[0], { type: "text",
+        text: `${system[1].text}${forced ? `\n${lastCallNote(ql)}` : ""}\n${noThinkingNote(ql)}` }];
       params.messages = convo.map((m) => (Array.isArray(m.content)
         ? { ...m, content: m.content.filter((b) => b.type !== "thinking" && b.type !== "redacted_thinking") } : m));
     }
@@ -486,22 +583,70 @@ export async function answer({ client, kb, messages, lang, page, send, signal, n
     more = false;
     let roundText = "";
     let message;
+    let wrong = false;
+    // this call's first text waits for the language gate — unless it goes on with a cut answer (held in `pending`
+    // until the overlap can be seen, and judged when it is let out) or the question has had its one retry
+    const judge = judged && !rec.lang_retry;
+    gate = judge && pending === null ? "" : null;
+    const release = () => {   // the held text, judged to be in the answer's language: to the reader
+      const t = gate;
+      gate = null;
+      paragraph();
+      emit(t);
+    };
     try {
       const stream = client.messages.stream(params, { signal, timeout: LIMITS.callMs });
       for await (const ev of stream) {
         if (ev.type === "content_block_start" && ev.content_block?.type === "tool_use") {
           send({ type: "status", text: statusText(lang, "think") });
         } else if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta" && ev.delta.text) {
-          // a new round's text after a tool round starts a new paragraph; a continuation joins the text it goes on with
-          if (!roundText && pending === null && text && !/\n\s*$/.test(text)) emit("\n\n");
+          const first = !roundText;
           roundText += ev.delta.text;
           if (pending !== null) {
             pending += ev.delta.text;
-            if (pending.length >= 160) flush();
+            if (pending.length >= 160) {
+              if (judge && wrongLanguage(pending, ql.code, LIMITS.gateLetters)) {
+                wrong = true;
+                break;   // the rest of a cut answer in another language: the reader has seen none of it
+              }
+              flush();
+            }
+          } else if (gate !== null) {
+            gate += ev.delta.text;
+            if (proseLetters(gate) >= LIMITS.gateLetters) {
+              if (judge && wrongLanguage(gate, ql.code, LIMITS.gateLetters)) {
+                wrong = true;
+                break;   // ends the stream: the reader has seen none of this call's text
+              }
+              release();
+            }
           } else {
+            if (first) paragraph();
             emit(ev.delta.text);
           }
         }
+      }
+      // a short text that ended before the gate could tell: judged on what it has (a held continuation too)
+      if (!wrong && gate) {
+        if (judge && wrongLanguage(gate, ql.code, LIMITS.gateMinLetters)) wrong = true;
+        else release();
+      }
+      if (!wrong && pending && judge && wrongLanguage(pending, ql.code, LIMITS.gateMinLetters)) wrong = true;
+      if (wrong) {
+        // what the dropped attempt used, as far as the stream reported it, so the log's usage covers every call
+        const u0 = stream.currentMessage?.usage || {};
+        rec.in += u0.input_tokens || 0;
+        rec.out += u0.output_tokens || 0;
+        rec.cache_read += u0.cache_read_input_tokens || 0;
+        rec.cache_write += u0.cache_creation_input_tokens || 0;
+        outUsed += u0.output_tokens || 0;
+        rec.lang_retry = 1;
+        gate = null;
+        if (pending !== null) pending = "";   // a continuation is asked again from the same cut
+        more = going;                         // … and is still a continuation (no tools, effort low)
+        system = [system[0], { type: "text", text: `${system[1].text}\n${languageRetryNote(ql)}` }];
+        call -= 1;
+        continue;
       }
       message = await stream.finalMessage();
       flush();
@@ -540,7 +685,7 @@ export async function answer({ client, kb, messages, lang, page, send, signal, n
     rec.stop = message.stop_reason || "";
     outUsed += u.output_tokens || params.max_tokens;
     if (message.stop_reason === "refusal") {
-      send({ type: "error", code: "refusal", message: errorText(lang, "refusal") });
+      send({ type: "error", code: "refusal", message: errorText(site, "refusal") });
       return { ...rec, status: "refusal" };
     }
     if (message.stop_reason === "pause_turn") {
@@ -567,7 +712,7 @@ export async function answer({ client, kb, messages, lang, page, send, signal, n
       rec.more = true;
       more = true;
       convo.push({ role: "assistant", content: message.content });
-      convo.push({ role: "user", content: neutralise(continueText([...(before + text)].slice(-160).join(""), qlang, site)) });
+      convo.push({ role: "user", content: neutralise(continueFor([...(before + text)].slice(-160).join(""), ql, where)) });
       pending = "";
       call -= 1;   // not a tool round
       continue;
@@ -575,7 +720,7 @@ export async function answer({ client, kb, messages, lang, page, send, signal, n
     if (!uses.length) break;   // end_turn, or max_tokens on a text answer (kept, marked cut)
     // a tool input cut off at max_tokens can parse as a valid partial object: never run it
     if (message.stop_reason === "max_tokens") {
-      send({ type: "error", code: "truncated", message: errorText(lang, "truncated") });
+      send({ type: "error", code: "truncated", message: errorText(site, "truncated") });
       return { ...rec, status: "truncated" };
     }
     if (message.stop_reason !== "tool_use") break;
@@ -592,29 +737,43 @@ export async function answer({ client, kb, messages, lang, page, send, signal, n
       let out;
       if (use.name === "search_site") {
         send({ type: "status", text: statusText(lang, "search", input.query) });
-        out = kb.searchText(input.query, { kind: input.kind, lang: input.lang || lang });
+        out = kb.searchText(input.query, { kind: input.kind, lang: input.lang || site, nameLang: site });
+      } else if (use.name === "fee_total") {
+        send({ type: "status", text: statusText(lang, "calc") });
+        const r = kb.feeTotal(input);
+        if (r.known !== null) totals.push(r.known);
+        out = r.text;
+      } else if (use.name === "check_plan") {
+        send({ type: "status", text: statusText(lang, "check") });
+        const r = kb.checkPlan(input);
+        rec.plan_flags = (rec.plan_flags || 0) + r.flags.length;
+        out = r.text;
       } else {
         send({ type: "status", text: statusText(lang, "read", input.ids.map((id) => kb.titleOf(id)).join(", ")) });
-        out = kb.pagesText(input.ids, { lang, budget: Math.max(0, toolChars) }).text;
+        out = kb.pagesText(input.ids, { lang: site, budget: Math.max(0, toolChars), nameLang: site }).text;
       }
       if (out.length > toolChars) {
-        out = toolChars > 200 ? `${out.slice(0, toolChars)}\n… (cut here: this question's reading limit)`
-          : "This question's reading limit is used up: answer now with what you have.";
+        // said as what the page holds, never as a limit the answer could pass on ('my lookups ran out', 2026-10-18)
+        out = toolChars > 200 ? `${out.slice(0, toolChars)}\n… (cut here: the rest is on the page)`
+          : "Nothing more is given here: answer from the catalog and the pages you have, and link the pages for the rest.";
       }
       toolChars -= out.length;
       results.push({ type: "tool_result", tool_use_id: use.id, content: dataBlock(use.name, out) });
     }
-    convo.push({ role: "user", content: results });
+    // the tool results first (the API wants every tool_result before other blocks), then the language note
+    convo.push({ role: "user", content: reminder ? [...results, reminder] : results });
   }
   flush(true);
   if (!text.trim() && !cont) {   // thinking used the whole turn, or the model said nothing
-    send({ type: "error", code: "empty", message: errorText(lang, "error") });
+    send({ type: "error", code: "empty", message: errorText(site, "empty") });
     return { ...rec, status: "empty" };
   }
-  // a continuation's links are checked together with the cut answer it follows (the browser shows them as one answer)
-  const { links, fix } = kb.fixLinks(cont ? `${cont.partial}\n${text}` : text, lang);
+  // a continuation's links are checked together with the cut answer it follows (the browser shows them as one answer);
+  // they open the pages in the answer's language (its site language: else English), not the interface's
+  const { links, fix } = kb.fixLinks(cont ? `${cont.partial}\n${text}` : text, site);
   send({ type: "done", links, fix, ...(rec.stop === "max_tokens" ? { cut: true } : {}) });
-  return { ...rec, status: "ok", links: links.length };
+  return { ...rec, status: "ok", links: links.length, ...(ql.code !== "ko" ? { hangul: hangulShare(text) } : {}),
+    ...(totals.length ? { totals_off: totalsOff(text, totals) } : {}) };
 }
 
 // ------------------------------------------------------------------ the handler
@@ -680,34 +839,40 @@ export function createHandler(deps = {}) {
       return json(503, { code: "not_configured", message: errorText("en", "not_configured") });
     }
     const key = clientKey(clientIp(request));
-    const refuse = (gate) => {
+    // a refusal's text: in the answer's language once the question has been read, before that in English (the
+    // browser shows its own text for each code, in its page's language: chat.js err)
+    const refuse = (gate, lang = "en") => {
       const code = limitCode(gate.limit);
       done("rate_limited", { limit: gate.limit });
-      return json(429, { code, message: errorText("en", code) }, { "Retry-After": String(gate.retry) });
+      return json(429, { code, message: errorText(lang, code) }, { "Retry-After": String(gate.retry) });
     };
     // a client (or the instance) already at a limit is refused before its body is read; nothing is counted yet
     let gate = limiter.check(key, now().getTime());
     if (!gate.ok) return refuse(gate);
     let req;
+    let raw = null;
     try {
-      req = cleanRequest(await readBody(request, LIMITS.bodyBytes), site);
+      raw = await readBody(request, LIMITS.bodyBytes);
+      req = cleanRequest(raw, site);
     } catch (err) {
       // anything else a body can make fail here (the client gone mid-upload, a value no check foresaw) is still the
-      // request's fault: 400, never an unhandled error — and never counted against anyone's limit
+      // request's fault: 400, never an unhandled error — and never counted against anyone's limit. Its text in the
+      // page's language when the body says it (a question over 800 characters), else in English.
       const e = err instanceof HttpError ? err : new HttpError(400, "bad_request");
       done(e.code, e === err ? {} : { reason: err?.name || "error" });
-      return json(e.status, { code: e.code, message: errorText("en", e.code) });
+      const pageLang = raw && typeof raw === "object" && typeof raw.lang === "string" ? normLang(raw.lang) : "en";
+      return json(e.status, { code: e.code, message: errorText(pageLang, e.code) });
     }
     // a question that passed every check: counted now (refused if a request alongside took the last place)
     gate = limiter.take(key, now().getTime());
-    if (!gate.ok) return refuse(gate);
+    if (!gate.ok) return refuse(gate, req.language);
     let kb;
     let api;
     try {
       [kb, api] = await Promise.all([knowledge(), getClient()]);
     } catch (err) {
       done("unavailable", { reason: err?.code || err?.name || "load" });
-      return json(503, { code: "unavailable", message: errorText("en", "busy") });
+      return json(503, { code: "unavailable", message: errorText(req.language, "unavailable") });
     }
     const ac = new AbortController();
     let timedOut = false;
@@ -730,7 +895,8 @@ export function createHandler(deps = {}) {
           done(rec.status, { rounds: rec.rounds, tools: rec.tools, in: rec.in, out: rec.out,
             cache_read: rec.cache_read, cache_write: rec.cache_write, stop: rec.stop, fallback: rec.fallback || undefined,
             cont: rec.cont || undefined, rescue: rec.rescue || undefined, more: rec.more || undefined,
-            more_error: rec.more_error, links: rec.links, lang: req.lang });
+            more_error: rec.more_error, forced: rec.forced || undefined, links: rec.links, lang: req.lang,
+            qlang: rec.qlang, hangul: rec.hangul, lang_retry: rec.lang_retry, plan_flags: rec.plan_flags, totals_off: rec.totals_off });
         } catch (err) {
           const status = apiStatus(err);
           let code = "error";
@@ -738,10 +904,11 @@ export function createHandler(deps = {}) {
           else if (ac.signal.aborted) code = "client_gone";
           else if (status === 429 || status === 529 || status >= 500 || !status) code = "busy";
           else if (status === 401 || status === 403) code = "unavailable";
-          if (code !== "client_gone") send({ type: "error", code, message: errorText(req.lang, code === "unavailable" ? "busy" : code) });
+          // in the answer's language (its site language: else English), as the rest of what this stream carries
+          if (code !== "client_gone") send({ type: "error", code, message: errorText(req.language, code) });
           // 401/403: the Anthropic API refused the key (a wrong or revoked ANTHROPIC_API_KEY) — the log says which, the
           // reader only that no answer can be made now
-          done(code, { api_status: status || undefined, lang: req.lang,
+          done(code, { api_status: status || undefined, lang: req.lang, qlang: req.qlang.code || "und",
             hint: status === 401 || status === 403 ? "check ANTHROPIC_API_KEY" : undefined });
         } finally {
           clearTimeout(timer);
