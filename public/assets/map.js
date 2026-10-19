@@ -176,15 +176,68 @@
       return x < 0 || y < 0 || x > sz.x || y > sz.y - hb;
     }).length;
   }
+  // the places of lls not in b that view v puts under the '지도 밖' control (top right: 10px in, 44px tall, bw wide; a
+  // marker, MK px, touching it) — under — or across the box's side, top or bottom edge, a marker cut in half — edge;
+  // the window's edge (hb: the part below it) is no edge of the map
+  var MK = 12;
+  function cut(g, v, lls, b, hb, bw) {
+    var sz = g.size(), c = g.project(v.c, v.lv), out = { under: [], edge: [] };
+    lls.forEach(function (a) {
+      if (b.indexOf(a) > -1) return;
+      var p = g.project(a, v.lv), x = p.x - c.x + sz.x / 2, y = p.y - c.y + sz.y / 2;
+      if (x < -MK / 2 || x > sz.x + MK / 2 || y < -MK / 2 || y > sz.y - hb + (hb ? 0 : MK / 2)) return;
+      if (y < 54 + MK / 2 && x > sz.x - 10 - bw - MK / 2 && x < sz.x - 10 + MK / 2) out.under.push(a);
+      else if (y < MK / 2 || x < MK / 2 || x > sz.x - MK / 2 || (!hb && y > sz.y - MK / 2)) out.edge.push(a);
+    });
+    return out;
+  }
+  // markers cut in half by the box's edge that cannot join the frame (it would zoom out): the frame moves the few px
+  // that put them wholly out, when the main body stays clear of the edges and of the control; null when it cannot
+  function nudge(g, v, b, edge, hb, bw) {
+    var sz = g.size(), c = g.project(v.c, v.lv), up = 0, down = 0, left = 0, right = 0;
+    var at = function (a) { var p = g.project(a, v.lv); return [p.x - c.x + sz.x / 2, p.y - c.y + sz.y / 2]; };
+    edge.forEach(function (a) {
+      var q = at(a);
+      if (q[1] < MK / 2) up = Math.max(up, q[1] + MK / 2 + 1);
+      else if (q[1] > sz.y - MK / 2) down = Math.max(down, sz.y + MK / 2 + 1 - q[1]);
+      if (q[0] < MK / 2) left = Math.max(left, q[0] + MK / 2 + 1);
+      else if (q[0] > sz.x - MK / 2) right = Math.max(right, sz.x + MK / 2 + 1 - q[0]);
+    });
+    if ((up && down) || (left && right)) return null;
+    var dx = left - right, dy = up - down;
+    var clear = b.every(function (a) {
+      var q = at(a), x = q[0] - dx, y = q[1] - dy;
+      return x >= MK && x <= sz.x - MK && y >= MK && y <= sz.y - hb - MK && !(y < 54 + MK / 2 && x > sz.x - 10 - bw - MK / 2);
+    });
+    return clear ? { c: g.unproject(pt(c.x + dx, c.y + dy), v.lv), lv: v.lv } : null;
+  }
   // a selection (a list's filter, a 권역 on /map/) framed on its main body (all of it once the '지도 밖' control has
   // been pressed: r.wide, until the selection changes)
   function selView(r, sel, pad, minLv, hb) {
     var key = sel.join(";");
     if (key !== r.selKey) { r.selKey = key; r.wide = false; }
     var b = r.wide ? sel : body(sel), v = frameIn(r.g, b, pad, minLv, hb), n = b.length < sel.length ? outside(r.g, v, sel, hb) : 0;
-    if (n && n * 10 >= sel.length) { // the control's row (top right, 44px) kept clear of the markers
+    if (n && n * 10 >= sel.length) {
+      // the control's row (top right, 44px) kept clear of the markers: those of the main body, and the places it leaves
+      // out that land under the control all the same — they join the frame, below the row, at the cost of one zoom-out
+      // at most, else the control counts them (review 2026-10-20: '지도 밖 18곳도 보기' covered 10 of 옹진 섬's markers —
+      // 장봉도, 신시모도 …); one cut in half by the box's edge joins it when the frame only moves, else the frame moves
+      // it wholly out (nudge; /map/ cut them in half at the top) — a zoom-out for it would open 옹진 섬 on its far islands
+      // again (QA-41). A few rounds: a moved frame can bring in the next ones
+      var bw = (r.restBtn && r.restBtn.offsetWidth) || 132;
       v = frameIn(r.g, b, pad, minLv, hb, 64);
-      n = outside(r.g, v, sel, hb);
+      for (var i = 0, lv0 = v.lv; i < 4; i++) {
+        var c = cut(r.g, v, sel, b, hb, bw), w;
+        if (c.under.length && (w = frameIn(r.g, b.concat(c.under, c.edge), pad, minLv, hb, 64)).lv <= lv0 + 1) {
+          b = b.concat(c.under, c.edge);
+        } else if (c.edge.length && (w = frameIn(r.g, b.concat(c.edge), pad, minLv, hb, 64)).lv <= lv0) {
+          b = b.concat(c.edge);
+        } else break;
+        v = w;
+      }
+      var e = cut(r.g, v, sel, b, hb, bw).edge, m = e.length ? nudge(r.g, v, b, e, hb, bw) : null;
+      if (m) v = m;
+      n = outside(r.g, v, sel, hb) + cut(r.g, v, sel, b, hb, bw).under.length;
     }
     rest(r, n, sel.length);
     return v;

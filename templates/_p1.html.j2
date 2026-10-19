@@ -10,7 +10,9 @@
                                             breaks — never as parsed table cells. A value the page's JSON-LD repeats
                                             (PLAIN: pipeline/jsonld.PROP_KEYS and the address of PostalAddress) is the
                                             bare text with no inner element, so the visible text holds the JSON-LD
-                                            string as one run (pipeline.validate jsonld_visibility); the other values
+                                            string as one run (pipeline.validate jsonld_visibility) — but for the
+                                            hours' words with a time, each one no-wrap span split at its spaces
+                                            (present.time_words: the run unchanged); the other values
                                             keep their marks (closed days, tel: links, unbroken house numbers). Text
                                             rows keep both the row check and the round-2 probe exact (tests/test_present).
                                             A row with r.anchor has it as its id (the 요금 row a combined ticket's row
@@ -59,7 +61,7 @@
     split at the spaces that are already there, so the visible text runs the same; a long word (an address given
     without spaces) keeps only its number together and wraps (present.nowrap_address) -#}
 {% if key == 'address' and '\n' not in v.text %}{{ v.text|addr_nw }}
-{%- elif key in PLAIN %}{% if v.closed %}<span class="closed">{{ v.text|nl2br }}</span>{% else %}{{ v.text|nl2br }}{% endif %}
+{%- elif key in PLAIN %}{% set t = v.text|time_words if key == 'usetime' else v.text|nl2br %}{% if v.closed %}<span class="closed">{{ t }}</span>{% else %}{{ t }}{% endif %}
 {%- elif v.url and '\n' in v.text %}{{ v.html }}
 {%- elif v.url %}<a href="{{ v.url }}" rel="noopener" data-track="official_click"{% if place %} data-place="{{ place }}"{% endif %}>{{ v.text }}</a>
 {%- elif v.closed %}<span class="closed">{{ v.html }}</span>{% else %}{{ v.html }}{% endif %}

@@ -206,7 +206,7 @@
 {% for t in tt.rows %}
 <tr class="{% if t.closed %}is-closed{% endif %}{% if t.label and t.group and t.group == ns.g %} sub{% endif %}">
 <th scope="row">{% if t.group and t.group != ns.g %}<b>{{ t.group }}</b>{% if t.label %} {{ t.label }}{% endif %}{% else %}{{ t.label }}{% endif %}</th>
-<td>{% if t.closed %}<span class="closed">{{ t.value }}</span>{% else %}<span class="tn">{{ t.value }}</span>{% endif %}{% if t.note %} <span class="tt-note">({{ t.note }})</span>{% endif %}</td>
+<td>{% if t.closed %}<span class="closed">{{ t.value }}</span>{% else %}<span class="tn">{{ t.value|times }}</span>{% endif %}{% if t.note %} <span class="tt-note">({{ t.note|times }})</span>{% endif %}</td>
 </tr>
 {% set ns.g = t.group %}
 {% endfor %}

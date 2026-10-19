@@ -84,3 +84,18 @@ test("QA-70: past the first 80 rows a button shows 80 more, the count line follo
   const e = await en.search("가상식당");
   assert.equal(e.more, "Show 80 more");
 });
+
+test("review 2026-10-20: '빵집' finds the bakeries by name and the places with a bread on the menu", async () => {
+  // the bread row of present.SEARCH_CONCEPTS; '빵집' found nothing while the course planner offers '카페나 빵집'
+  const bread = { say: ["빵집", "빵", "베이커리", "제과점", "빵 가게"], find: ["빵", "베이커리"] };
+  const rows = [
+    row("[테스트] 가상베이커리", "cafe", "카페·디저트"),
+    row("[테스트] 가상 제빵소", "cafe", "카페·디저트"),
+    row("[테스트] 가상 카페", "cafe", "카페·디저트", "", { m: "소금빵 · 아메리카노" }),
+    row("[테스트] 가상 국밥", "food", "음식점"),
+  ];
+  const p = page({ rows, concepts: [...CONCEPTS, bread], region: "인천" });
+  const names = (await p.search("빵집")).names;
+  assert.deepEqual([...names].sort(), ["[테스트] 가상 제빵소", "[테스트] 가상 카페", "[테스트] 가상베이커리"]);
+  assert.deepEqual([...(await p.search("인천 빵집")).names].sort(), [...names].sort());   // the city's name is no condition
+});

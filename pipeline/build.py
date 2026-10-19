@@ -228,6 +228,8 @@ def make_env() -> Environment:
     env.filters["frag"] = present.frag
     env.filters["tel"] = present.tel_markup
     env.filters["closedmark"] = present.mark_closed
+    env.filters["times"] = present.time_units       # each time or time range on one line (QA-75)
+    env.filters["time_words"] = present.time_words  # a JSON-LD value's words with a time on one line, text one run
     env.filters["clhead"] = present.closed_head     # a row's closed day: the square kept with its first word
     env.filters["glue_dots"] = present.glue_dots   # '해설·스탬프투어': a middle dot never starts a line
     env.filters["decaution"] = present.decaution

@@ -74,7 +74,10 @@ test("QA-35: the rules keep a check date for the question about it, with an exam
 test("QA-76: a Korean answer and a plan are written in Hangul — Chinese characters only in a name the data writes so", async () => {
   const r4 = rules(SITE_CFG).split("\n").find((l) => l.startsWith("4. "));
   assert.ok(r4.includes("A Korean answer is written in Hangul: never Hanja (Chinese characters) for a Korean word or ending"), r4);
-  assert.ok(r4.includes("\"공항행 버스 시간표\", never \"공항行 버스 시간표\""), r4);
+  assert.ok(r4.includes("a destination is \"공항행 버스\", the syllable 행 written in Hangul, never as its Chinese character"), r4);
+  // review 2026-10-20: the rule's own wrong example ('공항行 버스 시간표') was the only '○○行 … 시간표' the model read, and an
+  // answer wrote '자월도行 배 시간표' again — the error is described in words, its character never shown
+  assert.doesNotMatch(rules(SITE_CFG), /行/);
   assert.ok(r4.includes("Chinese characters only inside a name exactly as the data writes it"), r4);
   // the rules name no place of a city (the engine is the same for every city)
   assert.doesNotMatch(rules(SITE_CFG), /자월도/);
@@ -89,4 +92,13 @@ test("QA-76: a Korean answer and a plan are written in Hangul — Chinese charac
   useSite(SITE_CFG);
   const plan = buildPlanSystem("# catalog", new Date("2026-10-19T03:00:00Z"));
   assert.match(plan[1].text, /Write every word of the plan in Korean, in Hangul: no Hanja \(Chinese characters\) outside a name the page writes with them\./);
+});
+
+test("review 2026-10-20: the planner's own words claim no 권역 or walking the stops contradict", () => {
+  // a Saturday plan with '점심은 경방식당에서' said '모든 장소가 개항장·월미 권역 안에서 걸어서 이어집니다' while that stop was in
+  // 도심·소래 and its legs 5.6 km and 6.9 km by transit
+  useSite(SITE_CFG);
+  const r4 = buildPlanSystem("# catalog", new Date("2026-10-19T03:00:00Z"))[0].text.split("\n").find((l) => l.startsWith("4. "));
+  assert.ok(r4.includes("name a 권역 only when every stop the sentence speaks of has that 권역 on its catalog line"), r4);
+  assert.ok(r4.includes("never say how the stops connect (걸어서, 도보로, 가까이 이어진다, 이동이 짧다)"), r4);
 });

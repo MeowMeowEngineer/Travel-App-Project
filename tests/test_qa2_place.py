@@ -231,3 +231,72 @@ def test_a_list_card_says_what_it_lacks_once(site):
         if p.exists():
             for m in re.finditer(r'<li class="rec"[^>]*>.*?</li>', p.read_text("utf-8"), re.S):
                 assert m.group(0).count("확인 필요") <= 1, m.group(0)[:300]
+
+
+# ------------------------------------------------------------------ the reviews of 2026-10-20
+def test_a_line_that_names_its_own_days_holds_for_those_days_only():
+    """A Monday's hours read '평일 11:30–19:30 · 평일 마지막 주문 19:00 · 주말 마지막 주문 20:30' (and '준비시간(주말)' on
+    every weekday): a line outside the groups that names its days — leading or in brackets — joins those days' groups;
+    a line with no day word still holds for every group."""
+    w = present.day_hours("- 평일 11:30~19:30 - 평일 마지막 주문 19:00 - 주말 10:00~21:00 - 주말 마지막 주문 20:30")
+    assert w[1] == "평일 11:30–19:30 · 평일 마지막 주문 19:00" and "주말 마지막 주문" not in w[1]
+    assert w[6] == w[0] == "주말 10:00–21:00 · 주말 마지막 주문 20:30"
+    w = present.day_hours("-평일 10:00~21:30\n- 주말10:00~21:30\n- 준비시간(주말) 15:30~17:00")
+    assert w[3] == "평일 10:00–21:30" and w[6] == "주말 10:00–21:30 · 준비시간(주말) 15:30–17:00"
+    w = present.day_hours("- 목요일~일요일 10:00~19:00\n- 수요일 13:00~19:00\n- 마지막 주문 18:30")
+    assert w[0] == "목요일~일요일 10:00–19:00 · 마지막 주문 18:30" and w[3] == "수요일 13:00–19:00 · 마지막 주문 18:30"
+    assert present.line_days("월 2회 정기휴무") is None and present.line_days("마지막 주문 19:30") is None
+    assert present.line_days("토·일요일 마지막 주문 20:00") == {0, 6} and present.line_days("준비시간(토/일) 15:00") == {0, 6}
+
+
+def test_a_part_of_days_only_names_the_next_parts_hours():
+    """The hours tile read '일요일 11:30–23:00' for '- 평일 / 일요일 11:30~23:00' (the day-only part fell out, 11 places),
+    a '/' inside brackets cut '주중(화/수/목)' to '목', and a day-only part went into the closed days ('토요일~일요일')."""
+    b, closed = present.brief_hours("- 평일 / 일요일 11:30~23:00\n- 토요일 11:30~24:00")
+    assert (b["main"], b["sub"], b["more"], closed) == ("평일 / 일요일 11:30–23:00", "토요일 11:30–24:00", False, "")
+    b, closed = present.brief_hours("- 화요일~금요일 11:00~20:00- 토요일~일요일 / 법정공휴일 10:00~20:00")
+    assert (b["main"], b["sub"], closed) == ("화요일~금요일 11:00–20:00", "토요일~일요일 / 법정공휴일 10:00–20:00", "")
+    b, _ = present.brief_hours("[성수기(4월~10월)]- 주중(화/수/목) 10:00~18:00- 주말(금/토/일/공휴일) 10:00~19:00")
+    assert b["main"].endswith("주중(화/수/목) 10:00–18:00") and b["sub"].endswith("주말(금/토/일/공휴일) 10:00–19:00")
+    # a closed day after the hours stays a closed day
+    assert present.brief_hours("10:00~18:00 / 매주 월요일 휴무")[1] == "매주 월요일 휴무"
+    assert present.brief_hours("09:00~18:00 / 월요일")[1] == "월요일"
+
+
+def test_a_time_in_the_facts_table_never_breaks():
+    """QA-75 left in the facts table: '11:00–' / '11:30' (an event), '15:00–' / '17:30' (a place's break time)."""
+    v = present.value_view("usetime", "- 주중 11:30~22:00 (브레이크타임 15:00~17:30 / 점심 라스트오더 14:00)\n- 10:00~18:00 / 매주 월요일 휴무")
+    html = str(v["html"])
+    assert '<span class="nw">11:30–22:00</span>' in html and '<span class="nw">15:00–17:30</span>' in html
+    assert '<span class="closed">매주 월요일 휴무</span>' in html
+    assert re.sub(r"<[^>]+>", "", html.replace("<br>", "\n")) == v["text"]   # the text unchanged
+
+
+def test_the_built_facts_tables_keep_each_time_whole(site):
+    """In the built event page's and a place page's facts table every time range is one no-wrap piece."""
+    ev = next((site["out"] / "events").glob("*/index.html")).read_text("utf-8")
+    facts = re.search(r'<dl class="facts">(.*?)</dl>', ev, re.S).group(1)
+    assert '<span class="nw">10:00–18:00</span><wbr>(<span class="nw">17:00</span>입장마감)' in facts
+    rows = [facts] + [m.group(0) for slug in ("test-cafe-l", "test-diner-j")
+                      for m in re.finditer(r'<dd data-key="usetime[^"]*">.*?</dd>', _page(site, slug), re.S)]
+    assert len(rows) == 3
+    for html in rows:
+        for m in re.finditer(r"\d{1,2}:\d{2}–\d{1,2}:\d{2}", html):   # inside a no-wrap piece
+            assert html.rfind('<span class="nw">', 0, m.start()) > html.rfind("</span>", 0, m.start()), \
+                html[max(0, m.start() - 80):m.end()]
+
+
+def test_a_place_pages_hours_keep_each_time_word_whole_and_the_text_one_run():
+    """On the place page the hours are the JSON-LD's string (PLAIN): a word with a time is one no-wrap piece, split
+    only at its spaces, so the page's pieces joined by a space still hold the string."""
+    t = "- 주중 11:30–22:00 (브레이크타임 15:00–17:30 / 점심 라스트오더 14:00)\n- 주말10:00–21:30(21:00입장마감)"
+    html = str(present.time_words(t))
+    assert '<span class="nw">15:00–17:30</span>' in html and '<span class="nw">주말10:00–21:30(21:00입장마감)</span>' in html
+    pieces = re.split(r"<[^>]+>", html)
+    assert re.sub(r"\s+", " ", " ".join(pieces)).strip() == re.sub(r"\s+", " ", t).strip()
+
+
+def test_bread_words_find_the_bakeries():
+    """'빵집' found nothing (41 places with 빵 in the index, 4 named 베이커리) while the course planner offers '카페나 빵집'."""
+    by_say = {w: c for c in present.SEARCH_CONCEPTS for w in c["say"]}
+    assert {"빵", "베이커리"} <= set(by_say["빵집"]["find"]) and by_say["베이커리"] is by_say["빵집"]

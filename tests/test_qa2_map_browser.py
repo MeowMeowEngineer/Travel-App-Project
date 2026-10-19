@@ -302,3 +302,81 @@ def test_qa63_the_nearby_map_link_keeps_out_of_the_launchers_column(site):
                 ctx.close()
         finally:
             browser.close()
+
+
+# review 2026-10-20: '지도 밖 18곳도 보기' covered 10 of 옹진 섬's markers (장봉도, 신시모도 …) — a group the main body
+# leaves out (fewer than a quarter of the places) that lands under the control all the same. Made-up: a main body of 12
+# in a band, 3 places 0.24° north of its east end (a group of its own: over 20 km away), 3 far away, 4 in another 권역
+BAND = [(37.20 + 0.01 * (i % 2), 126.20 + 0.03 * i) for i in range(12)]
+NORTH = [(37.44, 126.53 + 0.004 * i) for i in range(3)]
+FAR3 = [(37.95, 124.70), (37.958, 124.712), (37.962, 124.705)]
+
+
+@pytest.fixture(scope="module")
+def site_north(tmp_path_factory):
+    tmp = tmp_path_factory.mktemp("qa2north")
+    data = tmp / "data"
+    data.mkdir()
+    for f in INCHEON.glob("*.json"):
+        if f.name not in RECORDS:
+            shutil.copy(f, data / f.name)
+    for f in TINY.glob("*.json"):
+        shutil.copy(f, data / f.name)
+    tpl = json.loads((TINY / "places.json").read_text("utf-8"))[0]
+    places, n = [], 0
+    for grp, pts in (("band", BAND), ("north", NORTH), ("far", FAR3)):
+        for i, ll in enumerate(pts):
+            n += 1
+            places.append(_place(tpl, n, f"test-r-{grp}-{i}", f"[테스트] {grp} {i}", "attraction", "옹진군", "영흥면", ll))
+    for i in range(4):
+        n += 1
+        places.append(_place(tpl, n, f"test-r-other-{i}", f"[테스트] 송도 {i}", "attraction", "연수구", "송도동",
+                             (37.385 + 0.003 * i, 126.635)))
+    (data / "places.json").write_text(json.dumps(places, ensure_ascii=False), "utf-8")
+    out = tmp / "out"
+    build(data, out, "preview")
+    return out
+
+
+# the given points' container pixels against the '지도 밖' control and the part of the box in the window
+UNDER = """([kind, pts]) => {
+  const r = GSMaps.find(m => m.data && m.data[kind]), b = r.g.box.getBoundingClientRect(), bot = Math.min(b.bottom, innerHeight) - b.top;
+  const c = r.restBtn && !r.restBtn.hidden ? r.restBtn.getBoundingClientRect() : null;
+  const ps = pts.map(a => r.g.cp(a)), MK = 6;
+  return { btn: c ? r.restBtn.textContent : null, lv: r.map.getLevel(),
+           under: ps.filter(p => c && p.x > c.left - b.left - MK && p.x < c.right - b.left + MK && p.y > c.top - b.top - MK && p.y < c.bottom - b.top + MK).length,
+           cut: ps.filter(p => p.y > -MK && p.y < bot + MK && (Math.abs(p.y) < MK || Math.abs(p.x) < MK || Math.abs(p.x - b.width) < MK)).length,
+           seen: ps.map(p => p.x >= 0 && p.x <= b.width && p.y >= 0 && p.y <= bot) };
+}"""
+
+
+def test_review_the_off_map_control_covers_no_marker(site_north):
+    """The places the main body leaves out but the view shows anyway join the frame below the control's row (one
+    zoom-out at most), on a list's 권역 filter (390 지도 view, 1440 beside the list) and a 권역 on /map/ (390): none under
+    the control, none cut in half by the box's edge, the far ones still left to it."""
+    pts = BAND + NORTH + FAR3
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        try:
+            for w, h, path in ((390, 844, "places"), (390, 844, "map"), (1440, 900, "places")):
+                ctx = _ctx(browser, site_north, w, h)
+                page = ctx.new_page()
+                errors: list[str] = []
+                page.on("pageerror", lambda e: errors.append(str(e)))
+                if path == "places":
+                    page.goto("http://site.test/places/?region=" + quote("옹진 섬") + ("&view=map" if w < 1024 else ""),
+                              wait_until="load")
+                    kind = "list"
+                else:
+                    page.goto("http://site.test/map/", wait_until="load")
+                    page.click('[data-region-tabs] a[data-region="옹진 섬"]')
+                    page.click("[data-segmap] [data-view=map]")
+                    kind = "all"
+                _ready(page, kind)
+                s = page.evaluate(UNDER, [kind, pts])
+                assert s["btn"] == "지도 밖 3곳도 보기" and s["under"] == 0 and s["cut"] == 0, (w, path, s)
+                assert all(s["seen"][:len(BAND) + len(NORTH)]) and not any(s["seen"][len(BAND) + len(NORTH):]), (w, path, s)
+                assert errors == [], errors
+                ctx.close()
+        finally:
+            browser.close()

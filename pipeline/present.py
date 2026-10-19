@@ -283,13 +283,36 @@ def time_units(text: str | None) -> Markup:
     '10:00–18:00(17:00입장마감)' breaks as '10:00–18:00 / (17:00입장마감)', the bracket kept whole, and never inside a
     time. The body's keep-all leaves no break in that run, and its overflow-wrap broke it anywhere ('17:' /
     '00입장마감', QA 2026-10-19 QA-75). Text unchanged (<wbr> adds none)."""
+    return time_units_html(str(escape(text or "")))
+
+
+def time_units_html(html: str) -> Markup:
+    """time_units over a line already made HTML (mark_closed's spans): a time is digits only, so it never falls inside
+    a tag, and the tags hold no bracket (review 2026-10-20: the facts table still broke '11:00–' / '11:30')."""
     def unit(m):
         before, after = m.string[:m.start()], m.string[m.end():m.end() + 1]
         inside = before.count("(") > before.count(")")
         return f'<span class="nw">{m.group(0)}</span>' + (
             "<wbr>" if not inside and re.match(r"[0-9A-Za-z가-힣]", after) else "")
-    html = TIME_UNIT.sub(unit, str(escape(text or "")))
+    html = TIME_UNIT.sub(unit, str(html))
     return Markup(re.sub(r"(?<=\S)\((?=[^()]*\))", "<wbr>(", html))
+
+
+TIME_WORD_MAX = 26   # '10:00–18:00(17:00입장마감)' is 22; a longer unspaced run stays plain and wraps
+
+
+def time_words(text: str | None) -> Markup:
+    """A value the place page's JSON-LD repeats (templates/_p1.html.j2 PLAIN: usetime), line breaks kept: each word that
+    holds a time ('15:00–17:30', '10:00–18:00(17:00입장마감)') in one no-wrap piece, split only at the spaces already
+    there — pipeline.validate joins a page's pieces with a space, so the text still runs as the JSON-LD string, which
+    time_units' pieces inside a word ('…18:00</span>(…') would break (review 2026-10-20: the facts card broke
+    '15:00–' / '17:30'). Text unchanged."""
+    def word(w: str) -> Markup:
+        if TIME_UNIT.search(w) and len(w) <= TIME_WORD_MAX:
+            return Markup('<span class="nw">') + escape(w) + Markup("</span>")
+        return escape(w)
+    return Markup("<br>").join(Markup(" ").join(word(w) for w in line.split(" "))
+                               for line in str(text or "").split("\n"))
 
 
 def nowrap_numbers(text: str | None) -> Markup:
@@ -595,7 +618,7 @@ def value_view(key: str, raw, place: str = "") -> dict:
         tt = timetable(raw_s)
         if tt and (len(tt["rows"]) > 1 or tt["rows"][0]["label"] or tt["rows"][0]["group"] or tt["foot"]):
             v.update(tt=tt, wide=True)
-        v["html"] = Markup("<br>").join(mark_closed(x) for x in text.split("\n"))
+        v["html"] = Markup("<br>").join(time_units_html(mark_closed(x)) for x in text.split("\n"))
     elif key == "restdate":
         v["closed"] = is_closure(text)
     elif key in ("usefee", "parkingfee", "discount"):
@@ -1107,6 +1130,29 @@ def _unpaired(text: str) -> str:
     return t
 
 
+HOUR_PART_SEP = r"\s*/\s*|,\s*(?=휴무일)|\s+-\s+(?=[가-힣\[])|^-\s*"
+
+
+def _hour_parts(line: str) -> list[str]:
+    """The parts of one hours line, split at '/' (and a ' - ' item or a ', 휴무일' clause) outside brackets ('주중(화/수/목)
+    10:00~18:00' is one part). A part of days only — '평일 / 일요일 11:30~23:00', '화요일~수요일/금요일~일요일 09:00~18:00' —
+    names the days of the next part's hours and joins it (review 2026-10-20: the tile read '일요일 11:30–23:00' and the
+    day-only part fell out of the hours, or into the closed days); a day part with no hours after it stays its own."""
+    parts = [p.strip(" ,-") for p in split_outside_brackets(line, HOUR_PART_SEP)]
+    out, carry = [], []
+    for p in (p for p in parts if p):
+        if not re.search(TIME, p) and weekday_set(p):
+            carry.append(p)
+            continue
+        if carry and RANGE_FIND.search(p):
+            p = " / ".join(carry + [p])
+        else:
+            out += carry
+        carry = []
+        out.append(p)
+    return out + carry
+
+
 def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
     lines = clean_lines(raw)
     if not lines:
@@ -1118,10 +1164,7 @@ def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
         if m:
             group = squash_ws(m.group(1))
             continue
-        for part in re.split(r"\s*/\s*|,\s*(?=휴무일)|\s+-\s+(?=[가-힣\[])|^-\s*", line):
-            part = (part or "").strip(" ,-")
-            if not part:
-                continue
+        for part in _hour_parts(line):
             found = list(RANGE_FIND.finditer(part))
             if not found:
                 if OPEN_HOURS.search(part) and not CLOSED_HINT.search(part.replace("휴무일", "")):
@@ -1198,9 +1241,24 @@ def _brief_hours(raw, base: str = "") -> tuple[dict | None, str]:
 # ('[금요일]' over '[평일]' on a Friday), in the source's words; lines after the last labelled line ('- 마지막 주문
 # 19:30') hold for every group. '공휴일'·'휴일' in a label are no weekday. A facility or season group ('[일반자료실]',
 # '[하절기]'), a line with hours before any label, or a label the code does not read: None (the value is shown whole).
+# A line outside the groups that names its own days — leading ('주말 마지막 주문 20:30') or in brackets ('준비시간(주말)
+# 15:30~17:00') — holds only for the groups of those days (review 2026-10-20: a Monday read '평일 11:30–19:30 · 평일
+# 마지막 주문 19:00 · 주말 마지막 주문 20:30').
 WEEKDAYS = "일월화수목금토"   # index = JavaScript getDay(), as chatbot/knowledge.js checkPlan reads a date
 DAY_SET_WORDS = {"평일": {1, 2, 3, 4, 5}, "주중": {1, 2, 3, 4, 5}, "주말": {0, 6}}
 HOLIDAY_WORDS = ("공휴일", "법정공휴일", "휴일", "국경일")
+# a lone '월' leads '월 2회 휴무' (a month): a single day needs '요일' unless it is in brackets ('(토·일)')
+DAY_WORD = r"(?:평일|주중|주말|[월화수목금토일](?:요일)?\s*[~\-–]\s*[월화수목금토일](?:요일)?|(?:[월화수목금토일]\s*[·,]\s*)*[월화수목금토일]요일)"
+DAY_WORD_P = rf"(?:{DAY_WORD}|[월화수목금토일])"
+LINE_DAYS = re.compile(rf"^(?P<lead>{DAY_WORD}(?:\s*[·/,]\s*{DAY_WORD})*)(?=\s|$)"
+                       rf"|\((?P<paren>{DAY_WORD_P}(?:\s*[·/,]\s*{DAY_WORD_P})*)\)")
+
+
+def line_days(text: str) -> set | None:
+    """The weekdays a line outside the day groups names for itself: its leading day words ('주말 마지막 주문 20:30')
+    or a bracket of day words ('준비시간(주말) 15:30~17:00'); None when it names none."""
+    m = LINE_DAYS.search(squash_ws(text))
+    return weekday_set(m.group("lead") or m.group("paren")) if m else None
 
 
 def weekday_set(label: str | None) -> set | None:
@@ -1243,6 +1301,7 @@ def day_hours(raw) -> list[str] | None:
     groups: list[dict] = []
     cur = None          # the '[group]' the next items belong to
     tail: list[str] = []  # lines after a labelled line: every group's when no labelled line follows them
+    own: list[tuple[set, str]] = []   # lines outside the groups that name their own days: those days' groups only
     for line in lines:
         m = re.fullmatch(r"\[([^\[\]]+)\]", line)
         if m:
@@ -1270,11 +1329,19 @@ def day_hours(raw) -> list[str] | None:
         if cur is not None:
             cur["items"].append(x)
         elif groups:
-            tail.append(x)
+            days = line_days(x)
+            if days:
+                own.append((days, x))
+            else:
+                tail.append(x)
         else:
             return None   # hours before any weekday label: the value is not by weekday
     if not any(g["days"] for g in groups):
         return None
+    for days, x in own:
+        for g in groups:
+            if g["days"] & days:
+                g["items"].append(x)
     texts = [squash_ws(f"{g['label']} " + " · ".join(dash_times(i) for i in g["items"] + tail if i)) for g in groups]
     out = []
     for d in range(7):
@@ -3968,7 +4035,8 @@ def event_vm(S, sr: dict) -> dict:
                          "checked_at": a.get("checked_at") or ""}
                 a_text = squash_ws(a.get("value"))
                 row["blocks"].append({"provider": short_src(a_src["provider"]), "provider_full": a_src["provider"],
-                                      "text": a_text, "html": tel_markup(a_text) if field == "tel" else escape(a_text),
+                                      "text": a_text, "html": tel_markup(a_text) if field == "tel" else
+                                      time_units(a_text) if field == "playtime" else escape(a_text),
                                       "n": notes.ref(a_src, label + "(다른 값)")})
             row["flag"] = True
             row["tel"] = (tel_text, tel) if tel and not flagged else None
@@ -3979,7 +4047,7 @@ def event_vm(S, sr: dict) -> dict:
     add("기간", squash_ws(re.sub(r"<[^>]+>", "", str(period_html))), period_html, "period")
     if ev.get("playtime"):   # its lines as the source lists them (QA 2026-10-19 QA-52)
         t = "\n".join(restore_lines(dash_times(ev["playtime"])))
-        add("시간", t, lines_html(t), "playtime")
+        add("시간", t, Markup("<br>").join(time_units(x) for x in t.split("\n")), "playtime")
     if ev.get("fee"):
         add("요금", squash_ws(ev["fee"]), escape(squash_ws(ev["fee"])), "fee")
     if ev.get("place_name"):
@@ -4494,6 +4562,9 @@ SEARCH_CONCEPTS = [
      "find": ["음식점", "맛집", "식당", "먹거리"]},
     # coffee: a café guide, the cafés and the places with a coffee on the menu
     {"say": ["카페", "커피", "커피숍", "찻집"], "find": ["카페", "커피"]},
+    # bread: the bakeries by name (…베이커리, …제빵소) and the places with a bread on the menu (소금빵, 식빵) — the course
+    # planner asks for '카페나 빵집' (review 2026-10-20: '빵집' found nothing)
+    {"say": ["빵집", "빵", "베이커리", "제과점", "빵 가게"], "find": ["빵", "베이커리"]},
     # one dish, two spellings (QA 2026-10-19 QA-25: '짜장면' and '자장면' never found each other's places)
     {"say": ["짜장면", "자장면", "짜장"], "find": ["짜장", "자장면"]},
     # parking: the guides that list it (주차 in their titles), a public car park guide
