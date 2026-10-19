@@ -28,13 +28,15 @@
        {list: [{lat, lng, name, url, id, kind, r}]}   a list page's places (id = the row's id: row ↔ marker); only the
                                                   places the list's filter keeps (window.GSFilter / gs:filter), framed
                                                   on their main body (body(): a group a sea away is left to a
-                                                  '지도 밖 n곳도 보기' control that frames them all); beside the shown
-                                                  list in the box's part in the window, framed again as the page
-                                                  scrolls more of it in (until the reader moves the map); each marker a
+                                                  '지도 밖 n곳도 보기' control that frames them all); in the box's part
+                                                  in the window (beside the shown list, and in phones' 지도 view under
+                                                  the filters), framed again as the page scrolls more of it in (until
+                                                  the reader moves the map); each marker a
                                                   link named by the place (quiet beside the shown list, in the tab
                                                   order where the list is hidden: phones' 지도)
        {all: [...same...], anchor_pts: [{name, n, geo}]}   the map page: 권역 labels, '먼 섬' edge control; a chosen 권역
-                                                  (gs:region) framed on its main body as a list's filter
+                                                  (gs:region) framed on its main body as a list's filter (in the
+                                                  box's part in the window, framed again as the page scrolls it in)
        {anchors: [{lat, lng, name, n, url, place}]}  the home: the 권역 anchors labelled with their counts, each a
                                                   link to its region on /map/ (present.home_vm region_map)
      Every box gets data-lenis-prevent (wheel and touch on the map stay the map's).
@@ -206,7 +208,6 @@
     r.restBtn.textContent = (W.rest || (EN ? "Show the {n} off the map" : "지도 밖 {n}곳도 보기")).replace("{n}", n);
     r.restBtn.hidden = false;
   }
-  function besideList() { return Array.prototype.some.call(doc.querySelectorAll("[data-ledger]"), visible); }
   // a list map's filter (site.js keeps the list's shown row ids in window.GSFilter and sends gs:filter): the kept
   // points ({keep: {id: 1}, lls}), or null when every point is kept (the map then shows its whole frame)
   function picked(list, ids) {
@@ -216,14 +217,15 @@
     list.forEach(function (p) { if (keep[idOf(p)]) lls.push([p.lat, p.lng]); });
     return lls.length === list.length ? null : { keep: keep, lls: lls };
   }
-  // the view of a list map: the filtered places with coordinates — their main body (selView), else the whole frame.
-  // Where the list is not shown (phones' 지도), framed in the whole box; beside the shown list (desktop: a sticky box
-  // whose lower part may be below the window) in its part in the window — r.hb, framed again when the page scrolls
-  // more of it in or out (listRefit); the zoom buttons zoom on the middle of that part (g.seen). QA 2026-10-19 QA-40:
-  // the markers sat in the top third of the box once it was all in view, and two zoom-ins on the box's middle, below
-  // the window, left none in view
+  // the view of a list map: the filtered places with coordinates — their main body (selView), else the whole frame —
+  // in the box's part in the window (r.hb: the part below it left out), framed again when the page scrolls more of it
+  // in (listRefit); the zoom buttons zoom on the middle of that part (g.seen), so frame and zoom agree. Beside the
+  // shown list (desktop) the sticky box's lower half is below the window at first; in phones' 지도 view the box under
+  // the filters is too. QA 2026-10-19 QA-40: the markers sat in the top third of the box once it was all in view, and
+  // two zoom-ins on the box's middle, below the window, left none in view; framed in the whole box while zooming on
+  // the part in the window, a phone's two zoom-ins pushed every café below the box (2026-10-20 integration check)
   function listView(r) {
-    var s = r.picked, hb = r.hb = besideList() ? Math.max(0, hiddenBelow(r.g.el)) : 0;
+    var s = r.picked, hb = r.hb = Math.max(0, hiddenBelow(r.g.el));
     if (s && s.lls.length) return selView(r, s.lls, 36, 5, hb);
     rest(r, 0);
     return frameIn(r.g, r.frame, 28, 2, hb);
@@ -929,8 +931,9 @@
       if (ok) { if (!r.g.shown(mk)) mk.setMap(r.map); pts.push([p.lat, p.lng]); } else if (r.g.shown(mk)) mk.setMap(null);
     });
     r.sel = det.region;
-    // the 권역's main body: a group of islands a sea away is left to the '지도 밖' control (body(), QA 2026-10-19 QA-41)
-    if (det.region && pts.length) { var v = selView(r, pts, 36, 5, 0); r.g.view(v.c, v.lv, true); }
+    // the 권역's main body: a group of islands a sea away is left to the '지도 밖' control (body(), QA 2026-10-19 QA-41),
+    // in the box's part in the window (r.hb, as a list map's: a phone's 지도 view opens half below the window)
+    if (det.region && pts.length) { var v = selView(r, pts, 36, 5, r.hb = Math.max(0, hiddenBelow(r.el))); r.g.view(v.c, v.lv, true); }
     else { rest(r, 0); if (!det.region) r.g.fit(r.frame, [28, 28, 28, 28], 2, true); }
     if (r.drawRegions) r.drawRegions(det.region);
   }
@@ -955,18 +958,20 @@
   doc.addEventListener("gs:focus", function (e) { lastFocus = (e.detail && e.detail.ids) || []; maps.forEach(function (r) { applyFocus(r, lastFocus); }); });
   doc.addEventListener("gs:mapready", function (e) { if (lastFocus && lastFocus.length) applyFocus(e.detail, lastFocus); });
   win.addEventListener("resize", function () { maps.forEach(listQuiet); }); // the list shows or hides beside the map at 1024px
-  // listRefit: a list map beside its list was framed in its part in the window (listView, r.hb); once the page has
-  // scrolled more of the box in (the sticky box all in view), its places are framed again in what is seen now — unless
-  // the reader has moved the map since (g.moved). QA 2026-10-19 QA-40: framed while the box's lower half was below the
-  // window, the markers stayed in its top third once the box was all in view
+  // listRefit: a list map, or /map/ with a 권역 chosen, was framed in its part in the window (listView, applyRegion:
+  // r.hb); once the page has scrolled more of the box in (all of it in view), its places are framed again in what is
+  // seen now — unless the reader has moved the map since (g.moved). QA 2026-10-19 QA-40: framed while the box's lower
+  // half was below the window, the markers stayed in its top third once the box was all in view
   var refitT = 0;
   win.addEventListener("scroll", function () {
     clearTimeout(refitT);
     refitT = setTimeout(function () {
       maps.forEach(function (r) {
-        if (!r.data.list || r.hb == null || r.g.moved || !visible(r.el) || r.el.getBoundingClientRect().top < 0) return;
-        var hb = besideList() ? Math.max(0, hiddenBelow(r.el)) : 0;
+        var region = r.data.all && r.sel && lastRegion && lastRegion.region === r.sel;
+        if (!(r.data.list || region) || r.hb == null || r.g.moved || !visible(r.el) || r.el.getBoundingClientRect().top < 0) return;
+        var hb = Math.max(0, hiddenBelow(r.el));
         if (r.hb - hb < 48) return;   // more of it in view (scrolled back out, it keeps its frame: the zoom anchor)
+        if (region) { applyRegion(r, lastRegion); return; }
         var v = listView(r);
         r.g.view(v.c, v.lv, true);
       });

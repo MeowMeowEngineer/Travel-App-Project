@@ -241,6 +241,53 @@ def test_qa40_a_list_map_half_below_the_window_zooms_on_what_is_seen_and_refits_
             browser.close()
 
 
+def test_qa40_a_phones_map_view_half_below_the_window_frames_and_zooms_on_what_is_seen(site):
+    """Integration check 2026-10-20: a phone's 지도 view opens under the filters with half its box below the window.
+    Framed in the whole box but zoomed on the part in the window, two zoom-ins pushed every café out of the box; framed
+    in that part, the places are on screen at first and stay after two zoom-ins, and are framed again in the whole box
+    once the page has scrolled it all in. The same for a 권역 on /map/."""
+    with sync_api.sync_playwright() as p:
+        browser = _browser(p)
+        try:
+            ctx = _ctx(browser, site, 390)
+            page = ctx.new_page()
+            errors: list[str] = []
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            for again in (False, True):
+                page.goto("http://site.test/cafes/", wait_until="load")
+                page.click("[data-f-more]")
+                page.click('[data-f=region][data-v="송도·연수"]')
+                page.click("[data-filters] [data-view=map]")
+                _ready(page, "list")
+                s = page.evaluate(BOX)
+                assert s["seen"][1] < s["h"] - 100, s            # the box's lower part is below the window
+                assert s["inSeen"] == s["n"] == 15, s             # all of them on screen at first
+                if not again:   # two zoom-ins on the part in the window: places stay in it
+                    page.click(".list-map .mz-in")
+                    page.click(".list-map .mz-in")
+                    page.wait_for_timeout(100)
+                    z = page.evaluate(BOX)
+                    assert z["lv"] == s["lv"] - 2 and z["inSeen"] > 0, (s, z)
+                else:           # untouched, scrolled all in: framed again in the whole box
+                    page.evaluate("() => window.scrollBy(0, document.querySelector('.list-map').getBoundingClientRect().top - 60)")
+                    page.wait_for_timeout(450)
+                    b = page.evaluate(BOX)
+                    assert b["seen"][1] >= b["h"] - 1 and abs(b["mid"] - b["h"] / 2) < b["h"] * 0.1 and b["inSeen"] == 15, b
+            # /map/: a 권역 framed in the part in the window too
+            page.goto("http://site.test/map/", wait_until="load")
+            page.click('[data-region-tabs] a[data-region="옹진 섬"]')
+            page.click("[data-segmap] [data-view=map]")
+            _ready(page, "all")
+            seen = page.evaluate("""(pts) => { const r = GSMaps.find(m => m.data && m.data.all), b = r.g.box.getBoundingClientRect();
+              const bot = Math.min(b.bottom, innerHeight) - b.top;
+              return { part: bot < b.height - 100, in: pts.map(a => { const c = r.g.cp(a); return c.x >= 0 && c.x <= b.width && c.y >= 0 && c.y <= bot; }) }; }""", NEAR)
+            assert seen["part"] and all(seen["in"]), seen
+            assert errors == [], errors
+            ctx.close()
+        finally:
+            browser.close()
+
+
 def test_qa63_the_nearby_map_link_keeps_out_of_the_launchers_column(site):
     with sync_api.sync_playwright() as p:
         browser = _browser(p)
