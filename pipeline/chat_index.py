@@ -6,8 +6,13 @@ function through functions.includeFiles).
                  video topic pages, theme and site pages — with the short facts those pages show (a place's first-screen
                  key facts exactly as present.key_facts gives them, both values with their providers where two sources
                  differ; its other names, '다른 이름'; the places of a combined ticket in its fee table, '통합권 N곳').
-                 It is the cached part of the system prompt: deterministic (sorted, no build date) and under
-                 CATALOG_BUDGET estimated tokens (estimate_tokens) so the whole prompt stays in the cheaper price tier.
+                 Shrunk by the operator's decision of 2026-10-20 (docs/qa/2026-10-19_scenario_qa.md 9-5, B + D + H):
+                 food and café lines carry the menu only (MENU_ONLY), shops and markets have no lines — their section
+                 head says search_site finds them (SEARCH_ONLY) —, and a place line's location is its 구·군 alone, with
+                 one head line giving each 구·군's 권역 (region_line). docs.json and index.json keep every place whole.
+                 It is the cached part of the system prompt: deterministic (sorted, no build date) and meant to stay
+                 under CATALOG_BUDGET estimated tokens (estimate_tokens); above it the build and validate warn
+                 (budget_warning — a warning, never an error: the collection grows day by day).
     docs.json    {v, site, docs: {key: {t title, k kind, e English path, l {hreflang: that version's path}, n {hreflang:
                  that version's name}, u page, h heading, a other names, x text}},
                  alias, ext}: what get_pages returns. key = the page path (a guide section: the guide path + '#h-b<n>', the section's anchor on the
@@ -43,11 +48,16 @@ from .textutil import display_address, first_sentence, parking_text, squash_ws, 
 
 CHAT_DIR = "chat"
 VERSION = 1
-CATALOG_BUDGET = 72_000      # estimated tokens (estimate_tokens). The spec's ceiling is ~80K; 72K keeps 25K+ for the
-                             # conversation and tool results (api: 20K characters) under the 100K-token price tier
+CATALOG_BUDGET = 72_000      # the design budget in estimated tokens (estimate_tokens) — the one number the build and
+                             # validate warn above (budget_warning). The spec's ceiling is ~80K; 72K keeps 25K+ for the
+                             # conversation and tool results (api: 20K characters) under the 100K-token price tier. The
+                             # API counted the cached prefix about 1.34 times the estimate (QA 2026-10-19 9-5)
 DOC_LIMIT = 9_000            # characters of one doc's text (get_pages caps what it returns again, api/chat.js)
 KIND_ORDER = ("attraction", "food", "cafe", "stay", "shopping")   # 카페·디저트 its own list (operator 2026-10-19)
 KIND_HEAD = {k: KIND_LABELS[k] for k in KIND_ORDER}
+# the catalog's size (operator 2026-10-20, QA 9-5 options B and D): what a place line of these kinds keeps
+MENU_ONLY = ("food", "cafe")     # B: name, path, type, 구·군 and the menu — hours, closed days, parking, phone on the page
+SEARCH_ONLY = ("shopping",)      # D: no lines; the section head stays and says search_site finds them
 LINE_MAX = 60                # a place's one-line summary: a whole sentence up to this length, else cut at a clause
 GUIDE_LINE_MAX = 100         # a guide's answer line, an event's usual timing
 SEP = " | "
@@ -85,6 +95,17 @@ def estimate_tokens(text: str) -> int:
     wide = sum(1 for ch in text if ord(ch) > 127)
     ascii_ = len(text) - wide
     return int(math.ceil(wide + ascii_ / 2.5))
+
+
+def budget_warning(tokens_est: int, budget: int | None = None) -> str:
+    """'' when the catalog's estimate is within the design budget (CATALOG_BUDGET), else the warning the build prints
+    and validate lists. A warning, not an error: the daily collection keeps adding places and a build must not stop
+    for it — what to cut next is the operator's choice (QA 2026-10-19 9-5)."""
+    budget = CATALOG_BUDGET if budget is None else budget
+    if tokens_est <= budget:
+        return ""
+    return (f"도우미 카탈로그(chat/catalog.txt) 추정 {tokens_est:,}토큰 — 설계 예산 {budget:,}토큰보다 "
+            f"{tokens_est - budget:,} 많음(질문마다 캐시하는 앞부분이 그만큼 커진다; 줄이는 선택지는 QA 보고서 9-5)")
 
 
 # ---------------------------------------------------------------- small helpers
@@ -347,6 +368,7 @@ class Knowledge:
         self.ext: set[str] = set()
         self.book: dict[str, dict] = {}   # 예약하기 addresses the docs list: url → {k: service, p: {hreflang: page}}
         self.video_topic: dict[str, dict] = {}
+        self.region_of: dict[str, str] = {}   # {구·군: 권역} of the head line (district_regions)
         self._names: list | None = None
         self._sentences: list | None = None
         self._tickets: dict[str, list] = {}
@@ -507,22 +529,27 @@ class Knowledge:
         for g in self.groups:
             for v in g["items"]:
                 self.video_topic[v["youtube_id"]] = g
+        listed = [e for kind in KIND_ORDER if kind not in SEARCH_ONLY for e in S.lists.get(kind) or []]
+        self.region_of = self.district_regions(listed)
         out = [
-            f"# Site catalog of {S.site.get('site_name', '')} ({self.site}). One line = one page of this site.",
+            f"# Site catalog of {S.site.get('site_name', '')} ({self.site}). One line = one page of this site "
+            "(shops and markets excepted: search_site).",
             "# Line letter: P place, G guide, C course, E event series, A foreign article (on /abroad/), V video topic page, "
             "T theme list, S site page. The second field is the page path (an article: its id): pass it to get_pages "
             f"as is, and link the page as {self.site} + path. A name in brackets is the place's English name; "
             "'다른 이름' = other names of the same place (a building and the museum in it, an old and a new name).",
             "# Place lines carry the key facts exactly as the page's first screen shows them, in this order — attraction: "
-            "시간 (hours), 휴무 (closed days), 요금 (fee), 주차 (parking), 전화 (phone); food and 카페·디저트 (cafés, tea houses, "
-            "bakeries — their own list, apart from 음식점): 시간, 휴무, 메뉴 (signature dishes), 주차, 전화; 쇼핑 (markets and "
-            "shops): 시간, 휴무, 주차, 전화; stay: 체크인, 체크아웃, 주차, 객실 (rooms), 전화. One of these missing from a line = "
-            "the site has no "
-            "value for it. '외' = the page has more. '두 출처 다름' = two sources give different values and the page shows "
+            "시간 (hours), 휴무 (closed days), 요금 (fee), 주차 (parking), 전화 (phone); stay: 체크인, 체크아웃, 주차, "
+            "객실 (rooms), 전화. One of these missing from such a line = the site has no value for it. Food and 카페·디저트 "
+            "(cafés, tea houses, bakeries — a list apart from 음식점) lines carry only 메뉴 (signature dishes): their hours, "
+            "closed days, parking and phone are on the page — read it with get_pages before stating them. "
+            f"{self.where_note()} "
+            "'외' = the page has more. '두 출처 다름' = two sources give different values and the page shows "
             "both (방문 전 전화 확인). '통합권 N곳' = the places a combined ticket in the fee covers, as the guides name "
             "them ('A(=B)': A is the name the guides use, B the place's page name). "
             "지정 = official designations the page lists. Everything else (all facts with sources, "
             "FAQ, nearby public parking and bus stops, guide text, event programmes) comes from get_pages.",
+            *self.region_line(),
             *self.official_line(),
             "",
         ]
@@ -530,7 +557,14 @@ class Knowledge:
             items = sorted(S.lists.get(kind) or [], key=lambda e: present.name_key(e["name"]))
             if not items:
                 continue
-            out.append(f"## {KIND_HEAD[kind]} {len(items)}곳 — 목록 {self._list_path(kind)}")
+            head = f"## {KIND_HEAD[kind]} {len(items)}곳 — 목록 {self._list_path(kind)}"
+            if kind in SEARCH_ONLY:   # D: the pages stay in docs.json and the search index, without a catalog line
+                out.append(f"{head} (장소 줄 없음 — search_site로 이름·브랜드·구·군·시장 이름을 찾는다)")
+                for e in items:
+                    self.place_doc(e, self.en_path(e["_path"]), self.en_names.get(e["id"], ""))
+                out.append("")
+                continue
+            out.append(head)
             out += [self.place(e) for e in items]
             out.append("")
         if S.guides:
@@ -576,15 +610,59 @@ class Knowledge:
         from .build import LISTS
         return LISTS[kind]["path"]
 
+    # -- where a place is (H, operator 2026-10-20): its 구·군 on the line, the 구·군's 권역 once in the head
+    @staticmethod
+    def _region(e: dict) -> str:
+        r = e.get("_region") or ""
+        return "" if r == present.none_label() else r
+
+    def district_regions(self, places: list[dict]) -> dict[str, str]:
+        """{구·군: 권역} for each 구·군 whose places with a line all fall in one 권역 (site.json city.travel_regions, as
+        present.assign_regions applied it). A 구·군 split between 권역 (an old district name read by its 법정동) or
+        without one is left out: its lines name their own 권역 (where())."""
+        seen: dict[str, set[str]] = {}
+        for e in places:
+            if e.get("_district"):
+                seen.setdefault(e["_district"], set()).add(self._region(e))
+        return {d: next(iter(r)) for d, r in seen.items() if len(r) == 1 and "" not in r}
+
+    def region_line(self) -> list[str]:
+        """The head line that gives each 구·군 its 권역, the 권역 in the map's order and their 구·군 in site.json's
+        order (districts, then districts_former): '# 권역 … 개항장·월미 = 제물포구; … 도심·소래 = 미추홀구·남동구'."""
+        if not self.region_of:
+            return []
+        order = {d: i for i, d in enumerate(city.current().all_districts)}
+        regions = list(dict.fromkeys([*getattr(self.S, "region_names", []), *sorted(self.region_of.values())]))
+        groups = []
+        for r in regions:
+            ds = sorted((d for d, x in self.region_of.items() if x == r), key=lambda d: (order.get(d, len(order)), d))
+            if ds:
+                groups.append(f"{r} = {'·'.join(ds)}")
+        return ["# 권역 (travel region) of each 구·군: " + "; ".join(groups)]
+
+    def where_note(self) -> str:
+        """How the head says to read a place line's location."""
+        head = " (its 권역: the 권역 line below)" if self.region_of else ""
+        return (f"A place line's location is its 구·군 only{head} or the 권역 the line names; the 동, road, address and "
+                "nearby places are on the page.")
+
+    def where(self, e: dict) -> str:
+        """A place line's location: its 구·군 when the head line gives that 구·군's 권역, else the 구·군 and its own
+        권역 ('중구 (개항장·월미 권역)'), or the 권역 alone ('개항장·월미 권역') for a place without a 구·군."""
+        d, r = e.get("_district") or "", self._region(e)
+        if d and (d in self.region_of or not r):
+            return d
+        return f"{d} ({r} 권역)" if d else (f"{r} 권역" if r else "")
+
     # -- places
     def place(self, e: dict) -> str:
         name = e["name"]
         en_name = self.en_names.get(e["id"], "")
         kf = present.key_facts(e, "hero")
-        slots = "; ".join(_slot_text(s) for s in kf["slots"])
-        where = "·".join(x for x in (e.get("_district") or "", e.get("_area") or e.get("_road") or "",
-                                     e.get("_region") if e.get("_region") != present.none_label() else "") if x)
-        ds = designations(e)
+        menu_only = e["kind"] in MENU_ONLY   # B: the menu alone — the page has the hours, closed days, parking, phone
+        slots = "; ".join(_slot_text(s) for s in kf["slots"] if not menu_only or s["key"] == "menu")
+        where = self.where(e)
+        ds = [] if menu_only else designations(e)
         title = f"{name} ({en_name})" if en_name else name
         alt = jsonld.alternate_names(e)
         if alt:   # the other names the page lists under its name: a building and the museum in it, an old and a new name
@@ -592,14 +670,14 @@ class Knowledge:
         # a combined ticket's places as the guides name them, with the page name of a place they call by another name
         # ('○○미술관(=구 ○○은행 지점 /places/…/)'): the review's '정정' came from a model that could not tie
         # the two; live check 2026-10-14: without the path the model said the museum had no page of its own
-        tickets = "; ".join(
+        tickets = "" if menu_only else "; ".join(
             f"{t['label']} {len(t['places'])}곳: " + "·".join(
                 f"{p['written']}(={p['e']['name']} {p['e']['_path']})" if p["e"] and p["by"] == "other" else p["written"]
                 for p in t["places"])
             for t in self.tickets(e))
+        line = "" if menu_only else _short_line(e.get("_line") or first_sentence(e.get("summary"), LINE_MAX))
         parts = [f"P {e['_path']}", title, e.get("_type") or KIND_LABELS[e["kind"]],
-                 where, _short_line(e.get("_line") or first_sentence(e.get("summary"), LINE_MAX)), slots, tickets,
-                 "지정 " + "·".join(d["short"] for d in ds) if ds else ""]
+                 where, line, slots, tickets, "지정 " + "·".join(d["short"] for d in ds) if ds else ""]
         self.place_doc(e, self.en_path(e["_path"]), en_name)
         return SEP.join(p for p in parts if p)
 
@@ -1313,8 +1391,10 @@ def export(S, out: Path) -> dict:
              "site.json": dumps(site_json(S)) + "\n"}
     for name, text in files.items():
         (target / name).write_bytes(text.encode("utf-8"))
-    places = sum(1 for line in k.lines if line.startswith("P "))
+    # places: every place the knowledge holds (docs.json); place_lines: those with a catalog line (shops: search only)
+    places = sum(1 for d in k.docs.values() if d["k"] == "place")
     return {"catalog_lines": sum(1 for line in k.lines if line[:2] in ("P ", "G ", "C ", "E ", "A ", "V ", "T ", "S ")),
-            "places": places, "catalog_chars": len(catalog), "catalog_bytes": len(catalog.encode("utf-8")),
-            "catalog_tokens_est": estimate_tokens(catalog), "docs": len(k.docs),
+            "places": places, "place_lines": sum(1 for line in k.lines if line.startswith("P ")),
+            "catalog_chars": len(catalog), "catalog_bytes": len(catalog.encode("utf-8")),
+            "catalog_tokens_est": estimate_tokens(catalog), "catalog_budget": CATALOG_BUDGET, "docs": len(k.docs),
             "docs_bytes": len(files["docs.json"].encode("utf-8")), "index_bytes": len(files["index.json"].encode("utf-8"))}

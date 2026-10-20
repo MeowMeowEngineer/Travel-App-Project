@@ -1968,6 +1968,9 @@ def build(data_dir: Path, out: Path, mode: str = "production", empty_hint: str |
     # the site assistant's knowledge (pipeline/chat_index.py): /chat/catalog.txt, docs.json, index.json — api/chat.js
     # reads them from public/chat/ (vercel.json includeFiles)
     S.stats["chat"] = chat_index.export(S, out)
+    over = chat_index.budget_warning(S.stats["chat"]["catalog_tokens_est"])
+    if over:   # a warning, not a stop: the collection grows daily (validate lists it too)
+        print(f"경고: {over}", file=sys.stderr)
 
     if S.dead_dropped:
         print(f"홈페이지 링크 숨김 {len(S.dead_dropped)}건(data/{data_dir.name}/dead_links.json)", file=sys.stderr)

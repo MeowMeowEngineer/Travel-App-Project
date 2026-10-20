@@ -99,6 +99,6 @@ test("review 2026-10-20: the planner's own words claim no 권역 or walking the 
   // 도심·소래 and its legs 5.6 km and 6.9 km by transit
   useSite(SITE_CFG);
   const r4 = buildPlanSystem("# catalog", new Date("2026-10-19T03:00:00Z"))[0].text.split("\n").find((l) => l.startsWith("4. "));
-  assert.ok(r4.includes("name a 권역 only when every stop the sentence speaks of has that 권역 on its catalog line"), r4);
+  assert.ok(r4.includes("name a 권역 only when every stop the sentence speaks of is in that 권역 by its catalog line"), r4);
   assert.ok(r4.includes("never say how the stops connect (걸어서, 도보로, 가까이 이어진다, 이동이 짧다)"), r4);
 });

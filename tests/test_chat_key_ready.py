@@ -59,7 +59,9 @@ def test_the_build_writes_this_site_s_knowledge_with_sources_and_no_other_city(b
     catalog = (chat / "catalog.txt").read_text("utf-8")
     assert catalog.startswith(f"# Site catalog of 인천각 ({SITE}).")
     lines = {line.split(" | ")[0][2:]: line for line in catalog.splitlines() if line.startswith("P ")}
-    assert set(lines) == PLACES and built["stats"]["chat"]["places"] == 7
+    # every place is in the knowledge; shops have no catalog line (operator 2026-10-20, D: search_site finds them —
+    # tests/test_chat_catalog_size.py)
+    assert set(lines) == PLACES - {"/places/test-shop-g/"} and built["stats"]["chat"]["places"] == 7
     assert "주차 [테스트] 주차 값" in lines["/places/test-beach-a/"]               # the first screen's key facts
     assert "메뉴 [테스트] 메뉴 값" in lines["/places/test-food-b/"]
     assert "정정 요청 ," not in catalog                                           # no contact yet: not named at all

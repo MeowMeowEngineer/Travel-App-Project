@@ -79,6 +79,9 @@ What is checked
   similar-name rows never show the page's own family nor an alias beside its parent, and JSON-LD containedInPlace /
   containsPlace say exactly the same (same_building: neither). Warning: same-building partners whose shared facts
   differ without each listing the other's value (relations.fact_differences)
+- the site assistant's catalog (chat/catalog.txt, the prompt's cached part): a warning when its estimated tokens
+  (chat_index.estimate_tokens) exceed the design budget chat_index.CATALOG_BUDGET — never an error, the collection
+  grows day by day (operator decision 2026-10-20)
 """
 from __future__ import annotations
 
@@ -93,7 +96,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from . import art, ask, booking, city, en_site, notices, present, relations, tickets
+from . import art, ask, booking, chat_index, city, en_site, notices, present, relations, tickets
 from .content_check import copy_issues, guide_issues
 from . import locales as LC
 from .build import DESC_MAX, HL_VIEWER, LISTS, MODES, State, fact_row, index_counts, load_abroad
@@ -1872,6 +1875,12 @@ def validate(data_dir: Path, out: Path, mode: str = "production") -> tuple[list[
     for name, text in ai_files.items():
         for problem in dead_link_problems(text, [], S.dead_links):
             E(name, problem)
+    # the assistant's cached catalog against its design budget (chat_index.CATALOG_BUDGET): a warning, never an error
+    if "/chat/catalog.txt" in ai_files:
+        stats["catalog_tokens_est"] = chat_index.estimate_tokens(ai_files["/chat/catalog.txt"])
+        over = chat_index.budget_warning(stats["catalog_tokens_est"])
+        if over:
+            W("chat/catalog.txt", over)
 
     if strict:
         su = S.site_url
