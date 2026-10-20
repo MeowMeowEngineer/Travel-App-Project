@@ -102,3 +102,16 @@ test("review 2026-10-20: the planner's own words claim no 권역 or walking the 
   assert.ok(r4.includes("name a 권역 only when every stop the sentence speaks of is in that 권역 by its catalog line"), r4);
   assert.ok(r4.includes("never say how the stops connect (걸어서, 도보로, 가까이 이어진다, 이동이 짧다)"), r4);
 });
+
+test("A/B review 2026-10-20: a catalog value ending in '외' is cut — read the page before calling part of it missing", () => {
+  // '아이랑 비 오는 날 실내' answered from the line '요금 중학생 이상 6,000원 외' without reading the page and said the child fee
+  // was not on the site; the page had it (12개월 이상~초등학생 7,000원)
+  const tools = rules(SITE_CFG).split("\nTools:\n")[1];
+  const line = tools.split("\n").find((l) => l.includes("'외'"));
+  assert.ok(line, tools);
+  assert.ok(line.includes("A catalog value that ends in '외' is cut: the page has the rest"), line);
+  assert.ok(line.includes("Read the page with get_pages before you say any part of that value is not on the site"), line);
+  assert.ok(line.includes("before you answer from it when the question turns on what was cut"), line);
+  // the example names no value of a real place
+  assert.doesNotMatch(line, /\d,\d{3}원/);
+});
