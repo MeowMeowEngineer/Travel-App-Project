@@ -14044,11 +14044,25 @@ URL: https://incheon.webforai.kr/places/%EC%82%BC%EC%84%B1%EC%8A%A4%ED%86%A0%EC%
 URL: https://incheon.webforai.kr/places/%EC%82%BC%EC%84%B1%EC%8A%A4%ED%86%A0%EC%96%B4-%EB%8F%84%ED%99%94/
 요약: 
 - 주소: 인천광역시 미추홀구 경인로 262 (도화동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~20:30 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1497-9022 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 삼성스토어 연수송도 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%82%BC%EC%84%B1%EC%8A%A4%ED%86%A0%EC%96%B4-%EC%97%B0%EC%88%98%EC%86%A1%EB%8F%84/
 요약: 
 - 주소: 인천광역시 연수구 경원대로 294 (연수동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~20:30 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 전자/디지털제품 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1442-7142 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 삼송가든 인천본점 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%82%BC%EC%86%A1%EA%B0%80%EB%93%A0-%EC%9D%B8%EC%B2%9C%EB%B3%B8%EC%A0%90/
@@ -14437,6 +14451,14 @@ URL: https://incheon.webforai.kr/places/%EC%85%80%EB%A0%88%EB%B8%8C%EB%A5%B4/
 URL: https://incheon.webforai.kr/places/%EC%86%8C%EB%8B%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2270 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 소담잔치국수 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%86%8C%EB%8B%B4%EC%9E%94%EC%B9%98%EA%B5%AD%EC%88%98/
@@ -14483,6 +14505,12 @@ URL: https://incheon.webforai.kr/places/%EC%86%8C%EC%84%B1%EC%A0%95/
 URL: https://incheon.webforai.kr/places/%EC%86%8C%EC%9D%B4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7947 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 소풀이양평해장국 청라본점 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%86%8C%ED%92%80%EC%9D%B4%EC%96%91%ED%8F%89%ED%95%B4%EC%9E%A5%EA%B5%AD-%EC%B2%AD%EB%9D%BC%EB%B3%B8%EC%A0%90/
@@ -14500,6 +14528,14 @@ URL: https://incheon.webforai.kr/places/%EC%86%8C%ED%92%80%EC%9D%B4%EC%96%91%ED%
 URL: https://incheon.webforai.kr/places/%EC%86%94%EB%A6%AC%EB%93%9C%EC%98%B4%EB%AF%80-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2210 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 솔밭회조개구이 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%86%94%EB%B0%AD%ED%9A%8C%EC%A1%B0%EA%B0%9C%EA%B5%AC%EC%9D%B4/
@@ -14807,26 +14843,58 @@ URL: https://incheon.webforai.kr/places/%EC%89%90%EB%9D%BC%ED%86%A4-%EA%B7%B8%EB
 URL: https://incheon.webforai.kr/places/%EC%89%AC%EC%A6%88%EB%AF%B8%EC%8A%A4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7356 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 쉬즈미스 스퀘어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%89%AC%EC%A6%88%EB%AF%B8%EC%8A%A4-%EC%8A%A4%ED%80%98%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4297 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 슈마커플러스 스케어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%88%EB%A7%88%EC%BB%A4%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%8A%A4%EC%BC%80%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4368 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스노우피크 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EB%85%B8%EC%9A%B0%ED%94%BC%ED%81%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-2400 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스노우피크 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EB%85%B8%EC%9A%B0%ED%94%BC%ED%81%AC-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1484-2456 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스시에반하다 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%8B%9C%EC%97%90%EB%B0%98%ED%95%98%EB%8B%A4/
@@ -14881,6 +14949,12 @@ URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%8B%9C%ED%95%98%EB%82%98/
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%99%80%EB%A1%9C%EB%B8%8C%EC%8A%A4%ED%82%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 보석/액세서리 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2155 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스위스파크 (숙소)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%9C%84%EC%8A%A4%ED%8C%8C%ED%81%AC/
@@ -14909,26 +14983,58 @@ URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%B9%B4%EC%9D%B4%ED%83%91%ED%
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%B9%B4%EC%9D%B4%ED%8C%9C%EC%95%BD%EA%B5%AD/
 요약: 
 - 주소: 인천광역시 영종구 공항로 272 (운서동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 05:30~21:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의약품/의료용 기기 (출처: 한국관광공사 TourAPI)
+- 문의: 032-743-0020 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스케쳐스 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%BC%80%EC%B3%90%EC%8A%A4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7725 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스케쳐스 인천부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%BC%80%EC%B3%90%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 64 (부평동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-526-9898 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스케쳐스 인천신포점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%BC%80%EC%B3%90%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EC%8B%A0%ED%8F%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 제물포구 개항로 39-1 (내동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~20:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1358-8820 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스케쳐스 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%EC%BC%80%EC%B3%90%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2464 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스타파이브 카페 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%ED%83%80%ED%8C%8C%EC%9D%B4%EB%B8%8C-%EC%B9%B4%ED%8E%98/
@@ -14980,21 +15086,46 @@ URL: https://incheon.webforai.kr/places/%EC%8A%A4%ED%86%A0%EB%A6%AC%EC%A7%80-%EC
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%ED%86%A4%ED%97%A8%EC%A7%80-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2438 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스파오 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%ED%8C%8C%EC%98%A4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1368-0669 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스파오키즈 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%ED%8C%8C%EC%98%A4%ED%82%A4%EC%A6%88-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-0047 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스파이더 동인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%ED%8C%8C%EC%9D%B4%EB%8D%94-%EB%8F%99%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 제물포구 개항로 39-2 (내동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1485-0551 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 스페인마을 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%8A%A4%ED%8E%98%EC%9D%B8%EB%A7%88%EC%9D%84/
@@ -15045,16 +15176,38 @@ URL: https://incheon.webforai.kr/places/%EC%8B%9C%EB%82%98%EB%A3%A8/
 URL: https://incheon.webforai.kr/places/%EC%8B%9C%EC%8A%A4%ED%85%9C-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2278 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 시스템옴므 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8B%9C%EC%8A%A4%ED%85%9C%EC%98%B4%EB%AF%80-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2213 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 시슬리 모다아울렛 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8B%9C%EC%8A%AC%EB%A6%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-452-2278 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 시옌 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%8B%9C%EC%98%8C/
@@ -15264,11 +15417,26 @@ URL: https://incheon.webforai.kr/places/%EC%8C%8D%EB%91%A5%EC%9D%B4%EB%84%A4-%ED
 URL: https://incheon.webforai.kr/places/%EC%8C%A4%EC%86%8C%EB%82%98%EC%9D%B4%ED%8A%B8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2480 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 써스데이아일랜드 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%8D%A8%EC%8A%A4%EB%8D%B0%EC%9D%B4%EC%95%84%EC%9D%BC%EB%9E%9C%EB%93%9C-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2421 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 씨월드관광호텔 (숙소)
 URL: https://incheon.webforai.kr/places/%EC%94%A8%EC%9B%94%EB%93%9C%EA%B4%80%EA%B4%91%ED%98%B8%ED%85%94/
@@ -15288,46 +15456,107 @@ URL: https://incheon.webforai.kr/places/%EC%94%A8%EC%9B%94%EB%93%9C%EA%B4%80%EA%
 URL: https://incheon.webforai.kr/places/%EC%94%A8%EC%B1%84%EB%84%90%EC%95%88%EA%B2%BD-%EB%8F%99%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 제물포구 개항로 56 (내동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~20:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의약품/의료용 기기 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1323-2040 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 씨채널안경 인하대점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%94%A8%EC%B1%84%EB%84%90%EC%95%88%EA%B2%BD-%EC%9D%B8%ED%95%98%EB%8C%80%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 인하로 100 (용현동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 09:00-18:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-토요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 잡화 (출처: 한국관광공사 TourAPI)
+- 문의: 032-873-2122 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아가방 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EA%B0%80%EB%B0%A9-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7177 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아가방플렉스 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EA%B0%80%EB%B0%A9%ED%94%8C%EB%A0%89%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2311 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아디다스 롯데백화점 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EB%94%94%EB%8B%A4%EC%8A%A4-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 4층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2499 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아디다스 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EB%94%94%EB%8B%A4%EC%8A%A4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 070-7005-2258 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아디다스 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EB%94%94%EB%8B%A4%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2122 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아디다스골프 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EB%94%94%EB%8B%A4%EC%8A%A4%EA%B3%A8%ED%94%84-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~23:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2222 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아디다스팩토리 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EB%94%94%EB%8B%A4%EC%8A%A4%ED%8C%A9%ED%86%A0%EB%A6%AC-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2122 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아띠오아나폴리핏제리아 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EB%9D%A0%EC%98%A4%EC%95%84%EB%82%98%ED%8F%B4%EB%A6%AC%ED%95%8F%EC%A0%9C%EB%A6%AC%EC%95%84/
@@ -15370,6 +15599,13 @@ URL: https://incheon.webforai.kr/places/%EC%95%84%EB%9D%BC%EC%A7%AC%EB%BD%95/
 URL: https://incheon.webforai.kr/places/%EC%95%84%EB%A6%AC%EB%94%B0%EC%9B%80-%EB%B6%80%ED%8F%89%EC%97%AD%EC%A7%80%ED%95%98%EC%83%81%EA%B0%80%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평대로 69 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 3주 화요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-512-0025 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아리아리랑 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EB%A6%AC%EC%95%84%EB%A6%AC%EB%9E%91/
@@ -15400,6 +15636,12 @@ URL: https://incheon.webforai.kr/places/%EC%95%84%EB%A7%A4%EB%84%A4-%EC%B9%B4%ED
 URL: https://incheon.webforai.kr/places/%EC%95%84%EC%8B%9D%EC%8A%A4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7727 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아우라지 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EC%9A%B0%EB%9D%BC%EC%A7%80/
@@ -15416,26 +15658,62 @@ URL: https://incheon.webforai.kr/places/%EC%95%84%EC%9A%B0%EB%9D%BC%EC%A7%80/
 URL: https://incheon.webforai.kr/places/%EC%95%84%EC%9D%B4%EB%8D%94-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 잡화 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7737 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아이더 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EC%9D%B4%EB%8D%94-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2461 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아이잗바바 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EC%9D%B4%EC%9E%97%EB%B0%94%EB%B0%94-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7906 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아이잗바바 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EC%9D%B4%EC%9E%97%EB%B0%94%EB%B0%94-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2152 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아이즈빌아울렛 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EC%9D%B4%EC%A6%88%EB%B9%8C%EC%95%84%EC%9A%B8%EB%A0%9B/
 요약: 
 - 주소: 인천광역시 부평구 마장로 489 (청천동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:30 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 연중무휴 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 / 영화 / 음식 등 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 4만566m²(총 면적 8000평)나이키, 디스커버리, 디즈니골프, 빈폴아웃도어, 서광모드, 웰메이드, 코오롱, 톰보이 등 (출처: 한국관광공사 TourAPI)
+- 문의: 032-270-2000 (출처: 한국관광공사 TourAPI)
+- 홈페이지: http://www.isvill.co.kr (출처: 한국관광공사 TourAPI)
+- 유모차 대여: 불가 (출처: 한국관광공사 TourAPI)
 
 ## 아일랜드캐슬 (숙소)
 URL: https://incheon.webforai.kr/places/%EC%95%84%EC%9D%BC%EB%9E%9C%EB%93%9C%EC%BA%90%EC%8A%AC/
@@ -15464,6 +15742,12 @@ URL: https://incheon.webforai.kr/places/%EC%95%84%EC%A0%80%EC%94%A8%EB%83%89%EB%
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%81%AC%ED%85%8C%EB%A6%AD%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2426 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아키라커피 본점 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%82%A4%EB%9D%BC%EC%BB%A4%ED%94%BC-%EB%B3%B8%EC%A0%90/
@@ -15495,46 +15779,104 @@ URL: https://incheon.webforai.kr/places/%EC%95%84%ED%8A%B8%EB%9E%91-%EC%83%A4%EB
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%8A%B8%EB%B0%95%EC%8A%A4-%EB%B6%80%ED%8F%89%EB%AC%B8%ED%99%94%EC%9D%98%EA%B1%B0%EB%A6%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로80번길 24 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:30-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 , 향수/화장품 , 식료품 , 휴대폰용품 , 사진장비/광학기기 , 전자/디지털제품 , 문구/장난감/오락용품 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1323-2240 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아트박스 부평역사점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%8A%B8%EB%B0%95%EC%8A%A4-%EB%B6%80%ED%8F%89%EC%97%AD%EC%82%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 광장로 지하15 (부평동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 , 향수/화장품 , 잡화 , 보석/액세서리 , 식료품 , 문구/장난감/오락용품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1377-9789 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아트박스 스퀘어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%8A%B8%EB%B0%95%EC%8A%A4-%EC%8A%A4%ED%80%98%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 문구/장난감/오락용품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1354-4318 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아트박스 영종하늘도시점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%8A%B8%EB%B0%95%EC%8A%A4-%EC%98%81%EC%A2%85%ED%95%98%EB%8A%98%EB%8F%84%EC%8B%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 하늘중앙로 221 (중산동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 문구/장난감/오락용품 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1407-0789 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아트박스 인천삼산점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%8A%B8%EB%B0%95%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EC%82%BC%EC%82%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 길주로 651 (삼산동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 식료품 , 문구/장난감/오락용품 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1346-0792 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아트박스 인천송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%8A%B8%EB%B0%95%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 신송로 165-17 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 잡화 , 보석/액세서리 , 문구/장난감/오락용품 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1479-0756 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 아트박스 작전역사점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%84%ED%8A%B8%EB%B0%95%EC%8A%A4-%EC%9E%91%EC%A0%84%EC%97%AD%EC%82%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 계양대로 지하73 (작전동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 식료품 , 문구/장난감/오락용품 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1452-0792 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 안경진정성 윙크 청라점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%88%EA%B2%BD%EC%A7%84%EC%A0%95%EC%84%B1-%EC%9C%99%ED%81%AC-%EC%B2%AD%EB%9D%BC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 청라커낼로 252 (청라동, 청라 롯데캐슬) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의약품/의료용 기기 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1302-8110 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 안경창고싸군 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%95%88%EA%B2%BD%EC%B0%BD%EA%B3%A0%EC%8B%B8%EA%B5%B0-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 컨벤시아대로130번길 14 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 09:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의약품/의료용 기기 (출처: 한국관광공사 TourAPI)
+- 문의: 032-833-6565 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 애월몽 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%95%A0%EC%9B%94%EB%AA%BD/
@@ -15552,6 +15894,12 @@ URL: https://incheon.webforai.kr/places/%EC%95%A0%EC%9B%94%EB%AA%BD/
 URL: https://incheon.webforai.kr/places/%EC%95%A0%ED%94%8C%ED%95%91%ED%81%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7959 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 앤드아워 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%95%A4%EB%93%9C%EC%95%84%EC%9B%8C/
@@ -15569,6 +15917,14 @@ URL: https://incheon.webforai.kr/places/%EC%95%A4%EB%93%9C%EC%95%84%EC%9B%8C/
 URL: https://incheon.webforai.kr/places/%EC%95%A4%EB%93%9C%EC%A7%80-%EB%B0%94%EC%9D%B4-%EC%A7%80%EC%98%A4%EC%A7%80%EC%95%84-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2206 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 야생화뜰 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%95%BC%EC%83%9D%ED%99%94%EB%9C%B0/
@@ -15636,6 +15992,12 @@ URL: https://incheon.webforai.kr/places/%EC%96%B4%EB%A6%AC%EB%B2%84%EB%A6%AC%EC%
 URL: https://incheon.webforai.kr/places/%EC%96%B4%EB%A9%94%EC%9D%B4%EC%A7%95%ED%81%AC%EB%A6%AC-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1391-2287 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 어부신광호 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%96%B4%EB%B6%80%EC%8B%A0%EA%B4%91%ED%98%B8/
@@ -15667,11 +16029,25 @@ URL: https://incheon.webforai.kr/places/%EC%96%B4%EB%B6%80%EC%9D%98%EC%A7%91/
 URL: https://incheon.webforai.kr/places/%EC%96%B8%EB%8D%94%EC%95%84%EB%A8%B8-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7713 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 언더아머 팩토리하우스 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%96%B8%EB%8D%94%EC%95%84%EB%A8%B8-%ED%8C%A9%ED%86%A0%EB%A6%AC%ED%95%98%EC%9A%B0%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1305-2475 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 얼레꼴레만두 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%96%BC%EB%A0%88%EA%BC%B4%EB%A0%88%EB%A7%8C%EB%91%90/
@@ -15689,6 +16065,12 @@ URL: https://incheon.webforai.kr/places/%EC%96%BC%EB%A0%88%EA%BC%B4%EB%A0%88%EB%
 URL: https://incheon.webforai.kr/places/%EC%96%BC%EB%B0%94%EC%9D%B8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2459 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 엉클인더키친 센트럴파크 본점 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%97%89%ED%81%B4%EC%9D%B8%EB%8D%94%ED%82%A4%EC%B9%9C-%EC%84%BC%ED%8A%B8%EB%9F%B4%ED%8C%8C%ED%81%AC-%EB%B3%B8%EC%A0%90/
@@ -15707,26 +16089,56 @@ URL: https://incheon.webforai.kr/places/%EC%97%89%ED%81%B4%EC%9D%B8%EB%8D%94%ED%
 URL: https://incheon.webforai.kr/places/%EC%97%90%EA%BC%B4%EB%A6%AC%EC%97%90-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7961 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 에메필 인천구월점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%97%90%EB%A9%94%ED%95%84-%EC%9D%B8%EC%B2%9C%EA%B5%AC%EC%9B%94%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 예술로 126 (구월동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-423-2622 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 에스마켓 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%97%90%EC%8A%A4%EB%A7%88%EC%BC%93-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1425-7917 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 에스콰이아 모다아울렛 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%97%90%EC%8A%A4%EC%BD%B0%EC%9D%B4%EC%95%84-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 , 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-452-2187 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 에스핏 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%97%90%EC%8A%A4%ED%95%8F-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-1239 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 에이치 123(h' 123) (음식점)
 URL: https://incheon.webforai.kr/places/%EC%97%90%EC%9D%B4%EC%B9%98-123/
@@ -15745,26 +16157,56 @@ URL: https://incheon.webforai.kr/places/%EC%97%90%EC%9D%B4%EC%B9%98-123/
 URL: https://incheon.webforai.kr/places/%EC%97%90%EC%9E%87%EC%84%B8%EC%BB%A8%EC%A6%88-%EC%86%A1%EB%8F%84-%ED%8A%B8%EB%A6%AC%ED%94%8C%EC%8A%A4%ED%8A%B8%EB%A6%AC%ED%8A%B8%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도과학로16번길 33-2 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 070-7090-0560 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 에잇컨셉 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%97%90%EC%9E%87%EC%BB%A8%EC%85%89-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-6348 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 에트로 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%97%90%ED%8A%B8%EB%A1%9C-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2134 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 엘르골프 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%97%98%EB%A5%B4%EA%B3%A8%ED%94%84-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7844 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 엘칸토 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%97%98%EC%B9%B8%ED%86%A0-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7765 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 엠클리프 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%97%A0%ED%81%B4%EB%A6%AC%ED%94%84/
@@ -15923,16 +16365,35 @@ URL: https://incheon.webforai.kr/places/%EC%98%81%ED%9D%A5%EC%9D%BC%EB%B2%88%EC%
 URL: https://incheon.webforai.kr/places/%EC%98%88%EA%B1%B0%EB%A5%B4%EC%BF%A8%ED%8A%B8%EB%A5%B4-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~20:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 보석/액세서리 (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2034 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 예작 모다백화점 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%88%EC%9E%91-%EB%AA%A8%EB%8B%A4%EB%B0%B1%ED%99%94%EC%A0%90-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-452-2462 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 예작 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%88%EC%9E%91-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7835 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 예전 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%98%88%EC%A0%84/
@@ -16020,6 +16481,13 @@ URL: https://incheon.webforai.kr/places/%EC%98%A4%EB%9D%BC%EC%B9%B4%EC%9D%B4-%EC
 URL: https://incheon.webforai.kr/places/%EC%98%A4%EB%A9%94%EA%B0%80-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~20:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 보석/액세서리 (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2295 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 오목골즉석메밀우동 박문점 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%98%A4%EB%AA%A9%EA%B3%A8%EC%A6%89%EC%84%9D%EB%A9%94%EB%B0%80%EC%9A%B0%EB%8F%99-%EB%B0%95%EB%AC%B8%EC%A0%90/
@@ -16038,6 +16506,14 @@ URL: https://incheon.webforai.kr/places/%EC%98%A4%EB%AA%A9%EA%B3%A8%EC%A6%89%EC%
 URL: https://incheon.webforai.kr/places/%EC%98%A4%EB%B8%8C%EC%A0%9C-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2793 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 오션97 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%98%A4%EC%85%9897/
@@ -16105,11 +16581,25 @@ URL: https://incheon.webforai.kr/places/%EC%98%A4%EC%8A%AC%EB%A1%9C-%EB%AC%B4%EC
 URL: https://incheon.webforai.kr/places/%EC%98%A4%EC%A1%B0%ED%81%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7875 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 오즈세컨 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%A4%EC%A6%88%EC%84%B8%EC%BB%A8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2256 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 오크우드 프리미어 인천 (숙소)
 URL: https://incheon.webforai.kr/places/%EC%98%A4%ED%81%AC%EC%9A%B0%EB%93%9C-%ED%94%84%EB%A6%AC%EB%AF%B8%EC%96%B4-%EC%9D%B8%EC%B2%9C/
@@ -16128,6 +16618,12 @@ URL: https://incheon.webforai.kr/places/%EC%98%A4%ED%81%AC%EC%9A%B0%EB%93%9C-%ED
 URL: https://incheon.webforai.kr/places/%EC%98%A4%ED%94%84%EB%9D%BC%EB%B2%A8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2316 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 오후엔 (숙소)
 URL: https://incheon.webforai.kr/places/%EC%98%A4%ED%9B%84%EC%97%94/
@@ -16197,371 +16693,823 @@ URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%93%9C%ED%83%80%EC%9A%B4/
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B0%84%EC%84%9D%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 석산로 17 (간석동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-437-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 검단사거리점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B2%80%EB%8B%A8%EC%82%AC%EA%B1%B0%EB%A6%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 검단구 검단로 480 (왕길동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-565-5291 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 검단신도시점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B2%80%EB%8B%A8%EC%8B%A0%EB%8F%84%EC%8B%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 검단구 완정로 14 (마전동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-564-5291 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 검단아라점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B2%80%EB%8B%A8%EC%95%84%EB%9D%BC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 검단구 이음대로 479 (당하동) CS메디컬프라자 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-569-2492 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 계산역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B3%84%EC%82%B0%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 경명대로 1077 (계산동) 로얄프라자 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-555-2654 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 계양구청점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B3%84%EC%96%91%EA%B5%AC%EC%B2%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 계산새로 93 (용종동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-552-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 계양점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B3%84%EC%96%91%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 오조산로 3 (작전동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-541-1739 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 구월 타운 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B5%AC%EC%9B%94-%ED%83%80%EC%9A%B4/
 요약: 
 - 주소: 인천광역시 남동구 예술로 126 (구월동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-421-0212 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 구월아시아드점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EA%B5%AC%EC%9B%94%EC%95%84%EC%8B%9C%EC%95%84%EB%93%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 인하로 556 (구월동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-461-7169 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 동암역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%8F%99%EC%95%94%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 동암광장로4번길 3 (십정동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-421-5293 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 롯데마트 삼산점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%A1%AF%EB%8D%B0%EB%A7%88%ED%8A%B8-%EC%82%BC%EC%82%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 길주로 623 (삼산동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-363-2301 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 만수향촌점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%A7%8C%EC%88%98%ED%96%A5%EC%B4%8C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 만수서로 62 (만수동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-461-4912 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 부평 타운 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%B6%80%ED%8F%89-%ED%83%80%EC%9A%B4/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로66번길 5 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-330-1859 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 부평그랑힐스점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%B6%80%ED%8F%89%EA%B7%B8%EB%9E%91%ED%9E%90%EC%8A%A4%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 산청로 97 (청천동, e편한세상부평그랑힐스) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-330-4628 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 부평북부점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%B6%80%ED%8F%89%EB%B6%81%EB%B6%80%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 경원대로 1401 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-506-1982 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 부평삼산점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%B6%80%ED%8F%89%EC%82%BC%EC%82%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 체육관로 14 (삼산동) 삼성메디플러스 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-505-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 부평역남부점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%B6%80%ED%8F%89%EC%97%AD%EB%82%A8%EB%B6%80%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 경인로 947 (부평동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-505-8406 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 부평역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%B6%80%ED%8F%89%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 광장로 16 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 09:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-515-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평대로 15 (부평동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-528-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 송도글로벌점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%86%A1%EB%8F%84%EA%B8%80%EB%A1%9C%EB%B2%8C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도과학로16번길 33-4 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-310-9639 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 송도랜드마크시티점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%86%A1%EB%8F%84%EB%9E%9C%EB%93%9C%EB%A7%88%ED%81%AC%EC%8B%9C%ED%8B%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 랜드마크로 68 (송도동, 랜드마크시티센트럴더샵) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-858-0621 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 송도삼성바이오로직스점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%86%A1%EB%8F%84%EC%82%BC%EC%84%B1%EB%B0%94%EC%9D%B4%EC%98%A4%EB%A1%9C%EC%A7%81%EC%8A%A4%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도바이오대로 300 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 08:00-21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-토요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-822-6150 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 송도센트럴파크점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%86%A1%EB%8F%84%EC%84%BC%ED%8A%B8%EB%9F%B4%ED%8C%8C%ED%81%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 해돋이로171번길 11 (송도동, 송도 센트럴파크 리버리치) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-858-0838 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 송도인천대입구역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%86%A1%EB%8F%84%EC%9D%B8%EC%B2%9C%EB%8C%80%EC%9E%85%EA%B5%AC%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 벤처로 10 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-858-0449 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 해돋이로120번길 23 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-831-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 송도트리플스트리트점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%86%A1%EB%8F%84%ED%8A%B8%EB%A6%AC%ED%94%8C%EC%8A%A4%ED%8A%B8%EB%A6%AC%ED%8A%B8%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도과학로16번길 33-2 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-310-9444 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 연수구청점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%97%B0%EC%88%98%EA%B5%AC%EC%B2%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 먼우금로 190 (연수동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-811-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 영종하늘달빛로점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%98%81%EC%A2%85%ED%95%98%EB%8A%98%EB%8B%AC%EB%B9%9B%EB%A1%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 하늘중앙로225번길 4 (중산동) 영종에스타워 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-751-9177 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 영종하늘도시점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%98%81%EC%A2%85%ED%95%98%EB%8A%98%EB%8F%84%EC%8B%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 하늘중앙로195번길 20 (중산동) 마지프라자 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-751-7867 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 운서역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9A%B4%EC%84%9C%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 신도시남로142번길 6 (운서동) 메가스타영종 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-746-3487 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 운서점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9A%B4%EC%84%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 흰바위로59번길 8 (운서동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-751-7084 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천가좌점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B0%80%EC%A2%8C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 원적로 103 (가좌동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-576-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천갈산점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B0%88%EC%82%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 주부토로249번길 17 (갈산동, 부평지웰에스테이트) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-527-4913 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천강화점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B0%95%ED%99%94%EC%A0%90/
 요약: 
 - 주소: 인천광역시 강화군 강화읍 강화대로 414 (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:00~21:30 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-933-3788 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천검단센트럴점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B2%80%EB%8B%A8%EC%84%BC%ED%8A%B8%EB%9F%B4%EC%A0%90/
 요약: 
 - 주소: 인천광역시 검단구 이음대로 388 (원당동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-569-4928 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천검암점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B2%80%EC%95%94%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 승학로 491 (검암동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-566-5291 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천공항제1여객터미널점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B3%B5%ED%95%AD%EC%A0%9C1%EC%97%AC%EA%B0%9D%ED%84%B0%EB%AF%B8%EB%84%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 공항로 271 (운서동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 06:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-743-5293 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천공항제2여객터미널점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B3%B5%ED%95%AD%EC%A0%9C2%EC%97%AC%EA%B0%9D%ED%84%B0%EB%AF%B8%EB%84%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 제2터미널대로 444 (운서동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 06:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-743-5292 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천구월로데오점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B5%AC%EC%9B%94%EB%A1%9C%EB%8D%B0%EC%98%A4%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 인하로 497-8 (구월동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-424-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천길병원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EA%B8%B8%EB%B3%91%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 구월남로 174 (구월동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-471-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천논현역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EB%85%BC%ED%98%84%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 청능대로 575 (논현동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-442-3044 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천라피에스타점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EB%9D%BC%ED%94%BC%EC%97%90%EC%8A%A4%ED%83%80%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 논고개로 61 (논현동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-428-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천루원시티점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EB%A3%A8%EC%9B%90%EC%8B%9C%ED%8B%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 가정로 406 (가정동, 루원지웰시티푸르지오) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-576-7241 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천만수점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EB%A7%8C%EC%88%98%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 장승남로 48 (만수동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-464-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천불로동점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EB%B6%88%EB%A1%9C%EB%8F%99%EC%A0%90/
 요약: 
 - 주소: 인천광역시 검단구 검단로 747 (불로동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-569-5908 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천서구청점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%84%9C%EA%B5%AC%EC%B2%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 탁옥로 57 (심곡동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-564-5295 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천서창점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%84%9C%EC%B0%BD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 서창남로 51 (서창동) 노블시티 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-465-5728 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천석남점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%84%9D%EB%82%A8%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 가정로 201-1 (석남동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-579-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천스퀘어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%8A%A4%ED%80%98%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4349 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천시민공원역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%8B%9C%EB%AF%BC%EA%B3%B5%EC%9B%90%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 경인로 372 (주안동, 포레나 미추홀) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-428-8407 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천신포점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%8B%A0%ED%8F%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 제물포구 개항로 32-1 (신포동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-765-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천신현점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%8B%A0%ED%98%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 가정로 370 (가정동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-578-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천앨리웨이점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%95%A8%EB%A6%AC%EC%9B%A8%EC%9D%B4%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 숙골로87번길 5 (도화동, 더샵 인천스카이타워 2단지) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-865-6495 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천연수점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%97%B0%EC%88%98%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 앵고개로 250 (동춘동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-811-9472 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천원당점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%9B%90%EB%8B%B9%EC%A0%90/
 요약: 
 - 주소: 인천광역시 검단구 원당대로 854 (당하동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-561-5357 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천인스파이어점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%9D%B8%EC%8A%A4%ED%8C%8C%EC%9D%B4%EC%96%B4%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 공항문화로 127 (운서동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-213-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천청라점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%EC%B2%AD%EB%9D%BC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 중봉대로586번길 22 (청라동, 청라 엑슬루타워) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-567-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 인천터미널역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9D%B8%EC%B2%9C%ED%84%B0%EB%AF%B8%EB%84%90%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 예술로 지하85 (관교동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 09:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-427-9415 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 임학역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9E%84%ED%95%99%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 장제로 867 (임학동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-541-2609 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 작전점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%9E%91%EC%A0%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 계양대로 65 (작전동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~23:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-556-6701 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 청라스퀘어세븐점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%B2%AD%EB%9D%BC%EC%8A%A4%ED%80%98%EC%96%B4%EC%84%B8%EB%B8%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 청라루비로 76 (청라동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-710-5295 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 청라시티점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%B2%AD%EB%9D%BC%EC%8B%9C%ED%8B%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 청라한내로100번길 24 (청라동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-569-5734 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 청라커낼에비뉴점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%B2%AD%EB%9D%BC%EC%BB%A4%EB%82%BC%EC%97%90%EB%B9%84%EB%89%B4%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 청라에메랄드로 79 (청라동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:00-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-561-2932 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 청라타워돔점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%EC%B2%AD%EB%9D%BC%ED%83%80%EC%9B%8C%EB%8F%94%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 중봉대로612번길 10-17 (청라동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-566-5293 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 트레이더스구월점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%ED%8A%B8%EB%A0%88%EC%9D%B4%EB%8D%94%EC%8A%A4%EA%B5%AC%EC%9B%94%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 매소홀로 749 (구월동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-473-7470 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2424 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 홈플러스 간석점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EA%B0%84%EC%84%9D%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 경원대로 971 (간석동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-876-9612 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 홈플러스 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 165 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-811-0135 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 홈플러스 인천논현점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EB%85%BC%ED%98%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 청능대로 596 (논현동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-421-2854 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 홈플러스 인천청라점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EC%B2%AD%EB%9D%BC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 중봉대로 587 (청라동) B2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-569-5293 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 홈플러스 인하점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%9D%B8%ED%95%98%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 소성로 6 (학익동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-861-7885 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리브영 홈플러스작전점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B8%8C%EC%98%81-%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4%EC%9E%91%EC%A0%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 계양대로 27 (작전동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-토요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-556-5290 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리비아하슬러 모다아울렛 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B9%84%EC%95%84%ED%95%98%EC%8A%AC%EB%9F%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-452-2368 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올리비아하슬러 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EB%A6%AC%EB%B9%84%EC%95%84%ED%95%98%EC%8A%AC%EB%9F%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7865 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올인원게스트하우스 (숙소)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EC%9D%B8%EC%9B%90%EA%B2%8C%EC%8A%A4%ED%8A%B8%ED%95%98%EC%9A%B0%EC%8A%A4/
@@ -16582,11 +17530,25 @@ URL: https://incheon.webforai.kr/places/%EC%98%AC%EC%9D%B8%EC%9B%90%EA%B2%8C%EC%
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EC%A0%A0-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7828 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 올젠 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%98%AC%EC%A0%A0-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2236 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 옹기꽃게장 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%98%B9%EA%B8%B0%EA%BD%83%EA%B2%8C%EC%9E%A5/
@@ -16604,6 +17566,12 @@ URL: https://incheon.webforai.kr/places/%EC%98%B9%EA%B8%B0%EA%BD%83%EA%B2%8C%EC%
 URL: https://incheon.webforai.kr/places/%EC%99%80%EC%9D%B4%EB%93%9C%EC%95%B5%EA%B8%80-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7840 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 왕가 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%99%95%EA%B0%80/
@@ -16813,6 +17781,14 @@ URL: https://incheon.webforai.kr/places/%EC%9B%90%EA%B0%88%EB%B9%84/
 URL: https://incheon.webforai.kr/places/%EC%9B%90%EB%8D%94%ED%94%8C%EB%A0%88%EC%9D%B4%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2443 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 원두막가든 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%9B%90%EB%91%90%EB%A7%89%EA%B0%80%EB%93%A0/
@@ -16916,6 +17892,12 @@ URL: https://incheon.webforai.kr/places/%EC%9C%84%ED%81%AC%EC%97%94%EB%93%9C-%EB
 URL: https://incheon.webforai.kr/places/%EC%9C%99%ED%81%AC-%EC%9D%B8%EC%B2%9C%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로66번길 11 (부평동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의약품/의료용 기기 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1373-3830 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 유노미 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%9C%A0%EB%85%B8%EB%AF%B8/
@@ -16932,26 +17914,62 @@ URL: https://incheon.webforai.kr/places/%EC%9C%A0%EB%85%B8%EB%AF%B8/
 URL: https://incheon.webforai.kr/places/%EC%9C%A0%EB%8B%88%ED%81%B4%EB%A1%9C-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2069 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 유니클로 부평역사점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%9C%A0%EB%8B%88%ED%81%B4%EB%A1%9C-%EB%B6%80%ED%8F%89%EC%97%AD%EC%82%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 광장로 16 (부평동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:00~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-330-8406 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 유니클로 스케어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%9C%A0%EB%8B%88%ED%81%B4%EB%A1%9C-%EC%8A%A4%EC%BC%80%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4260 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 유니클로 인천항동점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%9C%A0%EB%8B%88%ED%81%B4%EB%A1%9C-%EC%9D%B8%EC%B2%9C%ED%95%AD%EB%8F%99%EC%A0%90/
 요약: 
 - 주소: 인천광역시 제물포구 신포로 3 (항동6가) (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-764-5022 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 유니클로 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%9C%A0%EB%8B%88%ED%81%B4%EB%A1%9C-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2442 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 유달산 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%9C%A0%EB%8B%AC%EC%82%B0/
@@ -17049,6 +18067,12 @@ URL: https://incheon.webforai.kr/places/%EC%9C%A4%EA%B0%80%EB%84%A4%EC%B9%BC%EA%
 URL: https://incheon.webforai.kr/places/%EC%9C%BC%EB%9C%B850%EC%95%88%EA%B2%BD-%EC%9D%B8%EC%B2%9C%EA%B0%95%EB%82%A8%EC%8B%9C%EC%9E%A5%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 가정로 308 (석남동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의약품/의료용 기기 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1365-5100 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 은옥 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%9D%80%EC%98%A5/
@@ -17125,6 +18149,14 @@ URL: https://incheon.webforai.kr/places/%EC%9D%84%EC%99%95%EB%A6%AC%EC%A7%B1%EA%
 URL: https://incheon.webforai.kr/places/%EC%9D%B4%EB%8B%88%EC%8A%A4%ED%94%84%EB%A6%AC-%EC%9D%B8%EC%B2%9C-%EC%9A%B4%EC%84%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 흰바위로 45 (운서동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~20:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-752-3233 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 이당비스트로 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%9D%B4%EB%8B%B9%EB%B9%84%EC%8A%A4%ED%8A%B8%EB%A1%9C/
@@ -17164,16 +18196,38 @@ URL: https://incheon.webforai.kr/places/%EC%9D%B4%EB%A0%88%EC%8B%9D%EB%8B%B9/
 URL: https://incheon.webforai.kr/places/%EC%9D%B4%EB%A7%88%ED%8A%B8-%EA%B2%80%EB%8B%A8%EC%A0%90/
 요약: 
 - 주소: 인천광역시 검단구 서곶로 754 (당하동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 , 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 , 농수산품 , 전통민예품/도자기/목각제품/기타 공예품 , 휴대폰용품 , 사진장비/광학기기 , 전자/디지털제품 , 문구/장난감/오락용품 , 도서/음반 , 주류/담배 , 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-440-1234 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 이마트 계양점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%9D%B4%EB%A7%88%ED%8A%B8-%EA%B3%84%EC%96%91%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 봉오대로 785 (작전동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-717-1234 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 이마트 연수점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%9D%B4%EB%A7%88%ED%8A%B8-%EC%97%B0%EC%88%98%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 경원대로 184 (동춘동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~23:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절, 월2회 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-820-1234 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 이비스 스타일 앰배서더 인천 에어포트 (숙소)
 URL: https://incheon.webforai.kr/places/%EC%9D%B4%EB%B9%84%EC%8A%A4-%EC%8A%A4%ED%83%80%EC%9D%BC-%EC%95%B0%EB%B0%B0%EC%84%9C%EB%8D%94-%EC%9D%B8%EC%B2%9C-%EC%97%90%EC%96%B4%ED%8F%AC%ED%8A%B8/
@@ -17251,6 +18305,12 @@ URL: https://incheon.webforai.kr/places/%EC%9D%B8%EB%8F%99%EC%9E%94%EC%B9%98%EA%
 URL: https://incheon.webforai.kr/places/%EC%9D%B8%EB%94%94%EC%95%88-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) 4층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-452-2472 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 인스파이어 엔터테인먼트 리조트 (숙소)
 URL: https://incheon.webforai.kr/places/%EC%9D%B8%EC%8A%A4%ED%8C%8C%EC%9D%B4%EC%96%B4-%EC%97%94%ED%84%B0%ED%85%8C%EC%9D%B8%EB%A8%BC%ED%8A%B8-%EB%A6%AC%EC%A1%B0%ED%8A%B8/
@@ -17440,6 +18500,12 @@ URL: https://incheon.webforai.kr/places/%EC%9D%B8%EC%B2%9C%ED%95%AD%EA%B0%88%EB%
 URL: https://incheon.webforai.kr/places/%EC%9D%B8%ED%84%B0%ED%81%AC%EB%A3%A8-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-0299 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 인하의집 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%9D%B8%ED%95%98%EC%9D%98%EC%A7%91/
@@ -17517,6 +18583,12 @@ URL: https://incheon.webforai.kr/places/%EC%9E%84%ED%8C%8C%EC%8A%A4%ED%86%A0/
 URL: https://incheon.webforai.kr/places/%EC%9E%85%EC%83%9D%EB%A1%9C%EB%9E%91%EB%B7%B0%ED%8B%B0-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~20:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2081 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 잉글랜드왕돈까스 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%9E%89%EA%B8%80%EB%9E%9C%EB%93%9C%EC%99%95%EB%8F%88%EA%B9%8C%EC%8A%A4/
@@ -17560,6 +18632,12 @@ URL: https://incheon.webforai.kr/places/%EC%9E%90%EB%AF%B8%EA%B6%81-%EC%A0%9C%EB
 URL: https://incheon.webforai.kr/places/%EC%9E%90%EC%8A%A4%ED%8E%98%EB%A1%9C-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 보석/액세서리 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1349-6046 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 작은연못 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%9E%91%EC%9D%80%EC%97%B0%EB%AA%BB/
@@ -17724,6 +18802,14 @@ URL: https://incheon.webforai.kr/places/%EC%9E%A5%ED%92%8D%EC%86%A1%EB%8F%84%EC%
 URL: https://incheon.webforai.kr/places/%EC%9F%88%EB%94%95%EC%95%A4%EB%B3%BC%ED%85%8C%EB%A5%B4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2247 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 전구식당 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%A0%84%EA%B5%AC%EC%8B%9D%EB%8B%B9/
@@ -17789,56 +18875,127 @@ URL: https://incheon.webforai.kr/places/%EC%A0%84%EB%B3%B5%EC%B4%8C/
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EA%B0%88%EC%82%B0%EB%B3%B8%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 길주로 635 (삼산동) 엘림타워 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~20:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-토요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 문의: 070-4422-8122 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 검암점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EA%B2%80%EC%95%94%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 승학로 488 (검암동) 한영빌딩 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-565-0389 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 만수점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EB%A7%8C%EC%88%98%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 소래로 636 (만수동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 09:30~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-471-2304 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 모래내시장점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EB%AA%A8%EB%9E%98%EB%82%B4%EC%8B%9C%EC%9E%A5%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 구월로 268 (구월동) 대성빌딩 (출처: 한국관광공사 TourAPI)
+- 이용시간: 09:20~20:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-466-2304 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 부평역점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EB%B6%80%ED%8F%89%EC%97%AD%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 경원대로 1366 (부평동) 스테이션타워 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-523-0388 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 석바위점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EC%84%9D%EB%B0%94%EC%9C%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 경원대로 848 (주안동) 주안태흥프라자 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-토요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 , 기념품/특산품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-868-2304 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 해돋이로120번길 16 (송도동, 송도풍림아이원2단지아파트) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~20:30 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 월1회 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-851-2340 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 인천논현점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EC%9D%B8%EC%B2%9C%EB%85%BC%ED%98%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 논고개로 166 (논현동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 09:00~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-437-2303 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 주안점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EC%A3%BC%EC%95%88%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 미추홀대로 599 (주안동) 신기빌딩 (출처: 한국관광공사 TourAPI)
+- 이용시간: 09:30~20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-862-2304 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 중산본점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EC%A4%91%EC%82%B0%EB%B3%B8%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 하늘중앙로195번길 24 (중산동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~20:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-토요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-746-5304 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정관장 청라센트럴점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EA%B4%80%EC%9E%A5-%EC%B2%AD%EB%9D%BC%EC%84%BC%ED%8A%B8%EB%9F%B4%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 중봉대로 588 (청라동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-20:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 인삼/한약재/건강보조식품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-578-2304 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 정밀 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%A0%95%EB%B0%80/
@@ -17913,11 +19070,25 @@ URL: https://incheon.webforai.kr/places/%EC%A0%9C%EC%9D%B4%EC%95%A4%ED%8C%8C%ED%
 URL: https://incheon.webforai.kr/places/%EC%A0%9C%EC%9D%B4%EC%97%90%EC%8A%A4%ED%8B%B0%EB%82%98-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2186 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 제이에스티나 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A0%9C%EC%9D%B4%EC%97%90%EC%8A%A4%ED%8B%B0%EB%82%98-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 , 기타 섬유직물 , 보석/액세서리 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2484 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 제이콥스 핏제리아 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%A0%9C%EC%9D%B4%EC%BD%A5%EC%8A%A4-%ED%95%8F%EC%A0%9C%EB%A6%AC%EC%95%84/
@@ -17959,16 +19130,36 @@ URL: https://incheon.webforai.kr/places/%EC%A1%B0%EB%B0%95%EC%82%AC%EC%86%8C%EB%
 URL: https://incheon.webforai.kr/places/%EC%A1%B0%EC%88%9C%ED%9D%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-452-2351 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 조순희 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A1%B0%EC%88%9C%ED%9D%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7897 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 조안테디베어 파라다이스시티점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A1%B0%EC%95%88%ED%85%8C%EB%94%94%EB%B2%A0%EC%96%B4-%ED%8C%8C%EB%9D%BC%EB%8B%A4%EC%9D%B4%EC%8A%A4%EC%8B%9C%ED%8B%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 영종해안남로321번길 186 (운서동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 11:00~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 문구/장난감/오락용품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-729-5133 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 조양방직 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%A1%B0%EC%96%91%EB%B0%A9%EC%A7%81/
@@ -17997,6 +19188,12 @@ URL: https://incheon.webforai.kr/places/%EC%A1%B0%EC%9D%80%EC%A0%84%EA%B3%A8%EC%
 URL: https://incheon.webforai.kr/places/%EC%A4%8C%EC%95%84%EC%9A%B8%EB%A0%9B/
 요약: 
 - 주소: 인천광역시 검단구 발산로 23 (원당동) 5층-6층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~19:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1442-8861 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 중국성 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%A4%91%EA%B5%AD%EC%84%B1/
@@ -18028,6 +19225,14 @@ URL: https://incheon.webforai.kr/places/%EC%A4%91%ED%99%94%EB%A3%A8/
 URL: https://incheon.webforai.kr/places/%EC%A7%80%EA%B3%A0%ED%8A%B8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2252 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 지금이곳 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%A7%80%EA%B8%88%EC%9D%B4%EA%B3%B3/
@@ -18058,21 +19263,47 @@ URL: https://incheon.webforai.kr/places/%EC%A7%80%EC%97%98%EC%8B%9C%ED%8B%B0-%ED
 URL: https://incheon.webforai.kr/places/%EC%A7%80%EC%98%A4%EB%8B%A4%EB%85%B8-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7913 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 지오다노 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A7%80%EC%98%A4%EB%8B%A4%EB%85%B8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2441 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 지오지아 모다아울렛 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A7%80%EC%98%A4%EC%A7%80%EC%95%84-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) 4층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-452-2479 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 지오지아 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%A7%80%EC%98%A4%EC%A7%80%EC%95%84-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-5333 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 지츠겐 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%A7%80%EC%B8%A0%EA%B2%90/
@@ -18087,6 +19318,12 @@ URL: https://incheon.webforai.kr/places/%EC%A7%80%EC%B8%A0%EA%B2%90/
 URL: https://incheon.webforai.kr/places/%EC%A7%80%ED%94%84%ED%82%A4%EC%A6%88-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-0017 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 진복호 신관 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%A7%84%EB%B3%B5%ED%98%B8-%EC%8B%A0%EA%B4%80/
@@ -18162,6 +19399,14 @@ URL: https://incheon.webforai.kr/places/%EC%A7%84%ED%9D%A5%EC%A2%85%ED%95%A9%EC%
 URL: https://incheon.webforai.kr/places/%EC%A7%88%EC%8A%A4%ED%8A%9C%EC%96%B4%ED%8A%B8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2245 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 짱구네 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%A7%B1%EA%B5%AC%EB%84%A4/
@@ -18215,6 +19460,14 @@ URL: https://incheon.webforai.kr/places/%EC%B0%A8%EC%9D%B4%ED%99%8D/
 URL: https://incheon.webforai.kr/places/%EC%B0%B0%EC%8A%A4%EC%95%A4%ED%82%A4%EC%8A%A4-%EC%8A%A4%ED%80%98%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4120 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 참새초밥 부평본점 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%B0%B8%EC%83%88%EC%B4%88%EB%B0%A5-%EB%B6%80%ED%8F%89%EB%B3%B8%EC%A0%90/
@@ -18766,21 +20019,50 @@ URL: https://incheon.webforai.kr/places/%EC%B9%B4%ED%8E%98%ED%9E%90%EB%A1%9C/
 URL: https://incheon.webforai.kr/places/%EC%BA%89%EA%B3%A8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2447 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 캉골키즈 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BA%89%EA%B3%A8%ED%82%A4%EC%A6%88-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2777 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 커버낫 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BB%A4%EB%B2%84%EB%82%AB-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2430 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 커스텀멜로우 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BB%A4%EC%8A%A4%ED%85%80%EB%A9%9C%EB%A1%9C%EC%9A%B0-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2212 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 커피상회 휴 (음식점)
 URL: https://incheon.webforai.kr/places/%EC%BB%A4%ED%94%BC%EC%83%81%ED%9A%8C-%ED%9C%B4/
@@ -18797,11 +20079,23 @@ URL: https://incheon.webforai.kr/places/%EC%BB%A4%ED%94%BC%EC%83%81%ED%9A%8C-%ED
 URL: https://incheon.webforai.kr/places/%EC%BB%AC%EB%9F%BC%EB%B9%84%EC%95%84-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7738 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 컬럼비아 스퀘어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BB%AC%EB%9F%BC%EB%B9%84%EC%95%84-%EC%8A%A4%ED%80%98%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4247 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 컵피 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%BB%B5%ED%94%BC/
@@ -18818,16 +20112,35 @@ URL: https://incheon.webforai.kr/places/%EC%BB%B5%ED%94%BC/
 URL: https://incheon.webforai.kr/places/%EC%BC%80%EB%84%A4%EC%8A%A4%EB%A0%88%EC%9D%B4%EB%94%94-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7874 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 코닥어패럴 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BD%94%EB%8B%A5%EC%96%B4%ED%8C%A8%EB%9F%B4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 잡화 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7726 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 코닥어패럴 스퀘어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BD%94%EB%8B%A5%EC%96%B4%ED%8C%A8%EB%9F%B4-%EC%8A%A4%ED%80%98%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4200 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 코세드 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%EC%BD%94%EC%84%B8%EB%93%9C/
@@ -18844,26 +20157,63 @@ URL: https://incheon.webforai.kr/places/%EC%BD%94%EC%84%B8%EB%93%9C/
 URL: https://incheon.webforai.kr/places/%EC%BD%94%EC%98%A4%EB%A1%B1%EC%8A%A4%ED%8F%AC%EC%B8%A0-%EC%9D%B8%EC%B2%9C-%EC%B2%AD%EB%9D%BC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 중봉대로586번길 22 (청라동, 청라 엑슬루타워) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~20:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-561-7788 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 코오롱스포츠 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BD%94%EC%98%A4%EB%A1%B1%EC%8A%A4%ED%8F%AC%EC%B8%A0-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2477 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 코치 롯데백화점 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BD%94%EC%B9%98-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2166 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 코치 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BD%94%EC%B9%98-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2138 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 쿠론 현대프리미엄아울렛송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%EC%BF%A0%EB%A1%A0-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2482 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 퀸스비치 (숙소)
 URL: https://incheon.webforai.kr/places/%ED%80%B8%EC%8A%A4%EB%B9%84%EC%B9%98/
@@ -18910,16 +20260,36 @@ URL: https://incheon.webforai.kr/places/%ED%81%AC%EB%A1%9C%EB%A7%88%EC%9D%B4%ED%
 URL: https://incheon.webforai.kr/places/%ED%81%AC%EB%A1%9C%EC%BB%A4%EB%8B%A4%EC%9D%BC%EB%82%A8%EC%84%B1-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-0037 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 크록스 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%81%AC%EB%A1%9D%EC%8A%A4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 , 보석/액세서리 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7718 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 크록스 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%81%AC%EB%A1%9D%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 , 가방류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2466 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 큰나루밴댕이회무침 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%81%B0%EB%82%98%EB%A3%A8%EB%B0%B4%EB%8C%95%EC%9D%B4%ED%9A%8C%EB%AC%B4%EC%B9%A8/
@@ -18938,6 +20308,14 @@ URL: https://incheon.webforai.kr/places/%ED%81%B0%EB%82%98%EB%A3%A8%EB%B0%B4%EB%
 URL: https://incheon.webforai.kr/places/%ED%81%B4%EB%9F%BD%EB%AA%A8%EB%82%98%EC%BD%94-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2241 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 키카페(Quay Cafe) (카페·디저트)
 URL: https://incheon.webforai.kr/places/%ED%82%A4%EC%B9%B4%ED%8E%98/
@@ -18954,6 +20332,13 @@ URL: https://incheon.webforai.kr/places/%ED%82%A4%EC%B9%B4%ED%8E%98/
 URL: https://incheon.webforai.kr/places/%ED%82%A8%EB%A1%9D%EC%95%A4%EB%8D%94%EC%8A%A8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2208 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 타니스 레스토랑 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%83%80%EB%8B%88%EC%8A%A4-%EB%A0%88%EC%8A%A4%ED%86%A0%EB%9E%91/
@@ -18971,31 +20356,77 @@ URL: https://incheon.webforai.kr/places/%ED%83%80%EB%8B%88%EC%8A%A4-%EB%A0%88%EC
 URL: https://incheon.webforai.kr/places/%ED%83%80%EB%AF%B8%ED%9E%90%ED%94%BC%EA%B1%B0-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2239 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 타이틀리스트 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%83%80%EC%9D%B4%ED%8B%80%EB%A6%AC%EC%8A%A4%ED%8A%B8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2223 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 타임 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%83%80%EC%9E%84-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2140 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 타임옴므 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%83%80%EC%9E%84%EC%98%B4%EB%AF%80-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2141 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 탑텐키즈 스퀘어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%83%91%ED%85%90%ED%82%A4%EC%A6%88-%EC%8A%A4%ED%80%98%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4367 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 태그호이어 롯데백화점 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%83%9C%EA%B7%B8%ED%98%B8%EC%9D%B4%EC%96%B4-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2159 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 태림봉 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%83%9C%EB%A6%BC%EB%B4%89/
@@ -19051,6 +20482,14 @@ URL: https://incheon.webforai.kr/places/%ED%83%9C%ED%99%94%EC%9B%90/
 URL: https://incheon.webforai.kr/places/%ED%83%A0%EB%94%94-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2269 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 테리토리 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%85%8C%EB%A6%AC%ED%86%A0%EB%A6%AC/
@@ -19079,21 +20518,50 @@ URL: https://incheon.webforai.kr/places/%ED%85%8C%EB%A7%88%EC%9D%98%EA%B1%B0%EB%
 URL: https://incheon.webforai.kr/places/%ED%85%8C%EC%9D%BC%EB%9F%AC%EB%A9%94%EC%9D%B4%EB%93%9C-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 기타 섬유직물 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2876 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 텍코리아 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%85%8D%EC%BD%94%EB%A6%AC%EC%95%84/
 요약: 
 - 주소: 인천광역시 연수구 컨벤시아대로 50 (송도동, 푸르지오월드마크) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~18:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-833-3737 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 텐디 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%85%90%EB%94%94-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-452-2135 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 템퍼 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%85%9C%ED%8D%BC-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2325 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 토가 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%86%A0%EA%B0%80/
@@ -19111,6 +20579,13 @@ URL: https://incheon.webforai.kr/places/%ED%86%A0%EA%B0%80/
 URL: https://incheon.webforai.kr/places/%ED%86%A0%EB%8B%88%EB%AA%A8%EB%A6%AC-%EC%9D%B8%EC%B2%9C%EB%B6%80%ED%8F%89%EC%A7%80%ED%95%98%EB%A1%9C%ED%84%B0%EB%A6%AC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평대로 지하30 (부평동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-23:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 3주 화요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 향수/화장품 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1306-1270 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 토담마을 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%86%A0%EB%8B%B4%EB%A7%88%EC%9D%84/
@@ -19142,6 +20617,14 @@ URL: https://incheon.webforai.kr/places/%ED%86%A0%EB%AA%A8%EB%A3%A8%EA%B3%BC%EC%
 URL: https://incheon.webforai.kr/places/%ED%86%A0%EB%B0%95%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2301 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 토박이숯불갈비 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%86%A0%EB%B0%95%EC%9D%B4%EC%88%AF%EB%B6%88%EA%B0%88%EB%B9%84/
@@ -19158,6 +20641,13 @@ URL: https://incheon.webforai.kr/places/%ED%86%A0%EB%B0%95%EC%9D%B4%EC%88%AF%EB%
 URL: https://incheon.webforai.kr/places/%ED%86%A0%EC%A6%88-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~20:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 , 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2160 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 토지금고시장 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%86%A0%EC%A7%80%EA%B8%88%EA%B3%A0%EC%8B%9C%EC%9E%A5/
@@ -19213,6 +20703,14 @@ URL: https://incheon.webforai.kr/places/%ED%86%B5%ED%81%B0%EC%B9%BC%EA%B5%AD%EC%
 URL: https://incheon.webforai.kr/places/%ED%88%AC%EB%AF%B8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 지하66 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2160 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 툴롱(toulon) (음식점)
 URL: https://incheon.webforai.kr/places/%ED%88%B4%EB%A1%B1/
@@ -19229,21 +20727,47 @@ URL: https://incheon.webforai.kr/places/%ED%88%B4%EB%A1%B1/
 URL: https://incheon.webforai.kr/places/%ED%8A%B8%EB%9D%BC%EC%9D%B4%EC%97%84%ED%94%84-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-0029 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 트라이엄프 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8A%B8%EB%9D%BC%EC%9D%B4%EC%97%84%ED%94%84-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2228 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 트래블메이트 인천공항제2여객터미널점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8A%B8%EB%9E%98%EB%B8%94%EB%A9%94%EC%9D%B4%ED%8A%B8-%EC%9D%B8%EC%B2%9C%EA%B3%B5%ED%95%AD%EC%A0%9C2%EC%97%AC%EA%B0%9D%ED%84%B0%EB%AF%B8%EB%84%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 영종구 제2터미널대로 446 (운서동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 06:00~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-743-4313 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 트루젠 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8A%B8%EB%A3%A8%EC%A0%A0-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7825 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 트리플스트리트 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8A%B8%EB%A6%AC%ED%94%8C%EC%8A%A4%ED%8A%B8%EB%A6%AC%ED%8A%B8/
@@ -19285,16 +20809,36 @@ URL: https://incheon.webforai.kr/places/%ED%8C%8C%EB%9D%BC%EB%8B%A4%EC%9D%B4%EC%
 URL: https://incheon.webforai.kr/places/%ED%8C%8C%EB%A0%8C%ED%95%98%EC%9D%B4%ED%8A%B8-%EC%A7%80%EC%9D%B4%ED%81%AC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7813 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 파리게이츠 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8C%8C%EB%A6%AC%EA%B2%8C%EC%9D%B4%EC%B8%A0-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2214 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 파사디골프 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8C%8C%EC%82%AC%EB%94%94%EA%B3%A8%ED%94%84-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7839 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 파운드 바베큐 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%8C%8C%EC%9A%B4%EB%93%9C-%EB%B0%94%EB%B2%A0%ED%81%90/
@@ -19325,6 +20869,12 @@ URL: https://incheon.webforai.kr/places/%ED%8C%8C%ED%81%AC%EB%A7%88%EB%A6%B0%ED%
 URL: https://incheon.webforai.kr/places/%ED%8C%8C%ED%83%80%EA%B3%A0%EB%8B%88%EC%95%84-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2457 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 팟알 (Cafe POT R) (카페·디저트)
 URL: https://incheon.webforai.kr/places/%ED%8C%9F%EC%95%8C/
@@ -19341,6 +20891,12 @@ URL: https://incheon.webforai.kr/places/%ED%8C%9F%EC%95%8C/
 URL: https://incheon.webforai.kr/places/%ED%8C%AC%ED%85%80-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7851 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 퍼플 스왈로우 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%ED%8D%BC%ED%94%8C-%EC%8A%A4%EC%99%88%EB%A1%9C%EC%9A%B0/
@@ -19357,21 +20913,51 @@ URL: https://incheon.webforai.kr/places/%ED%8D%BC%ED%94%8C-%EC%8A%A4%EC%99%88%EB
 URL: https://incheon.webforai.kr/places/%ED%8E%98%EB%9D%BC%EA%B0%80%EB%AA%A8-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2101 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 페레가모 롯데백화점 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8E%98%EB%A0%88%EA%B0%80%EB%AA%A8-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2120 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 페이지플린 모다아울렛 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8E%98%EC%9D%B4%EC%A7%80%ED%94%8C%EB%A6%B0-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1422-2237 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 페트레이 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8E%98%ED%8A%B8%EB%A0%88%EC%9D%B4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2105 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 평양옥 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%8F%89%EC%96%91%EC%98%A5/
@@ -19415,36 +21001,81 @@ URL: https://incheon.webforai.kr/places/%ED%8F%AC%ED%81%AC/
 URL: https://incheon.webforai.kr/places/%ED%8F%B4%EB%A1%9C%EB%9E%84%ED%94%84%EB%A1%9C%EB%A0%8C-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2130 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 폴햄 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8F%B4%ED%96%84-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7915 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 폴햄키즈 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8F%B4%ED%96%84%ED%82%A4%EC%A6%88-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-8085 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 폴햄키즈 스퀘어원점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8F%B4%ED%96%84%ED%82%A4%EC%A6%88-%EC%8A%A4%ED%80%98%EC%96%B4%EC%9B%90%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~22:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-456-4358 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 폼 스튜디오 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%8F%BC-%EC%8A%A4%ED%8A%9C%EB%94%94%EC%98%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2246 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 푸마 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%91%B8%EB%A7%88-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7721 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 풍림명품물산 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%92%8D%EB%A6%BC%EB%AA%85%ED%92%88%EB%AC%BC%EC%82%B0/
 요약: 
 - 주소: 인천광역시 영종구 백운로 574 (운북동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 06:00~19:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 잡화 (출처: 한국관광공사 TourAPI)
+- 문의: 032-752-1688 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 풍림하나로쇼핑센타 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%92%8D%EB%A6%BC%ED%95%98%EB%82%98%EB%A1%9C%EC%87%BC%ED%95%91%EC%84%BC%ED%83%80/
@@ -19498,16 +21129,35 @@ URL: https://incheon.webforai.kr/places/%ED%92%8D%EC%B2%9C%EB%AF%BC%EB%AC%BC%EC%
 URL: https://incheon.webforai.kr/places/%ED%94%84%EB%9D%BC%EB%8B%A4-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-242-2121 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 프라임약국 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%94%84%EB%9D%BC%EC%9E%84%EC%95%BD%EA%B5%AD/
 요약: 
 - 주소: 인천광역시 영종구 공항로 272 (운서동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 06:30~21:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 불가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의약품/의료용 기기 (출처: 한국관광공사 TourAPI)
+- 문의: 032-743-7230 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 프랑코페라로 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%94%84%EB%9E%91%EC%BD%94%ED%8E%98%EB%9D%BC%EB%A1%9C-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7824 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 프로방스 호텔 (숙소)
 URL: https://incheon.webforai.kr/places/%ED%94%84%EB%A1%9C%EB%B0%A9%EC%8A%A4-%ED%98%B8%ED%85%94/
@@ -19524,16 +21174,34 @@ URL: https://incheon.webforai.kr/places/%ED%94%84%EB%A1%9C%EB%B0%A9%EC%8A%A4-%ED
 URL: https://incheon.webforai.kr/places/%ED%94%84%EB%A1%9C%EC%8A%A4%ED%8E%99%EC%8A%A4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7710 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 프로젝트엠 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%EC%97%A0-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7929 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 플랙 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%94%8C%EB%9E%99-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7934 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 핀오크 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%ED%95%80%EC%98%A4%ED%81%AC/
@@ -19551,11 +21219,25 @@ URL: https://incheon.webforai.kr/places/%ED%95%80%EC%98%A4%ED%81%AC/
 URL: https://incheon.webforai.kr/places/%ED%95%91-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7841 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 핑 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%95%91-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 기타 섬유직물 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2215 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 하늘채까페 (카페·디저트)
 URL: https://incheon.webforai.kr/places/%ED%95%98%EB%8A%98%EC%B1%84%EA%B9%8C%ED%8E%98/
@@ -19645,6 +21327,13 @@ URL: https://incheon.webforai.kr/places/%ED%95%9C%EA%B0%80%EB%9D%BC%EC%A7%80-%EB
 URL: https://incheon.webforai.kr/places/%ED%95%9C%EA%B5%AD%EA%B8%88%EA%B1%B0%EB%9E%98%EC%86%8C-%EC%9D%B8%EC%B2%9C%EC%A3%BC%EC%95%88%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 미추홀대로 735 (주안동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-20:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-토요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 보석/액세서리 (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1303-6795 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 한나네 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%95%9C%EB%82%98%EB%84%A4/
@@ -19737,6 +21426,14 @@ URL: https://incheon.webforai.kr/places/%ED%95%A0%EB%A8%B8%EB%8B%88-%EC%A6%89%EC
 URL: https://incheon.webforai.kr/places/%ED%95%AB%ED%8A%B8%EB%9E%99%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 문구/장난감/오락용품 , 도서/음반 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2445 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 해명산두부촌 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%95%B4%EB%AA%85%EC%82%B0%EB%91%90%EB%B6%80%EC%B4%8C/
@@ -19856,16 +21553,36 @@ URL: https://incheon.webforai.kr/places/%ED%95%B4%EC%A4%91%EB%A3%A8/
 URL: https://incheon.webforai.kr/places/%ED%95%B8%EB%A6%AC%EC%BD%94%ED%8A%BC-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2205 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 행텐 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%96%89%ED%85%90-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7927 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 행텐주니어 모다아울렛 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%96%89%ED%85%90%EC%A3%BC%EB%8B%88%EC%96%B4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 35 (부평동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 080-775-1114 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 향원정 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%96%A5%EC%9B%90%EC%A0%95/
@@ -19883,21 +21600,51 @@ URL: https://incheon.webforai.kr/places/%ED%96%A5%EC%9B%90%EC%A0%95/
 URL: https://incheon.webforai.kr/places/%ED%97%A4%EC%A7%80%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2243 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 헹텐주니어 모다아울렛 인천점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%97%B9%ED%85%90%EC%A3%BC%EB%8B%88%EC%96%B4-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-7957 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2233 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 현대홈쇼핑 플러스샵 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%98%84%EB%8C%80%ED%99%88%EC%87%BC%ED%95%91-%ED%94%8C%EB%9F%AC%EC%8A%A4%EC%83%B5-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 2층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2401 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 현미네 조개구이 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%98%84%EB%AF%B8%EB%84%A4-%EC%A1%B0%EA%B0%9C%EA%B5%AC%EC%9D%B4/
@@ -20055,56 +21802,139 @@ URL: https://incheon.webforai.kr/places/%ED%99%80%EB%A6%AC%EB%8D%B0%EC%9D%B4%EC%
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EA%B0%80%EC%A2%8C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 가정로151번길 11 (가좌동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 , 향수/화장품 , 잡화 , 보석/액세서리 , 인삼/한약재/건강보조식품 , 식료품 , 농수산품 , 기념품/특산품 , 전통민예품/도자기/목각제품/기타 공예품 , 휴대폰용품 , 사진장비/광학기기 , 전자/디지털제품 , 의약품/의료용 기기 , 문구/장난감/오락용품 , 도서/음반 , 주류/담배 , 기타 서비스 , 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-453-8000 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 계산점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EA%B3%84%EC%82%B0%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 오조산공원로 14 (계산동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절, 월2회 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-551-2080 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 구월점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EA%B5%AC%EC%9B%94%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 예술로 198 (구월동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-428-2080 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 메가푸드마켓 간석점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EB%A9%94%EA%B0%80%ED%91%B8%EB%93%9C%EB%A7%88%EC%BC%93-%EA%B0%84%EC%84%9D%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 경원대로 971 (간석동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-870-8000 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 메가푸드마켓 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EB%A9%94%EA%B0%80%ED%91%B8%EB%93%9C%EB%A7%88%EC%BC%93-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 165 (송도동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절, 월2회 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-220-8000 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 메가푸드마켓 인천연수점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EB%A9%94%EA%B0%80%ED%91%B8%EB%93%9C%EB%A7%88%EC%BC%93-%EC%9D%B8%EC%B2%9C%EC%97%B0%EC%88%98%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 청능대로 210 (동춘동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절, 월2회 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 즉시+사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-430-8000 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 메가푸드마켓 작전점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EB%A9%94%EA%B0%80%ED%91%B8%EB%93%9C%EB%A7%88%EC%BC%93-%EC%9E%91%EC%A0%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 계양구 계양대로 27 (작전동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-540-8000 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 인천논현점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EB%85%BC%ED%98%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 남동구 청능대로 596 (논현동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-455-8000 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 인천숭의점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EC%88%AD%EC%9D%98%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 석정로 51 (숭의동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절, 월2회 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-719-2000 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 인천청라점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%9D%B8%EC%B2%9C%EC%B2%AD%EB%9D%BC%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 중봉대로 587 (청라동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 2,4주 일요일 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 , 향수/화장품 , 잡화 , 인삼/한약재/건강보조식품 , 식료품 , 농수산품 , 기념품/특산품 , 전통민예품/도자기/목각제품/기타 공예품 , 휴대폰용품 , 사진장비/광학기기 , 전자/디지털제품 , 문구/장난감/오락용품 , 주류/담배 , 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-723-8800 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홈플러스 인하점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%99%88%ED%94%8C%EB%9F%AC%EC%8A%A4-%EC%9D%B8%ED%95%98%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 소성로 6 (학익동) (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00-22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절, 월 2회 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 032-763-2080 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 홍가명가궁석갈비 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%99%8D%EA%B0%80%EB%AA%85%EA%B0%80%EA%B6%81%EC%84%9D%EA%B0%88%EB%B9%84/
@@ -20229,21 +22059,48 @@ URL: https://incheon.webforai.kr/places/%ED%9A%8C%EB%82%98%EB%9D%BC%EC%8B%9D%EB%
 URL: https://incheon.webforai.kr/places/%ED%9C%A0%EB%9D%BC-%EB%AA%A8%EB%8B%A4%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 서해구 북항로32번안길 50 (원창동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-20:30 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 스포츠용품 , 잡화 (출처: 한국관광공사 TourAPI)
+- 문의: 032-288-2233 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 휠라 부평점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%9C%A0%EB%9D%BC-%EB%B6%80%ED%8F%89%EC%A0%90/
 요약: 
 - 주소: 인천광역시 부평구 부평문화로 70 (부평동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 스포츠용품 (출처: 한국관광공사 TourAPI)
+- 문의: 032-508-3690 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 휠라키즈 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%9C%A0%EB%9D%BC%ED%82%A4%EC%A6%88-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 3층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30~21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 매장 안내: 환급서비스 제공방식 : 사후 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2326 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 휴고보스 현대프리미엄아울렛 송도점 (쇼핑)
 URL: https://incheon.webforai.kr/places/%ED%9C%B4%EA%B3%A0%EB%B3%B4%EC%8A%A4-%ED%98%84%EB%8C%80%ED%94%84%EB%A6%AC%EB%AF%B8%EC%97%84%EC%95%84%EC%9A%B8%EB%A0%9B-%EC%86%A1%EB%8F%84%EC%A0%90/
 요약: 
 - 주소: 인천광역시 연수구 송도국제대로 123 (송도동) 1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:30-21:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 의류 , 신발류 , 가방류 , 기타 섬유직물 (출처: 한국관광공사 TourAPI)
+- 문의: 032-727-2135 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 휴그릴 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%9C%B4%EA%B7%B8%EB%A6%B4/
@@ -20261,6 +22118,13 @@ URL: https://incheon.webforai.kr/places/%ED%9C%B4%EA%B7%B8%EB%A6%B4/
 URL: https://incheon.webforai.kr/places/%ED%9C%B4%EB%B2%A0%EC%9D%B4%EC%8A%A4%EC%84%BC%ED%8A%B8%EB%9F%B4%EC%95%BD%EA%B5%AD-%EB%A1%AF%EB%8D%B0%EB%B0%B1%ED%99%94%EC%A0%90-%EC%9D%B8%EC%B2%9C%EC%A0%90/
 요약: 
 - 주소: 인천광역시 미추홀구 연남로 35 (관교동) B1층 (출처: 한국관광공사 TourAPI)
+- 이용시간: 10:00~22:00 (출처: 한국관광공사 TourAPI)
+- 쉬는 날: 명절 (출처: 한국관광공사 TourAPI)
+- 장날: 월-일요일 (출처: 한국관광공사 TourAPI)
+- 주차: 가능 (출처: 한국관광공사 TourAPI)
+- 판매 품목: 복합쇼핑몰(백화점, 마트, 편의점, 아울렛 등) (출처: 한국관광공사 TourAPI)
+- 문의: 0507-1440-2113 (출처: 한국관광공사 TourAPI)
+- 신용카드 결제: 가능 (출처: 한국관광공사 TourAPI)
 
 ## 흥부골숯불갈비 (음식점)
 URL: https://incheon.webforai.kr/places/%ED%9D%A5%EB%B6%80%EA%B3%A8%EC%88%AF%EB%B6%88%EA%B0%88%EB%B9%84/
