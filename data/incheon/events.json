@@ -26,11 +26,11 @@
     "id": "event-tourapi-3522322",
     "contentid": "3522322",
     "status": "draft",
-    "name": "오슬로우 빈티지 마켓",
-    "start_date": "2026-10-24",
-    "end_date": "2026-10-25",
+    "name": "오슬로우 빈티지 크리스마스 마켓",
+    "start_date": "2026-12-04",
+    "end_date": "2026-12-20",
     "place_name": "인천 아트플랫폼",
-    "address": "인천광역시 제물포구 제물량로218번길 3 (해안동1가)",
+    "address": "인천광역시 제물포구 월미로 33 (북성동1가)",
     "summary": "",
     "source_name": "한국관광공사 TourAPI",
     "source_url": "",
@@ -42,8 +42,8 @@
     "agelimit": "전 연령",
     "homepage": "https://www.instagram.com/ohslowmarket",
     "geo": {
-      "lat": 37.4727889015,
-      "lng": 126.6206091372,
+      "lat": 37.476568524,
+      "lng": 126.6144291728,
       "source": "TourAPI"
     }
   },
